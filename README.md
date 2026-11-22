@@ -20,6 +20,12 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
    - `main.js`: choreography (who moves when), camera, titles and effects
 4. **Render** (`engine/render.mjs`). Opens the film in headless Chrome, renders frame by frame (deterministic) and pipes the frames to ffmpeg.
 
+## Guides
+
+- `AGENTS.md`: start here (for people and AI assistants): map, commands, rules
+- `docs/CAMERA.md`: how to control the camera with data, plus recipes
+- `docs/STYLE-AND-FIGHT-SYSTEM.md`: the Lantern Origami style and the fight system
+
 ## Commands
 
 ```bash
@@ -42,6 +48,12 @@ Render only part of the film:
 
 ```bash
 node engine/render.mjs --from 24 --to 30 --out output/clash.mp4
+```
+
+Add sound to the rendered film (writes `output/ganryujima-sound.mp4`):
+
+```bash
+node engine/sound.mjs
 ```
 
 Live preview in a browser, then open the printed URL (add `?t=25.7` to freeze a frame):

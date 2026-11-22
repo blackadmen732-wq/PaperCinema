@@ -255,12 +255,15 @@ window.renderAt = (t) => {
   kojiro.head.getWorldPosition(tmp);
   impactBurst(t, 25.6, tmp.clone().add(new THREE.Vector3(0, 0.22, 0)));
 
-  // camera (+ shake on impact)
+  // camera path from the shot list, then any shakes listed in film.shakes
   placeCamera(shot, t);
-  if (t > 25.6 && t < 26.1) {
-    const s = (26.1 - t) * 0.03;
-    camera.position.x += Math.sin(t * 90) * s;
-    camera.position.y += Math.cos(t * 77) * s;
+  for (const sh of film.shakes ?? []) {
+    const k = (t - sh.t) / sh.dur;
+    if (k > 0 && k < 1) {
+      const s = (1 - k) * sh.amp;   // strongest at the hit, fading out
+      camera.position.x += Math.sin(t * 90) * s;
+      camera.position.y += Math.cos(t * 77) * s;
+    }
   }
 
   // overlays: titles, fades, flash

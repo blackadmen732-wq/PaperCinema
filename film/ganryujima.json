@@ -375,6 +375,14 @@
       ]
     }
   ],
+  "shakes": [
+    {
+      "t": 25.6,
+      "dur": 0.5,
+      "amp": 0.015,
+      "note": "impact of the decisive blow"
+    }
+  ],
   "titles": [
     {
       "start": 0.8,
