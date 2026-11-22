@@ -4,6 +4,7 @@
 folded/cut paper characters lit from inside, real-metal or demonic swords, data-driven camera and sound.
 
 ## Read these first
+0. `docs/playbook.html`: **visual playbook**: the 9-step pipeline, live camera-path plot, fight beats, sound cues, new-chat prompt (rebuild with `python3 docs/build_playbook.py`)
 1. `docs/STYLE-AND-FIGHT-SYSTEM.md`: the look, the 6-beat Strike Grammar, camera modes, lighting rules
 2. `docs/CAMERA.md`: **how to control the camera** (all camera moves are JSON data)
 3. `research/`: historical facts, each marked *documented* / *tradition* / *our choice*
@@ -32,6 +33,7 @@ npm install                                   # once
 node engine/render.mjs --still 2,11.5,25.7    # quick check → output/stills/
 npm run render                                # full film → output/ganryujima.mp4
 node engine/sound.mjs                         # add sound → output/ganryujima-sound.mp4
+python3 docs/build_playbook.py                # refresh the visual playbook from the film data
 npm run preview                               # live preview in a browser
 ```
 

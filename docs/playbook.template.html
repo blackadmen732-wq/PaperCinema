@@ -1,0 +1,525 @@
+<title>Paper Cinema Playbook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a production bible on washi paper. One reading column, wide "stage" panels for the
+   timeline and camera plot, ink rules between acts. Amber = light/human, crimson = impact/demonic. */
+:root {
+  --paper: #efebe2; --paper-2: #f7f4ee; --ink: #1c1915; --ink-2: #5c564d; --rule: #d3cbbd;
+  --amber: #b86a14; --crimson: #a5231b; --indigo: #2a3e5c; --sea: #7a8fae; --ok: #3d6b3d; --todo: #8a6a1e;
+  --f-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #13110e; --paper-2: #1b1814; --ink: #ece4d6; --ink-2: #a89f91; --rule: #322d26;
+  --amber: #f0a24a; --crimson: #e2554a; --indigo: #9db3d6; --sea: #6f86a8; --ok: #8cc28c; --todo: #e0bb5c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #13110e; --paper-2: #1b1814; --ink: #ece4d6; --ink-2: #a89f91; --rule: #322d26;
+  --amber: #f0a24a; --crimson: #e2554a; --indigo: #9db3d6; --sea: #6f86a8; --ok: #8cc28c; --todo: #e0bb5c; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 400 15.5px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 40px 80px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.3rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); font-weight: 700; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+:not(pre) > code { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px; padding: 0 5px; }
+a { color: var(--indigo); }
+.eyebrow { font: 500 0.72rem/1 var(--f-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--amber); }
+.muted { color: var(--ink-2); }
+section { display: grid; gap: 22px; padding-block: 44px; border-top: 1px solid var(--rule); }
+.lede { font-size: 1.12rem; color: var(--ink-2); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.15fr 1fr; gap: 36px; align-items: end; padding-bottom: 28px; }
+.hero .kanji { font-family: var(--f-display); font-size: clamp(4rem, 12vw, 8.5rem); line-height: 0.9; color: var(--crimson); font-weight: 800; }
+.hero .film { border-radius: 6px; overflow: hidden; border: 1px solid var(--rule); }
+.hero .film img { display: block; width: 100%; height: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 0.75rem/1 var(--f-mono); padding: 6px 9px; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-2); background: var(--paper-2); }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } }
+
+/* pipeline */
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; counter-reset: step; }
+.step { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 16px 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.step .n { font: 600 0.8rem/1 var(--f-mono); color: var(--amber); }
+.step h3 { font-size: 1.05rem; }
+.step p { font-size: 0.92rem; color: var(--ink-2); }
+.step .file { font: 400 0.78rem/1.4 var(--f-mono); color: var(--indigo); word-break: break-word; }
+.status { font: 600 0.68rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; justify-self: start; }
+.status.done { color: var(--ok); border: 1px solid currentColor; }
+.status.todo { color: var(--todo); border: 1px solid currentColor; }
+.upgrade { border-style: dashed; }
+
+/* stage: timeline + camera */
+.stage { background: var(--paper-2); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 16px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+button { font: 600 0.85rem/1 var(--f-body); color: var(--paper); background: var(--ink); border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+input[type=range] { flex: 1 1 260px; accent-color: var(--crimson); }
+.clock { font: 600 1.05rem/1 var(--f-mono); font-variant-numeric: tabular-nums; min-width: 6.5ch; }
+.scroll { overflow-x: auto; }
+#timeline { display: block; min-width: 760px; width: 100%; height: auto; }
+#timeline text { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-2); }
+#timeline .lane { font-family: var(--f-body); font-size: 11px; font-weight: 600; fill: var(--ink); }
+.now-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 820px) { .now-grid { grid-template-columns: 1fr; } }
+.shotcard { display: grid; gap: 10px; min-width: 0; }
+.shotcard img { width: 100%; border-radius: 6px; border: 1px solid var(--rule); display: block; }
+#plot { width: 100%; height: auto; display: block; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; }
+#plot text { font-family: var(--f-mono); font-size: 10px; fill: var(--ink-2); }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.readout div { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+.readout b { display: block; font: 600 0.95rem/1.2 var(--f-mono); font-variant-numeric: tabular-nums; }
+.readout span { font: 500 0.66rem/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.live { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.live .chip.sfx { border-color: var(--amber); color: var(--amber); }
+.live .chip.hit { border-color: var(--crimson); color: var(--crimson); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.8rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+
+/* tables */
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 0.7rem/1.2 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); background: var(--paper-2); }
+tr:last-child td { border-bottom: 0; }
+td.t { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.beat { font-family: var(--f-display); font-weight: 700; font-size: 1rem; }
+
+/* code + copy */
+pre { margin: 0; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 400 0.82rem/1.55 var(--f-mono); }
+.copybox { display: grid; gap: 8px; }
+.copybox .bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.rule-list { display: grid; gap: 10px; margin: 0; padding-left: 1.2em; }
+.rule-list li { max-width: 72ch; }
+footer { padding-top: 30px; border-top: 1px solid var(--rule); color: var(--ink-2); font-size: 0.85rem; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div style="display:grid; gap:18px">
+    <span class="eyebrow">Production playbook · Lantern Origami</span>
+    <h1>Paper Cinema Playbook</h1>
+    <p class="lede">How a story becomes a finished paper-samurai film, step by step: the data files, the camera, the fight beats and the sound. Any person or AI can follow it and make the same kind of video.</p>
+    <div class="chips">
+      <span class="chip">repo · blackadmen732-wq/papi</span>
+      <span class="chip" id="chip-film">film · ganryujima.json</span>
+      <span class="chip" id="chip-stats"></span>
+    </div>
+  </div>
+  <div style="display:grid; gap:10px">
+    <div class="kanji" aria-hidden="true">巌流島</div>
+    <div class="film"><img id="hero-img" alt="Frame from the Ganryūjima teaser: the decisive blow, with paper shards"></div>
+  </div>
+</header>
+
+<section id="pipeline">
+  <span class="eyebrow">The pipeline</span>
+  <h2>Story in, film out: nine steps</h2>
+  <p class="muted">Each step reads the output of the step before it. Everything a step needs is a file in the repo, so a new chat starts from the files, not from memory.</p>
+  <div class="flow" id="flow"></div>
+  <h3 style="margin-top:10px">Upgrade track: from preview to realistic</h3>
+  <p class="muted">The preview engine plans the camera, timing and sound. The upgrade track replaces the paper blocks with real 3D characters and a realistic look, using GPUs.</p>
+  <div class="flow" id="flow-up"></div>
+</section>
+
+<section id="stage">
+  <span class="eyebrow">Camera · sound · timing, live</span>
+  <h2>Scrub the film</h2>
+  <p class="muted">This is the real <code>film/ganryujima.json</code>. Drag the playhead: the camera plot uses the same path math the engine uses (centripetal Catmull-Rom curve and the shot's easing), so what you see here is where the camera is in the render.</p>
+  <div class="stage">
+    <div class="controls">
+      <button id="play" type="button">Play</button>
+      <span class="clock" id="clock">0.00 s</span>
+      <input id="scrub" type="range" min="0" max="36" step="0.01" value="25.6" aria-label="Film time in seconds">
+      <button class="ghost" id="jump-hit" type="button">Jump to the strike</button>
+    </div>
+    <div class="scroll"><svg id="timeline" viewBox="0 0 1000 210" role="img" aria-label="Film timeline with shots, titles, sound cues and impacts"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--indigo)"></i>Shot (a cut between bars)</span>
+      <span><i style="background:var(--amber)"></i>Sound cue</span>
+      <span><i style="background:var(--crimson)"></i>Shake / impact</span>
+      <span><i style="background:var(--ink-2)"></i>On-screen title</span>
+    </div>
+    <div class="now-grid">
+      <div class="shotcard">
+        <img id="shot-img" alt="">
+        <div>
+          <span class="eyebrow" id="shot-id"></span>
+          <h3 id="shot-name"></h3>
+          <p class="muted" id="shot-meta" style="font-size:.88rem"></p>
+        </div>
+        <div class="readout">
+          <div><span>Camera height</span><b id="r-h"></b></div>
+          <div><span>Distance to target</span><b id="r-d"></b></div>
+          <div><span>Lens (fov)</span><b id="r-f"></b></div>
+        </div>
+        <div><span class="eyebrow" style="color:var(--ink-2)">Playing now</span><div class="live" id="live"></div></div>
+      </div>
+      <div style="display:grid; gap:8px; min-width:0">
+        <svg id="plot" viewBox="0 0 420 360" role="img" aria-label="Top-down plan of the camera path for the current shot"></svg>
+        <p class="muted" style="font-size:.8rem">Top-down plan, 1 m grid. Line = camera path through its keyframes. Dot = camera now. Thin line = where it looks. Squares = Kojirō and Musashi.</p>
+      </div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Keyframe</th><th>pos [x, y, z]</th><th>look [x, y, z]</th><th>fov</th></tr></thead>
+      <tbody id="keys"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="strike">
+  <span class="eyebrow">Fight system</span>
+  <h2>The Strike Grammar: one hit, six beats</h2>
+  <p class="muted">Every attack uses the same beats. Each beat tells the character, the camera, the sound and the light what to do, so these four layers always land together. The times are the decisive blow in Ganryūjima.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Beat</th><th>In the film</th><th>Character</th><th>Camera</th><th>Sound</th><th>Light / FX</th></tr></thead>
+    <tbody>
+      <tr><td class="beat">1 · Ready</td><td class="t">24.0 s</td><td>Stance (kamae), both blades raised</td><td>Wide, low orbit. Show the distance</td><td>Sea and wind bed, footsteps on sand</td><td>Warm rim light from the sunrise</td></tr>
+      <tr><td class="beat">2 · Wind-up</td><td class="t">25.05 s</td><td>Arms pull further back, body coils</td><td>Push in, lens tightens toward 28</td><td>Air goes quiet</td><td>Lantern glow brightens</td></tr>
+      <tr><td class="beat">3 · Slash</td><td class="t">25.15–25.45 s</td><td>Fast swing, 3–5 frames</td><td>Ride the blade or whip pan</td><td><code>swing</code>: sword whoosh</td><td>Motion trail (planned)</td></tr>
+      <tr><td class="beat">4 · Hit-stop</td><td class="t">25.6 s</td><td>Contact; freeze 3–6 frames</td><td><code>shakes</code> entry: 0.5 s, 0.015 m</td><td><code>impact</code> + <code>impact-drum</code> boom (loudest moment)</td><td>White flash, paper-shard burst</td></tr>
+      <tr><td class="beat">5 · Follow-through</td><td class="t">25.6–26.3 s</td><td>Blade finishes its arc, headband tail flies</td><td>Keeps travelling past</td><td>Shards and tail settle</td><td>Flash fades</td></tr>
+      <tr><td class="beat">6 · Reaction</td><td class="t">26.3–28.2 s</td><td>Kojirō reels, kneels, falls</td><td>Swing to the faces, then crane back</td><td><code>fall</code>, then silence (ma)</td><td>Light returns to calm</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sound">
+  <span class="eyebrow">Sound</span>
+  <h2>Find, check, place</h2>
+  <div class="two">
+    <div style="display:grid; gap:12px; min-width:0">
+      <p><b>Find.</b> Each cue is a line in the film file with search words. <code>engine/sound.mjs</code> searches Openverse (free CC0 and CC-BY sounds).</p>
+      <p><b>Check.</b> Candidates are measured with ffmpeg. Silent, too-quiet or too-short files are rejected, and leading silence is trimmed.</p>
+      <p><b>Place.</b> The engine already knows when every slash and step happens, so each sound starts at its cue time. Beds loop; everything is mixed and limited under the video.</p>
+      <p class="muted">CC-BY sounds need the author's name in the video description. The list is in <code>assets/sfx/CREDITS.md</code>.</p>
+    </div>
+    <pre>{
+  "id": "impact",
+  "t": 25.6,            // second it starts
+  "query": "wood impact hit",
+  "min": 200, "max": 4000,   // ms length window
+  "len": 1.5,           // seconds used
+  "gain": 1.0           // loudness
+}</pre>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Time</th><th>Cue</th><th>Search words</th><th>Chosen sound</th><th>Licence</th></tr></thead>
+    <tbody id="cues"></tbody>
+  </table></div>
+</section>
+
+<section id="camera">
+  <span class="eyebrow">Camera recipes</span>
+  <h2>Copy a move, change the numbers</h2>
+  <p class="muted">S is the point you care about, for example a fighter's chest <code>[0, 1.2, -0.8]</code>. Units are metres, y is up, the ground is 0. Keep the camera on one side of the fighters' line (the z axis) unless you mean to cross it.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Move</th><th>Keyframes</th><th>Lens</th><th>Use it for</th></tr></thead>
+    <tbody>
+      <tr><td class="beat">Fly-over</td><td><code>pos</code> far and high [0, 5, 60] → near and low [1, 2.4, 13], <code>look</code> stays on the island</td><td class="t">42 → 36</td><td>Opening a film, new location</td></tr>
+      <tr><td class="beat">Push-in</td><td><code>pos</code> S+[2.5, 0.2, 2.5] → S+[1, 0.1, 1], <code>look</code> = S</td><td class="t">36 → 30</td><td>Tension before a strike</td></tr>
+      <tr><td class="beat">Orbit</td><td>3–4 keys on a circle around S, same height and distance, <code>ease: linear</code></td><td class="t">34</td><td>Standoffs</td></tr>
+      <tr><td class="beat">Over-the-shoulder</td><td>Behind fighter A's shoulder, <code>look</code> at fighter B's chest</td><td class="t">32–36</td><td>Dialogue, staring down</td></tr>
+      <tr><td class="beat">Low hero angle</td><td><code>pos</code> y 0.4–0.7, close; <code>look</code> at chest or face</td><td class="t">32</td><td>Making a fighter look powerful</td></tr>
+      <tr><td class="beat">Impact close-up</td><td>A key exactly at the hit time, ~1.6 m from contact, <code>ease: linear</code>, plus a <code>shakes</code> entry</td><td class="t">28</td><td>The decisive blow</td></tr>
+      <tr><td class="beat">Crane up</td><td><code>pos</code> rises y 2 → 9 while pulling back, <code>look</code> lifts to the horizon</td><td class="t">36 → 42</td><td>Endings</td></tr>
+      <tr><td class="beat">Cut on action</td><td>End one shot and start the next on the same second, mid-movement</td><td class="t">any</td><td>Hiding cuts, energy</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="newchat">
+  <span class="eyebrow">For a new chat or agent</span>
+  <h2>Start a new film with one message</h2>
+  <p class="muted">Paste this into a new Claude Code chat (or another coding agent) that has the repo attached. Replace the story line.</p>
+  <div class="copybox">
+    <div class="bar"><b>Prompt</b><button class="ghost" id="copy-btn" type="button">Copy prompt</button></div>
+    <pre id="prompt">Work in the repo blackadmen732-wq/papi.
+Read AGENTS.md first, then docs/CAMERA.md, docs/STYLE-AND-FIGHT-SYSTEM.md and docs/playbook.html.
+
+Make a new Lantern Origami film, 30–40 seconds, about: [YOUR STORY HERE].
+
+Follow the playbook steps in order:
+1. Research the history. Write research/&lt;name&gt;.md, marking each fact documented / tradition / our choice.
+2. Copy film/ganryujima.json to film/&lt;name&gt;.json. Write the shots (camera keyframes), titles, shakes and sound cues.
+3. Pick characters, outfits and swords from library/ (add presets there if needed).
+4. Write the choreography with the 6-beat Strike Grammar (hit-stop on every hit).
+5. Check still frames with node engine/render.mjs --film film/&lt;name&gt;.json --still ... and fix the framing before any full render.
+6. Render, then run node engine/sound.mjs --film film/&lt;name&gt;.json.
+7. Rebuild the playbook: python3 docs/build_playbook.py film/&lt;name&gt;.json
+Rules: never start a paid GPU without asking me first and stating the cost. Commit and push when done.</pre>
+  </div>
+</section>
+
+<section id="rules">
+  <span class="eyebrow">House rules</span>
+  <h2>What keeps the look and the budget safe</h2>
+  <ol class="rule-list">
+    <li><b>Check stills before renders.</b> A still takes seconds; a full 36-second render takes about 55 minutes on CPU.</li>
+    <li><b>Paid GPUs need the owner's yes first</b>, with the cost. Use the cheapest community GPU, set the 60-minute self-destruct timer, and stop the pod before any wait. An idle pod once cost $3.</li>
+    <li><b>Free compute first:</b> this machine, then Kaggle (free GPU after phone verification).</li>
+    <li><b>Light means power:</b> amber glow for people, crimson for demonic power and impacts. Paper shards, never blood.</li>
+    <li><b>History is marked honestly.</b> Tradition is never presented as documented fact.</li>
+    <li><b>Commercial-safe licences only</b> (MIT, Apache, CC0, CC-BY), and CC-BY sounds are credited.</li>
+    <li><b>No secrets in files.</b> API keys are injected by the network proxy.</li>
+  </ol>
+</section>
+
+<footer>
+  <p>Generated from <code id="foot-src">film/ganryujima.json</code> by <code>docs/build_playbook.py</code>. Rebuild after any change to the film file so this page stays true.</p>
+</footer>
+</div>
+
+<script>
+const FILM = /*FILM_JSON*/null;
+const THUMBS = /*THUMBS*/{};
+const CREDITS = /*CREDITS*/{};
+const SRC = /*SRC*/"film/ganryujima.json";
+
+/* ---------- pipeline cards ---------- */
+const STEPS = [
+  ["Research", "Find the real history. Mark each fact documented, tradition or our choice.", "research/*.md", "done"],
+  ["Film file", "One JSON file holds the shots, camera keyframes, titles, shakes and sound cues.", "film/<name>.json", "done"],
+  ["Cast & props", "Characters share one body; outfits, patterns and swords are swapped by data.", "library/ · engine/library.js", "done"],
+  ["Choreography", "Poses over time, built from the 6-beat Strike Grammar. Still code for now.", "engine/main.js (kojiroKeys, musashiKeys)", "todo"],
+  ["Camera", "Keyframes of position, target and lens per shot. Smooth curve, cuts between shots.", "film/<name>.json → shots[].camera", "done"],
+  ["Check stills", "Render a few frames in seconds and fix the framing before committing an hour.", "node engine/render.mjs --still 3,25.7", "done"],
+  ["Render", "Headless Chrome renders every frame, ffmpeg encodes the MP4.", "npm run render", "done"],
+  ["Sound", "Find on Openverse, check with ffmpeg, place at cue times, mix.", "node engine/sound.mjs", "done"],
+  ["Publish", "Upload the video; paste the CC-BY credits into the description.", "assets/sfx/CREDITS.md", "done"],
+];
+const UP = [
+  ["3D characters", "TRELLIS turns a reference image into a textured 3D model (MIT licence).", "gpu/gen_trellis.py → assets/models/", "done"],
+  ["Rig", "Give the model a skeleton so arms, body and legs bend.", "Blender (free)", "todo"],
+  ["Motion", "Real human sword motion from a text-to-motion model or video capture.", "Kaggle free GPU", "todo"],
+  ["Realistic render + restyle", "Blender for light through paper; Wan VACE repaints frames to match the reference image.", "Kaggle free GPU", "todo"],
+];
+function cards(el, list, up) {
+  el.innerHTML = list.map(([h, p, f, s], i) => `<div class="step${up ? ' upgrade' : ''}">
+    <span class="n">${up ? 'Upgrade ' + (i + 1) : 'Step ' + (i + 1)}</span><h3>${h}</h3><p>${p}</p>
+    <span class="file">${f.replace(/</g, '&lt;')}</span>
+    <span class="status ${s}">${s === 'done' ? 'Built' : 'Not built yet'}</span></div>`).join('');
+}
+cards(document.getElementById('flow'), STEPS);
+cards(document.getElementById('flow-up'), UP, true);
+
+/* ---------- header bits ---------- */
+document.getElementById('hero-img').src = THUMBS.S5 || '';
+document.getElementById('chip-stats').textContent =
+  `${FILM.shots.length} shots · ${FILM.duration}s · ${FILM.fps}fps · ${(FILM.sounds || []).length} sounds`;
+document.getElementById('chip-film').textContent = 'film · ' + SRC.split('/').pop();
+document.getElementById('foot-src').textContent = SRC;
+
+/* ---------- camera math: same as engine/main.js placeCamera + THREE.CatmullRomCurve3 (centripetal) ---------- */
+const sub = (a, b) => a.map((v, i) => v - b[i]);
+const add = (a, b) => a.map((v, i) => v + b[i]);
+const d2 = (a, b) => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0);
+function crPoint(pts, u) {
+  const l = pts.length;
+  const p = (l - 1) * u;
+  let i = Math.floor(p), w = p - i;
+  if (i >= l - 1) { i = l - 2; w = 1; }
+  const p1 = pts[i], p2 = pts[i + 1];
+  const p0 = i > 0 ? pts[i - 1] : add(sub(p1, p2), p1);
+  const p3 = i + 2 < l ? pts[i + 2] : add(sub(p2, p1), p2);
+  let dt0 = Math.pow(d2(p0, p1), 0.25), dt1 = Math.pow(d2(p1, p2), 0.25), dt2 = Math.pow(d2(p2, p3), 0.25);
+  if (dt1 < 1e-4) dt1 = 1; if (dt0 < 1e-4) dt0 = dt1; if (dt2 < 1e-4) dt2 = dt1;
+  return [0, 1, 2].map((k) => {
+    const x0 = p0[k], x1 = p1[k], x2 = p2[k], x3 = p3[k];
+    let t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
+    let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+    t1 *= dt1; t2 *= dt1;
+    const c2 = -3 * x1 + 3 * x2 - 2 * t1 - t2, c3 = 2 * x1 - 2 * x2 + t1 + t2;
+    return x1 + t1 * w + c2 * w * w + c3 * w * w * w;
+  });
+}
+const EASE = { linear: (k) => k, inOut: (k) => 0.5 - 0.5 * Math.cos(Math.PI * k) };
+const shotAt = (t) => FILM.shots.find((s) => t >= s.start && t < s.end) || FILM.shots[FILM.shots.length - 1];
+function camAt(shot, t) {
+  const keys = shot.camera;
+  const k = (EASE[shot.ease] || EASE.inOut)(Math.min(1, Math.max(0, (t - shot.start) / (shot.end - shot.start))));
+  const tt = shot.start + k * (shot.end - shot.start);
+  let i = 0;
+  while (i < keys.length - 2 && tt > keys[i + 1].t) i++;
+  const f = Math.min(1, Math.max(0, (tt - keys[i].t) / (keys[i + 1].t - keys[i].t)));
+  const u = (i + f) / (keys.length - 1);
+  return { pos: crPoint(keys.map((q) => q.pos), u), look: crPoint(keys.map((q) => q.look), u),
+    fov: keys[i].fov + (keys[i + 1].fov - keys[i].fov) * f };
+}
+
+/* ---------- timeline ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+const tl = document.getElementById('timeline');
+const X0 = 92, X1 = 990, D = FILM.duration;
+const tx = (t) => X0 + (t / D) * (X1 - X0);
+const el = (tag, attrs, parent = tl) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const cues = (FILM.sounds || []).slice().sort((a, b) => a.t - b.t);
+const rows = [];
+cues.forEach((c) => {
+  const end = c.t + c.len;
+  let r = rows.findIndex((e) => e <= c.t + 0.05);
+  if (r < 0) { r = rows.length; rows.push(0); }
+  rows[r] = end;
+  c._row = r;
+});
+const rowH = 11;
+const lanes = { Shots: 22, Titles: 62, Sound: 88 };
+lanes.Impacts = lanes.Sound + rows.length * rowH + 10;
+const H = lanes.Impacts + 26;
+tl.setAttribute('viewBox', `0 0 1000 ${H}`);
+for (const [name, y] of Object.entries(lanes)) { const t = el('text', { x: 0, y: y + 14, class: 'lane' }); t.textContent = name; }
+for (let s = 0; s <= D; s += 2) {
+  el('line', { x1: tx(s), x2: tx(s), y1: 14, y2: H - 4, stroke: 'var(--rule)', 'stroke-width': s % 10 ? 0.6 : 1.2 });
+  const lb = el('text', { x: tx(s) + (s === D ? -2 : 2), y: 10, 'text-anchor': s === D ? 'end' : 'start' }); lb.textContent = s + 's';
+}
+FILM.shots.forEach((s, i) => {
+  el('rect', { x: tx(s.start) + 1, y: lanes.Shots, width: tx(s.end) - tx(s.start) - 2, height: 26, rx: 4,
+    fill: s.mode === 'studio' ? 'var(--ink)' : 'var(--indigo)', opacity: 0.9 });
+  const t = el('text', { x: tx(s.start) + 6, y: lanes.Shots + 17, style: 'fill: var(--paper); font-size: 11px; font-weight: 600' });
+  t.textContent = s.id;
+});
+(FILM.titles || []).forEach((ti) => el('rect', { x: tx(ti.start), y: lanes.Titles + 6, width: tx(ti.end) - tx(ti.start), height: 8, rx: 3, fill: 'var(--ink-2)', opacity: 0.55 }));
+cues.forEach((c) => el('rect', { x: tx(c.t), y: lanes.Sound + c._row * rowH, width: Math.max(3, tx(c.t + c.len) - tx(c.t)), height: rowH - 3, rx: 2,
+  fill: 'var(--amber)', opacity: c.bed ? 0.35 : 0.9 }));
+(FILM.shakes || []).forEach((sh) => {
+  el('rect', { x: tx(sh.t), y: lanes.Impacts + 2, width: Math.max(4, tx(sh.t + sh.dur) - tx(sh.t)), height: 14, rx: 2, fill: 'var(--crimson)' });
+});
+const head = el('line', { x1: 0, x2: 0, y1: 14, y2: H - 2, stroke: 'var(--crimson)', 'stroke-width': 2 });
+const hit = (FILM.shakes && FILM.shakes[0]) ? FILM.shakes[0].t : D / 2;
+tl.addEventListener('click', (e) => {
+  const r = tl.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * 1000;
+  if (x >= X0) setT(((x - X0) / (X1 - X0)) * D);
+});
+
+/* ---------- camera plot (top-down: x across, z down) ---------- */
+const plot = document.getElementById('plot');
+const PW = 420, PH = 360, PAD = 34;
+let plotShot = null, map = null, camDot, aim;
+function drawPlot(shot) {
+  plot.innerHTML = '';
+  plotShot = shot;
+  const N = 80;
+  const path = Array.from({ length: N + 1 }, (_, i) => camAt(shot, shot.start + (i / N) * (shot.end - shot.start)));
+  const pts = path.flatMap((c) => [c.pos, c.look]);
+  const studio = shot.mode === 'studio';
+  if (!studio) pts.push([0, 0, -0.8], [0, 0, 0.85]);
+  let minX = Math.min(...pts.map((p) => p[0])), maxX = Math.max(...pts.map((p) => p[0]));
+  let minZ = Math.min(...pts.map((p) => p[2])), maxZ = Math.max(...pts.map((p) => p[2]));
+  const span = Math.max(maxX - minX, maxZ - minZ, 2) * 1.1;
+  const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+  const s = Math.min(PW - 2 * PAD, PH - 2 * PAD) / span;
+  map = (p) => [PW / 2 + (p[0] - cx) * s, PH / 2 + (p[2] - cz) * s];
+  const step = span > 40 ? 10 : span > 12 ? 2 : 1;
+  const g = el('g', {}, plot);
+  for (let x = Math.floor((cx - span) / step) * step; x <= cx + span; x += step) {
+    const [px] = map([x, 0, cz]); if (px < 0 || px > PW) continue;
+    el('line', { x1: px, x2: px, y1: 0, y2: PH, stroke: 'var(--rule)', 'stroke-width': 0.6 }, g);
+  }
+  for (let z = Math.floor((cz - span) / step) * step; z <= cz + span; z += step) {
+    const [, py] = map([cx, 0, z]); if (py < 0 || py > PH) continue;
+    el('line', { x1: 0, x2: PW, y1: py, y2: py, stroke: 'var(--rule)', 'stroke-width': 0.6 }, g);
+  }
+  const lbl = el('text', { x: 8, y: PH - 8 }, plot); lbl.textContent = `grid ${step} m · x → · z ↓ (toward the sea)`;
+  if (!studio) {
+    [[[0, 0, -0.8], 'Kojirō'], [[0, 0, 0.85], 'Musashi']].forEach(([p, n]) => {
+      const [x, y] = map(p);
+      el('rect', { x: x - 5, y: y - 5, width: 10, height: 10, fill: 'var(--crimson)', opacity: 0.8 }, plot);
+      const t = el('text', { x: x + 8, y: y + 4 }, plot); t.textContent = n;
+    });
+  } else {
+    const [x, y] = map([199.95, 0, 0]);
+    const t = el('text', { x: x - 30, y: y + 18 }, plot); t.textContent = 'sword (studio set)';
+    el('line', { x1: map([199.6, 0, 0])[0], x2: map([200.95, 0, 0])[0], y1: y, y2: y, stroke: 'var(--ink)', 'stroke-width': 3 }, plot);
+  }
+  el('polyline', { points: path.map((c) => map(c.pos).join(',')).join(' '), fill: 'none', stroke: 'var(--indigo)', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, plot);
+  shot.camera.forEach((k, i) => {
+    const [x, y] = map(k.pos);
+    el('circle', { cx: x, cy: y, r: 4, fill: 'var(--paper)', stroke: 'var(--indigo)', 'stroke-width': 2 }, plot);
+    const t = el('text', { x: x + 7, y: y - 6 }, plot); t.textContent = `k${i + 1} · ${k.t}s`;
+  });
+  aim = el('line', { stroke: 'var(--amber)', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, plot);
+  camDot = el('circle', { r: 7, fill: 'var(--amber)', stroke: 'var(--paper)', 'stroke-width': 2 }, plot);
+  document.getElementById('keys').innerHTML = shot.camera.map((k, i) =>
+    `<tr><td class="t">k${i + 1} · ${k.t}s</td><td class="t">[${k.pos.join(', ')}]</td><td class="t">[${k.look.join(', ')}]</td><td class="t">${k.fov}</td></tr>`).join('');
+}
+
+/* ---------- sound table ---------- */
+document.getElementById('cues').innerHTML = cues.map((c) => {
+  const cr = CREDITS[c.id] || {};
+  const lic = cr.license ? (cr.license === 'cc0' ? 'CC0' : 'CC-BY') : '—';
+  const title = cr.title ? `“${String(cr.title).replace(/</g, '&lt;')}” by ${String(cr.creator || '').replace(/</g, '&lt;')}` : 'not fetched yet';
+  return `<tr><td class="t">${c.t.toFixed(2)}s</td><td><code>${c.id}</code>${c.bed ? ' <span class="muted">(loop)</span>' : ''}</td><td>${c.query}</td><td>${title}</td><td>${lic}</td></tr>`;
+}).join('');
+
+/* ---------- playhead ---------- */
+const scrub = document.getElementById('scrub');
+scrub.max = D;
+let T = 0;
+function setT(t) {
+  T = Math.max(0, Math.min(D - 0.001, t));
+  scrub.value = T.toFixed(2);
+  document.getElementById('clock').textContent = T.toFixed(2) + ' s';
+  const x = tx(T); head.setAttribute('x1', x); head.setAttribute('x2', x);
+  const shot = shotAt(T);
+  if (shot !== plotShot) {
+    drawPlot(shot);
+    document.getElementById('shot-img').src = THUMBS[shot.id] || '';
+    document.getElementById('shot-img').alt = 'Frame from shot ' + shot.id + ': ' + shot.name;
+    document.getElementById('shot-id').textContent = `${shot.id} · ${shot.start}–${shot.end}s · ${shot.mode}`;
+    document.getElementById('shot-name').textContent = shot.name;
+    document.getElementById('shot-meta').textContent = `${shot.camera.length} keyframes · ease: ${shot.ease} · ${shot.ease === 'linear' ? 'constant speed, keys land on exact moments' : 'starts slow, ends slow'}`;
+  }
+  const c = camAt(shot, T);
+  const [px, py] = map(c.pos), [lx, ly] = map(c.look);
+  camDot.setAttribute('cx', px); camDot.setAttribute('cy', py);
+  aim.setAttribute('x1', px); aim.setAttribute('y1', py); aim.setAttribute('x2', lx); aim.setAttribute('y2', ly);
+  document.getElementById('r-h').textContent = c.pos[1].toFixed(2) + ' m';
+  document.getElementById('r-d').textContent = Math.sqrt(d2(c.pos, c.look)).toFixed(2) + ' m';
+  document.getElementById('r-f').textContent = c.fov.toFixed(1) + '°';
+  const live = cues.filter((q) => T >= q.t && T < q.t + q.len).map((q) => `<span class="chip sfx">${q.id}</span>`);
+  (FILM.shakes || []).forEach((sh) => { if (T >= sh.t && T < sh.t + sh.dur) live.unshift('<span class="chip hit">shake</span>'); });
+  (FILM.titles || []).forEach((ti) => { if (T >= ti.start && T < ti.end) live.push(`<span class="chip">title: ${(ti.en || ti.jp || '').slice(0, 34)}…</span>`); });
+  document.getElementById('live').innerHTML = live.join('') || '<span class="muted" style="font-size:.85rem">Nothing triggered at this moment</span>';
+}
+scrub.addEventListener('input', () => setT(parseFloat(scrub.value)));
+document.getElementById('jump-hit').addEventListener('click', () => setT(hit));
+let playing = false, last = 0;
+const playBtn = document.getElementById('play');
+function loop(now) {
+  if (!playing) return;
+  const dt = last ? (now - last) / 1000 : 0; last = now;
+  let t = T + dt; if (t >= D - 0.01) t = 0;
+  setT(t); requestAnimationFrame(loop);
+}
+playBtn.addEventListener('click', () => {
+  playing = !playing; playBtn.textContent = playing ? 'Pause' : 'Play'; last = 0;
+  if (playing) requestAnimationFrame(loop);
+});
+setT(parseFloat(scrub.value));
+
+/* ---------- copy prompt ---------- */
+document.getElementById('copy-btn').addEventListener('click', async (e) => {
+  const text = document.getElementById('prompt').textContent;
+  try { await navigator.clipboard.writeText(text); e.target.textContent = 'Copied'; }
+  catch {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById('prompt'));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    e.target.textContent = 'Selected: press Ctrl+C';
+  }
+  setTimeout(() => (e.target.textContent = 'Copy prompt'), 2200);
+});
+</script>

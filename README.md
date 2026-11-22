@@ -22,6 +22,7 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
 
 ## Guides
 
+- `docs/playbook.html`: the visual playbook (open in a browser): pipeline, live camera paths, fight beats, sound
 - `AGENTS.md`: start here (for people and AI assistants): map, commands, rules
 - `docs/CAMERA.md`: how to control the camera with data, plus recipes
 - `docs/STYLE-AND-FIGHT-SYSTEM.md`: the Lantern Origami style and the fight system
