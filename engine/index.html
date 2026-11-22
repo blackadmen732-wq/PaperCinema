@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper Cinema</title>
+<style>
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; }
+  #c { display: block; }
+  .bar { position: absolute; left: 0; right: 0; background: #000; z-index: 5; }
+  #barTop { top: 0; } #barBot { bottom: 0; }
+  #fade, #flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 4; }
+  #fade { background: #000; } #flash { background: #fff6e8; }
+  .title { position: absolute; z-index: 3; opacity: 0; color: #f6eedd;
+    font-family: 'DejaVu Serif', 'IPAGothic', serif; text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+  .title .jp { font-family: 'IPAGothic', serif; }
+  .title.hero { left: 0; right: 0; top: 30%; text-align: center; }
+  .title.hero .jp { font-size: 92px; letter-spacing: 18px; }
+  .title.hero .en { font-size: 26px; letter-spacing: 14px; margin-top: 6px; }
+  .title.hero .sub { font-size: 15px; letter-spacing: 2px; margin-top: 12px; opacity: .9; }
+  .title.left { left: 7%; top: 32%; width: 34%; }
+  .title.left .jp { font-size: 54px; letter-spacing: 10px; color: #e9b36f; }
+  .title.left .en { font-size: 20px; letter-spacing: 8px; margin-top: 6px; }
+  .title.left .sub { font-size: 14px; line-height: 1.5; margin-top: 12px; opacity: .85; }
+  .title.bottom { left: 8%; right: 8%; bottom: 118px; text-align: center; }
+  .title.bottom .jp { font-size: 26px; letter-spacing: 6px; margin-bottom: 4px; }
+  .title.bottom .en { font-size: 20px; letter-spacing: 1px; }
+  .title.bottom .sub { font-size: 13px; margin-top: 6px; opacity: .85; }
+</style>
+<script type="importmap">{ "imports": { "three": "/node_modules/three/build/three.module.js" } }</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="fade"></div><div id="flash"></div>
+  <div class="bar" id="barTop"></div><div class="bar" id="barBot"></div>
+</div>
+<script type="module" src="/engine/main.js"></script>
+</body>
+</html>

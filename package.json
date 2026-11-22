@@ -1,0 +1,15 @@
+{
+  "name": "paper-cinema",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Paper-craft cinematic animation system: shot list -> 3D paper world -> MP4",
+  "type": "module",
+  "scripts": {
+    "preview": "node engine/serve.mjs",
+    "still": "node engine/render.mjs --still",
+    "render": "node engine/render.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  }
+}
