@@ -7,70 +7,573 @@
   "duration": 36,
   "shots": [
     {
-      "id": "S1", "name": "Establishing: dawn over the strait", "mode": "dawn",
-      "start": 0, "end": 6, "ease": "inOut",
+      "id": "S1",
+      "name": "Establishing: dawn over the strait",
+      "mode": "dawn",
+      "start": 0,
+      "end": 6,
+      "ease": "inOut",
       "camera": [
-        { "t": 0,   "pos": [0, 5.2, 62], "look": [2, 2.2, -40], "fov": 42 },
-        { "t": 3,   "pos": [0.6, 3.4, 36], "look": [1, 1.6, -20], "fov": 40 },
-        { "t": 6,   "pos": [1.2, 2.4, 13], "look": [0, 1.0, -3], "fov": 36 }
+        {
+          "t": 0,
+          "pos": [
+            0,
+            5.2,
+            62
+          ],
+          "look": [
+            2,
+            2.2,
+            -40
+          ],
+          "fov": 42
+        },
+        {
+          "t": 3,
+          "pos": [
+            0.6,
+            3.4,
+            36
+          ],
+          "look": [
+            1,
+            1.6,
+            -20
+          ],
+          "fov": 40
+        },
+        {
+          "t": 6,
+          "pos": [
+            1.2,
+            2.4,
+            13
+          ],
+          "look": [
+            0,
+            1.0,
+            -3
+          ],
+          "fov": 36
+        }
       ]
     },
     {
-      "id": "S2", "name": "The sword: macro dolly, then the draw", "mode": "studio",
-      "start": 6, "end": 12.5, "ease": "inOut",
+      "id": "S2",
+      "name": "The sword: macro dolly, then the draw",
+      "mode": "studio",
+      "start": 6,
+      "end": 12.5,
+      "ease": "inOut",
       "camera": [
-        { "t": 6,    "pos": [201.2, 1.32, 0.36],  "look": [200.8, 1.18, 0], "fov": 32 },
-        { "t": 9,    "pos": [200.25, 1.33, 0.38],  "look": [199.9, 1.18, 0],  "fov": 32 },
-        { "t": 12.5, "pos": [199.92, 1.42, 1.45], "look": [199.95, 1.18, 0], "fov": 34 }
+        {
+          "t": 6,
+          "pos": [
+            201.2,
+            1.32,
+            0.36
+          ],
+          "look": [
+            200.8,
+            1.18,
+            0
+          ],
+          "fov": 32
+        },
+        {
+          "t": 9,
+          "pos": [
+            200.25,
+            1.33,
+            0.38
+          ],
+          "look": [
+            199.9,
+            1.18,
+            0
+          ],
+          "fov": 32
+        },
+        {
+          "t": 12.5,
+          "pos": [
+            199.92,
+            1.42,
+            1.45
+          ],
+          "look": [
+            199.95,
+            1.18,
+            0
+          ],
+          "fov": 34
+        }
       ]
     },
     {
-      "id": "S3", "name": "Musashi arrives late, by boat", "mode": "dawn",
-      "start": 12.5, "end": 17.5, "ease": "inOut",
+      "id": "S3",
+      "name": "Musashi arrives late, by boat",
+      "mode": "dawn",
+      "start": 12.5,
+      "end": 17.5,
+      "ease": "inOut",
       "camera": [
-        { "t": 12.5, "pos": [1.8, 0.75, 22],  "look": [0.3, 0.9, 10], "fov": 38 },
-        { "t": 15,   "pos": [1.6, 0.95, 15],  "look": [0, 1.0, 2],   "fov": 36 },
-        { "t": 17.5, "pos": [2.2, 1.15, 9.5], "look": [0, 1.0, 0.5], "fov": 34 }
+        {
+          "t": 12.5,
+          "pos": [
+            1.8,
+            0.75,
+            22
+          ],
+          "look": [
+            0.3,
+            0.9,
+            10
+          ],
+          "fov": 38
+        },
+        {
+          "t": 15,
+          "pos": [
+            1.6,
+            0.95,
+            15
+          ],
+          "look": [
+            0,
+            1.0,
+            2
+          ],
+          "fov": 36
+        },
+        {
+          "t": 17.5,
+          "pos": [
+            2.2,
+            1.15,
+            9.5
+          ],
+          "look": [
+            0,
+            1.0,
+            0.5
+          ],
+          "fov": 34
+        }
       ]
     },
     {
-      "id": "S4", "name": "Standoff: the draw, the scabbard thrown away", "mode": "dawn",
-      "start": 17.5, "end": 24, "ease": "linear",
+      "id": "S4",
+      "name": "Standoff: the draw, the scabbard thrown away",
+      "mode": "dawn",
+      "start": 17.5,
+      "end": 24,
+      "ease": "linear",
       "camera": [
-        { "t": 17.5, "pos": [3.4, 1.3, 4.2],  "look": [0, 1.0, 1.6], "fov": 36 },
-        { "t": 19.0, "pos": [2.3, 1.25, 0.6], "look": [0, 1.15, -0.6], "fov": 34 },
-        { "t": 21.0, "pos": [1.6, 1.4, -3.0], "look": [0.2, 1.1, 1.8], "fov": 38 },
-        { "t": 22.6, "pos": [-2.3, 1.3, -2.7], "look": [0, 1.2, 0.6], "fov": 37 },
-        { "t": 24.0, "pos": [-3.2, 1.05, 0.5], "look": [0, 1.25, 0.3], "fov": 36 }
+        {
+          "t": 17.5,
+          "pos": [
+            3.4,
+            1.3,
+            4.2
+          ],
+          "look": [
+            0,
+            1.0,
+            1.6
+          ],
+          "fov": 36
+        },
+        {
+          "t": 19.0,
+          "pos": [
+            2.3,
+            1.25,
+            0.6
+          ],
+          "look": [
+            0,
+            1.15,
+            -0.6
+          ],
+          "fov": 34
+        },
+        {
+          "t": 21.0,
+          "pos": [
+            1.6,
+            1.4,
+            -3.0
+          ],
+          "look": [
+            0.2,
+            1.1,
+            1.8
+          ],
+          "fov": 38
+        },
+        {
+          "t": 22.6,
+          "pos": [
+            -2.3,
+            1.3,
+            -2.7
+          ],
+          "look": [
+            0,
+            1.2,
+            0.6
+          ],
+          "fov": 37
+        },
+        {
+          "t": 24.0,
+          "pos": [
+            -3.2,
+            1.05,
+            0.5
+          ],
+          "look": [
+            0,
+            1.25,
+            0.3
+          ],
+          "fov": 36
+        }
       ]
     },
     {
-      "id": "S5", "name": "One strike", "mode": "dawn",
-      "start": 24, "end": 29.5, "ease": "linear",
+      "id": "S5",
+      "name": "One strike",
+      "mode": "dawn",
+      "start": 24,
+      "end": 29.5,
+      "ease": "linear",
       "camera": [
-        { "t": 24.0, "pos": [-3.2, 1.05, 0.5], "look": [0, 1.25, 0.3],  "fov": 36 },
-        { "t": 25.0, "pos": [-2.2, 0.7, -0.2], "look": [0, 1.45, 0.3],  "fov": 32 },
-        { "t": 25.7, "pos": [-1.7, 1.2, 0.4],  "look": [0, 1.45, 0.1],  "fov": 28 },
-        { "t": 26.8, "pos": [-1.6, 1.05, 1.7], "look": [0, 1.15, 0.1],  "fov": 32 },
-        { "t": 29.5, "pos": [-2.6, 2.7, 3.8],  "look": [0, 0.7, 0],     "fov": 36 }
+        {
+          "t": 24.0,
+          "pos": [
+            -3.2,
+            1.05,
+            0.5
+          ],
+          "look": [
+            0,
+            1.25,
+            0.3
+          ],
+          "fov": 36
+        },
+        {
+          "t": 25.0,
+          "pos": [
+            -2.2,
+            0.7,
+            -0.2
+          ],
+          "look": [
+            0,
+            1.45,
+            0.3
+          ],
+          "fov": 32
+        },
+        {
+          "t": 25.7,
+          "pos": [
+            -1.7,
+            1.2,
+            0.4
+          ],
+          "look": [
+            0,
+            1.45,
+            0.1
+          ],
+          "fov": 28
+        },
+        {
+          "t": 26.8,
+          "pos": [
+            -1.6,
+            1.05,
+            1.7
+          ],
+          "look": [
+            0,
+            1.15,
+            0.1
+          ],
+          "fov": 32
+        },
+        {
+          "t": 29.5,
+          "pos": [
+            -2.6,
+            2.7,
+            3.8
+          ],
+          "look": [
+            0,
+            0.7,
+            0
+          ],
+          "fov": 36
+        }
       ]
     },
     {
-      "id": "S6", "name": "Aftermath: back to the boat, crane up to the sun", "mode": "dawn",
-      "start": 29.5, "end": 36, "ease": "inOut",
+      "id": "S6",
+      "name": "Aftermath: back to the boat, crane up to the sun",
+      "mode": "dawn",
+      "start": 29.5,
+      "end": 36,
+      "ease": "inOut",
       "camera": [
-        { "t": 29.5, "pos": [-2.6, 2.7, 3.8], "look": [0, 0.7, 0],   "fov": 36 },
-        { "t": 32.5, "pos": [3.8, 4.2, 9.5],  "look": [0, 1.0, 2.5], "fov": 38 },
-        { "t": 36,   "pos": [1.5, 9.5, 18],   "look": [6, 4, -60],   "fov": 42 }
+        {
+          "t": 29.5,
+          "pos": [
+            -2.6,
+            2.7,
+            3.8
+          ],
+          "look": [
+            0,
+            0.7,
+            0
+          ],
+          "fov": 36
+        },
+        {
+          "t": 32.5,
+          "pos": [
+            3.8,
+            4.2,
+            9.5
+          ],
+          "look": [
+            0,
+            1.0,
+            2.5
+          ],
+          "fov": 38
+        },
+        {
+          "t": 36,
+          "pos": [
+            1.5,
+            9.5,
+            18
+          ],
+          "look": [
+            6,
+            4,
+            -60
+          ],
+          "fov": 42
+        }
       ]
     }
   ],
   "titles": [
-    { "start": 0.8,  "end": 5.4,  "style": "hero",   "jp": "巌流島", "en": "GANRYŪJIMA", "sub": "Strait of Shimonoseki · April 1612 (traditional date)" },
-    { "start": 6.6,  "end": 12.0, "style": "left",   "jp": "物干竿", "en": "THE LONG SWORD", "sub": "Tradition gives Sasaki Kojirō a blade of about 3 shaku (≈91 cm), nicknamed “Monohoshizao”. This paper sword is our own design." },
-    { "start": 13.0, "end": 17.2, "style": "bottom", "en": "Miyamoto Musashi arrives late, by boat — carrying a wooden sword cut from an oar." },
-    { "start": 18.0, "end": 20.6, "style": "bottom", "en": "Kojirō draws, and throws his scabbard into the sea." },
-    { "start": 20.9, "end": 23.6, "style": "bottom", "jp": "「小次郎、敗れたり」", "en": "“Kojirō, you have already lost.” (as tradition tells it)" },
-    { "start": 30.4, "end": 35.2, "style": "bottom", "en": "One blow. Kojirō fell, and Musashi returned to his boat.", "sub": "Main source: Nitenki (1776), written ~130 years later. Details are tradition, not record." }
+    {
+      "start": 0.8,
+      "end": 5.4,
+      "style": "hero",
+      "jp": "巌流島",
+      "en": "GANRYŪJIMA",
+      "sub": "Strait of Shimonoseki · April 1612 (traditional date)"
+    },
+    {
+      "start": 6.6,
+      "end": 12.0,
+      "style": "left",
+      "jp": "物干竿",
+      "en": "THE LONG SWORD",
+      "sub": "Tradition gives Sasaki Kojirō a blade of about 3 shaku (≈91 cm), nicknamed “Monohoshizao”. This paper sword is our own design."
+    },
+    {
+      "start": 13.0,
+      "end": 17.2,
+      "style": "bottom",
+      "en": "Miyamoto Musashi arrives late, by boat — carrying a wooden sword cut from an oar."
+    },
+    {
+      "start": 18.0,
+      "end": 20.6,
+      "style": "bottom",
+      "en": "Kojirō draws, and throws his scabbard into the sea."
+    },
+    {
+      "start": 20.9,
+      "end": 23.6,
+      "style": "bottom",
+      "jp": "「小次郎、敗れたり」",
+      "en": "“Kojirō, you have already lost.” (as tradition tells it)"
+    },
+    {
+      "start": 30.4,
+      "end": 35.2,
+      "style": "bottom",
+      "en": "One blow. Kojirō fell, and Musashi returned to his boat.",
+      "sub": "Main source: Nitenki (1776), written ~130 years later. Details are tradition, not record."
+    }
+  ],
+  "sounds": [
+    {
+      "id": "sea-bed",
+      "t": 0,
+      "query": "ocean waves shore calm",
+      "min": 20000,
+      "max": 600000,
+      "len": 36,
+      "gain": 0.35,
+      "bed": true
+    },
+    {
+      "id": "wind-bed",
+      "t": 0,
+      "query": "wind ambience",
+      "min": 20000,
+      "max": 600000,
+      "len": 36,
+      "gain": 0.2,
+      "bed": true
+    },
+    {
+      "id": "title-taiko",
+      "t": 0.8,
+      "query": "taiko drum hit",
+      "min": 500,
+      "max": 8000,
+      "len": 4,
+      "gain": 0.9
+    },
+    {
+      "id": "reveal-gong",
+      "t": 6.3,
+      "query": "gong",
+      "min": 2000,
+      "max": 20000,
+      "len": 6,
+      "gain": 0.6
+    },
+    {
+      "id": "sword-draw-1",
+      "t": 9.6,
+      "query": "sword unsheath",
+      "min": 500,
+      "max": 6000,
+      "len": 3,
+      "gain": 0.9
+    },
+    {
+      "id": "rowing",
+      "t": 12.5,
+      "query": "rowing boat oar water",
+      "min": 3000,
+      "max": 120000,
+      "len": 4.2,
+      "gain": 0.6
+    },
+    {
+      "id": "sword-draw-2",
+      "t": 18.25,
+      "query": "sword draw metal",
+      "min": 500,
+      "max": 6000,
+      "len": 2.5,
+      "gain": 1.0
+    },
+    {
+      "id": "throw-whoosh",
+      "t": 20.05,
+      "query": "whoosh swing",
+      "min": 300,
+      "max": 4000,
+      "len": 1.5,
+      "gain": 0.8
+    },
+    {
+      "id": "splash",
+      "t": 21.35,
+      "query": "water splash small",
+      "min": 500,
+      "max": 6000,
+      "len": 2.5,
+      "gain": 0.8
+    },
+    {
+      "id": "clap",
+      "t": 20.9,
+      "query": "wood block hit",
+      "min": 100,
+      "max": 3000,
+      "len": 1.2,
+      "gain": 0.9
+    },
+    {
+      "id": "steps-in",
+      "t": 24.0,
+      "query": "footsteps sand",
+      "min": 1000,
+      "max": 60000,
+      "len": 0.9,
+      "gain": 0.6
+    },
+    {
+      "id": "swing",
+      "t": 25.15,
+      "query": "sword swing whoosh",
+      "min": 300,
+      "max": 4000,
+      "len": 1.2,
+      "gain": 1.0
+    },
+    {
+      "id": "impact",
+      "t": 25.6,
+      "query": "wood impact hit",
+      "min": 200,
+      "max": 4000,
+      "len": 1.5,
+      "gain": 1.0
+    },
+    {
+      "id": "impact-drum",
+      "t": 25.6,
+      "query": "big drum hit boom",
+      "min": 500,
+      "max": 8000,
+      "len": 3,
+      "gain": 1.0
+    },
+    {
+      "id": "fall",
+      "t": 27.6,
+      "query": "body fall thud",
+      "min": 300,
+      "max": 5000,
+      "len": 1.5,
+      "gain": 0.8
+    },
+    {
+      "id": "steps-out",
+      "t": 30.6,
+      "query": "footsteps sand",
+      "min": 1000,
+      "max": 60000,
+      "len": 3.8,
+      "gain": 0.5
+    },
+    {
+      "id": "temple-bell",
+      "t": 33.8,
+      "query": "temple bell",
+      "min": 3000,
+      "max": 40000,
+      "len": 5,
+      "gain": 0.7
+    }
   ]
 }
