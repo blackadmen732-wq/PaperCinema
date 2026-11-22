@@ -1,0 +1,4 @@
+{ "name": "Autumn Maple 紅葉", "colors": {
+  "robe":   { "color": "#2c5560", "pattern": "momiji", "fg": "#d9693a", "scale": 1.2 },
+  "sleeve": { "color": "#2c5560", "pattern": "momiji", "fg": "#d9693a", "scale": 1.2 },
+  "hakama": "#a8322d", "hakamaFold": "#8a2622", "haori": null } }

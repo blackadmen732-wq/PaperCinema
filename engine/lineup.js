@@ -76,6 +76,7 @@ if (show === 'swords') {
   scene.add(key, new THREE.AmbientLight(0xffffff, 0.08));
 } else {
   const names = (params.get('characters') ?? 'musashi,kojiro,ronin').split(',');
+  const outfits = (params.get('outfits') ?? '').split(',');
   scene.background = new THREE.Color('#d9c4a0');
   scene.add(new THREE.HemisphereLight(0xfff0d8, 0x3a4560, 1.0));
   const sun = new THREE.DirectionalLight(0xffc27e, 2.6);
@@ -94,9 +95,16 @@ if (show === 'swords') {
   const back = new THREE.Mesh(new THREE.PlaneGeometry(20, 8), paper('#e8d3ac', { repeat: 0.5, glow: 0.25, glowColor: '#f3b878' }));
   back.position.set(0, 3, -3);
   scene.add(back);
-  const gap = 1.25;
+  const gap = names.length > 3 ? 1.0 : 1.25;
   for (let i = 0; i < names.length; i++) {
-    const preset = await loadCharacter(names[i]);
+    let preset = await loadCharacter(names[i]);
+    if (outfits[i]) {
+      // an outfit swaps cloth colours/patterns on the same shared body
+      const o = await (await fetch(`/library/outfits/${outfits[i]}.json`)).json();
+      const acc = { ...preset.accessories };
+      if ('haori' in o.colors) acc.haori = o.colors.haori;
+      preset = { ...preset, name: o.name, colors: { ...preset.colors, ...o.colors }, accessories: acc };
+    }
     const f = buildCharacter(preset);
     scene.add(f.root);
     applyPose(f, { ...BASE_POSE, x: (i - (names.length - 1) / 2) * gap, ry: 0.25 - i * 0.25,
@@ -105,7 +113,7 @@ if (show === 'swords') {
       const k = buildSword(await loadSword(preset.weapon), parts, 'paper');
       holdInHand(f.rH, k.sword, -0.06);
     }
-    label(preset.name, 50 + ((i - (names.length - 1) / 2) * 30));
+    label(preset.name, 50 + ((i - (names.length - 1) / 2) * (names.length > 3 ? 23 : 30)));
   }
   camera.position.set(0, 1.25, 5.6);
   camera.lookAt(0, 1.0, 0);

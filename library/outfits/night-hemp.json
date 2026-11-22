@@ -1,0 +1,4 @@
+{ "name": "Night Hemp-leaf 麻の葉", "colors": {
+  "robe":   { "color": "#141418", "pattern": "asanoha", "fg": "#6b5bd6", "scale": 0.8 },
+  "sleeve": { "color": "#141418", "pattern": "asanoha", "fg": "#6b5bd6", "scale": 0.8 },
+  "hakama": "#26222e", "hakamaFold": "#1c1922", "haori": null } }

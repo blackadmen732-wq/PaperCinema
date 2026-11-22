@@ -1,0 +1,4 @@
+{ "name": "Sea Waves 青海波", "colors": {
+  "robe":   { "color": "#1f3a5a", "pattern": "seigaiha", "fg": "#e8dcc4", "scale": 1.0 },
+  "sleeve": { "color": "#1f3a5a", "pattern": "seigaiha", "fg": "#e8dcc4", "scale": 1.0 },
+  "hakama": "#2a2a33", "hakamaFold": "#1f1f27", "haori": null } }

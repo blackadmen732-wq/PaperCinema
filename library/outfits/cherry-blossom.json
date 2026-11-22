@@ -1,0 +1,4 @@
+{ "name": "Cherry Blossom 桜", "colors": {
+  "robe":   { "color": "#efe6d4", "pattern": "sakura", "fg": "#e59aa6", "scale": 1.0 },
+  "sleeve": { "color": "#efe6d4", "pattern": "sakura", "fg": "#e59aa6", "scale": 1.0 },
+  "hakama": { "color": "#5c2220", "pattern": "uroko", "fg": "#6e2a27", "scale": 0.7 }, "hakamaFold": "#4a1b19", "haori": null } }

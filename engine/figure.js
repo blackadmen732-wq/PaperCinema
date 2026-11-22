@@ -12,7 +12,11 @@ function m(geo, mat) {
 }
 
 export function makeFigure(c) {
-  const P = (hex) => paper(hex, { repeat: 6 });
+  // A cloth value is either a colour ("#2b4a6b") or a patterned cloth
+  // ({ "color": "#2b4a6b", "pattern": "seigaiha", "fg": "#e8dcc4", "scale": 1 }).
+  const P = (v) => (typeof v === 'string' || v == null)
+    ? paper(v ?? '#888888', { repeat: 6 })
+    : paper(v.color, { repeat: v.repeat ?? 3, pattern: { pattern: v.pattern, fg: v.fg, scale: v.scale } });
   const root = new THREE.Group();
   root.rotation.order = 'YXZ';
   const hips = new THREE.Group();

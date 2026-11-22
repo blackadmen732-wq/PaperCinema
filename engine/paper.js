@@ -3,6 +3,7 @@
 // (speckle + fibres), flat shading for crisp folds, and optional glow
 // to fake light shining through thin paper.
 import * as THREE from 'three';
+import { drawPattern } from './patterns.js';
 
 export function rng(seed) {
   let s = (seed >>> 0) || 1;
@@ -15,14 +16,15 @@ export function rng(seed) {
 }
 
 const canvasCache = new Map();
-function paperCanvas(hex, seed) {
-  const key = hex + ':' + seed;
+function paperCanvas(hex, seed, pattern) {
+  const key = hex + ':' + seed + ':' + JSON.stringify(pattern ?? null);
   if (canvasCache.has(key)) return canvasCache.get(key);
   const c = document.createElement('canvas');
   c.width = c.height = 512;
   const g = c.getContext('2d');
   g.fillStyle = hex;
   g.fillRect(0, 0, 512, 512);
+  if (pattern) drawPattern(g, 512, { ...pattern, color: hex });
   const r = rng(seed);
   const img = g.getImageData(0, 0, 512, 512);
   const d = img.data;
@@ -56,7 +58,7 @@ export function paper(hex, opts = {}) {
   const repeat = opts.repeat ?? 1;
   const key = JSON.stringify([hex, opts]);
   if (matCache.has(key)) return matCache.get(key);
-  const tex = new THREE.CanvasTexture(paperCanvas(hex, opts.seed ?? 7));
+  const tex = new THREE.CanvasTexture(paperCanvas(hex, opts.seed ?? 7, opts.pattern));
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(repeat, repeat);
