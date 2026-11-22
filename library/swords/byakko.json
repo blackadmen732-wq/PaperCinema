@@ -1,0 +1,9 @@
+{
+  "name": "Byakko 白虎", "type": "historical",
+  "blade": { "length": 0.76, "curve": 0.022, "steel": "dark-blue" },
+  "tsuba": { "shape": "square", "cutout": "none", "metal": "silver" },
+  "tsuka": { "length": 0.27, "wrap": "#e9e4da", "diamonds": "#1c1c22", "fittings": "silver", "menuki": "silver" },
+  "habaki": "silver",
+  "saya": { "color": "#e8e2d6", "finish": "matte", "cord": "#2b3a55", "tip": "silver" },
+  "glow": null
+}

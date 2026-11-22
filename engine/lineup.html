@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library Lineup</title>
+<style>
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; }
+  #c { display: block; }
+  .label { position: absolute; bottom: 7%; transform: translateX(-50%); color: #f1e6d0; font: 15px "DejaVu Serif", "IPAGothic", serif; letter-spacing: 2px; text-shadow: 0 1px 6px #000; white-space: nowrap; }
+  .ink-text { position: absolute; inset: 0; pointer-events: none; font-family: 'IPAGothic', serif; color: #0d0d0d; }
+  .ink-text .vert { position: absolute; left: 7%; top: 6%; writing-mode: vertical-rl; font-size: 64px; letter-spacing: 14px; }
+  .ink-text .big { position: absolute; right: 7%; bottom: 5%; font-size: 150px; }
+</style>
+<script type="importmap">{ "imports": {
+  "three": "/node_modules/three/build/three.module.js",
+  "three/addons/": "/node_modules/three/examples/jsm/"
+} }</script>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas><div id="labels"></div></div>
+<script type="module" src="/engine/lineup.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "Sasaki Kojirō",
+  "colors": { "robe": "#efe6d4", "sleeve": "#efe6d4", "hakama": "#5c2220", "hakamaFold": "#4a1b19",
+              "skin": "#efe3cc", "collar": "#f6eedf", "obi": "#2a1d1a" },
+  "accessories": { "band": null, "kasa": false, "haori": "#9c2a25" },
+  "weapon": "shiokaze"
+}

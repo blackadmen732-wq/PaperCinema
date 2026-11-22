@@ -96,10 +96,16 @@ export function makeKatana(o = {}) {
 
   // tsuba: round iron guard with wave (nami) openwork — original design
   const ts = new THREE.Shape();
-  const R = 0.043;
-  for (let i = 0; i <= 14; i++) {
-    const a = (i / 14) * Math.PI * 2;
-    const rr = R * (0.97 + 0.03 * Math.cos(a * 3));
+  const R = o.tsubaSize ?? 0.043;
+  const shape = o.tsubaShape ?? 'round';
+  const nPts = shape === 'round' ? 14 : 40;
+  for (let i = 0; i <= nPts; i++) {
+    const a = (i / nPts) * Math.PI * 2;
+    let rr;
+    if (shape === 'mokko') rr = R * (0.84 + 0.16 * Math.abs(Math.cos(2 * a)));            // four-lobed
+    else if (shape === 'square') rr = (R * 0.9) / Math.pow(Math.pow(Math.abs(Math.cos(a)), 4) + Math.pow(Math.abs(Math.sin(a)), 4), 0.25);
+    else if (shape === 'aori') rr = R * (0.8 + 0.2 * Math.abs(Math.cos(a)));             // oval, wide across
+    else rr = R * (0.97 + 0.03 * Math.cos(a * 3));                                         // round
     i === 0 ? ts.moveTo(Math.cos(a) * rr, Math.sin(a) * rr) : ts.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
   }
   const hole = (pts) => { const p = new THREE.Path(); pts.forEach((q, i) => (i ? p.lineTo(...q) : p.moveTo(...q))); p.closePath(); ts.holes.push(p); };
@@ -108,8 +114,9 @@ export function makeKatana(o = {}) {
   // kogai / kozuka hitsu-ana
   hole([[0.013, 0.012], [0.019, 0.006], [0.019, -0.006], [0.013, -0.012]]);
   hole([[-0.013, 0.008], [-0.018, 0.004], [-0.018, -0.008], [-0.013, -0.01]]);
-  // wave curls
-  for (const [cx, cy, sgn] of [[0.026, 0.024, 1], [-0.026, -0.024, -1], [-0.025, 0.026, 1], [0.025, -0.026, -1]]) {
+  // wave curls (optional cut-out pattern)
+  const cutout = o.tsubaCutout ?? 'waves';
+  if (cutout === 'waves') for (const [cx, cy, sgn] of [[0.026, 0.024, 1], [-0.026, -0.024, -1], [-0.025, 0.026, 1], [0.025, -0.026, -1]]) {
     const pts = [];
     for (let k = 0; k <= 6; k++) {
       const a = sgn * (k / 6) * Math.PI * 1.3;

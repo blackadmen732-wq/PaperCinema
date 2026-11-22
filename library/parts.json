@@ -1,0 +1,21 @@
+{
+  "_about": "Parts catalogue. A sword preset picks one option from each group. Add new options here and every sword can use them.",
+  "metals": {
+    "iron":    { "color": "#4a4542", "rough": 0.42 },
+    "gold":    { "color": "#d7a748", "rough": 0.18 },
+    "silver":  { "color": "#d9dde2", "rough": 0.14 },
+    "copper":  { "color": "#c98b52", "rough": 0.22 },
+    "black":   { "color": "#1d1b1c", "rough": 0.30 }
+  },
+  "steels": {
+    "polished": { "color": "#dfe3e8", "rough": 0.07, "hamon": "#f4f3ef" },
+    "black":    { "color": "#2a2a30", "rough": 0.16, "hamon": "#120203" },
+    "dark-blue":{ "color": "#5a6578", "rough": 0.10, "hamon": "#dfe6f0" }
+  },
+  "tsubaShapes": ["round", "mokko", "square", "aori"],
+  "tsubaCutouts": ["waves", "none"],
+  "sayaFinishes": {
+    "lacquer": { "rough": 0.12, "clearcoat": 1 },
+    "matte":   { "rough": 0.7,  "clearcoat": 0 }
+  }
+}

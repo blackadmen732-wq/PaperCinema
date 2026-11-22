@@ -1,0 +1,9 @@
+{
+  "name": "Yamikaze 闇風", "type": "demonic",
+  "blade": { "length": 0.86, "curve": 0.026, "steel": "black" },
+  "tsuba": { "shape": "aori", "cutout": "waves", "metal": "black" },
+  "tsuka": { "length": 0.32, "wrap": "#1a1a1f", "diamonds": "#3b2a6e", "fittings": "black", "menuki": "silver" },
+  "habaki": "black",
+  "saya": { "color": "#120f18", "finish": "lacquer", "cord": "#5b3fa8", "tip": "black" },
+  "glow": { "color": "#8a5cff", "strength": 1.8, "pulse": true }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Kurenai-oni 紅鬼", "type": "demonic",
+  "blade": { "length": 0.95, "curve": 0.03, "steel": "black" },
+  "tsuba": { "shape": "mokko", "cutout": "none", "metal": "gold" },
+  "tsuka": { "length": 0.31, "wrap": "#121114", "diamonds": "#a3151a", "fittings": "gold", "menuki": "gold" },
+  "habaki": "gold",
+  "saya": { "color": "#0b0a0b", "finish": "lacquer", "cord": "#b0161a", "tip": "gold" },
+  "glow": { "color": "#ff1e14", "strength": 2.2, "pulse": true }
+}

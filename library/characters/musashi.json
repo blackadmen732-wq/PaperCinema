@@ -1,0 +1,7 @@
+{
+  "name": "Miyamoto Musashi",
+  "colors": { "robe": "#3d4252", "sleeve": "#3d4252", "hakama": "#4b3e34", "hakamaFold": "#3d322a",
+              "skin": "#efe3cc", "collar": "#d9d2c2", "obi": "#1f1b19" },
+  "accessories": { "band": "#f3eee2", "kasa": false, "haori": null },
+  "weapon": "bokken"
+}

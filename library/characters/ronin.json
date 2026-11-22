@@ -1,0 +1,7 @@
+{
+  "name": "Wandering ronin (from your reference image)",
+  "colors": { "robe": "#e6ddcc", "sleeve": "#e6ddcc", "hakama": "#d8cdb8", "hakamaFold": "#c9bda6",
+              "skin": "#e9dfcc", "collar": "#f2ebde", "obi": "#cbbfa8" },
+  "accessories": { "band": null, "kasa": true, "haori": null },
+  "weapon": "kurenai-oni"
+}
