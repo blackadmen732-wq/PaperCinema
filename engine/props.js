@@ -42,6 +42,7 @@ export function makeKatana(o = {}) {
     lacquer: paper('#141113', { repeat: 25, rough: 0.32, metal: 0.12, bump: 0.15 }),
     sageo: paper('#9e1f1c', { repeat: 40, rough: 0.85 }),
     horn: paper('#2a2522', { repeat: 40, rough: 0.5 }),
+    ...(o.materials ?? {}),
   };
 
   // ---------- blade ----------

@@ -3,6 +3,7 @@
 //   node engine/render.mjs --still 6,9,25.6     → output/stills/t6.png ...
 //   node engine/render.mjs --from 24 --to 30    → render only part of the film
 //   node engine/render.mjs --film film/other.json --out output/other.mp4
+//   node engine/render.mjs --page engine/lookdev.html --film film/lookdev.json --query mode=metal --still 2 --prefix metal-
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -24,21 +25,23 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const page = await browser.newPage({ viewport: { width: film.width, height: film.height } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 page.on('console', (m) => { if (m.type() === 'error') console.error('console:', m.text()); });
-await page.goto(`http://localhost:${port}/engine/index.html?render=1&film=/${filmPath}`);
+const pagePath = opt('page', 'engine/index.html');
+const extra = opt('query', '');
+await page.goto(`http://localhost:${port}/${pagePath}?render=1&film=/${filmPath}${extra ? '&' + extra : ''}`);
 await page.waitForFunction('window.READY === true', null, { timeout: 120000 });
 
 if (stills) {
   fs.mkdirSync('output/stills', { recursive: true });
   for (const t of stills.split(',').map(Number)) {
     await page.evaluate((t) => window.renderAt(t), t);
-    await page.screenshot({ path: `output/stills/t${t}.png` });
+    await page.screenshot({ path: `output/stills/${opt('prefix', '')}t${t}.png` });
     console.log('still', t);
   }
 } else {
   const from = Number(opt('from', 0)), to = Number(opt('to', film.duration));
   const out = opt('out', `output/${path.basename(filmPath, '.json')}.mp4`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  const dir = 'output/frames';
+  const dir = opt('frames', 'output/frames');
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   const frames = Math.round((to - from) * film.fps);
