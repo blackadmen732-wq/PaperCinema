@@ -6,7 +6,11 @@ fights. Guide: docs/CHARACTER-BLENDER.md.
   nice -n 10 $B -b -t 2 -P blender/character/rig_trellis.py -- --model ronin_base --pose jodan --out output/character/rig-jodan.png
   # one moment of a film (needs output/<film>.motion.json from tools/export_motion.mjs)
   nice -n 10 $B -b -t 2 -P blender/character/rig_trellis.py -- --motion output/dash-test.motion.json --t 1.11 --out output/character/rig-cut.png
-  options: --mode heat|panels|cloak|rigid (how the mesh follows the bones; heat is the default) · --view front|q|side|back · --save file.blend
+  options: --mode heat|panels|cloak|rigid (how the mesh follows the bones; heat is the default)
+  # motion capture: any BVH file, one moment of it
+  ... rig_trellis.py -- --bvh take.bvh --t 2.0 --out output/character/rig-bvh.png
+  # hand the rig to another tool: A-pose rest + standard humanoid bone names (Hips, Spine, LeftArm, …)
+  ... rig_trellis.py -- --a-pose --names humanoid --save output/character/ronin_rig.blend · --view front|q|side|back · --save file.blend
 
 From another Blender script:
   import sys; sys.path.insert(0, 'blender/character'); import rig_trellis as rt
@@ -759,6 +763,14 @@ def load_motion(path):
     return out
 
 
+def sample_sword(sample, cid):
+    """the sword of one sub-frame sample → (position, quaternion) in Blender axes (film export or BVH)"""
+    c = sample['cast'][cid]
+    if 'swordB' in c:
+        return c['swordB'][0].copy(), c['swordB'][1].to_quaternion()
+    return v3(c['sword'][:3]), q3(c['sword'][3:]).to_quaternion()
+
+
 def sword_samples(motion, cid, f0, f1):
     """sub-frame sword transforms (Blender axes) between two frames, newest last: [(t, pos, rot3)]"""
     sub = motion['sub']
@@ -868,7 +880,7 @@ def solve(ch, fr):
     # hips: the engine's hip travel in the root's frame, scaled to this model's legs
     leg_k = (ch['T'][0] + ch['T'][1]) / ENGINE['leg']
     loc = Rr.transposed() @ (J['hips'][0] - pr)             # Blender axes: x side, y back(+)/front(-), z up
-    hips = pr + Rr @ (Vector(spec['hips']) + Vector((loc.x * leg_k, loc.y * leg_k, (loc.z - ENGINE['hipY']) * min(1.0, leg_k * 1.15))))
+    hips = pr + Rr @ (Vector(spec['hips']) + Vector((loc.x * leg_k, loc.y * leg_k, (loc.z - ENGINE['hipY']) * leg_k * 0.9)))
     out['hips'] = TR(hips, J['hips'][1] @ R3['hips'])
 
     def fk(b, rot_world):
@@ -917,7 +929,7 @@ def solve(ch, fr):
         hj = hips + Rr @ (Vector(side(spec['hip_joint'], s)) - Vector(spec['hips']))
         fl = Rr.transposed() @ (J[f'foot.{s}'][0] - pr)
         an = side(spec['ankle'], s)
-        foot = pr + Rr @ Vector((an.x, fl.y * leg_k * 1.1 + an.y, max(0.0, fl.z - 0.04) * leg_k + an.z))
+        foot = pr + Rr @ Vector((an.x + (fl.x - (0.1 if s == 'L' else -0.1)) * leg_k, fl.y * leg_k * 1.1 + an.y, max(0.0, fl.z - 0.04) * leg_k + an.z))
         K, foot = ik2(hj, foot, ch['T'][0], ch['T'][1], fwd + Rr @ Vector((0.25 if s == 'L' else -0.25, 0, 0)))
         base = Rr @ R3[f'thigh.{s}']
         out[f'thigh.{s}'] = TR(hj, swing(base @ Vector((0, 1, 0)), K - hj) @ base)
@@ -1025,6 +1037,161 @@ def _fcurves(action):
     return out
 
 
+# ----------------------------------------------------------------------------------------------- mocap (BVH) + standard names
+# Our joint → the standard humanoid name (Mixamo / most BVH and FBX exporters). export_names() renames the rig to
+# these for other tools; bvh_motion() uses the same table (plus aliases) to read any BVH.
+HUMANOID = {
+    'root': 'Root', 'hips': 'Hips', 'waist': 'Spine', 'chest': 'Spine1', 'neck': 'Neck', 'head': 'Head',
+    'clavicle.L': 'LeftShoulder', 'shoulder.L': 'LeftArm', 'elbow.L': 'LeftForeArm', 'twist.L': 'LeftForeArmRoll', 'hand.L': 'LeftHand',
+    'clavicle.R': 'RightShoulder', 'shoulder.R': 'RightArm', 'elbow.R': 'RightForeArm', 'twist.R': 'RightForeArmRoll', 'hand.R': 'RightHand',
+    'thigh.L': 'LeftUpLeg', 'shin.L': 'LeftLeg', 'foot.L': 'LeftFoot', 'thigh.R': 'RightUpLeg', 'shin.R': 'RightLeg', 'foot.R': 'RightFoot',
+    'sleeve.L': 'LeftSleeve', 'sleeve.R': 'RightSleeve',
+}
+# other spellings seen in BVH files (lower case, side written as {s} = left/right or l/r): first match wins
+BVH_ALIASES = {
+    'hips': ['hips', 'hip', 'pelvis', 'root'], 'waist': ['spine', 'abdomen', 'lowerback', 'chest'], 'chest': ['spine2', 'spine1', 'chest2', 'chest', 'upperchest', 'thorax'],
+    'neck': ['neck', 'neck1'], 'head': ['head'],
+    'clavicle': ['{s}shoulder', '{s}collar', '{s}clavicle'], 'shoulder': ['{s}arm', '{s}upperarm', '{s}shldr', '{s}uparm'],
+    'elbow': ['{s}forearm', '{s}lowerarm', '{s}elbow', '{s}lowarm'], 'hand': ['{s}hand', '{s}wrist'],
+    'thigh': ['{s}upleg', '{s}upperleg', '{s}thigh', '{s}hip'], 'shin': ['{s}leg', '{s}lowerleg', '{s}shin', '{s}knee', '{s}lowleg'], 'foot': ['{s}foot', '{s}ankle'],
+}
+
+
+def export_names(ch, style='humanoid'):
+    """Rename the bones (and the vertex groups) to the standard humanoid names, for retarget tools and game engines.
+    Do this LAST (before saving a .blend or exporting FBX): the driver in this file uses our own names."""
+    if style != 'humanoid':
+        return
+    for ob in [ch['mesh'], *ch['feet'], *ch['fists'], *([ch['core']] if ch.get('core') else [])]:
+        for g in ob.vertex_groups:
+            if g.name in HUMANOID:
+                g.name = HUMANOID[g.name]
+    for b in ch['rig'].data.bones:
+        if b.name in HUMANOID:
+            b.name = HUMANOID[b.name]
+
+
+def a_pose(ch, arm_out=0.75):
+    """Make the REST pose an A-pose (arms out and down, about 45°), the bind pose retarget tools expect. The model's own
+    rest is "arms folded"; this poses it, bakes the mesh there and makes that the new rest. Run it LAST, like
+    export_names(): after it the folded-pose measurements this file's driver uses no longer describe the rig."""
+    apply_frame(ch, pose_frame({'rsz': arm_out, 'lsz': -arm_out, 'rsx': 0.0, 'lsx': 0.0, 'rex': -0.08, 'lex': -0.08, 'stance': 0.0}, two_hand=False))
+    bpy.context.view_layer.update()
+    for ob in [ch['mesh'], *ch['feet'], *ch['fists'], *([ch['core']] if ch.get('core') else [])]:
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.view_layer.objects.active = ob; ob.select_set(True)
+        for md in [m for m in ob.modifiers if m.type == 'ARMATURE']:
+            bpy.ops.object.modifier_apply(modifier=md.name)
+        md = ob.modifiers.new('Armature', 'ARMATURE'); md.object = ch['rig']
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = ch['rig']; ch['rig'].select_set(True)
+    bpy.ops.object.mode_set(mode='POSE')
+    bpy.ops.pose.armature_apply(selected=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+
+def bvh_motion(path, scale=None, two_hand=False, forward='-Y'):
+    """A BVH file (any mocap app or tool) → the same frames load_motion() gives, so bake() plays it on the character.
+    Uses Blender's own BVH importer. The retarget is by WORLD rotation change from the BVH rest pose (so a T-pose or an
+    A-pose file both work) for the spine, head, hands and feet, and by limb DIRECTIONS for arms and legs, re-scaled to the
+    engine's limb lengths; solve() then fits them to the character with IK, exactly as it does for film motion.
+    The BVH figure should face `forward` in Blender after import (the importer turns Y-up files to Z-up)."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_anim.bvh(filepath=path, axis_forward='-Z', axis_up='Y', rotate_mode='NATIVE', update_scene_fps=False, update_scene_duration=False)
+    src = [o for o in bpy.data.objects if o not in before and o.type == 'ARMATURE'][0]
+    names = {b.name.lower().replace('_', '').replace(' ', '').replace('.', '').split(':')[-1]: b.name for b in src.data.bones}
+
+    def find(joint, s=None):
+        base = joint.split('.')[0]
+        for al in BVH_ALIASES[base]:
+            for sd in ((('left', 'l') if s == 'L' else ('right', 'r')) if s else ('',)):
+                key = al.format(s=sd)
+                if key in names:
+                    return names[key]
+        return None
+    M = {j: find(j) for j in ('hips', 'waist', 'chest', 'neck', 'head')}
+    for s in 'LR':
+        for j in ('clavicle', 'shoulder', 'elbow', 'hand', 'thigh', 'shin', 'foot'):
+            M[f'{j}.{s}'] = find(j, s)
+    if M['chest'] == M['waist']:                              # a one-bone spine: the chest takes it, the waist stays with the hips
+        M['waist'] = None
+    need = ['hips', 'head'] + [f'{j}.{s}' for s in 'LR' for j in ('shoulder', 'elbow', 'hand', 'thigh', 'shin', 'foot')]
+    missing = [j for j in need if not M[j]]
+    if missing:
+        raise RuntimeError(f'bvh_motion: no bone found for {missing} in {os.path.basename(path)} (bones: {sorted(names.values())[:40]}). Add the spelling to BVH_ALIASES in rig_trellis.py.')
+    yaw_fix = {'-Y': 0.0, 'Y': math.pi, 'X': math.pi / 2, '-X': -math.pi / 2}[forward]
+    G = Matrix.Rotation(yaw_fix, 3, 'Z')
+    rest = {j: (src.matrix_world @ src.data.bones[b].matrix_local) for j, b in M.items() if b}
+    h0 = rest['hips'].translation.z - min(rest['foot.L'].translation.z, rest['foot.R'].translation.z)
+    sc = scale or (0.90 / max(h0, 1e-6))                     # engine hips are 0.92 m up; feet joints sit 0.04 m above the ground
+    floor = min(rest['foot.L'].translation.z, rest['foot.R'].translation.z)
+    act = src.animation_data.action if src.animation_data else None
+    f0, f1 = (int(act.frame_range[0]), int(act.frame_range[1])) if act else (1, 1)
+    scene = bpy.context.scene
+    # frame time of the BVH: resample to 24 fps
+    dt = 1 / FPS
+    try:
+        with open(path) as fh:
+            for line in fh:
+                if line.strip().lower().startswith('frame time'):
+                    dt = float(line.split(':')[1]); break
+    except Exception:                                       # noqa: BLE001
+        pass
+    dur = (f1 - f0) * dt
+    frames = []
+    eng_rest = engine_fk({})
+    conv = lambda m: (v3(m.translation), C3 @ m.to_3x3() @ C3.transposed())
+    E0 = {n: conv(eng_rest[n]) for n in JOINTS}
+    down = Vector((0, 0, -1))
+    for i in range(int(dur * FPS) + 1):
+        ff = f0 + i / FPS / dt
+        scene.frame_set(int(ff), subframe=ff - int(ff))
+        W = {j: (src.matrix_world @ src.pose.bones[b].matrix) for j, b in M.items() if b}
+        D = {j: G @ (W[j].to_3x3() @ rest[j].to_3x3().inverted()) for j in W}     # world rotation change from the rest pose
+        P = {j: G @ ((W[j].translation - Vector((rest['hips'].translation.x, rest['hips'].translation.y, floor))) * sc) for j in W}
+        J = {}
+        hips = P['hips']
+        fw = D['hips'] @ Vector((0, -1, 0)); yaw = math.atan2(fw.x, -fw.y)
+        Rroot = Matrix.Rotation(yaw, 3, 'Z')
+        proot = Vector((hips.x, hips.y, 0))
+        J['root'] = (proot, Rroot)
+        J['hips'] = (Vector((hips.x, hips.y, hips.z + 0.04)), D['hips'])
+        J['waist'] = (J['hips'][0], D.get('waist', D['hips']))
+        J['chest'] = (J['waist'][0] + J['waist'][1] @ Vector((0, 0, 0.26)), D.get('chest', J['waist'][1]))
+        J['neck'] = (J['chest'][0] + J['chest'][1] @ Vector((0, 0, 0.29)), D.get('neck', J['chest'][1]))
+        J['head'] = (J['neck'][0] + J['neck'][1] @ Vector((0, 0, 0.06)), D['head'])
+        for s, sg in (('L', 1), ('R', -1)):
+            J[f'clavicle.{s}'] = (J['chest'][0] + J['chest'][1] @ Vector((sg * 0.07, 0, 0.21)), D.get(f'clavicle.{s}', J['chest'][1]))
+            sh = J[f'clavicle.{s}'][0] + J[f'clavicle.{s}'][1] @ Vector((sg * 0.16, 0, 0))
+            du = (W[f'elbow.{s}'].translation - W[f'shoulder.{s}'].translation); df = (W[f'hand.{s}'].translation - W[f'elbow.{s}'].translation)
+            du, df = (G @ du).normalized(), (G @ df).normalized()
+            el = sh + du * 0.30; hd = el + df * 0.29
+            J[f'shoulder.{s}'] = (sh, swing(down, du))
+            J[f'elbow.{s}'] = (el, swing(down, df)); J[f'twist.{s}'] = (el, swing(down, df))
+            J[f'hand.{s}'] = (hd, swing(down, df))             # the hand follows the forearm (mocap wrists are noisy)
+            # legs: the foot seen from the hip joint, at the engine's leg length
+            leg = (W[f'foot.{s}'].translation - W[f'thigh.{s}'].translation)
+            leg0 = (rest[f'foot.{s}'].translation - rest[f'thigh.{s}'].translation).length
+            hj = proot + Rroot @ Vector((sg * 0.1, 0, 0)) + Vector((0, 0, J['hips'][0].z - 0.02))
+            ft = hj + (G @ leg) * (0.90 / max(leg0, 1e-6))
+            ft.z = max(0.04, 0.04 + (P[f'foot.{s}'].z - (rest[f'foot.{s}'].translation.z - floor) * sc))
+            fyaw = D[f'foot.{s}'] @ Vector((0, -1, 0))
+            J[f'thigh.{s}'] = (hj, Rroot); J[f'shin.{s}'] = ((hj + ft) / 2, Rroot)
+            J[f'foot.{s}'] = (ft, Matrix.Rotation(math.atan2(fyaw.x, -fyaw.y), 3, 'Z'))
+        # the katana rides in the right hand the way the engine holds it (handle along the hand's diagonal)
+        a = math.sqrt(0.5)
+        xa, ya = Vector((0, -a, a)), Vector((0, a, a))
+        hold = C3 @ Matrix((xa, ya, xa.cross(ya))).transposed() @ C3.transposed()
+        Rh = J['hand.R'][1]
+        sword = (J['hand.R'][0] + Rh @ (C3 @ (xa * 0.06 + Vector((0, -0.01, 0)))), Rh @ hold)
+        frames.append({'t': i / FPS, 'tb': i / FPS, 'cam': None, 'trees': [], 'cast': {'hero': {'J': J, 'sword': sword, 'twoHand': 1.0 if two_hand else 0.0, 'pose': {}, 'eyes': None}}})
+    bpy.data.objects.remove(src)
+    samples = [{'t': fr['t'], 'tb': fr['tb'], 'cast': {'hero': {'swordB': fr['cast']['hero']['sword']}}} for fr in frames]
+    meta = {'film': {'fps': FPS, 'duration': dur}, 'sword': {'bladeLen': 0.91}, 'cast': {'hero': {}}, 'trees': [], 'camera': {'cuts': []}, 'events': {}}
+    return {'meta': meta, 'sub': 1, 'fps': FPS, 'frames': frames, 'samples': samples, 'bvh': True}
+
+
+
 # ----------------------------------------------------------------------------------------------- stage + render
 def stage_dark(scene, fog=0.0, floor=True, world=(0.004, 0.005, 0.008)):
     """The owner's reference look (research/reference-videos.md): 70% darkness, dark ground that catches the glow."""
@@ -1036,7 +1203,7 @@ def stage_dark(scene, fog=0.0, floor=True, world=(0.004, 0.005, 0.008)):
         fl = bpy.context.object; fl.name = 'STAGE_floor'
         m = bpy.data.materials.new('STAGE_floor'); m.use_nodes = True
         nt = m.node_tree; p = nt.nodes['Principled BSDF']
-        p.inputs['Base Color'].default_value = (0.045, 0.04, 0.036, 1); p.inputs['Roughness'].default_value = 0.62
+        p.inputs['Base Color'].default_value = (0.016, 0.015, 0.014, 1); p.inputs['Roughness'].default_value = 0.62
         tc = nt.nodes.new('ShaderNodeTexCoord')
         nz = nt.nodes.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 1.4; nz.inputs['Detail'].default_value = 8.0
         nt.links.new(tc.outputs['Object'], nz.inputs['Vector'])
@@ -1100,8 +1267,8 @@ def _main():
     sc = bpy.context.scene
     ch = build_character(arg('model', 'ronin_base'), mode=arg('mode', 'heat'), demonic='--demonic' in argv)
     centre = Vector((0, 0, 0.95))
-    if arg('motion'):
-        mo = load_motion(arg('motion'))
+    if arg('motion') or arg('bvh'):
+        mo = bvh_motion(arg('bvh')) if arg('bvh') else load_motion(arg('motion'))
         cid = arg('who') or next(iter(mo['frames'][0]['cast']))
         f = int(round(float(arg('t', 0)) * mo['fps']))
         bake(ch, mo, cid, f - 1, f + 1)
@@ -1128,10 +1295,14 @@ def _main():
     spot('key', centre - back * 2.8 - right * 2.4 + Vector((0, 0, 2.9)), centre, 1300, (1.0, 0.86, 0.68), 40)
     spot('rim', centre + back * 3.0 + right * 2.4 + Vector((0, 0, 1.8)), centre + Vector((0, 0, 0.2)), 2200, (0.62, 0.75, 1.0), 34, 0.3)
     spot('fill', centre - back * 3.5 + right * 3.0 + Vector((0, 0, 0.6)), centre, 160, (0.5, 0.6, 1.0), 50)
-    render_settings(sc, arg('res', '432x768'), arg('samples', 16), blur=bool(arg('motion')))
+    render_settings(sc, arg('res', '432x768'), arg('samples', 16), blur=bool(arg('motion') or arg('bvh')))
     out = arg('out', 'output/character/rig-test.png')
     sc.render.filepath = os.path.abspath(out)
     bpy.ops.render.render(write_still=True)
+    if '--a-pose' in argv:
+        a_pose(ch)
+    if arg('names'):
+        export_names(ch, arg('names'))
     if arg('save'):
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(arg('save')))
 

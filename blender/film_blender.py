@@ -11,6 +11,8 @@
   --cam plan        the Blender camera plan for this film in library/blender-cameras.json (falls back to film)
   --cam <move>      one named move for every frame: circle, come-back, go-front, low-hero, high-crane, top-down,
                     side-track, over-shoulder, blade-close (library/blender-cameras.json → "moves")
+  --bvh take.bvh    motion capture instead of a film: any BVH (Blender's importer), retargeted onto the character;
+                    --cam defaults to circle; --two-hand puts the left hand on the handle; --bvh-forward -Y|Y|X|-X
   --model ronin_base   which TRELLIS model plays the first fighter       --mode heat|panels|cloak|rigid
   --res 432x768 --samples 16 --fog 0.012 --no-blur --no-slash --no-dust --no-glare
   --set output/sets/dojo.blend [--at x,y,z,yawDeg]   stage the film inside a built set (blender/sets/); default: dark stage
@@ -136,7 +138,7 @@ def key_tree(tree, T, frame):
 
 
 # ----------------------------------------------------------------------------------------------- slash of light
-def slash_material(colour='amber', strength=42.0):
+def slash_material(colour='amber', strength=26.0):
     hot, body = PALETTE[colour]
     m = bpy.data.materials.new('SLASH_light'); m.use_nodes = True
     nt = m.node_tree
@@ -185,7 +187,7 @@ def slash_material(colour='amber', strength=42.0):
 class Slash:
     """The blade's own sweep as a ribbon of light. Rebuilt for the frame being rendered (nothing is keyframed)."""
 
-    def __init__(self, motion, cid, solved, parent, colour='amber', min_speed=7.0, life=0.085):
+    def __init__(self, motion, cid, solved, parent, colour='amber', min_speed=7.0, life=0.06):
         self.mo, self.cid, self.solved = motion, cid, solved
         self.min_speed, self.life = min_speed, life
         self.me = bpy.data.meshes.new('SLASH')
@@ -215,8 +217,8 @@ class Slash:
         pts = []
         i = i1
         while i >= 0 and tb1 - S[i]['tb'] <= self.life + 1e-6 and len(pts) < 80:
-            c = S[i]['cast'][self.cid]['sword']
-            pts.append((S[i]['tb'], rt.v3(c[:3]) + self._rebase(i), rt.q3(c[3:]).to_quaternion()))
+            sp, sq = rt.sample_sword(S[i], self.cid)
+            pts.append((S[i]['tb'], sp + self._rebase(i), sq))
             i -= 1
         pts.reverse()                                        # oldest first
         speed = 0.0
@@ -397,7 +399,7 @@ class Camera:
     def blade_speed(self, f):
         S = self.mo['samples']; sub = self.mo['sub']; L = 0.91
         i = min(f * sub, len(S) - 1); j = max(0, i - sub)
-        tip = lambda s: rt.v3(s['cast'][self.cid]['sword'][:3]) + rt.q3(s['cast'][self.cid]['sword'][3:]) @ Vector((L, 0, 0))
+        tip = lambda s: rt.sample_sword(s, self.cid)[0] + rt.sample_sword(s, self.cid)[1] @ Vector((L, 0, 0))
         return (tip(S[i]) - tip(S[j])).length / max(S[i]['tb'] - S[j]['tb'], 1e-3)
 
     def key(self, f, frame):
@@ -419,10 +421,19 @@ def main():
     name = os.path.splitext(os.path.basename(film_path))[0]
     film = json.load(open(os.path.join(REPO, film_path) if not os.path.isabs(film_path) else film_path))
     motion_path = arg('motion', os.path.join(REPO, 'output', name + '.motion.json'))
-    if not os.path.exists(motion_path) or os.path.getmtime(motion_path) < os.path.getmtime(os.path.join(REPO, film_path)):
+    if arg('bvh'):
+        pass                                                 # motion capture: the BVH is read after the scene is reset (below)
+    elif not os.path.exists(motion_path) or os.path.getmtime(motion_path) < os.path.getmtime(os.path.join(REPO, film_path)):
         print('[film_blender] exporting the motion from the preview engine…')
         subprocess.run(['node', 'tools/export_motion.mjs', film_path, '--out', motion_path], cwd=REPO, check=True)
-    mo = rt.load_motion(motion_path)
+    mo = None if arg('bvh') else rt.load_motion(motion_path)
+    if arg('set'):
+        bpy.ops.wm.open_mainfile(filepath=os.path.abspath(arg('set')))
+    else:
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+    if arg('bvh'):
+        mo = rt.bvh_motion(os.path.abspath(arg('bvh')), two_hand=flag('two-hand'), forward=arg('bvh-forward', '-Y'))
+        name = os.path.splitext(os.path.basename(arg('bvh')))[0]
     NF = len(mo['frames'])
     if arg('times'):
         frames = [min(NF - 1, int(round(float(t) * mo['fps']))) for t in arg('times').split(',')]
@@ -434,10 +445,6 @@ def main():
     out_dir = os.path.abspath(arg('out', os.path.join(REPO, 'output', 'blender', name)))
     os.makedirs(out_dir, exist_ok=True)
 
-    if arg('set'):
-        bpy.ops.wm.open_mainfile(filepath=os.path.abspath(arg('set')))
-    else:
-        bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     root = bpy.data.objects.new('FILM_ROOT', None); sc.collection.objects.link(root)
     if arg('at'):
@@ -469,7 +476,9 @@ def main():
         rt.stage_dark(sc, fog=float(arg('fog', 0.0)))
         backdrop(root, mo)
     lib = json.load(open(os.path.join(REPO, 'library', 'blender-cameras.json')))
-    cam_arg = arg('cam', 'film')
+    cam_arg = arg('cam', 'circle' if arg('bvh') else 'film')
+    if arg('bvh') and cam_arg == 'film':
+        raise SystemExit('a BVH has no film camera: use --cam <move> (for example circle, low-hero, push-pull)')
     if cam_arg == 'film':
         plan = None
     elif cam_arg == 'plan':
@@ -556,10 +565,10 @@ def light_rig(sc, root, cam, subject, power=1.0, with_set=False):
     aim = Vector((subject.x, subject.y, max(0.9, subject.z)))
     k = power * (0.45 if with_set else 1.0)
     obs = [
-        rt.spot('LIGHT_rim', aim - to_cam * 3.4 + right * 2.2 + Vector((0, 0, 2.2)), aim + Vector((0, 0, 0.1)), 3000 * k, (0.55, 0.70, 1.0), 42, 0.35, 0.12),
-        rt.spot('LIGHT_rim2', aim - to_cam * 3.0 - right * 2.8 + Vector((0, 0, 1.0)), aim, 900 * k, (0.60, 0.72, 1.0), 46, 0.4, 0.2),
-        rt.spot('LIGHT_key', aim + to_cam * 2.6 - right * 2.6 + Vector((0, 0, 2.7)), aim, 1000 * k, (1.0, 0.84, 0.66), 44, 0.5, 0.35),
-        rt.spot('LIGHT_fill', aim + to_cam * 3.5 + right * 2.5 + Vector((0, 0, 0.5)), aim, 90 * k, (0.45, 0.55, 1.0), 60, 0.6, 0.5),
+        rt.spot('LIGHT_rim', aim - to_cam * 3.4 + right * 2.2 + Vector((0, 0, 2.2)), aim + Vector((0, 0, 0.1)), 2600 * k, (0.55, 0.70, 1.0), 30, 0.5, 0.12),
+        rt.spot('LIGHT_rim2', aim - to_cam * 3.0 - right * 2.8 + Vector((0, 0, 1.0)), aim, 700 * k, (0.60, 0.72, 1.0), 32, 0.5, 0.2),
+        rt.spot('LIGHT_key', aim + to_cam * 2.6 - right * 2.6 + Vector((0, 0, 2.7)), aim, 800 * k, (1.0, 0.84, 0.66), 30, 0.6, 0.35),
+        rt.spot('LIGHT_fill', aim + to_cam * 3.5 + right * 2.5 + Vector((0, 0, 0.5)), aim, 70 * k, (0.45, 0.55, 1.0), 40, 0.6, 0.5),
     ]
     for o in obs:
         if o.parent is not root:
