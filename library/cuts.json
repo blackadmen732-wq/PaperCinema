@@ -1,0 +1,1550 @@
+{
+ "_about": "The cut system. \"directions\" = the 8 cut directions of the owner's clock sheet (Sens de la coupe). \"kata\" = the 12 ZNKR seitei iaido kata as sequences of those cuts. Every pose name is in library/poses.json; \"move\" names are in library/moves.json. Guide: docs/ANIMATION.md §11.",
+ "frame": "Target lines are in the OPPONENT's local frame, metres: origin on the ground under the hips, +x = the opponent's own left, +y up, +z = the way the opponent faces. To get world space for an opponent at (X, Z) facing ry: world = [X + x·cos(ry) + z·sin(ry), y, Z − x·sin(ry) + z·cos(ry)]. Lines are for a STANDING paper figure (1.78 m); several kata are aimed at a seated enemy in the original (see each \"enemy\").",
+ "attackerFrame": "Pose notes use the attacker's frame: +x = the attacker's left, +z forward. \"From the attacker's upper right\" therefore lands on the opponent's LEFT side.",
+ "confidence": {
+  "documented": "The eight basic cut directions and the names kiri-oroshi, kesa, yoko, kiri-age, tsuki are standard teaching in kenjutsu and iaido. The 12 seitei kata, their names, order, starting postures, enemy positions and cut sequence come from the All Japan Kendo Federation (ZNKR) iaido manual (7 kata set in 1969, 3 added in 1980, 2 in 2000). They were written here from memory of that manual: check the current edition before quoting a detail (especially left / right of a line and the exact landmark).",
+  "tradition": "The clock-face chart with exactly eight numbered cuts is a teaching convention (happo-giri); schools number and name the diagonals differently (see gyaku-kesa nameNote). The reasons given for each kata (who attacks, why) are the manual's scenario, not history.",
+  "ours": "Everything in metres or frames: landmark coordinates on our paper body, the tip-path notes, the frame timings (24 fps), the wrist values and the pose names. These are animation choices, not measurements of real practice. Hand/blade poses were solved numerically for our rig (the sword sits at 45° in the hand), then checked on stills."
+ },
+ "landmarks": {
+  "head-top": [
+   0,
+   1.78,
+   0.02
+  ],
+  "forehead": [
+   0,
+   1.72,
+   0.09
+  ],
+  "temple-left": [
+   0.08,
+   1.66,
+   0.04
+  ],
+  "temple-right": [
+   -0.08,
+   1.66,
+   0.04
+  ],
+  "chin": [
+   0,
+   1.54,
+   0.08
+  ],
+  "neck-left": [
+   0.07,
+   1.46,
+   0.02
+  ],
+  "neck-right": [
+   -0.07,
+   1.46,
+   0.02
+  ],
+  "shoulder-left": [
+   0.2,
+   1.4,
+   0
+  ],
+  "shoulder-right": [
+   -0.2,
+   1.4,
+   0
+  ],
+  "suigetsu": [
+   0,
+   1.22,
+   0.17
+  ],
+  "navel": [
+   0,
+   1,
+   0.17
+  ],
+  "flank-left": [
+   0.18,
+   1.05,
+   0.05
+  ],
+  "flank-right": [
+   -0.18,
+   1.05,
+   0.05
+  ],
+  "hip-left": [
+   0.17,
+   0.92,
+   0.05
+  ],
+  "hip-right": [
+   -0.17,
+   0.92,
+   0.05
+  ],
+  "wrist-right": [
+   -0.07,
+   1.16,
+   0.52
+  ]
+ },
+ "snapNote": "snap = [wind-up value, contact value] of the right wrist, read from the two poses. In this rig rwx is the te-no-uchi snap (it swings the blade toward its edge, in line with the forearm: bigger = further through the cut); rwz bends the wrist sideways and is used to keep the edge on the cut plane (hasuji) on diagonals; rfy (forearm roll) turns the edge for horizontal and rising cuts. Key the contact with \"ease\": \"snap\", \"drag\": 0 so the wrist arrives with everything else.",
+ "timingNote": "frames at 24 fps: anticipation (wind-up incl. a 2-3 frame hang) / snap (wind-up → contact; the feet and hips go in the first half, the blade in the second) / followThrough (contact → finish) / settle (hold with \"settle\": 1 before recovering).",
+ "directions": [
+  {
+   "id": "kiri-oroshi",
+   "clock": 1,
+   "name": "Kiri-oroshi (shomen, straight down)",
+   "jp": "切り下ろし",
+   "hands": 2,
+   "windup": "furikaburi",
+   "contact": "kiri-oroshi-contact",
+   "finish": "kiri-oroshi-finish",
+   "line": {
+    "from": "head-top",
+    "to": "navel",
+    "start": [
+     0,
+     1.78,
+     0.02
+    ],
+    "end": [
+     0,
+     1,
+     0.17
+    ]
+   },
+   "tipPath": "A big vertical arc on the centre line: from behind the head, over the top, the tip leads down in front; it stops level with the navel, tip a little below horizontal.",
+   "frames": {
+    "anticipation": 10,
+    "snap": 4,
+    "followThrough": 2,
+    "settle": 9
+   },
+   "move": "kiri-oroshi",
+   "alsoIn": [
+    "lunge-shomen",
+    "nuki-uchi"
+   ],
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     -0.28,
+     1.12
+    ],
+    "rwz": [
+     -0.33,
+     -0.6
+    ],
+    "rfy": [
+     0.3,
+     -0.23
+    ]
+   }
+  },
+  {
+   "id": "kesa",
+   "clock": 2,
+   "name": "Kesa-giri (diagonal down, from the attacker's upper right)",
+   "jp": "袈裟切り",
+   "hands": 2,
+   "windup": "kesa-windup",
+   "contact": "kesa-contact",
+   "finish": "kesa-finish",
+   "line": {
+    "from": "neck-left",
+    "to": "hip-right",
+    "start": [
+     0.07,
+     1.46,
+     0.02
+    ],
+    "end": [
+     -0.17,
+     0.92,
+     0.05
+    ]
+   },
+   "tipPath": "From hasso at the right shoulder the tip travels over the head and down a 45° plane, in at the opponent's left neck / shoulder, out at the right hip; hands finish in front of the left hip.",
+   "frames": {
+    "anticipation": 8,
+    "snap": 4,
+    "followThrough": 2,
+    "settle": 8
+   },
+   "move": "kesa-giri",
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     0.03,
+     0.73
+    ],
+    "rwz": [
+     -0.27,
+     -0.56
+    ],
+    "rfy": [
+     -0.91,
+     -0.36
+    ]
+   }
+  },
+  {
+   "id": "gyaku-kesa",
+   "clock": 3,
+   "name": "Gyaku-kesa (diagonal down, from the attacker's upper left)",
+   "jp": "逆袈裟",
+   "hands": 2,
+   "windup": "gyaku-kesa-windup",
+   "contact": "gyaku-kesa-contact",
+   "finish": "gyaku-kesa-finish",
+   "line": {
+    "from": "neck-right",
+    "to": "hip-left",
+    "start": [
+     -0.07,
+     1.46,
+     0.02
+    ],
+    "end": [
+     0.17,
+     0.92,
+     0.05
+    ]
+   },
+   "tipPath": "Mirror of kesa: from the left shoulder, in at the opponent's right neck / shoulder, out at the left hip; hands finish in front of the right hip.",
+   "frames": {
+    "anticipation": 8,
+    "snap": 4,
+    "followThrough": 2,
+    "settle": 8
+   },
+   "move": null,
+   "source": "documented",
+   "nameNote": "Schools disagree on the word: some call the RISING diagonal gyaku-kesa. Here it follows the owner's clock sheet (2 / 3 = the two downward diagonals, 6 / 7 = the rising ones).",
+   "snap": {
+    "rwx": [
+     0.72,
+     0.97
+    ],
+    "rwz": [
+     -0.35,
+     -0.24
+    ],
+    "rfy": [
+     0.88,
+     0.41
+    ]
+   }
+  },
+  {
+   "id": "yoko-right",
+   "clock": 4,
+   "name": "Yoko-giri / do (horizontal, right to left)",
+   "jp": "横切り",
+   "hands": 2,
+   "windup": "waki-right",
+   "contact": "yoko-contact",
+   "finish": "yoko-finish",
+   "line": {
+    "from": "flank-left",
+    "to": "flank-right",
+    "start": [
+     0.18,
+     1.05,
+     0.05
+    ],
+    "end": [
+     -0.18,
+     1.05,
+     0.05
+    ]
+   },
+   "tipPath": "A flat arc at belly height: the blade starts hidden behind the right hip (waki-gamae), the hips turn first, the tip swings around the right side and through the body, level all the way.",
+   "frames": {
+    "anticipation": 11,
+    "snap": 4,
+    "followThrough": 2,
+    "settle": 9
+   },
+   "move": "yoko-giri",
+   "alsoIn": [
+    "spin-cut"
+   ],
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     -0.47,
+     0.23
+    ],
+    "rwz": [
+     -0.6,
+     -0.43
+    ],
+    "rfy": [
+     -0.61,
+     -1.02
+    ]
+   }
+  },
+  {
+   "id": "yoko-left",
+   "clock": 5,
+   "name": "Yoko-giri (horizontal, left to right; the draw-cut line)",
+   "jp": "横切り (抜き付け)",
+   "hands": 1,
+   "windup": "iai-ready",
+   "contact": "nukitsuke-contact",
+   "finish": "nukitsuke-finish",
+   "line": {
+    "from": "temple-right",
+    "to": "temple-left",
+    "start": [
+     -0.08,
+     1.66,
+     0.04
+    ],
+    "end": [
+     0.08,
+     1.66,
+     0.04
+    ]
+   },
+   "twoHandPoses": {
+    "windup": "waki-left",
+    "contact": "yoko-l-contact",
+    "finish": "yoko-l-finish",
+    "line": {
+     "from": "flank-right",
+     "to": "flank-left",
+     "start": [
+      -0.18,
+      1.05,
+      0.05
+     ],
+     "end": [
+      0.18,
+      1.05,
+      0.05
+     ]
+    }
+   },
+   "tipPath": "Drawn from the left hip: the handle goes straight at the opponent, the tip leaves the scabbard mouth and whips flat from left to right. In iaido the line is the temple (komekami); as a two-hand cut it is the belly.",
+   "frames": {
+    "anticipation": 12,
+    "snap": 4,
+    "followThrough": 2,
+    "settle": 14
+   },
+   "move": "nukitsuke",
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     -0.68,
+     0.74
+    ],
+    "rwz": [
+     -0.03,
+     0.32
+    ],
+    "rfy": [
+     1.6,
+     0.47
+    ]
+   }
+  },
+  {
+   "id": "kiri-age-right",
+   "clock": 6,
+   "name": "Kiri-age (rising diagonal, from the attacker's lower right)",
+   "jp": "切り上げ",
+   "hands": 2,
+   "windup": "waki-right",
+   "contact": "kiri-age-contact",
+   "finish": "kiri-age-finish",
+   "line": {
+    "from": "hip-left",
+    "to": "shoulder-right",
+    "start": [
+     0.17,
+     0.92,
+     0.05
+    ],
+    "end": [
+     -0.2,
+     1.4,
+     0
+    ]
+   },
+   "tipPath": "From waki-gamae, low behind the right hip: the legs push up, the tip skims low and rises on a 45° plane, in at the opponent's left hip, out over the right shoulder; the body ends at full extension.",
+   "frames": {
+    "anticipation": 12,
+    "snap": 4,
+    "followThrough": 3,
+    "settle": 9
+   },
+   "move": "rising-cut",
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     -0.47,
+     0.28
+    ],
+    "rwz": [
+     -0.6,
+     -0.03
+    ],
+    "rfy": [
+     -0.61,
+     -1.6
+    ]
+   }
+  },
+  {
+   "id": "kiri-age-left",
+   "clock": 7,
+   "name": "Kiri-age (rising diagonal, from the attacker's lower left)",
+   "jp": "逆袈裟 (切り上げ)",
+   "hands": 2,
+   "windup": "waki-left",
+   "contact": "kiri-age-l-contact",
+   "finish": "kiri-age-l-finish",
+   "line": {
+    "from": "hip-right",
+    "to": "shoulder-left",
+    "start": [
+     -0.17,
+     0.92,
+     0.05
+    ],
+    "end": [
+     0.2,
+     1.4,
+     0
+    ]
+   },
+   "tipPath": "From the left hip (the draw side): the edge is turned up and the tip rises from the opponent's right hip to the left shoulder. This is the first cut of seitei no. 5 (there it is one-handed, straight from the draw).",
+   "frames": {
+    "anticipation": 10,
+    "snap": 4,
+    "followThrough": 3,
+    "settle": 9
+   },
+   "move": null,
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     0.05,
+     0.89
+    ],
+    "rwz": [
+     -0.27,
+     0.45
+    ],
+    "rfy": [
+     1.6,
+     1.6
+    ]
+   }
+  },
+  {
+   "id": "tsuki",
+   "clock": 8,
+   "name": "Tsuki (thrust)",
+   "jp": "突き",
+   "hands": 2,
+   "windup": "tsuki-load",
+   "contact": "tsuki-contact",
+   "finish": "tsuki-load",
+   "line": {
+    "from": "suigetsu",
+    "to": "suigetsu",
+    "start": [
+     0,
+     1.22,
+     0.17
+    ],
+    "end": [
+     0,
+     1.22,
+     -0.05
+    ],
+    "depthNote": "a point, not a line: the tip goes in about 20 cm along the attacker's forward axis"
+   },
+   "variants": {
+    "high": "tsuki-high",
+    "low": "tsuki-low",
+    "oneHandFlat": "katate-tsuki",
+    "supported": "soete-tsuki",
+    "drive": "drive-contact"
+   },
+   "tipPath": "A straight line: the tip never leaves the line from the hands to the target. Hands pull back to the hip, the whole body drives forward, then the blade is pulled straight back out.",
+   "frames": {
+    "anticipation": 7,
+    "snap": 3,
+    "followThrough": 2,
+    "settle": 7
+   },
+   "move": "tsuki",
+   "alsoIn": [
+    "rapid-thrusts",
+    "linear-drive"
+   ],
+   "source": "documented",
+   "snap": {
+    "rwx": [
+     1.11,
+     1.38
+    ],
+    "rwz": [
+     -0.16,
+     -0.46
+    ],
+    "rfy": [
+     0.13,
+     0.15
+    ]
+   }
+  }
+ ],
+ "kata": [
+  {
+   "n": 1,
+   "name": "Mae",
+   "jp": "前",
+   "start": "seiza (kneeling), facing the front",
+   "enemy": "one, in front, seated",
+   "steps": [
+    {
+     "action": "nukitsuke (draw-cut)",
+     "direction": "yoko-left",
+     "target": {
+      "from": "temple-right",
+      "to": "temple-left",
+      "start": [
+       -0.08,
+       1.66,
+       0.04
+      ],
+      "end": [
+       0.08,
+       1.66,
+       0.04
+      ]
+     },
+     "hands": 1,
+     "poses": [
+      "iai-ready",
+      "nukitsuke-contact",
+      "nukitsuke-finish"
+     ]
+    },
+    {
+     "action": "furikaburi + kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "o-chiburi",
+     "target": null,
+     "poses": [
+      "chiburi-raise",
+      "chiburi-finish"
+     ],
+     "hands": 1
+    },
+    {
+     "action": "noto",
+     "target": null,
+     "poses": [
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "name": "Ushiro",
+   "jp": "後ろ",
+   "start": "seiza, facing away from the enemy",
+   "enemy": "one, behind, seated",
+   "steps": [
+    {
+     "action": "turn 180° to the left on the knees, nukitsuke",
+     "direction": "yoko-left",
+     "target": {
+      "from": "temple-right",
+      "to": "temple-left",
+      "start": [
+       -0.08,
+       1.66,
+       0.04
+      ],
+      "end": [
+       0.08,
+       1.66,
+       0.04
+      ]
+     },
+     "hands": 1,
+     "turn": 3.14159,
+     "poses": [
+      "iai-ready",
+      "nukitsuke-contact",
+      "nukitsuke-finish"
+     ]
+    },
+    {
+     "action": "kiri-oroshi (left foot forward)",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "o-chiburi",
+     "target": null,
+     "poses": [
+      "chiburi-raise",
+      "chiburi-finish"
+     ],
+     "hands": 1
+    },
+    {
+     "action": "noto",
+     "target": null,
+     "poses": [
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "name": "Uke-nagashi",
+   "jp": "受け流し",
+   "start": "seiza, facing right (the enemy is on the left side)",
+   "enemy": "one, from the left, standing and cutting down",
+   "steps": [
+    {
+     "action": "rise and draw overhead into the deflection (blade slopes down over the left shoulder)",
+     "target": "the enemy's blade slides off",
+     "poses": [
+      "iai-ready",
+      "nuki-up"
+     ],
+     "hands": 1
+    },
+    {
+     "action": "turn to face the enemy, cut kesa",
+     "direction": "kesa",
+     "target": {
+      "from": "neck-left",
+      "to": "hip-right",
+      "start": [
+       0.07,
+       1.46,
+       0.02
+      ],
+      "end": [
+       -0.17,
+       0.92,
+       0.05
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "nuki-up",
+      "kesa-contact",
+      "kesa-finish"
+     ]
+    },
+    {
+     "action": "reverse-grip noto (blade rested on the right knee first)",
+     "target": null,
+     "poses": [
+      "noto-set"
+     ],
+     "hands": 1,
+     "note": "not built: our noto is the ordinary one"
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "name": "Tsuka-ate",
+   "jp": "柄当て",
+   "start": "tate-hiza (one knee raised)",
+   "enemy": "two, front and behind, seated",
+   "steps": [
+    {
+     "action": "strike with the pommel",
+     "target": {
+      "point": "suigetsu",
+      "at": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "poses": [
+      "iai-ready",
+      "tsuka-ate"
+     ],
+     "hands": 1,
+     "who": "front"
+    },
+    {
+     "action": "draw, turn the body left, one-hand thrust to the rear (blade flat)",
+     "direction": "tsuki",
+     "target": {
+      "point": "suigetsu",
+      "at": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "poses": [
+      "tsuka-ate",
+      "katate-tsuki",
+      "nuki-up"
+     ],
+     "hands": 1,
+     "who": "behind"
+    },
+    {
+     "action": "kiri-oroshi to the front",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "who": "front",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "yoko-chiburi + noto",
+     "target": null,
+     "poses": [
+      "nukitsuke-finish",
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "name": "Kesa-giri",
+   "jp": "袈裟切り",
+   "start": "standing, walking forward",
+   "enemy": "one, in front, standing",
+   "steps": [
+    {
+     "action": "draw into a rising one-hand cut (edge turned up)",
+     "direction": "kiri-age-left",
+     "target": {
+      "from": "hip-right",
+      "to": "shoulder-left",
+      "start": [
+       -0.17,
+       0.92,
+       0.05
+      ],
+      "end": [
+       0.2,
+       1.4,
+       0
+      ]
+     },
+     "hands": 1,
+     "poses": [
+      "iai-ready",
+      "kiri-age-l-contact",
+      "kiri-age-l-finish"
+     ]
+    },
+    {
+     "action": "turn the blade over at the top, cut down the same line",
+     "direction": "kesa",
+     "target": {
+      "from": "neck-left",
+      "to": "hip-right",
+      "start": [
+       0.07,
+       1.46,
+       0.02
+      ],
+      "end": [
+       -0.17,
+       0.92,
+       0.05
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "kiri-age-l-finish",
+      "kesa-contact",
+      "kesa-finish"
+     ]
+    },
+    {
+     "action": "step back into hasso (zanshin), chiburi, noto",
+     "target": null,
+     "poses": [
+      "hasso",
+      "chiburi-finish",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 6,
+   "name": "Morote-tsuki",
+   "jp": "諸手突き",
+   "start": "standing, walking forward",
+   "enemy": "three: two in front, one behind (the manual describes front and rear)",
+   "steps": [
+    {
+     "action": "draw and cut one-handed to the face",
+     "direction": "kesa",
+     "target": {
+      "from": "temple-right",
+      "to": "chin",
+      "start": [
+       -0.08,
+       1.66,
+       0.04
+      ],
+      "end": [
+       0,
+       1.54,
+       0.08
+      ]
+     },
+     "hands": 1,
+     "poses": [
+      "iai-ready",
+      "nukitsuke-contact",
+      "kiri-oroshi-finish"
+     ],
+     "who": "front",
+     "note": "a diagonal across the face from the right temple down to the chin"
+    },
+    {
+     "action": "two-hand thrust",
+     "direction": "tsuki",
+     "target": {
+      "point": "suigetsu",
+      "at": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "who": "front",
+     "poses": [
+      "tsuki-load",
+      "tsuki-contact",
+      "tsuki-load"
+     ]
+    },
+    {
+     "action": "turn 180°, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "turn": 3.14159,
+     "who": "behind",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "turn 180°, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "turn": 3.14159,
+     "who": "front",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "yoko-chiburi + noto",
+     "target": null,
+     "poses": [
+      "nukitsuke-finish",
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 7,
+   "name": "Sanpo-giri",
+   "jp": "三方切り",
+   "start": "standing, walking forward",
+   "enemy": "three: right, left, front",
+   "steps": [
+    {
+     "action": "draw and cut the enemy on the right, one-handed, from the top of the head to the chin",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "chin",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1.54,
+       0.08
+      ]
+     },
+     "hands": 1,
+     "turn": -1.5708,
+     "who": "right",
+     "poses": [
+      "iai-ready",
+      "nuki-up",
+      "kiri-oroshi-contact"
+     ]
+    },
+    {
+     "action": "turn to the left enemy, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "turn": 3.14159,
+     "who": "left",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "turn to the front, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "turn": -1.5708,
+     "who": "front",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "step back into jodan (zanshin), o-chiburi, noto",
+     "target": null,
+     "poses": [
+      "jodan",
+      "chiburi-finish",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 8,
+   "name": "Ganmen-ate",
+   "jp": "顔面当て",
+   "start": "standing, walking forward",
+   "enemy": "two: front and behind",
+   "steps": [
+    {
+     "action": "strike the face with the pommel",
+     "target": {
+      "point": "between the eyes",
+      "at": [
+       0,
+       1.72,
+       0.09
+      ]
+     },
+     "poses": [
+      "iai-ready",
+      "tsuka-ate"
+     ],
+     "hands": 1,
+     "who": "front",
+     "note": "our tsuka-ate pose is at chest height: raise the hand ~0.45 m for the face"
+    },
+    {
+     "action": "draw, turn, one-hand thrust to the rear",
+     "direction": "tsuki",
+     "target": {
+      "point": "suigetsu",
+      "at": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "poses": [
+      "tsuka-ate",
+      "katate-tsuki",
+      "nuki-up"
+     ],
+     "hands": 1,
+     "turn": 3.14159,
+     "who": "behind"
+    },
+    {
+     "action": "turn back, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "turn": 3.14159,
+     "who": "front",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "yoko-chiburi + noto",
+     "target": null,
+     "poses": [
+      "nukitsuke-finish",
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 9,
+   "name": "Soete-tsuki",
+   "jp": "添え手突き",
+   "start": "standing, walking forward",
+   "enemy": "one, on the left",
+   "steps": [
+    {
+     "action": "turn left, draw and cut one-handed, right shoulder to left flank",
+     "direction": "gyaku-kesa",
+     "target": {
+      "from": "shoulder-right",
+      "to": "flank-left",
+      "start": [
+       -0.2,
+       1.4,
+       0
+      ],
+      "end": [
+       0.18,
+       1.05,
+       0.05
+      ]
+     },
+     "hands": 1,
+     "turn": 1.5708,
+     "poses": [
+      "iai-ready",
+      "gyaku-kesa-contact",
+      "gyaku-kesa-finish"
+     ]
+    },
+    {
+     "action": "supported thrust: the left hand pinches the back of the blade",
+     "direction": "tsuki",
+     "target": {
+      "point": "abdomen",
+      "at": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "soete-tsuki",
+      "soete-tsuki",
+      "soete-tsuki"
+     ],
+     "note": "key the thrust as a 0.4 m step with this pose held; the hands barely move"
+    },
+    {
+     "action": "zanshin with the blade lowered, chiburi, noto",
+     "target": null,
+     "poses": [
+      "chiburi-finish",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 10,
+   "name": "Shiho-giri",
+   "jp": "四方切り",
+   "start": "standing, walking forward",
+   "enemy": "four, on the diagonals",
+   "steps": [
+    {
+     "action": "strike the right-front enemy's drawing hand with the flat of the handle",
+     "target": {
+      "point": "right wrist",
+      "at": [
+       -0.07,
+       1.16,
+       0.52
+      ]
+     },
+     "poses": [
+      "iai-ready",
+      "tsuka-ate"
+     ],
+     "hands": 1,
+     "who": "right-front"
+    },
+    {
+     "action": "draw, thrust the left-rear enemy (blade flat, on the chest line)",
+     "direction": "tsuki",
+     "target": {
+      "point": "suigetsu",
+      "at": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "poses": [
+      "tsuka-ate",
+      "katate-tsuki",
+      "nuki-up"
+     ],
+     "hands": 1,
+     "who": "left-rear"
+    },
+    {
+     "action": "kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "who": "right-front",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "who": "right-rear",
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "through waki-gamae, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "who": "left-front",
+     "poses": [
+      "waki-right",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "jodan (zanshin), o-chiburi, noto",
+     "target": null,
+     "poses": [
+      "jodan",
+      "chiburi-finish",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 11,
+   "name": "So-giri",
+   "jp": "総切り",
+   "start": "standing, walking forward",
+   "enemy": "one, in front, driven back by five cuts",
+   "steps": [
+    {
+     "action": "cut 1: diagonal across the face",
+     "direction": "kesa",
+     "target": {
+      "from": "temple-left",
+      "to": "chin",
+      "start": [
+       0.08,
+       1.66,
+       0.04
+      ],
+      "end": [
+       0,
+       1.54,
+       0.08
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "kesa-windup",
+      "kesa-contact",
+      "kesa-finish"
+     ]
+    },
+    {
+     "action": "cut 2: from the right shoulder to the solar plexus",
+     "direction": "gyaku-kesa",
+     "target": {
+      "from": "shoulder-right",
+      "to": "suigetsu",
+      "start": [
+       -0.2,
+       1.4,
+       0
+      ],
+      "end": [
+       0,
+       1.22,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "gyaku-kesa-windup",
+      "gyaku-kesa-contact",
+      "gyaku-kesa-finish"
+     ]
+    },
+    {
+     "action": "cut 3: from the left shoulder to the navel",
+     "direction": "kesa",
+     "target": {
+      "from": "shoulder-left",
+      "to": "navel",
+      "start": [
+       0.2,
+       1.4,
+       0
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "kesa-windup",
+      "kesa-contact",
+      "kesa-finish"
+     ]
+    },
+    {
+     "action": "cut 4: horizontal through the waist",
+     "direction": "yoko-right",
+     "target": {
+      "from": "flank-left",
+      "to": "flank-right",
+      "start": [
+       0.18,
+       1.05,
+       0.05
+      ],
+      "end": [
+       -0.18,
+       1.05,
+       0.05
+      ]
+     },
+     "hands": 2,
+     "note": "recalled as right-to-left from the attacker's side; verify the side in the manual",
+     "poses": [
+      "waki-right",
+      "yoko-contact",
+      "yoko-finish"
+     ]
+    },
+    {
+     "action": "cut 5: kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "o-chiburi, noto",
+     "target": null,
+     "poses": [
+      "chiburi-raise",
+      "chiburi-finish",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ]
+  },
+  {
+   "n": 12,
+   "name": "Nuki-uchi",
+   "jp": "抜き打ち",
+   "start": "standing, facing the enemy",
+   "enemy": "one, in front, who attacks first",
+   "steps": [
+    {
+     "action": "step back out of the enemy's cut while drawing straight up overhead",
+     "target": "the enemy's cut misses",
+     "poses": [
+      "iai-ready",
+      "nuki-up",
+      "furikaburi"
+     ],
+     "hands": 1
+    },
+    {
+     "action": "step in, kiri-oroshi",
+     "direction": "kiri-oroshi",
+     "target": {
+      "from": "head-top",
+      "to": "navel",
+      "start": [
+       0,
+       1.78,
+       0.02
+      ],
+      "end": [
+       0,
+       1,
+       0.17
+      ]
+     },
+     "hands": 2,
+     "poses": [
+      "furikaburi",
+      "kiri-oroshi-contact",
+      "kiri-oroshi-finish"
+     ]
+    },
+    {
+     "action": "yoko-chiburi + noto, standing",
+     "target": null,
+     "poses": [
+      "nukitsuke-finish",
+      "noto-set",
+      "noto-pull",
+      "noto-set"
+     ],
+     "hands": 1
+    }
+   ],
+   "move": "nuki-uchi"
+  }
+ ]
+}

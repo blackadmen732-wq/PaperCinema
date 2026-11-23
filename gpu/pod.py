@@ -49,7 +49,7 @@ def main():
         q = f'''mutation {{ podFindAndDeployOnDemand(input: {{
             cloudType: {os.environ.get("POD_CLOUD", "COMMUNITY")}, gpuCount: 1, gpuTypeId: "{GPU}",
             name: "paper-cinema-3d", imageName: "{IMAGE}", dockerArgs: {json.dumps(docker_args)},
-            ports: "8000/http", containerDiskInGb: 80, volumeInGb: 0,
+            ports: "8000/http", containerDiskInGb: {os.environ.get("POD_DISK", "40")}, volumeInGb: 0,
             env: [{{ key: "SECRET", value: "{secret}" }}] }}) {{ id costPerHr machine {{ gpuDisplayName }} }} }}'''
         p = gql(q)["podFindAndDeployOnDemand"]
         json.dump({"id": p["id"], "secret": secret}, open(STATE, "w"))

@@ -149,23 +149,46 @@
    "pose": "jodan"
   },
   {
-   "dt": 0.2,
-   "pose": "jodan-wind-up"
+   "dt": 0.208,
+   "pose": "furikaburi",
+   "fwd": -0.04,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.333,
+   "pose": "furikaburi",
+   "fwd": 0.42,
+   "stance": 0.85,
+   "weight": 0.5,
+   "crouch": 0.15,
+   "tx": 0.06,
+   "cx": -0.2,
+   "ease": "in"
   },
   {
    "dt": 0.42,
-   "pose": "shomen-cut-finish",
+   "pose": "kiri-oroshi-contact",
+   "fwd": 0.62,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.5,
+   "pose": "kiri-oroshi-finish",
+   "fwd": 0.65,
+   "settle": 1
+  },
+  {
+   "dt": 0.667,
+   "pose": "kiri-oroshi-finish",
    "fwd": 0.65
   },
   {
-   "dt": 0.58,
-   "pose": "shomen-cut-finish",
-   "fwd": 0.65
-  },
-  {
-   "dt": 1.0,
+   "dt": 1,
    "pose": "chudan",
-   "fwd": 0.65
+   "fwd": 0.65,
+   "ease": "out",
+   "settle": 0.5
   }
  ],
  "kesa-giri": [
@@ -174,19 +197,45 @@
    "pose": "hasso"
   },
   {
-   "dt": 0.3,
-   "pose": "kesa-giri-finish",
-   "fwd": 0.5
+   "dt": 0.167,
+   "pose": "kesa-windup",
+   "fwd": -0.03,
+   "ease": "antic"
   },
   {
-   "dt": 0.45,
-   "pose": "kesa-giri-finish",
+   "dt": 0.235,
+   "pose": "kesa-windup",
+   "fwd": 0.3,
+   "stance": 0.78,
+   "weight": 0.45,
+   "crouch": 0.15,
+   "ty": -0.2,
+   "ease": "in"
+  },
+  {
+   "dt": 0.3,
+   "pose": "kesa-contact",
+   "fwd": 0.46,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.375,
+   "pose": "kesa-finish",
+   "fwd": 0.5,
+   "settle": 1
+  },
+  {
+   "dt": 0.583,
+   "pose": "kesa-finish",
    "fwd": 0.5
   },
   {
    "dt": 0.9,
    "pose": "chudan",
-   "fwd": 0.5
+   "fwd": 0.5,
+   "ease": "out",
+   "settle": 0.5
   }
  ],
  "tsuki": [
@@ -245,6 +294,628 @@
    "dt": 0.9,
    "pose": "chudan",
    "fwd": -0.6
+  }
+ ],
+ "kiri-oroshi": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.333,
+   "pose": "furikaburi",
+   "fwd": -0.05,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.417,
+   "pose": "furikaburi",
+   "fwd": -0.05,
+   "cx": -0.17,
+   "crouch": 0.05
+  },
+  {
+   "dt": 0.5,
+   "pose": "furikaburi",
+   "fwd": 0.38,
+   "stance": 0.8,
+   "weight": 0.45,
+   "crouch": 0.15,
+   "tx": 0.06,
+   "cx": -0.2,
+   "ease": "in"
+  },
+  {
+   "dt": 0.583,
+   "pose": "kiri-oroshi-contact",
+   "fwd": 0.55,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.667,
+   "pose": "kiri-oroshi-finish",
+   "fwd": 0.6,
+   "settle": 1
+  },
+  {
+   "dt": 1.042,
+   "pose": "kiri-oroshi-finish",
+   "fwd": 0.6
+  },
+  {
+   "dt": 1.5,
+   "pose": "chudan",
+   "fwd": 0.6,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "yoko-giri": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.375,
+   "pose": "waki-right",
+   "fwd": -0.05,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.458,
+   "pose": "waki-right",
+   "fwd": -0.05,
+   "crouch": 0.2
+  },
+  {
+   "dt": 0.542,
+   "pose": "waki-right",
+   "fwd": 0.32,
+   "stance": 0.8,
+   "weight": 0.45,
+   "crouch": 0.2,
+   "ty": -0.2,
+   "cy": -0.45,
+   "ease": "in"
+  },
+  {
+   "dt": 0.625,
+   "pose": "yoko-contact",
+   "fwd": 0.5,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.708,
+   "pose": "yoko-finish",
+   "fwd": 0.55,
+   "settle": 1
+  },
+  {
+   "dt": 1.083,
+   "pose": "yoko-finish",
+   "fwd": 0.55
+  },
+  {
+   "dt": 1.542,
+   "pose": "chudan",
+   "fwd": 0.55,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "rising-cut": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.375,
+   "pose": "waki-right",
+   "fwd": -0.05,
+   "crouch": 0.26,
+   "tx": 0.2,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.5,
+   "pose": "waki-right",
+   "fwd": -0.05,
+   "crouch": 0.3,
+   "tx": 0.24
+  },
+  {
+   "dt": 0.583,
+   "pose": "waki-right",
+   "fwd": 0.3,
+   "stance": 0.8,
+   "weight": 0.4,
+   "crouch": 0.28,
+   "tx": 0.2,
+   "ty": -0.2,
+   "cy": -0.45,
+   "ease": "in"
+  },
+  {
+   "dt": 0.667,
+   "pose": "kiri-age-contact",
+   "fwd": 0.45,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.792,
+   "pose": "kiri-age-finish",
+   "fwd": 0.5,
+   "rax": 0,
+   "lax": 0.4,
+   "settle": 1
+  },
+  {
+   "dt": 1.167,
+   "pose": "kiri-age-finish",
+   "fwd": 0.5,
+   "lax": 0.4
+  },
+  {
+   "dt": 1.625,
+   "pose": "chudan",
+   "fwd": 0.5,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "rapid-thrusts": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.292,
+   "pose": "tsuki-load",
+   "fwd": -0.05,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.417,
+   "pose": "tsuki-high",
+   "fwd": 0.2,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.542,
+   "pose": "tsuki-load",
+   "fwd": 0.18,
+   "weight": 0,
+   "stance": 0.6,
+   "ease": "out"
+  },
+  {
+   "dt": 0.667,
+   "pose": "tsuki-low",
+   "fwd": 0.3,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.792,
+   "pose": "tsuki-load",
+   "fwd": 0.28,
+   "weight": -0.1,
+   "stance": 0.6,
+   "ease": "out"
+  },
+  {
+   "dt": 0.875,
+   "pose": "tsuki-load",
+   "fwd": 0.26,
+   "weight": -0.35,
+   "stance": 0.55,
+   "crouch": 0.24
+  },
+  {
+   "dt": 1,
+   "pose": "tsuki-contact",
+   "fwd": 0.6,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 1.083,
+   "pose": "tsuki-contact",
+   "fwd": 0.62,
+   "settle": 1
+  },
+  {
+   "dt": 1.375,
+   "pose": "tsuki-contact",
+   "fwd": 0.62
+  },
+  {
+   "dt": 1.833,
+   "pose": "chudan",
+   "fwd": 0.5,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "linear-drive": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.417,
+   "pose": "drive-load",
+   "fwd": -0.12,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.583,
+   "pose": "drive-load",
+   "fwd": -0.14,
+   "crouch": 0.38,
+   "tx": 0.4
+  },
+  {
+   "dt": 0.75,
+   "pose": "drive-contact",
+   "fwd": 1.5,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.833,
+   "pose": "drive-contact",
+   "fwd": 1.6,
+   "settle": 1
+  },
+  {
+   "dt": 1.25,
+   "pose": "drive-contact",
+   "fwd": 1.62
+  },
+  {
+   "dt": 1.792,
+   "pose": "chudan",
+   "fwd": 1.62,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "spin-cut": [
+  {
+   "dt": 0,
+   "pose": "chudan",
+   "ry": 0
+  },
+  {
+   "dt": 0.292,
+   "pose": "waki-right",
+   "ry": -0.25,
+   "ty": -0.35,
+   "cy": -0.3,
+   "crouch": 0.2,
+   "weight": 0.3,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.417,
+   "pose": "waki-right",
+   "ry": 0.35,
+   "ty": -0.1,
+   "cy": -0.4,
+   "crouch": 0.2,
+   "weight": 0.4,
+   "hy": 0.7,
+   "ny": 0.4
+  },
+  {
+   "dt": 0.542,
+   "pose": "waki-right",
+   "ry": 3.14159,
+   "fwd": 0.22,
+   "stance": 0.4,
+   "crouch": 0.14,
+   "weight": 0.2,
+   "ty": 0.3,
+   "cy": -0.3,
+   "hy": 0.5,
+   "ny": 0.3
+  },
+  {
+   "dt": 0.667,
+   "pose": "waki-right",
+   "ry": 5.75,
+   "fwd": 0.42,
+   "stance": 0.8,
+   "weight": 0.45,
+   "crouch": 0.2,
+   "ty": -0.1,
+   "cy": -0.5,
+   "hy": 0.3,
+   "ny": 0.2
+  },
+  {
+   "dt": 0.75,
+   "pose": "yoko-contact",
+   "ry": 6.28319,
+   "fwd": 0.55,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.833,
+   "pose": "yoko-finish",
+   "ry": 6.28319,
+   "fwd": 0.6,
+   "settle": 1
+  },
+  {
+   "dt": 1.25,
+   "pose": "yoko-finish",
+   "ry": 6.28319,
+   "fwd": 0.6
+  },
+  {
+   "dt": 1.708,
+   "pose": "chudan",
+   "ry": 6.28319,
+   "fwd": 0.6,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "low-dodge": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.167,
+   "pose": "low-dodge",
+   "side": 0.45,
+   "fwd": 0.1,
+   "ease": "out",
+   "settle": 0.6
+  },
+  {
+   "dt": 0.583,
+   "pose": "low-dodge",
+   "side": 0.47,
+   "fwd": 0.1,
+   "crouch": 0.52,
+   "tx": 1.04
+  },
+  {
+   "dt": 0.833,
+   "pose": "crouch-load",
+   "side": 0.45,
+   "fwd": 0.05,
+   "crouch": 0.3,
+   "ease": "in"
+  },
+  {
+   "dt": 1.208,
+   "pose": "chudan",
+   "side": 0.45,
+   "fwd": 0,
+   "ease": "out",
+   "settle": 0.5
+  }
+ ],
+ "calm-low-stance": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.583,
+   "pose": "calm-low",
+   "ease": "out",
+   "settle": 0.4
+  },
+  {
+   "dt": 1.5,
+   "pose": "calm-low",
+   "crouch": 0.2,
+   "weight": -0.06,
+   "cx": 0.07,
+   "rwz": 0.05
+  },
+  {
+   "dt": 2.417,
+   "pose": "calm-low",
+   "crouch": 0.16,
+   "weight": 0.05,
+   "cx": 0.02,
+   "rwz": -0.04
+  },
+  {
+   "dt": 3,
+   "pose": "calm-low"
+  }
+ ],
+ "nukitsuke": [
+  {
+   "dt": 0,
+   "pose": "iai-ready"
+  },
+  {
+   "dt": 0.417,
+   "pose": "iai-ready",
+   "crouch": 0.27,
+   "tx": 0.36,
+   "weight": 0.4,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.5,
+   "pose": "iai-ready",
+   "crouch": 0.28,
+   "tx": 0.37,
+   "weight": 0.42
+  },
+  {
+   "dt": 0.583,
+   "pose": "nuki-draw-mid",
+   "fwd": 0.3,
+   "ease": "in"
+  },
+  {
+   "dt": 0.667,
+   "pose": "nukitsuke-contact",
+   "fwd": 0.5,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.75,
+   "pose": "nukitsuke-finish",
+   "fwd": 0.55,
+   "settle": 1
+  },
+  {
+   "dt": 1.333,
+   "pose": "nukitsuke-finish",
+   "fwd": 0.55
+  }
+ ],
+ "nuki-uchi": [
+  {
+   "dt": 0,
+   "pose": "iai-ready"
+  },
+  {
+   "dt": 0.333,
+   "pose": "iai-ready",
+   "crouch": 0.27,
+   "tx": 0.36,
+   "weight": 0.4,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.5,
+   "pose": "nuki-up",
+   "fwd": -0.1,
+   "ease": "in"
+  },
+  {
+   "dt": 0.583,
+   "pose": "furikaburi",
+   "fwd": -0.1
+  },
+  {
+   "dt": 0.667,
+   "pose": "furikaburi",
+   "fwd": 0.28,
+   "stance": 0.8,
+   "weight": 0.45,
+   "crouch": 0.15,
+   "tx": 0.06,
+   "cx": -0.2,
+   "ease": "in"
+  },
+  {
+   "dt": 0.75,
+   "pose": "kiri-oroshi-contact",
+   "fwd": 0.45,
+   "ease": "snap",
+   "drag": 0
+  },
+  {
+   "dt": 0.833,
+   "pose": "kiri-oroshi-finish",
+   "fwd": 0.5,
+   "settle": 1
+  },
+  {
+   "dt": 1.333,
+   "pose": "kiri-oroshi-finish",
+   "fwd": 0.5
+  }
+ ],
+ "chiburi": [
+  {
+   "dt": 0,
+   "pose": "kiri-oroshi-finish"
+  },
+  {
+   "dt": 0.333,
+   "pose": "chiburi-raise",
+   "ease": "out"
+  },
+  {
+   "dt": 0.458,
+   "pose": "chiburi-raise",
+   "cx": -0.05
+  },
+  {
+   "dt": 0.583,
+   "pose": "chiburi-finish",
+   "ease": "snap",
+   "drag": 0,
+   "settle": 1.2
+  },
+  {
+   "dt": 1.083,
+   "pose": "chiburi-finish"
+  }
+ ],
+ "noto": [
+  {
+   "dt": 0,
+   "pose": "chiburi-finish"
+  },
+  {
+   "dt": 0.333,
+   "pose": "nuki-draw-mid",
+   "stance": 0.55,
+   "crouch": 0.12,
+   "weight": 0.1,
+   "tx": 0.1,
+   "ty": 0.3
+  },
+  {
+   "dt": 0.583,
+   "pose": "noto-set",
+   "ease": "out"
+  },
+  {
+   "dt": 0.708,
+   "pose": "noto-set"
+  },
+  {
+   "dt": 1.125,
+   "pose": "noto-pull"
+  },
+  {
+   "dt": 1.25,
+   "pose": "noto-pull"
+  },
+  {
+   "dt": 1.917,
+   "pose": "noto-set",
+   "crouch": 0.13,
+   "ease": "out"
+  },
+  {
+   "dt": 2.25,
+   "pose": "noto-set",
+   "crouch": 0.13
+  },
+  {
+   "dt": 2.833,
+   "pose": "noto-set",
+   "stance": 0.2,
+   "crouch": 0,
+   "weight": 0,
+   "tx": 0,
+   "ty": 0.1,
+   "hx": 0,
+   "ease": "out"
   }
  ]
 }

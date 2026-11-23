@@ -21,6 +21,19 @@ const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', '
   'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid'];
 const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc'];   // anime motion layer (docs/ANIMATION.md §10)
 const D = film.duration;
+// Joint limits (radians / metres): what the paper body can do without looking broken. Outside = a warning.
+// Same limits the poses in library/cuts.json were solved with (docs/ANIMATION.md §11).
+const LIMITS = { rsx: [-3.1, 0.9], lsx: [-3.1, 0.9], rsz: [-1.6, 1.6], lsz: [-1.6, 1.6], rsy: [-1.2, 1.2], lsy: [-1.2, 1.2], rex: [-2.6, 0], lex: [-2.6, 0],
+  rfy: [-1.6, 1.6], lfy: [-1.6, 1.6], rwx: [-1.0, 1.4], lwx: [-1.0, 1.4], rwz: [-0.6, 0.6], lwz: [-0.6, 0.6], tx: [-0.5, 1.2], ty: [-0.9, 0.9], tz: [-0.6, 0.6],
+  cx: [-0.35, 0.5], cy: [-0.6, 0.6], cz: [-0.35, 0.35], nx: [-0.5, 0.5], ny: [-0.7, 0.7], hx: [-0.6, 0.6], hy: [-0.9, 0.9], hz: [-0.4, 0.4],
+  rcy: [-0.35, 0.35], rcz: [-0.35, 0.35], lcy: [-0.35, 0.35], lcz: [-0.35, 0.35], rax: [-0.6, 0.7], lax: [-0.6, 0.7], stance: [0, 1.3], crouch: [-0.05, 0.6], weight: [-1, 1] };
+const limitWarned = new Set();
+const checkLimits = (where, obj) => {
+  for (const [k, v] of Object.entries(obj ?? {})) {
+    const l = LIMITS[k];
+    if (l && isNum(v) && (v < l[0] - 1e-9 || v > l[1] + 1e-9) && !limitWarned.has(where + k)) { limitWarned.add(where + k); warn(where, `${k} = ${v} is past the joint limit ${l[0]} … ${l[1]}; the limb will look broken`); }
+  }
+};
 
 // --- basics
 for (const k of ['fps', 'width', 'height', 'duration']) if (!isNum(film[k]) || film[k] <= 0) err(k, `must be a positive number (got ${JSON.stringify(film[k])})`);
@@ -108,6 +121,9 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (j > 0 && isNum(k.t) && k.t <= keys[j - 1].t && !keys[j - 1].move) err(kw, `keys must be in time order with no repeats (t=${k.t} after t=${keys[j - 1].t}); to hold a pose, repeat it at a later time`);
     if (k.move && !moves[k.move]) err(kw, `unknown move "${k.move}". Known moves: ${Object.keys(moves).filter((n) => !n.startsWith('_')).join(', ')}`);
     if (k.move && k.pose) err(kw, 'use either "move" or "pose" on a key, not both');
+    checkLimits(kw, k);
+    if (k.pose && poses[k.pose]) checkLimits(`pose "${k.pose}" (library/poses.json)`, poses[k.pose]);
+    if (k.move && moves[k.move]) moves[k.move].forEach((bt, n) => { checkLimits(`move "${k.move}" beat ${n} (library/moves.json)`, bt); if (poses[bt.pose]) checkLimits(`pose "${bt.pose}" (library/poses.json)`, poses[bt.pose]); else err(`move "${k.move}" beat ${n}`, `unknown pose "${bt.pose}"`); });
     if (k.pose && !poses[k.pose]) err(kw, `unknown pose "${k.pose}". Known poses: ${Object.keys(poses).filter((n) => !n.startsWith('_')).join(', ')}`);
     for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist', ...MOTION_FIELDS].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, note, ${MOTION_FIELDS.join(', ')}, ${JOINTS.join(', ')}`);
     if (j > 0 && isNum(k.t)) {

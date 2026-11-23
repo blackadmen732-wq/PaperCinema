@@ -1,0 +1,709 @@
+{
+ "title": "Moves gallery: every cut and move in library/moves.json, one after another",
+ "note": "A test page, not a Short: horizontal so a full lunge fits side-on. Stills: node engine/render.mjs --film film/moves-gallery.json --still <times> --prefix mv-  (times per move in \"index\"). The foe is a standing target, so the cut lines can be judged against a body. spin-cut leaves ry at 2π, so the keys after it carry \"ry\": 6.28319.",
+ "page": "engine/motion.html",
+ "fps": 24,
+ "width": 1280,
+ "height": 720,
+ "format": "horizontal",
+ "duration": 47,
+ "mode": "dawn",
+ "motion": {
+  "overlap": true
+ },
+ "cast": {
+  "hero": {
+   "character": "kojiro",
+   "face": "eyes"
+  },
+  "foe": {
+   "character": "musashi",
+   "face": "eyes"
+  }
+ },
+ "index": [
+  {
+   "move": "calm-low-stance",
+   "t": 0.8,
+   "end": 3.8,
+   "stills": [
+    1.383,
+    3.217
+   ]
+  },
+  {
+   "move": "kiri-oroshi",
+   "t": 5.25,
+   "end": 6.75,
+   "stills": [
+    5.667,
+    5.833,
+    5.958
+   ]
+  },
+  {
+   "move": "kesa-giri",
+   "t": 8.2,
+   "end": 9.1,
+   "stills": [
+    8.367,
+    8.5,
+    8.617
+   ]
+  },
+  {
+   "move": "yoko-giri",
+   "t": 10.55,
+   "end": 12.092,
+   "stills": [
+    11.008,
+    11.175,
+    11.3
+   ]
+  },
+  {
+   "move": "rising-cut",
+   "t": 13.542,
+   "end": 15.167,
+   "stills": [
+    14.042,
+    14.209,
+    14.375
+   ]
+  },
+  {
+   "move": "lunge-shomen",
+   "t": 16.617,
+   "end": 17.617,
+   "stills": [
+    16.825,
+    17.038,
+    17.159
+   ]
+  },
+  {
+   "move": "rapid-thrusts",
+   "t": 19.067,
+   "end": 20.9,
+   "stills": [
+    19.484,
+    19.734,
+    20.067
+   ]
+  },
+  {
+   "move": "linear-drive",
+   "t": 22.35,
+   "end": 24.142,
+   "stills": [
+    22.933,
+    23.1,
+    23.225
+   ]
+  },
+  {
+   "move": "spin-cut",
+   "t": 25.592,
+   "end": 27.3,
+   "stills": [
+    26.009,
+    26.134,
+    26.259,
+    26.342,
+    26.467
+   ]
+  },
+  {
+   "move": "low-dodge",
+   "t": 28.75,
+   "end": 29.958,
+   "stills": [
+    28.958,
+    29.333
+   ]
+  },
+  {
+   "move": "nukitsuke",
+   "t": 31.408,
+   "end": 32.741,
+   "stills": [
+    31.908,
+    31.991,
+    32.033,
+    32.075,
+    32.116,
+    32.2
+   ]
+  },
+  {
+   "move": "chiburi",
+   "t": 33.041,
+   "end": 34.124,
+   "stills": [
+    33.458,
+    33.624,
+    33.749
+   ]
+  },
+  {
+   "move": "noto",
+   "t": 34.424,
+   "end": 37.257,
+   "stills": [
+    35.007,
+    35.591,
+    36.341,
+    37.257
+   ]
+  },
+  {
+   "move": "nuki-uchi",
+   "t": 38.707,
+   "end": 40.04,
+   "stills": [
+    39.04,
+    39.207,
+    39.29,
+    39.457,
+    39.582
+   ]
+  },
+  {
+   "move": "chiburi",
+   "t": 40.34,
+   "end": 41.423,
+   "stills": [
+    40.923
+   ]
+  },
+  {
+   "move": "noto",
+   "t": 41.723,
+   "end": 44.556,
+   "stills": [
+    42.89,
+    44.556
+   ]
+  }
+ ],
+ "performances": {
+  "hero": {
+   "twoHand": [
+    [
+     0,
+     28.45
+    ],
+    [
+     39.29,
+     40.04
+    ]
+   ],
+   "keys": [
+    {
+     "t": 0,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ry": 0
+    },
+    {
+     "t": 0.55,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 0.8,
+     "move": "calm-low-stance",
+     "note": "calm-low-stance"
+    },
+    {
+     "t": 4.25,
+     "pose": "chudan"
+    },
+    {
+     "t": 5,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 5.25,
+     "move": "kiri-oroshi",
+     "note": "kiri-oroshi"
+    },
+    {
+     "t": 7.2,
+     "pose": "chudan"
+    },
+    {
+     "t": 7.95,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 8.2,
+     "move": "kesa-giri",
+     "note": "kesa-giri"
+    },
+    {
+     "t": 9.55,
+     "pose": "chudan"
+    },
+    {
+     "t": 10.3,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 10.55,
+     "move": "yoko-giri",
+     "note": "yoko-giri"
+    },
+    {
+     "t": 12.542,
+     "pose": "chudan"
+    },
+    {
+     "t": 13.292,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 13.542,
+     "move": "rising-cut",
+     "note": "rising-cut"
+    },
+    {
+     "t": 15.617,
+     "pose": "chudan"
+    },
+    {
+     "t": 16.367,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 16.617,
+     "move": "lunge-shomen",
+     "note": "lunge-shomen"
+    },
+    {
+     "t": 18.067,
+     "pose": "chudan"
+    },
+    {
+     "t": 18.817,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 19.067,
+     "move": "rapid-thrusts",
+     "note": "rapid-thrusts"
+    },
+    {
+     "t": 21.35,
+     "pose": "chudan"
+    },
+    {
+     "t": 22.1,
+     "pose": "chudan",
+     "x": 0,
+     "z": -2.35,
+     "ease": "out"
+    },
+    {
+     "t": 22.35,
+     "move": "linear-drive",
+     "note": "linear-drive"
+    },
+    {
+     "t": 24.592,
+     "pose": "chudan"
+    },
+    {
+     "t": 25.342,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ease": "out"
+    },
+    {
+     "t": 25.592,
+     "move": "spin-cut",
+     "note": "spin-cut"
+    },
+    {
+     "t": 27.75,
+     "pose": "chudan"
+    },
+    {
+     "t": 28.5,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.05,
+     "ry": 6.28319,
+     "ease": "out"
+    },
+    {
+     "t": 28.75,
+     "move": "low-dodge",
+     "note": "low-dodge"
+    },
+    {
+     "t": 30.408,
+     "pose": "chudan"
+    },
+    {
+     "t": 31.158,
+     "pose": "iai-ready",
+     "x": 0,
+     "z": -1.05,
+     "ry": 6.28319,
+     "ease": "out"
+    },
+    {
+     "t": 31.408,
+     "move": "nukitsuke",
+     "note": "nukitsuke"
+    },
+    {
+     "t": 33.041,
+     "move": "chiburi",
+     "note": "chiburi"
+    },
+    {
+     "t": 34.424,
+     "move": "noto",
+     "note": "noto"
+    },
+    {
+     "t": 37.707,
+     "pose": "noto-set"
+    },
+    {
+     "t": 38.457,
+     "pose": "iai-ready",
+     "x": 0,
+     "z": -1.05,
+     "ry": 6.28319,
+     "ease": "out"
+    },
+    {
+     "t": 38.707,
+     "move": "nuki-uchi",
+     "note": "nuki-uchi"
+    },
+    {
+     "t": 40.34,
+     "move": "chiburi",
+     "note": "chiburi"
+    },
+    {
+     "t": 41.723,
+     "move": "noto",
+     "note": "noto"
+    },
+    {
+     "t": 45.006,
+     "pose": "noto-set"
+    },
+    {
+     "t": 47.3,
+     "pose": "noto-set",
+     "stance": 0.2,
+     "crouch": 0,
+     "weight": 0,
+     "tx": 0,
+     "ty": 0.1
+    }
+   ]
+  },
+  "foe": {
+   "keys": [
+    {
+     "t": 0,
+     "pose": "stand-blade-low",
+     "x": 0,
+     "z": 1.05,
+     "ry": 3.14159,
+     "rsz": -0.5,
+     "rsx": 0.1
+    },
+    {
+     "t": 47.3,
+     "pose": "stand-blade-low",
+     "rsz": -0.5,
+     "rsx": 0.1
+    }
+   ]
+  }
+ },
+ "camera": [
+  {
+   "t": 0.1,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "calm-low-stance"
+  },
+  {
+   "t": 4.55,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "kiri-oroshi"
+  },
+  {
+   "t": 7.5,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "kesa-giri"
+  },
+  {
+   "t": 9.85,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "yoko-giri"
+  },
+  {
+   "t": 12.842,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "rising-cut"
+  },
+  {
+   "t": 15.917,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "lunge-shomen"
+  },
+  {
+   "t": 18.367,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "rapid-thrusts"
+  },
+  {
+   "t": 21.65,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "linear-drive"
+  },
+  {
+   "t": 24.892,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "spin-cut"
+  },
+  {
+   "t": 28.05,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "low-dodge"
+  },
+  {
+   "t": 30.708,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "nukitsuke"
+  },
+  {
+   "t": 32.941,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "chiburi"
+  },
+  {
+   "t": 34.324,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.8,
+   "deg0": -52,
+   "deg1": -52,
+   "height": 1.05,
+   "fov": 36,
+   "feel": "locked",
+   "note": "noto"
+  },
+  {
+   "t": 38.007,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "nuki-uchi"
+  },
+  {
+   "t": 40.24,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "chiburi"
+  },
+  {
+   "t": 41.623,
+   "rig": "orbit",
+   "subjects": [
+    "hero",
+    "foe"
+   ],
+   "radius": 4.6,
+   "deg0": -90,
+   "deg1": -90,
+   "height": 1,
+   "fov": 36,
+   "feel": "locked",
+   "note": "noto"
+  }
+ ],
+ "effects": {
+  "ribbon": {
+   "minSpeed": 5,
+   "frames": 3
+  },
+  "impactFrame": false,
+  "hitStop": {
+   "min": 0,
+   "max": 0
+  }
+ },
+ "sounds": []
+}

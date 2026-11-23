@@ -167,3 +167,66 @@ across the attacker's blade at fraction `s`; the blades meet on frame `t` and st
 `frame` (both fighters, `angle` 0 = side-on), `orbit`. Each aims at real joints; a spring smooths the path at 240 Hz.
 
 Check: `node engine/render.mjs --film film/motion-test.json --still 0.7,2.2,3.16,3.7` then look at the stills.
+
+## 11. Cut system and move list (`library/cuts.json`, `film/moves-gallery.json`)
+
+**The cut system** is data in `library/cuts.json`:
+- `directions`: the 8 cut directions of the owner's clock sheet. Each has a wind-up, contact and follow-through pose
+  (names in `library/poses.json`), the target line on the opponent's body, a tip-path note, timing in frames and the wrist snap.
+- `kata`: the 12 ZNKR seitei iaido kata (Mae … Nuki-uchi) as sequences of those cuts, with poses per step.
+- `confidence`: what is documented (names, order, cut sequence: from the ZNKR manual, written from memory, so check a detail
+  before quoting it), what is tradition (the eight-cut clock chart, school naming), and what is ours (every metre and frame).
+
+| Clock | Direction | Poses (wind-up → contact → finish) | Line on the opponent | Move |
+|---|---|---|---|---|
+| 1 | kiri-oroshi (straight down) | `furikaburi` → `kiri-oroshi-contact` → `kiri-oroshi-finish` | head top → navel | `kiri-oroshi`, `lunge-shomen`, `nuki-uchi` |
+| 2 | kesa (from the upper right) | `kesa-windup` → `kesa-contact` → `kesa-finish` | left neck → right hip | `kesa-giri` |
+| 3 | gyaku-kesa (from the upper left) | `gyaku-kesa-windup` → `-contact` → `-finish` | right neck → left hip | poses only |
+| 4 | yoko, right to left | `waki-right` → `yoko-contact` → `yoko-finish` | left flank → right flank | `yoko-giri`, `spin-cut` |
+| 5 | yoko, left to right (draw-cut) | `iai-ready` → `nukitsuke-contact` → `nukitsuke-finish` (two hands: `waki-left` → `yoko-l-*`) | right temple → left temple | `nukitsuke` |
+| 6 | kiri-age from the lower right | `waki-right` → `kiri-age-contact` → `kiri-age-finish` | left hip → right shoulder | `rising-cut` |
+| 7 | kiri-age from the lower left | `waki-left` → `kiri-age-l-contact` → `kiri-age-l-finish` | right hip → left shoulder | poses only |
+| 8 | tsuki | `tsuki-load` → `tsuki-contact` (`tsuki-high`, `tsuki-low`) → `tsuki-load` | solar plexus (a point) | `tsuki`, `rapid-thrusts`, `linear-drive` |
+
+- **Target lines** are in the opponent's own frame (metres; +x = the opponent's left, +y up, +z = the way they face). The file gives the formula to world space.
+- **Wrist:** `rwx` is the snap (it swings the blade toward its edge); `rwz` and `rfy` keep the edge on the cut plane. `snap` in the file lists wind-up and contact values.
+- **Aiming a new pose:** the sword sits at 45° in the hand, and its edge is always on the side the forearm points to. So a straight-down cut needs the forearm
+  pointing forward-down, a right-to-left cut needs the elbow to the right of the hand, and a blade pointing behind the hand needs the elbow out to the side.
+  The cut poses were solved numerically for hand position, blade direction and edge direction inside the joint limits, then checked on stills.
+
+**New moves** (all use `ease` / `drag` / `settle`; frames at 24 fps):
+
+| Move | Length | Beats (anticipation / snap / follow-through) | Notes |
+|---|---|---|---|
+| `kiri-oroshi` | 1.5 s | 10 / 4 / 2, hold 9 | Feet and weight go first (frames 10–12), the blade in the last 2 frames |
+| `lunge-shomen` (improved) | 1.0 s | 5 / 5 / 2 | Same contact time (0.42 s) and 0.65 m step as before; now ends level, not in the ground |
+| `kesa-giri` (improved) | 0.9 s | 4 / 3 / 2 | Same contact time (0.30 s) and 0.5 m step as before |
+| `yoko-giri` | 1.55 s | 11 / 4 / 2 | From waki-gamae; hips turn before the chest (`cy` held back) |
+| `rising-cut` | 1.6 s | 12 / 4 / 3 | Sinks low, ends at full extension on a straight back leg |
+| `rapid-thrusts` | 1.85 s | 7, then 3 thrusts of 3 frames (high, low, middle) | 3-frame recoils; the third has a 2-frame extra load and the deepest step |
+| `linear-drive` | 1.8 s | 14 / 4 / 2 | 1.6 m lunge; back leg straight, body and blade on one diagonal. Start 3.3 m from the opponent |
+| `spin-cut` | 1.7 s | 7 / 11 (the spin) / 2 | Head turns 3 frames before the hips. Uses absolute `ry` 0 → 2π: for a fighter facing +z only; put `"ry": 6.28319` on the next key |
+| `low-dodge` | 1.2 s | 4-frame drop, hold 10, rise 15 | Slips 0.45 m left, head at 0.7 m, left hand on the ground. One-handed: no `twoHand` window here |
+| `calm-low-stance` | 3.0 s | sinks over 14 frames, then a breathing hold | Ends in `calm-low`; follow with any attack |
+| `nukitsuke` | 1.35 s | 12 / 4 / 2 | Horizontal draw-cut from `iai-ready`. One-handed |
+| `nuki-uchi` | 1.35 s | 8 / 10 (draw up + cut down) / 2 | Seitei no. 12. One-handed until 0.58 s, then open a `twoHand` window |
+| `chiburi` | 1.1 s | 8 + 3 hold / 3 / settle | Large chiburi: fist to the temple, flick down to the right |
+| `noto` | 2.85 s | slow, uneven | One-handed. The motion page has no scabbard, so the blade is only laid along the left hip |
+
+A move's first beat is its starting pose, so the key before it should be about 0.25 s earlier in a guard.
+`twoHand` windows belong to the performance, not the move: leave the one-handed moves out of them.
+
+**Gallery:** `film/moves-gallery.json` performs every move against a standing target (horizontal, 47 s; it is a test page, not a Short).
+Its `index` lists each move's start time and the still times used for review:
+
+```bash
+node engine/validate.mjs film/moves-gallery.json
+nice -n 10 node engine/render.mjs --film film/moves-gallery.json --still 5.833,8.5,14.209 --prefix mv-
+```
+Loading takes about 2 minutes (the page samples the whole film at 240 Hz first).
+
+**Checker:** `validate.mjs` now warns when a key, a pose or a move beat goes past a joint limit, and fails on a move beat that names a missing pose.
+
+**Known weak spots:** `noto` (no scabbard on the motion page; the edge lies flat, not up); `calm-low-stance` (legs only bend in the
+forward plane, so the stance is long, not wide); `spin-cut` (absolute `ry`); directions 3 and 7 and the kata extras
+(`tsuka-ate`, `katate-tsuki`, `soete-tsuki`) are poses checked by numbers only, with no move yet.
