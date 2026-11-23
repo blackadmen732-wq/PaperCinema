@@ -1280,7 +1280,7 @@ def _leaf(mb, key, base, direction, length, width, side, pr):
 
 
 @piece('bamboo_grove', width=20.0, depth=14.0, count=150, height=[9.0, 15.0], radius=[0.04, 0.085], lean=5.0,
-       leaves=1.0, clear=[], path=None, min_dist=0.35, key='bamboo')
+       leaves=1.0, leaf_size=1.0, clear=[], path=None, min_dist=0.35, key='bamboo')
 def bamboo_grove(ctx, P, rnd):
     """Moso bamboo grove: tall leaning culms (8-sided, tapering, own tone each) with node rings, twigs in the
     upper half carrying sprays of folded leaves. Keeps clear of the fighter marks, of `clear` [[x, y, r], ...]
@@ -1337,14 +1337,15 @@ def bamboo_grove(ctx, P, rnd):
                 tl = rnd.uniform(0.5, 1.2) * (1.2 - (i / n) * 0.6)
                 end = p + dirv * tl
                 culms.tube('bamboo_node', [p, end], [0.008, 0.004], segs=3, pr=pr, cap=False)
-                for kk in range(rnd.randint(5, 9)):
+                for kk in range(int(rnd.randint(5, 9) * max(1.0, P['leaves'] / 1.5))):
                     b = p.lerp(end, rnd.uniform(0.35, 1.0))
                     ang = rnd.uniform(0, 2 * math.pi)
                     dd = (dirv * 0.6 + Vector((math.cos(ang), math.sin(ang), -rnd.uniform(0.6, 1.4)))).normalized()
                     sd = dd.cross(Vector((0, 0, 1)))
                     if sd.length < 1e-3:
                         sd = Vector((1, 0, 0))
-                    _leaf(leaves, 'bamboo_leaf', b, dd, rnd.uniform(0.16, 0.26), rnd.uniform(0.018, 0.03), sd, rnd.random())
+                    ls = P['leaf_size']
+                    _leaf(leaves, 'bamboo_leaf', b, dd, rnd.uniform(0.16, 0.26) * ls, rnd.uniform(0.018, 0.03) * ls, sd, rnd.random())
     culms.finish()
     if P['leaves'] > 0:
         leaves.finish()
@@ -1702,6 +1703,209 @@ def moon(ctx, P, rnd):
         ctx.link(ob, parent=False)
 
 
+# =========================================================================== 2.5D layered backgrounds
+def _ridge(rnd, n_pow=6, start=6, rough=0.55):
+    h = [rnd.uniform(0.2, 1.0) for _ in range(start)]
+    amp = 0.5
+    for _ in range(n_pow):
+        nh = []
+        for i in range(len(h) - 1):
+            a, b = h[i], h[i + 1]
+            nh += [a, (a + b) / 2 + rnd.uniform(-amp, amp)]
+        nh.append(h[-1])
+        h = nh
+        amp *= rough
+    lo, hi = min(h), max(h)
+    return [(v - lo) / (hi - lo + 1e-9) for v in h]
+
+
+def _sil_mountains(rnd, W, H, smooth=False):
+    hs = _ridge(rnd, 6 if not smooth else 4, 7, 0.55 if not smooth else 0.4)
+    n = len(hs)
+    pts = [(-W / 2 + W * i / (n - 1), H * (0.25 + 0.75 * h)) for i, h in enumerate(hs)]
+    return [[(-W / 2, -3)] + pts + [(W / 2, -3)]], []
+
+
+def _sil_trees(rnd, W, H):
+    polys = [[(-W / 2, -3), (W / 2, -3), (W / 2, H * 0.3), (-W / 2, H * 0.3)]]
+    x = -W / 2
+    while x < W / 2:
+        h = H * rnd.uniform(0.55, 1.0)
+        w = h * rnd.uniform(0.22, 0.35)
+        if rnd.random() < 0.7:            # conifer: stacked jagged tiers
+            tiers = rnd.randint(3, 5)
+            for t in range(tiers):
+                z0 = H * 0.25 + (h - H * 0.25) * t / tiers
+                ww = w * (1 - t / (tiers + 0.6))
+                polys.append([(x - ww, z0), (x + ww, z0), (x + ww * 0.15, z0 + (h - H * 0.25) / tiers * 1.6), (x - ww * 0.1, z0 + (h - H * 0.25) / tiers * 1.7)])
+        else:                              # broadleaf: faceted crown
+            k = 9
+            polys.append([(x + w * 1.2 * math.cos(2 * math.pi * j / k) * rnd.uniform(0.75, 1.1), h * 0.72 + h * 0.3 * math.sin(2 * math.pi * j / k) * rnd.uniform(0.75, 1.1)) for j in range(k)])
+            polys.append([(x - w * 0.08, -1), (x + w * 0.08, -1), (x + w * 0.05, h * 0.6), (x - w * 0.05, h * 0.6)])
+        x += w * rnd.uniform(0.9, 1.6)
+    return polys, []
+
+
+def _sil_clouds(rnd, W, H):
+    polys = []
+    for _ in range(int(W / (H * 3)) + 2):
+        cx, cz = rnd.uniform(-W / 2, W / 2), rnd.uniform(0, H)
+        L = H * rnd.uniform(2.5, 5)
+        for _b in range(rnd.randint(3, 6)):
+            bx = cx + rnd.uniform(-L / 2, L / 2)
+            r = H * rnd.uniform(0.18, 0.4)
+            k = 8
+            polys.append([(bx + r * 1.6 * math.cos(2 * math.pi * j / k), cz + r * 0.6 * max(-0.2, math.sin(2 * math.pi * j / k))) for j in range(k)])
+    return polys, []
+
+
+def _sil_castle(rnd, W, H, storeys=4, x0=0.0, walls=True):
+    """Castle skyline cut-out: battered base, stacked storeys with flared roofs and gables, lit windows,
+    turrets and a long wall with a gate tower."""
+    polys, wins = [], []
+    bw = H * 0.62
+    bh = H * 0.22
+    polys.append([(x0 - bw / 2 - bh * 0.25, -3), (x0 + bw / 2 + bh * 0.25, -3), (x0 + bw / 2, bh), (x0 - bw / 2, bh)])
+    z = bh
+    w = bw * 0.85
+    sh = (H - bh) / (storeys + 0.6)
+    for i in range(storeys):
+        polys.append([(x0 - w / 2, z - 0.1), (x0 + w / 2, z - 0.1), (x0 + w / 2, z + sh * 0.62), (x0 - w / 2, z + sh * 0.62)])
+        for k in range(max(1, int(w / (sh * 0.55)))):
+            nwin = max(1, int(w / (sh * 0.55)))
+            wx = x0 - w / 2 + w * (k + 0.5) / nwin
+            if rnd.random() < 0.6:
+                wins.append((wx, z + sh * 0.18, sh * 0.16, sh * 0.2))
+        rz = z + sh * 0.6
+        ow = w / 2 + sh * 0.55
+        top = i == storeys - 1
+        rh = sh * (0.75 if top else 0.42)
+        tip = sh * 0.18
+        polys.append([(x0 - ow - tip, rz + tip), (x0 - ow, rz), (x0 + ow, rz), (x0 + ow + tip, rz + tip),
+                      (x0 + w * (0.18 if top else 0.42), rz + rh), (x0 - w * (0.18 if top else 0.42), rz + rh)])
+        if 0 < i < storeys - 1:
+            gw = w * 0.35
+            polys.append([(x0 - gw / 2, rz + rh * 0.4), (x0 + gw / 2, rz + rh * 0.4), (x0, rz + rh * 0.4 + gw * 0.5)])
+        if top:
+            for sx in (-1, 1):
+                polys.append([(x0 + sx * w * 0.18, rz + rh), (x0 + sx * (w * 0.18 + sh * 0.12), rz + rh + sh * 0.25), (x0 + sx * w * 0.12, rz + rh)])
+        z = rz + rh * 0.85
+        w *= 0.8
+    if walls:
+        wh = H * 0.13
+        polys.append([(-W / 2, -3), (W / 2, -3), (W / 2, wh), (-W / 2, wh)])
+        for tx in (x0 - bw * 1.4, x0 + bw * 1.5, x0 - bw * 2.6):
+            tw = H * rnd.uniform(0.14, 0.2)
+            th = wh + H * rnd.uniform(0.12, 0.18)
+            polys.append([(tx - tw / 2, wh - 0.5), (tx + tw / 2, wh - 0.5), (tx + tw / 2, th), (tx - tw / 2, th)])
+            polys.append([(tx - tw / 2 - tw * 0.3, th - tw * 0.05), (tx + tw / 2 + tw * 0.3, th - tw * 0.05), (tx + tw * 0.15, th + tw * 0.4), (tx - tw * 0.15, th + tw * 0.4)])
+            if rnd.random() < 0.7:
+                wins.append((tx, th - tw * 0.5, tw * 0.18, tw * 0.22))
+    return polys, wins
+
+
+SILHOUETTES = {'mountains': _sil_mountains, 'hills': lambda r, W, H: _sil_mountains(r, W, H, True), 'trees': _sil_trees,
+               'clouds': _sil_clouds, 'castle': _sil_castle}
+
+
+def _card_material(name, color, haze_color, haze, glow, translucency, image=None):
+    col = tuple(c * (1 - haze) + h * haze for c, h in zip(color, haze_color))
+    em = tuple(h * haze * glow for h in haze_color)
+    m = pm.paper_material(name, col, translucency=translucency, fibre_scale=0.6, fibre_strength=0.25, facet_var=0.0,
+                          rough=0.9, glow=(em, 1.0) if glow > 0 and haze > 0 else None, translucent_color=(1.0, 0.65, 0.4))
+    if image:
+        img = bpy.data.images.load(os.path.abspath(image), check_existing=True)
+        nt = m.node_tree
+        out = [n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'][0]
+        surf = out.inputs['Surface'].links[0].from_socket
+        tex = nt.nodes.new('ShaderNodeTexImage')
+        tex.image = img
+        tc = nt.nodes.new('ShaderNodeTexCoord')
+        nt.links.new(tc.outputs['UV'], tex.inputs['Vector'])
+        tr = nt.nodes.new('ShaderNodeBsdfTransparent')
+        mx = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(tex.outputs['Alpha'], mx.inputs[0])
+        nt.links.new(tr.outputs['BSDF'], mx.inputs[1])
+        nt.links.new(surf, mx.inputs[2])
+        nt.links.new(mx.outputs['Shader'], out.inputs['Surface'])
+        for n in nt.nodes:                  # the image colour replaces the flat card colour
+            if n.type == 'BSDF_PRINCIPLED':
+                mul = nt.nodes.new('ShaderNodeMix'); mul.data_type = 'RGBA'; mul.blend_type = 'MIX'
+                mul.inputs[0].default_value = haze
+                nt.links.new(tex.outputs['Color'], mul.inputs[6])
+                mul.inputs[7].default_value = (*haze_color, 1)
+                nt.links.new(mul.outputs[2], n.inputs['Base Color'])
+    return m
+
+
+@piece('layers', layers=[
+    {'shape': 'trees', 'dist': 40, 'height': 14, 'color': [0.04, 0.045, 0.04], 'haze': 0.15},
+    {'shape': 'castle', 'dist': 90, 'height': 45, 'color': [0.05, 0.05, 0.06], 'haze': 0.3},
+    {'shape': 'hills', 'dist': 180, 'height': 40, 'color': [0.06, 0.06, 0.08], 'haze': 0.5},
+    {'shape': 'mountains', 'dist': 400, 'height': 110, 'color': [0.08, 0.08, 0.1], 'haze': 0.7},
+    {'shape': 'clouds', 'dist': 600, 'height': 60, 'z': 120, 'color': [0.5, 0.45, 0.45], 'haze': 0.6}],
+    haze_color=[0.55, 0.42, 0.38], glow=0.6, translucency=0.35, thickness=0.004, window_glow=[1.0, 0.55, 0.2, 12.0],
+    fov_width=1.3)
+def layers(ctx, P, rnd):
+    """2.5D paper-cut backdrop: flat silhouette cards (shape 'mountains', 'hills', 'trees', 'clouds', 'castle', or
+    'image' with `image` = PNG with alpha) standing upright at increasing `dist` along +Y, each card's colour pulled
+    toward `haze_color` by its `haze` (0 near .. 1 far) and lit a little from inside (`glow`), so a moving camera
+    gets real parallax and depth with almost no render cost. Per layer: shape, dist, width (default dist *
+    fov_width + 30), height, z (base), x, color, haze, seed, storeys (castle), windows (castle lit windows)."""
+    hz = P['haze_color']
+    for li, L in enumerate(P['layers']):
+        r = random.Random(f"{ctx.seed}:{ctx.info['name']}:{li}:{L.get('seed', 0)}")
+        dist = L['dist']
+        W = L.get('width', dist * P['fov_width'] * 2 + 30)
+        H = L.get('height', 20)
+        nm = f"{ctx.info['name']}_{li}_{L.get('shape', 'card')}"
+        mat = _card_material('SET_' + nm, L.get('color', [0.1, 0.1, 0.1]), hz, L.get('haze', 0.3), P['glow'],
+                             L.get('translucency', P['translucency']), L.get('image'))
+        me = bpy.data.meshes.new(nm)
+        bm = bmesh.new()
+        x0, z0 = L.get('x', 0.0), L.get('z', 0.0)
+        if L.get('shape') == 'image':
+            img = bpy.data.images.load(os.path.abspath(L['image']), check_existing=True)
+            iw, ih = img.size
+            Wd = H * iw / max(1, ih)
+            vs = [bm.verts.new((x0 + a * Wd / 2, dist, z0 + b)) for a, b in ((-1, 0), (1, 0), (1, H), (-1, H))]
+            f = bm.faces.new(vs)
+            uv = bm.loops.layers.uv.new('UVMap')
+            for loop, co in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+                loop[uv].uv = co
+            wins = []
+        else:
+            kw = {'storeys': L['storeys']} if L.get('shape') == 'castle' and 'storeys' in L else {}
+            polys, wins = SILHOUETTES[L.get('shape', 'mountains')](r, W, H, **kw)
+            for poly in polys:
+                vs = [bm.verts.new((x0 + x, dist, z0 + z)) for x, z in poly]
+                try:
+                    bm.faces.new(vs[::-1])
+                except ValueError:
+                    pass
+        bm.to_mesh(me)
+        bm.free()
+        ob = bpy.data.objects.new(nm, me)
+        me.materials.append(mat)
+        if L.get('windows', True) and wins:
+            wc = P['window_glow']
+            wm = pm.emission_material('SET_' + nm + '_win', wc[:3], wc[3])
+            me.materials.append(wm)
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            for (wx, wz, ww, wh) in wins:
+                vs = [bm.verts.new((x0 + wx + a * ww / 2, dist - 0.05 - li * 0.0, z0 + wz + b * wh)) for a, b in ((1, 0), (-1, 0), (-1, 1), (1, 1))]
+                f = bm.faces.new(vs)
+                f.material_index = 1
+            bm.to_mesh(me)
+            bm.free()
+        if P['thickness'] > 0 and L.get('shape') != 'image':
+            sm = ob.modifiers.new('card', 'SOLIDIFY')
+            sm.thickness = P['thickness'] * dist
+        ob.visible_shadow = L.get('shadow', False)
+        ctx.link(ob)
+
+
 # =========================================================================== Ganryujima (port of blender/world)
 def _bw(ctx, P):
     """Import blender/world/build_world.py as a library, pointed at this set's scene and collection."""
@@ -1743,7 +1947,9 @@ def ganryujima(ctx, P, rnd):
         if P[part]:
             fn()
     if P['realistic']:
-        swap = {'LO_PaperSand': ctx.mat('sand'), 'LO_PaperRock': ctx.mat('stone_mossy'), 'LO_PaperBark': ctx.mat('bark')}
+        calm = pm.sea_material('LO_SeaPaperCalm', haze=(None, 1400.0, 1.0), foam_cells=0.05, foam_gain=2.5, crest_gain=1.5)
+        swap = {'LO_PaperSand': ctx.mat('sand'), 'LO_PaperRock': ctx.mat('stone_mossy'), 'LO_PaperBark': ctx.mat('bark'),
+                'LO_SeaPaper': calm}
         for ob in set(bpy.data.objects) - before:
             if ob.type == 'MESH':
                 for i, m in enumerate(ob.data.materials):

@@ -498,6 +498,24 @@
    "status_note": "🧪 v1"
   },
   {
+   "id": "SETS",
+   "name": "Sets (modular, data-driven, Blender)",
+   "does": "A location = one JSON in `library/sets/`: kit pieces with positions, sizes and seeds (ishigaki stone walls, plaster walls, kawara roofs, tenshu keep, yaguramon gate, floor planks, tatami, shoji, rooms, torii, toro lanterns, stairs, bridge, bamboo, pine, cherry, rocks, 2.5D paper-cut `layers` backdrops, fog, rain, petals/embers/dust, moon, the Ganryūjima island), lighting presets (night, dusk, dawn, day, overcast), fighter key/fill/rim, camera anchors `CAM_*`, marks `MARK_*`; realistic procedural stone, plaster, wood, tile, lacquer, washi materials; optional origami samurai on the marks in a pose; previews. Sets: castle-courtyard, dojo-interior, bamboo-forest, ganryujima-beach, castle-skyline-2d5",
+   "files": [
+    "blender/sets/kit.py",
+    "blender/sets/build_set.py",
+    "library/sets/",
+    "blender/world/paper_materials.py",
+    "blender/character/origami_samurai.py"
+   ],
+   "guide": [
+    "docs/SETS.md"
+   ],
+   "command": "blender -b -P blender/sets/build_set.py -- --set castle-courtyard --preview output/sets/castle.png --with-character hero:wide-stance,foe:hasso:demon",
+   "status": "test",
+   "status_note": "🧪 v1"
+  },
+  {
    "id": "GPU",
    "name": "GPU jobs",
    "does": "Rent/run/stop RunPod pods (self-destruct timer); TRELLIS image → 3D",
@@ -759,6 +777,18 @@
   ],
   [
    "SLASHFX",
+   "BLENDER"
+  ],
+  [
+   "PAPERMAT",
+   "SETS"
+  ],
+  [
+   "BWORLD",
+   "SETS"
+  ],
+  [
+   "SETS",
    "BLENDER"
   ]
  ]

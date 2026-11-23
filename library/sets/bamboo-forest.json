@@ -1,0 +1,347 @@
+{
+  "name": "bamboo-forest",
+  "about": "Moso bamboo forest in morning mist: a packed-earth path between tall leaning culms, leaf litter and moss, low sun from behind the grove cutting shafts through the canopy and the mist, a mossy stone lantern and boulders by the path. Camera looks along the path (+Y), into the light.",
+  "seed": 11,
+  "clear": 1.4,
+  "lighting": {
+    "preset": "day",
+    "sun": {
+      "elev": 24,
+      "az": 170,
+      "color": [
+        1.0,
+        0.85,
+        0.62
+      ],
+      "energy": 6.0,
+      "angle": 0.5
+    },
+    "sky": {
+      "type": "nishita",
+      "strength": 0.5
+    },
+    "exposure": -1.6,
+    "bloom": 0.5,
+    "vignette": 0.45,
+    "fighter": {
+      "key": {
+        "offset": [
+          -1.4,
+          2.6,
+          2.4
+        ],
+        "energy": 30,
+        "color": [
+          0.85,
+          0.95,
+          0.8
+        ],
+        "size": 1.8
+      },
+      "fill": {
+        "offset": [
+          2.4,
+          1.6,
+          1.2
+        ],
+        "energy": 8,
+        "color": [
+          0.7,
+          0.85,
+          0.75
+        ],
+        "size": 2.0
+      },
+      "rim": {
+        "offset": [
+          0.4,
+          -2.6,
+          2.8
+        ],
+        "energy": 60,
+        "color": [
+          1.0,
+          0.85,
+          0.6
+        ],
+        "size": 0.8
+      }
+    },
+    "pieces": [
+      {
+        "kit": "fog",
+        "name": "mist",
+        "pos": [
+          0,
+          12,
+          0
+        ],
+        "params": {
+          "size": [
+            50,
+            60,
+            22
+          ],
+          "density": 0.06,
+          "height": 6.0,
+          "noise": 0.5,
+          "noise_scale": 0.1,
+          "color": [
+            0.82,
+            0.9,
+            0.82
+          ],
+          "anisotropy": 0.65
+        }
+      },
+      {
+        "kit": "particles",
+        "name": "motes",
+        "pos": [
+          0,
+          6,
+          0
+        ],
+        "params": {
+          "kind": "dust",
+          "area": [
+            10,
+            14,
+            6
+          ],
+          "count": 300,
+          "size": 0.006,
+          "velocity": [
+            0.02,
+            0.0,
+            0.02
+          ],
+          "random": 0.3,
+          "brownian": 0.2
+        }
+      }
+    ]
+  },
+  "pieces": [
+    {
+      "kit": "ground",
+      "name": "floor",
+      "pos": [
+        0,
+        12,
+        0
+      ],
+      "params": {
+        "width": 70,
+        "depth": 80,
+        "key": "forest_floor",
+        "bumps": 0.25,
+        "bump_scale": 0.15,
+        "res": 70
+      }
+    },
+    {
+      "kit": "ground",
+      "name": "path",
+      "pos": [
+        0,
+        12,
+        0.03
+      ],
+      "params": {
+        "width": 2.2,
+        "depth": 60,
+        "key": "earth",
+        "bumps": 0.02,
+        "res": 30
+      }
+    },
+    {
+      "kit": "bamboo_grove",
+      "name": "grove",
+      "pos": [
+        0,
+        14,
+        0
+      ],
+      "params": {
+        "width": 34,
+        "depth": 46,
+        "count": 520,
+        "height": [
+          10,
+          17
+        ],
+        "radius": [
+          0.045,
+          0.09
+        ],
+        "lean": 6,
+        "path": [
+          [
+            0,
+            -24
+          ],
+          [
+            0,
+            24
+          ],
+          3.2
+        ],
+        "min_dist": 0.5,
+        "leaves": 3.0,
+        "leaf_size": 1.4
+      }
+    },
+    {
+      "kit": "toro",
+      "name": "lantern",
+      "pos": [
+        -2.3,
+        6.5,
+        0
+      ],
+      "params": {
+        "lit": false,
+        "height": 1.7,
+        "key": "stone_mossy"
+      }
+    },
+    {
+      "kit": "rocks",
+      "name": "rocks_L",
+      "pos": [
+        -2.8,
+        4,
+        0
+      ],
+      "params": {
+        "count": 5,
+        "radius": 1.4,
+        "size": [
+          0.3,
+          0.9
+        ]
+      }
+    },
+    {
+      "kit": "rocks",
+      "name": "rocks_R",
+      "pos": [
+        2.6,
+        9,
+        0
+      ],
+      "params": {
+        "count": 4,
+        "radius": 1.2,
+        "size": [
+          0.3,
+          0.8
+        ]
+      }
+    }
+  ],
+  "marks": {
+    "MARK_hero": {
+      "pos": [
+        0,
+        1.6,
+        0
+      ],
+      "face": [
+        0,
+        5.0
+      ]
+    },
+    "MARK_foe": {
+      "pos": [
+        0,
+        5.0,
+        0
+      ],
+      "face": [
+        0,
+        1.6
+      ]
+    },
+    "MARK_center": {
+      "pos": [
+        0,
+        3.3,
+        0
+      ],
+      "face": [
+        -10,
+        3.3
+      ]
+    }
+  },
+  "cameras": {
+    "CAM_wide": {
+      "pos": [
+        0.4,
+        -6.0,
+        1.4
+      ],
+      "look": [
+        0,
+        10,
+        4.5
+      ],
+      "lens": 22,
+      "note": "down the path into the light; culms frame both sides"
+    },
+    "CAM_medium": {
+      "pos": [
+        -2.6,
+        0.2,
+        1.3
+      ],
+      "look_mark": "MARK_center",
+      "look_z": 1.3,
+      "lens": 30,
+      "fstop": 4.0,
+      "focus": "MARK_center",
+      "note": "side-on duel on the path (the 180-degree line is Y)"
+    },
+    "CAM_hero_ots": {
+      "pos": [
+        0.6,
+        -0.6,
+        1.75
+      ],
+      "look": [
+        0,
+        5.0,
+        1.45
+      ],
+      "lens": 50,
+      "fstop": 2.8,
+      "focus": "MARK_foe"
+    },
+    "CAM_up": {
+      "pos": [
+        0.3,
+        2.0,
+        0.6
+      ],
+      "look": [
+        0.8,
+        6.0,
+        14.0
+      ],
+      "lens": 16,
+      "note": "looking up the culms into the canopy"
+    }
+  },
+  "preview_cams": [
+    "CAM_wide",
+    "CAM_medium"
+  ],
+  "render": {
+    "samples": 32,
+    "res": "540x960",
+    "volume_step_rate": 4.0
+  }
+}

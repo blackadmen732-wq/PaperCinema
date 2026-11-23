@@ -13,7 +13,7 @@
         0.66,
         1.0
       ],
-      "energy": 0.55,
+      "energy": 0.9,
       "angle": 1.2
     },
     "sky": {
@@ -31,7 +31,7 @@
       "stars": 1.0,
       "strength": 1.0
     },
-    "exposure": 1.6,
+    "exposure": 0.9,
     "bloom": 0.8,
     "vignette": 0.45,
     "fighter": {
@@ -41,7 +41,7 @@
           2.6,
           2.6
         ],
-        "energy": 60,
+        "energy": 18,
         "color": [
           1.0,
           0.72,
@@ -49,13 +49,27 @@
         ],
         "size": 1.4
       },
+      "fill": {
+        "offset": [
+          2.6,
+          1.8,
+          1.3
+        ],
+        "energy": 4,
+        "color": [
+          0.6,
+          0.7,
+          1.0
+        ],
+        "size": 2.0
+      },
       "rim": {
         "offset": [
           0.8,
           -2.8,
           2.8
         ],
-        "energy": 160,
+        "energy": 60,
         "color": [
           0.55,
           0.68,
@@ -89,8 +103,8 @@
             90,
             30
           ],
-          "density": 0.045,
-          "height": 4.5,
+          "density": 0.022,
+          "height": 5.0,
           "noise": 0.45,
           "noise_scale": 0.08,
           "color": [
@@ -109,10 +123,12 @@
     },
     "gravel": {
       "color": [
-        0.3,
-        0.29,
-        0.27
-      ]
+        0.13,
+        0.128,
+        0.12
+      ],
+      "scale": 16.0,
+      "moss": 0.3
     }
   },
   "pieces": [
@@ -310,7 +326,7 @@
         0
       ],
       "params": {
-        "energy": 22
+        "energy": 66
       }
     },
     {
@@ -322,7 +338,7 @@
         0
       ],
       "params": {
-        "energy": 22
+        "energy": 66
       }
     },
     {
@@ -334,7 +350,7 @@
         0
       ],
       "params": {
-        "energy": 16,
+        "energy": 48,
         "height": 1.9
       }
     },
@@ -347,7 +363,7 @@
         0
       ],
       "params": {
-        "energy": 16,
+        "energy": 48,
         "height": 1.9
       }
     },
@@ -466,12 +482,12 @@
       "pos": [
         0.8,
         -11.5,
-        1.6
+        1.25
       ],
       "look": [
         0,
         14,
-        7.5
+        8.5
       ],
       "lens": 24,
       "note": "establishing: fighters small, gate, keep, moon"
@@ -491,9 +507,9 @@
     },
     "CAM_hero_ots": {
       "pos": [
-        -3.7,
-        -1.5,
-        1.75
+        -2.7,
+        -1.0,
+        1.72
       ],
       "look": [
         1.8,
@@ -507,9 +523,9 @@
     },
     "CAM_foe_ots": {
       "pos": [
-        3.7,
-        -1.5,
-        1.75
+        2.7,
+        -1.0,
+        1.72
       ],
       "look": [
         -1.8,

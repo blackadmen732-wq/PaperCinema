@@ -39,7 +39,7 @@ export function analyseGround({ fighters, dur, filmT = (x) => x, opts = {} }) {
       if (dashing) {
         peak = Math.max(peak, s.v);
         if (s.tb - last >= 1 / 60) { ev('wake', s); last = s.tb; }
-        if (s.v < 0.6 * peak && S[Math.min(S.length - 1, i + HZ / 8)].v < 0.75 * s.v) {   // really stopping (not a lump in the keyed speed) dashing = false; skidding = true; ev('skid', s, { peak: +peak.toFixed(1) }); }
+        if (s.v < 0.6 * peak && S[Math.min(S.length - 1, i + HZ / 8)].v < 0.75 * s.v) { /* really stopping, not a lump in the keyed speed */ dashing = false; skidding = true; ev('skid', s, { peak: +peak.toFixed(1) }); }
       } else if (skidding) {
         if (s.v < 0.8) skidding = false;
         else if (s.tb - last >= 1 / 60) { ev('skidding', s); last = s.tb; }
@@ -185,7 +185,7 @@ export function makeAfterimages(scene, fighters, o = {}) {
     const ghosts = [];
     for (let i = 0; i < count; i++) {
       const fig = f.makeGhost();
-      const mat = new THREE.MeshBasicMaterial({ color: o.color ?? f.glow ?? '#ffb060', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false });
+      const mat = new THREE.MeshBasicMaterial({ color: o.color ?? f.glow ?? '#d98a3c', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, toneMapped: false });
       fig.root.traverse((m) => { if (m.isMesh) { m.material = mat; m.castShadow = m.receiveShadow = false; } });
       fig.root.visible = false; group.add(fig.root);
       ghosts.push({ fig, mat });
@@ -203,7 +203,7 @@ export function makeAfterimages(scene, fighters, o = {}) {
         gh.fig.root.visible = kk > 0.03 && far > 0.12 && tg > 0;
         if (!gh.fig.root.visible) return;
         applyPose(gh.fig, p);
-        gh.mat.opacity = (o.opacity ?? 0.42) * kk * Math.pow(0.58, i);
+        gh.mat.opacity = (o.opacity ?? 0.16) * kk * Math.pow(0.58, i);
       });
     }
   }

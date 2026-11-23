@@ -63,6 +63,7 @@ PRESETS = {
                      exposure=-0.5, look='AgX - Base Contrast', bloom=0.2, vignette=0.3),
 }
 FIGHTER = {'key': {'offset': [-1.8, 2.4, 2.8], 'energy': 0.0, 'color': [1.0, 0.82, 0.62], 'size': 1.6},
+           'fill': {'offset': [2.4, 1.6, 1.4], 'energy': 0.0, 'color': [0.7, 0.78, 1.0], 'size': 2.0},
            'rim': {'offset': [1.2, -2.6, 2.6], 'energy': 0.0, 'color': [0.62, 0.74, 1.0], 'size': 0.8}}
 
 
@@ -295,14 +296,15 @@ def add_characters(scene, coll, specs, marks, fighter):
         ch = bpy.data.collections.new('CHAR_' + role)
         coll.children.link(ch)
         res = osam.build(pose, tuple(mk.location), yaw, demon=demon, seed=3 + len(made), name='CHAR_' + role, collection=ch,
-                         lamp_scale=fighter.get('lamp_scale', 1.0))
+                         lamp_scale=fighter.get('lamp_scale', 0.12), seam_glow=fighter.get('seam_glow', 1.6),
+                         eye_glow=fighter.get('eye_glow', 14.0), inner_glow=fighter.get('inner_glow', 1.5))
         M = mk.matrix_world
         aim = mk.location + Vector((0, 0, 1.25))
-        for nm in ('key', 'rim'):
+        for nm in ('key', 'fill', 'rim'):
             L = fighter[nm]
             if L.get('energy', 0) <= 0:
                 continue
-            ld = bpy.data.lights.new(f'FIGHTER_{role}_{nm}', 'AREA')
+            ld = bpy.data.lights.new(f'LGT_{nm.capitalize()}_{role}', 'AREA')
             ld.energy = L['energy']
             ld.color = L['color'][:3]
             ld.size = L['size']

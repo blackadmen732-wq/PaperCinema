@@ -178,7 +178,8 @@ def apply_pose(p):
 
 # ---------------------------------------------------------------------------- build (importable)
 def build(pose_name='standing', location=(0, 0, 0), yaw=0.0, demon=None, seed=None, name='ORIGAMI_SAMURAI',
-          collection=None, paper=None, seam_glow=5.0, eye_glow=22.0, lamp_scale=1.0, pose_overrides=None):
+          collection=None, paper=None, seam_glow=5.0, eye_glow=22.0, lamp_scale=1.0, pose_overrides=None,
+          inner_glow=4.0):
     """Build one origami samurai into `collection` (a new collection `name` under the scene when None), posed
     with a pose from library/poses.json, standing at `location` (Blender metres, feet on the ground) and turned
     by `yaw` radians (0 = facing -Y). Returns {'collection', 'joints', 'root', 'lights', 'objects'}.
@@ -199,7 +200,7 @@ def build(pose_name='standing', location=(0, 0, 0), yaw=0.0, demon=None, seed=No
     M_PAPER_DARK = pm.paper_material('OS_PaperShade' + sfx, tuple(c * 0.86 for c in PAPER_), translucency=0.25, fibre_scale=140, facet_var=0.06)
     M_SEAM = pm.emission_material('OS_SeamGlow' + sfx, GLOW, seam_glow)
     M_EYES = pm.emission_material('OS_Eyes' + sfx, GLOW, eye_glow)
-    M_INNER = pm.emission_material('OS_InnerGlow' + sfx, GLOW, 4.0)
+    M_INNER = pm.emission_material('OS_InnerGlow' + sfx, GLOW, inner_glow)
 
     J = {}
     J['root'] = joint('root', None, (0, 0, 0))

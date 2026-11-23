@@ -1,0 +1,366 @@
+{
+  "name": "dojo-interior",
+  "about": "Timber dojo hall by day: polished plank floor, posts and heavy beams, a board ceiling, plaster walls with a high barred window band on the left that throws sun shafts through dusty air, backlit shoji on the right, an alcove with a hanging scroll at the back. Camera inside, looking toward +Y.",
+  "seed": 3,
+  "clear": 1.6,
+  "lighting": {
+    "preset": "day",
+    "sun": {
+      "elev": 30,
+      "az": -100,
+      "color": [
+        1.0,
+        0.86,
+        0.68
+      ],
+      "energy": 6.0,
+      "angle": 0.6
+    },
+    "sky": {
+      "type": "nishita",
+      "strength": 0.35
+    },
+    "exposure": -0.6,
+    "bloom": 0.45,
+    "vignette": 0.45,
+    "fighter": {
+      "key": {
+        "offset": [
+          -1.2,
+          2.4,
+          2.2
+        ],
+        "energy": 25,
+        "color": [
+          1.0,
+          0.85,
+          0.7
+        ],
+        "size": 1.6
+      },
+      "fill": {
+        "offset": [
+          2.4,
+          1.6,
+          1.4
+        ],
+        "energy": 6,
+        "color": [
+          0.85,
+          0.88,
+          1.0
+        ],
+        "size": 2.0
+      },
+      "rim": {
+        "offset": [
+          0.6,
+          -2.4,
+          2.6
+        ],
+        "energy": 40,
+        "color": [
+          1.0,
+          0.9,
+          0.8
+        ],
+        "size": 0.8
+      }
+    },
+    "pieces": [
+      {
+        "kit": "fog",
+        "name": "dust_air",
+        "pos": [
+          0,
+          3,
+          0
+        ],
+        "params": {
+          "size": [
+            14,
+            11.4,
+            3.6
+          ],
+          "density": 0.05,
+          "color": [
+            1.0,
+            0.95,
+            0.88
+          ],
+          "anisotropy": 0.6,
+          "noise": 0.3,
+          "noise_scale": 0.4
+        }
+      },
+      {
+        "kit": "particles",
+        "name": "motes",
+        "pos": [
+          -2,
+          3,
+          0.3
+        ],
+        "params": {
+          "kind": "dust",
+          "area": [
+            8,
+            8,
+            3
+          ],
+          "count": 400,
+          "size": 0.004,
+          "velocity": [
+            0.02,
+            0.0,
+            0.01
+          ],
+          "random": 0.3,
+          "brownian": 0.15
+        }
+      }
+    ],
+    "lights": [
+      {
+        "name": "garden_bounce",
+        "pos": [
+          8.2,
+          3,
+          1.4
+        ],
+        "type": "AREA",
+        "energy": 1600,
+        "color": [
+          1.0,
+          0.88,
+          0.7
+        ],
+        "size": [
+          11,
+          3
+        ],
+        "look": [
+          0,
+          3,
+          1.4
+        ]
+      },
+      {
+        "name": "front_bounce",
+        "pos": [
+          0,
+          -3.4,
+          2.0
+        ],
+        "type": "AREA",
+        "energy": 150,
+        "color": [
+          0.85,
+          0.9,
+          1.0
+        ],
+        "size": [
+          10,
+          2
+        ],
+        "look": [
+          0,
+          6,
+          1.2
+        ]
+      }
+    ]
+  },
+  "materials": {
+    "plaster": {
+      "color": [
+        0.78,
+        0.74,
+        0.66
+      ],
+      "grime": 0.3,
+      "splash": 0.2
+    }
+  },
+  "pieces": [
+    {
+      "kit": "floor_planks",
+      "name": "floor",
+      "pos": [
+        0,
+        3,
+        0
+      ],
+      "params": {
+        "width": 14,
+        "depth": 11.2,
+        "plank": 0.24,
+        "along": "Y"
+      }
+    },
+    {
+      "kit": "room",
+      "name": "hall",
+      "pos": [
+        0,
+        3,
+        0
+      ],
+      "params": {
+        "width": 14,
+        "depth": 11.2,
+        "height": 3.7,
+        "walls": {
+          "back": "plaster",
+          "left": "renji",
+          "right": "shoji",
+          "front": "shoji"
+        },
+        "window_z": 2.15,
+        "window_h": 0.8
+      }
+    },
+    {
+      "kit": "ground",
+      "name": "outside",
+      "pos": [
+        0,
+        3,
+        -0.06
+      ],
+      "params": {
+        "width": 60,
+        "depth": 60,
+        "key": "gravel",
+        "res": 8,
+        "bumps": 0.0
+      }
+    }
+  ],
+  "marks": {
+    "MARK_hero": {
+      "pos": [
+        -1.7,
+        3.2,
+        0
+      ],
+      "face": [
+        1.7,
+        3.2
+      ]
+    },
+    "MARK_foe": {
+      "pos": [
+        1.7,
+        3.2,
+        0
+      ],
+      "face": [
+        -1.7,
+        3.2
+      ]
+    },
+    "MARK_center": {
+      "pos": [
+        0,
+        3.2,
+        0
+      ],
+      "face": [
+        0,
+        10
+      ]
+    },
+    "MARK_kamiza": {
+      "pos": [
+        0,
+        7.4,
+        0
+      ],
+      "face": [
+        0,
+        0
+      ],
+      "role": "the master kneels here, under the scroll"
+    }
+  },
+  "cameras": {
+    "CAM_wide": {
+      "pos": [
+        0.4,
+        -2.1,
+        1.55
+      ],
+      "look": [
+        0,
+        8.4,
+        1.75
+      ],
+      "lens": 18,
+      "note": "the hall: shafts across the floor, alcove behind"
+    },
+    "CAM_medium": {
+      "pos": [
+        0.5,
+        -1.4,
+        1.3
+      ],
+      "look_mark": "MARK_center",
+      "look_z": 1.35,
+      "lens": 28,
+      "fstop": 4.0,
+      "focus": "MARK_center"
+    },
+    "CAM_hero_ots": {
+      "pos": [
+        -3.4,
+        1.9,
+        1.7
+      ],
+      "look": [
+        1.7,
+        3.2,
+        1.45
+      ],
+      "lens": 50,
+      "fstop": 2.8,
+      "focus": "MARK_foe"
+    },
+    "CAM_shafts": {
+      "pos": [
+        5.6,
+        -1.8,
+        1.2
+      ],
+      "look": [
+        -3,
+        6,
+        2.2
+      ],
+      "lens": 22,
+      "note": "toward the window band: god rays"
+    },
+    "CAM_low": {
+      "pos": [
+        0.2,
+        -1.6,
+        0.25
+      ],
+      "look": [
+        0,
+        6,
+        1.9
+      ],
+      "lens": 20
+    }
+  },
+  "preview_cams": [
+    "CAM_wide",
+    "CAM_medium"
+  ],
+  "render": {
+    "samples": 32,
+    "res": "540x960",
+    "volume_step_rate": 2.0
+  }
+}

@@ -289,7 +289,7 @@ export function makeRamps(ramps, dur) {
 // ---------- SMEAR: the trail of the blade ----------
 // style "light" (default): a crescent of LIGHT, wide at the leading edge and tapering to a point: white-hot core,
 // amber outer glow (crimson for a demonic blade), three thin filaments that outlive the body of the arc, additive,
-// with a short afterglow (ribbon.afterglow frames, default 5). The fighters are lanterns: what leaves the blade is
+// with a short afterglow (ribbon.afterglow frames, default 4). The fighters are lanterns: what leaves the blade is
 // their light (docs/STUDIO-STANDARD.md §7). style "paper" = the old flat white paper strip.
 /** makeRibbons(scene, fighters, { ribbon: {minSpeed, frames, style, afterglow, color}, fps, pose, tipSpeedAt }) → { meshes, update(tb, red), level } */
 export function makeRibbons(scene, fighters, { ribbon, fps, pose, tipSpeedAt }) {
@@ -309,7 +309,7 @@ export function makeRibbons(scene, fighters, { ribbon, fps, pose, tipSpeedAt }) 
   for (const f of fighters) { const m = new THREE.Mesh(ribGeo.clone(), mk()); m.frustumCulled = false; m.userData.noAudit = true; scene.add(m); meshes[f.id] = m; level[f.id] = 0; }
   const hex = (h) => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
   function update(tb, red = false) {
-    const span = (LIGHT ? (RIB.afterglow ?? 5) * 1.7 : RIB.frames) / fps;
+    const span = (LIGHT ? (RIB.afterglow ?? 4) * 1.5 : RIB.frames) / fps;
     const hist = [];
     for (let j = 0; j < RN; j++) {
       const tj = tb - (j / (RN - 1)) * span;
@@ -337,7 +337,7 @@ export function makeRibbons(scene, fighters, { ribbon, fps, pose, tipSpeedAt }) 
         const gain = RIB.gain ?? 1;
         meshes[f.id].material.blending = red ? THREE.NormalBlending : THREE.AdditiveBlending;
         for (let j = 0; j < RN; j++) {
-          const h = hist[j][f.id], uf = j / (RN - 1), u = Math.min(1, uf * 1.7);   // the body of the arc lives 1/1.7 of the filaments
+          const h = hist[j][f.id], uf = j / (RN - 1), u = Math.min(1, uf * 1.5);   // the body of the arc lives 2/3 of the filaments
           const sf = clamp((h.v - RIB.minSpeed) / 6, 0, 1);
           const along = h.tip.clone().sub(h.mid), len = along.length() || 1; along.multiplyScalar(1 / len);
           const wide = Math.pow(1 - u, 1.25);                                      // crescent: wide at the blade, a point at the tail
@@ -476,6 +476,6 @@ export function contactFx(contacts, o = {}) {
   if (o === false) return [];
   return contacts.flatMap((c) => [
     { t: c.t, effect: 'ca-flash', amount: (o.ca ?? 8) + (o.caI ?? 10) * c.intensity, dur: 0.25 },
-    { t: c.t, effect: 'bloom-pulse', amount: (o.bloom ?? 0.5) + 0.6 * c.intensity, dur: 0.3 },
+    { t: c.t, effect: 'bloom-pulse', amount: (o.bloom ?? 0.5) + (o.bloomI ?? 0.6) * c.intensity, dur: 0.3 },
   ]);
 }

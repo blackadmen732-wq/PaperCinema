@@ -11,6 +11,8 @@ import { paper, rng } from './paper.js';
 import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
 import { createFX, fxAt } from './fx.js';
+import { analyseGround, groundCues, makeDust, makeContactShadows } from './groundfx.js';
+import { installAudit } from './audit-hooks.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/ganryujima.json')).json();
@@ -376,6 +378,15 @@ if (FX) {                                               // particle fields named
 }
 
 // ---------- frame ----------
+// GROUND FX (engine/groundfx.js), opt-in per film: effects.ground {} = dust on every dash / skid / landing (+ sound cues),
+// effects.contactShadow {} = a soft pool of shadow under each fighter
+const GFIGHT = [{ ...FIGHTERS.kojiro, motion: kojiroMotion }, { ...FIGHTERS.musashi, motion: musashiMotion }];
+const GROUND = film.effects?.ground ? analyseGround({ fighters: GFIGHT, dur: film.duration, filmT, opts: film.effects.ground }) : null;
+const DUST = GROUND ? makeDust(scene, GROUND.events, film.effects.ground) : null;
+const CSHADOWS = film.effects?.contactShadow ? makeContactShadows(scene, GFIGHT, film.effects.contactShadow) : null;
+if (GROUND && film.autoSounds) window.EVENTS.cues = [...window.EVENTS.cues, ...groundCues(GROUND.events, film.autoSounds.ground ?? {})].sort((a, b) => a.t - b.t);
+if (GROUND) window.EVENTS.ground = GROUND.events.filter((e) => !['wake', 'skidding'].includes(e.kind));
+let NO_DRAW = false;                                    // the audit measures a frame without drawing it
 window.renderAt = (t) => {
   FILM_TIME = t;
   const tb = bodyT(t);
@@ -443,6 +454,8 @@ window.renderAt = (t) => {
     camera.rotateZ((pu.roll * Math.PI) / 180);
   }
   const fl = SPARKS.update(t);                          // sparks + flash light
+  DUST?.update(t);
+  CSHADOWS?.update();
 
   // overlays: titles, fades, flash
   film.titles.forEach((tl, i) => {
@@ -458,6 +471,7 @@ window.renderAt = (t) => {
   const inkPost = FX_TRACK.some((e) => e.effect === 'ink-impact' && t >= e.t && t < e.t + (e.dur ?? 2 / FPS));   // keep the ink frame clean
   flashEl.style.opacity = impactFrame || inkPost ? 0 : Math.max(hitFlash, Math.min(0.35, fl * 0.3));
 
+  if (NO_DRAW) return;
   if (impactFrame) {                                   // ONE frame: ink silhouettes on a washi page
     combat.renderInkFrame(renderer, scene, camera, [kojiro.root, musashi.root, blade], RIB.meshes);
     return;
@@ -465,6 +479,21 @@ window.renderAt = (t) => {
   if (FX) FX.render(t, fxAt(t, FX_TRACK, film.fxBase, FPS));
   else renderer.render(scene, camera);
 };
+// studio QA hooks (tools/audit.mjs, docs/AUDIT.md)
+installAudit({
+  scene, camera, W, H, fps: FPS, dur: film.duration, page: 'main',
+  fighters: () => [FIGHTERS.kojiro, FIGHTERS.musashi],
+  meta: { effects: { ground: !!GROUND, contactShadow: !!CSHADOWS, smear: film.effects?.ribbon?.style ?? 'light', fx: !!FX },
+    shots: film.shots.map((s) => ({ id: s.id, start: s.start, end: s.end })) },
+  stage(t) {
+    NO_DRAW = true; try { window.renderAt(t); } finally { NO_DRAW = false; }
+    const tb = bodyT(t), shot = shotAt(tb);
+    const names = [...(shot.rig?.subjects ?? []), shot.rig?.subject, shot.rig?.who].filter((n) => typeof n === 'string');
+    const subjects = names.length ? [...new Set(names.map((n) => n.split('.')[0]))].filter((id) => FIGHTERS[id]) : null;
+    return { tb, shot: film.shots.indexOf(shot), free: shot.mode === 'studio' || !shot.rig, subjects, smear: RIB?.level,
+      impactFrame: COMBAT_ON && combat.isImpactFrame(film, contacts, t, FPS, INK_AT) };
+  },
+});
 window.probe = (tb) => {                               // blade positions and distance at a body time (debugging clashes)
   poseFighters(tb);
   const A = combat.bladeSeg(FIGHTERS.kojiro), B = combat.bladeSeg(FIGHTERS.musashi);

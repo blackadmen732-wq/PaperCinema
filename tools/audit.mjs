@@ -122,7 +122,7 @@ const ids = Object.keys(F[0].fighters);
 const vis = (d) => ids.filter((id) => d.fighters[id].visible);
 const subjectsOf = (d) => (d.subjects?.length ? d.subjects.filter((id) => d.fighters[id]?.visible) : vis(d));
 const cuts = new Set();                                      // frame indices (into F) that start a new shot
-for (const c of META.cuts ?? []) cuts.add(Math.round((c * FPS) / STEP));
+for (const c of META.cuts ?? []) cuts.add(Math.ceil((c * FPS - 1e-6) / STEP));
 F.forEach((d, i) => {
   if (!i) return;
   const p = F[i - 1];

@@ -18,7 +18,8 @@ catch (e) { console.log(`✗ ${filmPath}: cannot read or parse JSON (${e.message
 const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
 const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
-  'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid'];
+  'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid',
+  'stride', 'phase'];   // stride/phase: walking feet; motion capture keys a left-foot-forward stance with them (docs/MOCAP.md)
 const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang'];   // anime motion layer (docs/ANIMATION.md §10)
 const D = film.duration;
 // Joint limits (radians / metres): what the paper body can do without looking broken. Outside = a warning.
@@ -262,7 +263,9 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (j > 0 && isNum(k.t)) {
       const dt = k.t - keys[j - 1].t;
       const moved = ['x', 'z'].map((a) => (k[a] ?? null)).some((v) => v !== null);
-      if (moved && dt < 0.15) warn(kw, `position changes in ${dt.toFixed(2)}s; that is a teleport, not a step`);
+      // dense keys (motion capture) may move every frame: only a jump faster than 6 m/s is a teleport
+      const pk = keys[j - 1], dist = isNum(pk.x) && isNum(pk.z) && isNum(k.x) && isNum(k.z) ? Math.hypot(k.x - pk.x, k.z - pk.z) : null;
+      if (moved && dt < 0.15 && (dist === null || dist / dt > 6)) warn(kw, `position changes in ${dt.toFixed(2)}s; that is a teleport, not a step`);
     }
   });
   try {

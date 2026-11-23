@@ -18,6 +18,7 @@
 | `EFFECTS-CATALOG.md` | choosing or wiring screen effects | The FX module (`engine/fx.js`): bloom, grade moods, vignette, grain, letterbox, CA flash, speed lines, ink impact, light shafts, particles, glint; film `fx` events; 42-effect catalogue (`library/effects.json`) by story beat |
 | `BLENDER-PLAN.md` | doing realistic renders | Blender pipeline, shaders, render costs, milestones M1–M8 |
 | `BLENDER-WORLD.md` | filming in the Blender world set, adding slash effects | The Ganryūjima set (run, contents, marks, camera anchors), paper materials, slash library, measured render times |
+| `SETS.md` | making a new location (castle, dojo, forest…) or rendering a Blender still with characters in a set | The data-driven set system: write a JSON in `library/sets/`, the kit pieces and their parameters, materials, lighting presets, 2.5D paper-cut layers, characters on marks, render settings and measured times |
 | `STORY-BIBLE.md` | writing a story | World rules, characters, cursed swords (fiction), episode ideas |
 | `SCENE-WRITING.md` | writing a scene, monologue or hook | Beats for 30/45/60 s Shorts, lines and voice direction, shot types, taste rules (full procedure: `../.claude/skills/scene-writing/SKILL.md`, templates: `../library/scene-templates.json`) |
 | `../research/` | making historical claims | Facts marked documented / tradition / our choice |

@@ -49,6 +49,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(36, W / H, 0.02, 600);
 const world = buildWorld(scene);
 world.setMode(film.mode ?? 'dawn');
+if (film.light) world.setLight(film.light);                      // { sun, hemi, fill, ground }: lift the shadows (docs/STUDIO-STANDARD.md §8)
 
 // ---------- cast ----------
 const POSES = await (await fetch('/library/poses.json')).json();
@@ -309,7 +310,7 @@ function rigTarget(b, t, tb, s) {
     const fov = L('fov', 36), size = L('size', 0.6), span = b.span ?? (b.aim ? 0.6 : 1.8);
     const tv = Math.tan((fov * Math.PI) / 360), th = tv * (W / H);
     const dist = span / size / (2 * tv);
-    const solids = TREES.filter((x) => !subIds.includes(x.tr.id) || b.guard === 'all').flatMap((x) => x.solids(s));
+    const solids = [...TREES.filter((x) => !subIds.includes(x.tr.id) || b.guard === 'all').flatMap((x) => x.solids(s)), ...((film.mode ?? 'dawn') === 'dawn' ? world.obstacles : [])];
     const build = (azDeg) => {
       const a = (azDeg * Math.PI) / 180 + basis, e = (L('elev', 0) * Math.PI) / 180;
       const dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));

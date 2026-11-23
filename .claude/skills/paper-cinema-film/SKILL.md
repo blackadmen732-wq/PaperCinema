@@ -57,6 +57,7 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
 - **Cut wounds / paint stains:** `docs/SHIMI.md` (SHIMI presets and the frame-by-frame slash sequence).
 - **A new pose:** add it to `library/poses.json`, then check it in the pose gallery.
 - **A new location:** sets are still code in `engine/world.js`. Build one there, or ask the owner.
+- **Blender sets:** final Blender renders use a set from `library/sets/` (castle-courtyard, dojo-interior, bamboo-forest, ganryujima-beach, castle-skyline-2d5). A new location is a new JSON there, built from the kit; preview it with `blender/sets/build_set.py -- --set <name> --preview output/sets/<name>.png --with-character hero:<pose>,foe:<pose>` and look at the stills. Guide: `docs/SETS.md`.
 - **Realistic (Blender) renders:** follow `docs/BLENDER-PLAN.md`. Its scripts are not built yet (milestone M1 onward).
 
 ## Anime motion and clashes (new)
