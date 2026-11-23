@@ -3,6 +3,9 @@
 **Paper Cinema** makes cinematic Japanese sword-fight films in the **Lantern Origami** style:
 folded/cut paper characters lit from inside, real-metal or demonic swords, data-driven camera and sound.
 
+## Claude skill
+`.claude/skills/paper-cinema-film/SKILL.md` is the step-by-step procedure for making or changing a film (Claude Code loads it automatically).
+
 ## Read these first
 0. `docs/playbook.html`: **visual playbook**: the 9-step pipeline, live camera-path plot, fight beats, sound cues, new-chat prompt (rebuild with `python3 docs/build_playbook.py`)
 1. `docs/STYLE-AND-FIGHT-SYSTEM.md`: the look, the 6-beat Strike Grammar, camera modes, lighting rules

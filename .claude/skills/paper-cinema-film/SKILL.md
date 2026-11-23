@@ -1,0 +1,51 @@
+---
+name: paper-cinema-film
+description: Make or change a Lantern Origami sword-duel film in this repo (Paper Cinema). Use whenever the task is a new film, a new fight, camera moves, character poses or motion, sound cues, titles, or rendering a film or stills. Covers the data files, the checker, the still-frame review loop and the render pipeline.
+---
+
+# Making a Paper Cinema film
+
+Everything in a film is **data** in `film/<name>.json`. You direct it by editing JSON, then the engine renders.
+Read `AGENTS.md` once per session; this skill is the working procedure.
+
+## Procedure (do every step, in order)
+
+1. **Research** the story. Write `research/<name>.md`. Mark every fact *documented*, *tradition* or *our choice*.
+2. **Start from the working example:** `cp film/ganryujima.json film/<name>.json`. Field reference: `docs/FILM-FORMAT.md`.
+3. **Cast:** pick characters, outfits and swords from `library/` (`characters/`, `outfits/`, `swords/`, `poses.json`).
+4. **Choreography:** write `performances.<id>.keys` as `{ "t": seconds, "pose": "name" }`. Follow the 6-beat
+   Strike Grammar in `docs/STYLE-AND-FIGHT-SYSTEM.md`:
+   - Ready: hold the stance 0.5–2 s
+   - Wind-up: 0.2–0.4 s
+   - Slash: 0.15–0.4 s
+   - Hit-stop: repeat the same pose about 0.15 s later
+   - Follow-through
+   - Reaction
+
+   Add `twoHand` windows while both hands hold the sword, and a `duels` entry so the fighters watch and react to each other.
+5. **Camera:** write each shot's `camera` keyframes with the recipes in `docs/CAMERA.md` (fly-over, push-in, orbit,
+   over-the-shoulder, low hero, impact close-up, crane, cut on action). Put a key exactly on each hit and add a `shakes` entry.
+6. **Sound:** add `sounds` cues at the same seconds as the actions (swing, impact, steps, bed loops).
+7. **Validate:** `node engine/validate.mjs film/<name>.json`. Fix every ✗ before rendering.
+8. **Review stills (mandatory before any full render):** `node engine/render.mjs --film film/<name>.json --still auto`,
+   then LOOK at every image in `output/stills/`. Check:
+   - **Subject in frame:** fix `look`, `pos` or `fov`.
+   - **Both hands on the handle:** check the `twoHand` window.
+   - **Feet on the ground and knees bent in strikes:** check `stance`, `crouch` and `weight` (in the pose or as key overrides).
+   - **The blade lands on target at the hit second:** adjust the pose angles, or check them in the pose gallery:
+     `node engine/render.mjs --page engine/lineup.html --film film/lineup.json --query "show=poses&poses=a,b,c" --still 1 --prefix poses-`
+9. **Render a section first** if the fight changed: `node engine/render.mjs --film film/<name>.json --from 24 --to 30 --out output/clip.mp4`.
+10. **Full pipeline:** `node engine/make.mjs film/<name>.json` (check → stills → render → sound → playbook). It takes about 55 min per 36 s on this CPU.
+11. **Commit and push.** Report what changed, where the video is, and which sounds need CC-BY credit (`assets/sfx/CREDITS.md`).
+
+## Quality rules
+- Amber glow = human, crimson = demonic power. Paper shards or red paint, never blood.
+- Keep the camera on one side of the fighters' line unless crossing it on purpose.
+- Every hit gets: a camera key on the hit second, a shake, an impact sound and a hit-stop (held pose).
+- Never present tradition as documented history.
+- Never start a paid GPU without the owner's explicit yes and a cost estimate (rule 1 in `AGENTS.md`).
+
+## When something is missing
+- **A new pose:** add it to `library/poses.json`, then check it in the pose gallery.
+- **A new location:** sets are still code in `engine/world.js`. Build one there, or ask the owner.
+- **Realistic (Blender) renders:** follow `docs/BLENDER-PLAN.md`. Its scripts are not built yet (milestone M1 onward).
