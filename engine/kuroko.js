@@ -128,12 +128,15 @@ function rigTarget(rig, t, ctx, shot) {
     const sep = pts.length > 1 ? len(sub(pts[1], pts[0])) : 0;
     // frame fill (research spec): width = separation + 2 × 0.55 m arm/sword margin, height by shot size
     const size = rig.size ?? (pts.length > 1 ? 'full' : 'medium');
-    const W = pts.length > 1 ? sep + 1.1 : (SIZES[size] ?? 2);
+    // azimuth: 0 = profile, + toward subject[0]'s back. In vertical video the default is an over-the-shoulder
+    // 55° (depth staging), and only the separation seen across the screen counts toward the width.
+    const vertical = ctx.aspect < 1;
+    const ang = clamp(rig.angle ?? (vertical && pts.length > 1 ? 55 : 0), -75, 75) * DEG;
+    const W = pts.length > 1 ? sep * Math.abs(Math.cos(ang)) + 1.1 : (SIZES[size] ?? 2);
     const Hh = { wide: 4, full: 1.9, medium: 1.0, close: 0.45, extreme: 0.2 }[size] ?? 1.9;
     const dist = Math.max(W / (2 * 0.62 * Math.tan(hfov / 2)), Hh / (2 * 0.7 * Math.tan((vfov * DEG) / 2)), 0.8) * (rig.dist ?? 1);
     let n = [-axis[2], 0, axis[0]];                                 // perpendicular to the subjects' line
     if (rig.side === 'right') n = mul(n, -1);
-    const ang = clamp(rig.angle ?? 0, -70, 70) * DEG;               // azimuth: 0 = profile, + toward subject[0]'s back
     n = norm(add(mul(n, Math.cos(ang)), mul(axis, -Math.sin(ang))));
     const el = (rig.elevation ?? 4) * DEG;                          // -5…+15° recommended
     const pos = add(mid, add(mul(n, dist * Math.cos(el)), [0, dist * Math.sin(el) + (rig.height ?? 0), 0]));

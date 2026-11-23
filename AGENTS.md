@@ -61,8 +61,12 @@ npm run preview                                          # live preview in a bro
   - preview engine; KUROKO camera; skeleton with legs, balance and the correct draw; moves; reactions
   - library; sound; checker; one-command pipeline; new-film scaffolder; vertical format; thumbnails
   - SHIMI stain sim (2D); 5 TRELLIS models (static); Blender slash test; playbook
+  - articulated skeleton (spine, neck, clavicles, twists, wrists, ankles, glowing eyes) + anime motion layer (lag, snap, settle, jump arcs)
+  - motion-test page (`engine/motion.js`): blade-contact detection, clash aim, hit-stop, smear ribbon, ink impact frame, auto sound cues, eye-to-blade camera
+  - our own synthesised sword sounds (`tools/synth_sfx.sh`); Blender world set + slash FX (`blender/world/`, v1)
 - **Next** (see `docs/EFFECTS-PLAN.md`, `docs/SHIMI.md`, `docs/BLENDER-PLAN.md`):
   - the face-touch scene; SHIMI on the 3D body
   - the anime effects pack; a 3-second Shorts opening; Blender slash v2
   - rigging the TRELLIS models
-- **Limits:** sets (island, sea, studio) are still code in `engine/world.js`. Only one location exists so far.
+- **Next first:** port the motion-test systems into `main.js` and re-render the duel (see `docs/FIX-LIST.md` status table).
+- **Limits:** the browser preview's set is still code in `engine/world.js`; the Blender set (`blender/world/build_world.py`) does not yet import characters or a film timeline.

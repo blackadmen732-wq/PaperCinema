@@ -1,5 +1,5 @@
 {
- "_about": "Named poses for the shared paper body. Angles are radians. A film's performances list refers to these names; each key can override any joint. Joints: tx/ty/tz torso lean/turn/side-bend · hx/hy head nod/turn · rsx/rsz right shoulder forward/sideways · rex right elbow (negative = bend) · rwx right wrist · lsx/lsz/lex/lwx left arm. Negative rsx/lsx lifts the arm forward and up (-1.57 = straight forward, -2.8 = overhead). Lower body: stance = feet apart front-to-back in metres (right foot forward), crouch = hip drop in metres (knees bend automatically), weight = -1 back foot … +1 front foot.",
+ "_about": "Named poses for the shared paper body. Angles are radians. A film's performances list refers to these names; each key can override any joint. Joints: tx/ty/tz torso lean/turn/side-bend · hx/hy head nod/turn · rsx/rsz right shoulder forward/sideways · rex right elbow (negative = bend) · rwx right wrist · lsx/lsz/lex/lwx left arm. Negative rsx/lsx lifts the arm forward and up (-1.57 = straight forward, -2.8 = overhead). Lower body: stance = feet apart front-to-back in metres (right foot forward), crouch = hip drop in metres (knees bend automatically), weight = -1 back foot … +1 front foot. Added joints: cx/cy/cz chest bend/turn/side above the waist, nx/ny neck, hz head roll, rcy/rcz (lcy/lcz) clavicle forward/shrug, rsy/lsy shoulder twist, rfy/lfy forearm twist, rwz/lwz wrist side-bend (the cutting snap), rax/lax ankles, lid eyelids (0 open, 1 shut; only on faces with eyes).",
  "neutral": {},
  "rest-hand-on-hilt": {
   "rsx": -0.35,
@@ -332,5 +332,69 @@
   "stance": 0.6,
   "crouch": 0.1,
   "weight": -0.8
+ },
+ "hasso-wind-up": {
+  "rsx": -2.45,
+  "rsz": 0.05,
+  "rex": -1.75,
+  "lsx": -2.1,
+  "lsz": -0.6,
+  "lex": -1.6,
+  "ty": -0.45,
+  "cy": -0.35,
+  "rcz": 0.12,
+  "tx": -0.06,
+  "rwx": -0.2,
+  "stance": 0.55,
+  "crouch": 0.12,
+  "weight": -0.45
+ },
+ "kesa-mid": {
+  "rsx": -1.1,
+  "rsz": 0.15,
+  "rex": -0.6,
+  "rwx": 0,
+  "rwz": -0.4,
+  "rfy": 0.4,
+  "lsx": -1.6,
+  "lsz": -0.2,
+  "lex": -0.4,
+  "tx": 0.18,
+  "ty": 0.2,
+  "cy": 0.2,
+  "rcy": 0.15,
+  "stance": 0.75,
+  "crouch": 0.14,
+  "weight": 0.55
+ },
+ "uke-left": {
+  "rsx": -1.4,
+  "rsz": 0,
+  "rex": -0.6,
+  "rwx": 0,
+  "rwz": 0.4,
+  "rfy": -0.4,
+  "lsx": -1.6,
+  "lsz": -0.3,
+  "lex": -0.9,
+  "ty": 0.2,
+  "cy": 0.1,
+  "tx": -0.05,
+  "stance": 0.55,
+  "crouch": 0.1,
+  "weight": -0.2
+ },
+ "low-ready": {
+  "rsx": -1.1,
+  "rsz": 0,
+  "rex": -0.1,
+  "rwx": 1.2,
+  "rwz": -0.4,
+  "rfy": -0.4,
+  "lsx": -0.2,
+  "lsz": -0.15,
+  "lex": -0.3,
+  "stance": 0.45,
+  "crouch": 0.05
  }
 }

@@ -130,7 +130,7 @@
   {
    "id": "SKELETON",
    "name": "Skeleton + balance",
-   "does": "Shared rig with legs: leg IK (planted feet, bending knees), stance/crouch/weight, two-hand grip, hand reach",
+   "does": "Shared rig: two-part spine, neck, clavicles, shoulder/forearm twist, 2-axis wrists, ankles, optional glowing eyes with lids; leg IK, stance/crouch/weight, analytic arm IK (`solveArm`)",
    "files": [
     "engine/figure.js"
    ],
@@ -144,7 +144,7 @@
   {
    "id": "MOTION",
    "name": "Motion system",
-   "does": "Keys of \"second + pose\", smooth monotone curves, breathing, cloth follow-through, walk cycle",
+   "does": "Keys of \"second + pose\", smooth monotone curves, breathing, cloth follow-through, walk cycle; anime layer: per-joint follow-through lag, `ease` snap curves, `settle` overshoot, `drag:0` contacts",
    "files": [
     "engine/figure.js",
     "library/poses.json"
@@ -275,6 +275,37 @@
    "status_note": "✅"
   },
   {
+   "id": "CLASH",
+   "name": "Blade contact + hit-stop",
+   "does": "Finds blade-to-blade contact (segment distance, 240 Hz), clash aim so blocks meet the cut, hit-stop body time, sparks, smear ribbon, ink impact frame, auto sound cues (whoosh/clash/scrape) → `output/<film>.events.json`",
+   "files": [
+    "engine/motion.js",
+    "engine/motion.html",
+    "film/motion-test.json"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": "node engine/render.mjs --film film/motion-test.json",
+   "status": "built",
+   "status_note": "✅ (motion-test page; port to main engine next)"
+  },
+  {
+   "id": "SYNTHSFX",
+   "name": "Synthesised sword sounds",
+   "does": "Our own layered clash (tink + ring + body + paper crinkle), light clash, scrape, 3 whooshes, draw shing; no licence needed",
+   "files": [
+    "tools/synth_sfx.sh",
+    "assets/sfx/"
+   ],
+   "guide": [
+    "docs/FIX-LIST.md"
+   ],
+   "command": "bash tools/synth_sfx.sh",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "THUMB",
    "name": "Thumbnails",
    "does": "16:9 + 9:16 from the decisive-blow frame, kanji title, brush swash",
@@ -359,6 +390,48 @@
    "command": "blender -b -P blender/demon_slash_test.py -- --state impact",
    "status": "test",
    "status_note": "🧪 test"
+  },
+  {
+   "id": "BWORLD",
+   "name": "Blender world set (Ganryūjima)",
+   "does": "Build-once 3D location: faceted paper island, pines, rocks, Ocean-modifier sea with foam, cut-paper mountain rings with sky haze, Nishita dawn + paper sun, paper clouds, optional fog; named collections, fighter marks (`MARK_*`) and camera anchors (`CAM_*`); seeded and deterministic",
+   "files": [
+    "blender/world/build_world.py"
+   ],
+   "guide": [
+    "docs/BLENDER-WORLD.md"
+   ],
+   "command": "blender -b -P blender/world/build_world.py -- --out output/world/ganryujima.blend --preview output/world/preview.png",
+   "status": "test",
+   "status_note": "🧪 v1"
+  },
+  {
+   "id": "PAPERMAT",
+   "name": "Paper materials (Blender)",
+   "does": "Reusable Lantern Origami shaders: faceted washi (true-normal facets, fibre bump, per-facet tone, translucency, inner glow, stripes, sky haze), paper sea, metal",
+   "files": [
+    "blender/world/paper_materials.py"
+   ],
+   "guide": [
+    "docs/BLENDER-WORLD.md"
+   ],
+   "command": null,
+   "status": "test",
+   "status_note": "🧪 v1"
+  },
+  {
+   "id": "SLASHFX",
+   "name": "Slash effects (Blender)",
+   "does": "Keyframed crescent slash: tapered folded arc, emissive core (amber human / crimson demonic), ink-brush edge, paper-shard spray, flare light; radius, sweep, thickness, colour, demonic flag",
+   "files": [
+    "blender/world/slash_fx.py"
+   ],
+   "guide": [
+    "docs/BLENDER-WORLD.md"
+   ],
+   "command": "blender -b -P blender/world/slash_fx.py -- --test output/world/slash-test.png",
+   "status": "test",
+   "status_note": "🧪 v1"
   },
   {
    "id": "GPU",
@@ -547,6 +620,22 @@
   [
    "MAKE",
    "PLAYBOOK"
+  ],
+  [
+   "PAPERMAT",
+   "BWORLD"
+  ],
+  [
+   "PAPERMAT",
+   "SLASHFX"
+  ],
+  [
+   "BWORLD",
+   "BLENDER"
+  ],
+  [
+   "SLASHFX",
+   "BLENDER"
   ]
  ]
 }

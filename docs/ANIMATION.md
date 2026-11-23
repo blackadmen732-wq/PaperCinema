@@ -144,3 +144,26 @@ Shows the chosen poses side-on with the two-hand grip, so knees, balance and bla
 The TRELLIS models in `assets/models/` are **static meshes: they have no skeleton yet.** Next step:
 rig them in Blender (auto-weights after a clean remesh) using the **same bone names and layout as above**,
 so every pose in `library/poses.json` drives them too. The full plan is in `docs/BLENDER-PLAN.md`.
+
+## 10. Anime motion layer and the new joints (motion test)
+**New joints** (all default 0, so old poses look the same): `cx/cy/cz` chest above the waist, `nx/ny` neck,
+`hz` head roll, `rcy/rcz` (`lcy/lcz`) clavicle forward/shrug, `rsy/lsy` shoulder twist, `rfy/lfy` forearm twist,
+`rwz/lwz` wrist side-bend (the cutting snap), `rax/lax` ankles, `lid` eyelids. `face: "eyes"` in a cast entry adds two
+amber-glowing eye slits with lids and a brow (default stays faceless, the owner's design).
+
+**Motion layer** (turn on with `"motion": { "overlap": true }` in the film):
+| Key field | Effect |
+|---|---|
+| (always) | Follow-through: head and feet lead 2 frames, hips 1, chest +1, shoulder +1.5, elbow +2, forearm +2.5, wrist and cloth +3 |
+| `"drag": 0` | Contact key: every joint arrives together on this frame (the far joints whip to catch up) |
+| `"ease": "snap"` / `"antic"` / `"out"` / `"in"` or `[x1,y1,x2,y2]` | Shape of the segment arriving at this key. End slopes are finite (no infinite speed) |
+| `"settle": true` (or a strength) | Each joint overshoots the pose a little and settles (closed-form damped spring) |
+
+**Clash** (`film.clashes`): `{ t, until, attacker, defender, s }` turns the defender's blade (up to `maxDeg`) so it lies
+across the attacker's blade at fraction `s`; the blades meet on frame `t` and stay crossed through a bind. Contact is then
+*detected* (not assumed) and drives hit-stop, sparks, the impact frame and the clash sound.
+
+**Camera beats** (`film.camera` on the motion page): `face` (eyes), `slide` (along `path` joints: elbow → wrist → tsuba),
+`frame` (both fighters, `angle` 0 = side-on), `orbit`. Each aims at real joints; a spring smooths the path at 240 Hz.
+
+Check: `node engine/render.mjs --film film/motion-test.json --still 0.7,2.2,3.16,3.7` then look at the stills.

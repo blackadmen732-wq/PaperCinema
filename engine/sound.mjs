@@ -67,9 +67,16 @@ async function find(cue) {
   return null;
 }
 
+// Automatic cues (whooshes, clashes, scrapes found from the motion) come from an events file
+// written by the renderer: --events output/<film>.events.json (default: used when it exists).
+const evPath = opt('events', `output/${base}.events.json`);
+const autoCues = fs.existsSync(evPath) ? (JSON.parse(fs.readFileSync(evPath, 'utf8')).cues ?? []) : [];
+if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
 const placed = [];
-for (const cue of film.sounds ?? []) {
-  const f = await find(cue);
+for (const cue of [...(film.sounds ?? []), ...autoCues]) {
+  // "sfx" reuses another sound by its id (one file, many cues); defaults for length checks
+  const lib = cue.sfx ? { min: 0.2, max: 8, len: cue.len, query: cue.query ?? cue.sfx, ...cue, id: cue.sfx } : cue;
+  const f = await find(lib);
   if (f) placed.push({ cue, f });
 }
 fs.writeFileSync(creditsPath, JSON.stringify(credits, null, 2));
@@ -81,7 +88,9 @@ placed.forEach(({ cue, f }, i) => {
   if (cue.bed) inputs.push('-stream_loop', '-1');
   inputs.push('-i', f);
   const fadeOut = Math.min(0.6, cue.len / 3);
-  filters.push(`[${i + 1}:a]atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${cue.bed ? 1.5 : 0.01},` +
+  // rate: play faster/higher (>1) or slower/lower (<1), like a tape speed change
+  const rate = cue.rate && cue.rate !== 1 ? `asetrate=44100*${cue.rate},aresample=44100,` : '';
+  filters.push(`[${i + 1}:a]${rate}atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${cue.bed ? 1.5 : 0.01},` +
     `afade=t=out:st=${(cue.len - fadeOut).toFixed(2)}:d=${fadeOut.toFixed(2)},volume=${cue.gain},` +
     `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}[a${i}]`);
 });

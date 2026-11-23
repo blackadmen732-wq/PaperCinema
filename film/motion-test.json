@@ -1,0 +1,426 @@
+{
+  "title": "Motion test: face → arm → blade → anime slash",
+  "page": "engine/motion.html",
+  "fps": 24,
+  "width": 1280,
+  "height": 720,
+  "format": "vertical",
+  "duration": 8,
+  "mode": "dawn",
+  "motion": {
+    "overlap": true,
+    "note": "follow-through lag, snap easing and overshoot (docs/ANIMATION.md §8)"
+  },
+  "cast": {
+    "hero": {
+      "character": "kojiro",
+      "face": "eyes"
+    },
+    "foe": {
+      "character": "musashi",
+      "face": "eyes"
+    }
+  },
+  "performances": {
+    "hero": {
+      "twoHand": [
+        [
+          2.1,
+          8
+        ]
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "low-ready",
+          "x": 0,
+          "z": -1.3,
+          "ry": 0,
+          "lid": 1,
+          "hx": 0.16,
+          "nx": 0.08
+        },
+        {
+          "t": 0.85,
+          "pose": "low-ready",
+          "lid": 1,
+          "hx": 0.16,
+          "nx": 0.08
+        },
+        {
+          "t": 0.95,
+          "pose": "low-ready",
+          "lid": 0,
+          "hx": 0,
+          "ease": "out",
+          "settle": true,
+          "note": "eyes open, head lifts"
+        },
+        {
+          "t": 1.75,
+          "pose": "low-ready"
+        },
+        {
+          "t": 2.5,
+          "pose": "hasso",
+          "ease": "out",
+          "settle": true,
+          "note": "raises the sword into hasso while the camera slides up the arm"
+        },
+        {
+          "t": 2.62,
+          "pose": "hasso"
+        },
+        {
+          "t": 2.96,
+          "pose": "hasso-wind-up",
+          "ease": "antic",
+          "note": "anticipation: 8 frames"
+        },
+        {
+          "t": 3.17,
+          "pose": "kesa-mid",
+          "z": -1.05,
+          "ease": "snap",
+          "drag": 0,
+          "note": "contact: every joint in sync"
+        },
+        {
+          "t": 3.34,
+          "pose": "kesa-mid",
+          "z": -1.1,
+          "rsx": -1.25,
+          "settle": true,
+          "note": "recoil off the block"
+        },
+        {
+          "t": 3.55,
+          "pose": "bind",
+          "z": -0.92
+        },
+        {
+          "t": 4.45,
+          "pose": "bind",
+          "z": -0.9
+        },
+        {
+          "t": 4.72,
+          "pose": "jodan-wind-up",
+          "z": -0.9,
+          "ease": "antic"
+        },
+        {
+          "t": 4.92,
+          "pose": "shomen-cut-finish",
+          "z": -0.5,
+          "ease": "snap",
+          "drag": 0,
+          "settle": true,
+          "note": "second cut through the air"
+        },
+        {
+          "t": 5.45,
+          "pose": "shomen-cut-finish",
+          "z": -0.5
+        },
+        {
+          "t": 6.3,
+          "pose": "zanshin",
+          "z": -0.5,
+          "settle": true
+        },
+        {
+          "t": 8.3,
+          "pose": "zanshin",
+          "z": -0.5
+        }
+      ],
+      "eyes": [
+        [
+          0,
+          0.4
+        ],
+        [
+          0.95,
+          0.9
+        ],
+        [
+          1.1,
+          1.4
+        ],
+        [
+          2.62,
+          1.4
+        ],
+        [
+          2.75,
+          2.2
+        ],
+        [
+          3.12,
+          2.2
+        ],
+        [
+          3.16,
+          3.5
+        ],
+        [
+          3.25,
+          1.6
+        ],
+        [
+          4.6,
+          2.2
+        ],
+        [
+          4.92,
+          3.5
+        ],
+        [
+          5.1,
+          1.4
+        ],
+        [
+          8,
+          1.2
+        ]
+      ],
+      "blinks": [
+        1.9,
+        6.6
+      ]
+    },
+    "foe": {
+      "twoHand": [
+        [
+          0,
+          8
+        ]
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "chudan",
+          "x": 0,
+          "z": 1.25,
+          "ry": 3.14159
+        },
+        {
+          "t": 2.86,
+          "pose": "chudan"
+        },
+        {
+          "t": 3.12,
+          "pose": "uke-left",
+          "z": 1.15,
+          "ease": "out",
+          "note": "raises the block"
+        },
+        {
+          "t": 3.17,
+          "pose": "uke-left",
+          "z": 1.15,
+          "drag": 0
+        },
+        {
+          "t": 3.34,
+          "pose": "uke-left",
+          "z": 1.15,
+          "settle": true
+        },
+        {
+          "t": 3.55,
+          "pose": "bind",
+          "z": 0.95
+        },
+        {
+          "t": 4.45,
+          "pose": "bind",
+          "z": 0.93
+        },
+        {
+          "t": 4.6,
+          "move": "jump-back",
+          "speed": 1.2
+        },
+        {
+          "t": 6.6,
+          "pose": "chudan"
+        },
+        {
+          "t": 8.3,
+          "pose": "chudan"
+        }
+      ],
+      "eyes": [
+        [
+          0,
+          1.2
+        ],
+        [
+          3.1,
+          1.4
+        ],
+        [
+          3.16,
+          0.4
+        ],
+        [
+          3.3,
+          1.4
+        ],
+        [
+          8,
+          1.2
+        ]
+      ],
+      "blinks": [
+        0.6,
+        4.1,
+        6.9
+      ]
+    }
+  },
+  "camera": [
+    {
+      "t": 0,
+      "rig": "face",
+      "who": "hero",
+      "dist": 0.62,
+      "fov": 26,
+      "angle": 18,
+      "lift": 0.03,
+      "feel": "crane",
+      "note": "his eyes"
+    },
+    {
+      "t": 1.55,
+      "rig": "slide",
+      "who": "hero",
+      "path": [
+        "elbow",
+        "wrist",
+        "tsuba"
+      ],
+      "until": 2.5,
+      "offset": 0.7,
+      "fov": 32,
+      "feel": "dolly",
+      "note": "along the arm to the sword guard, then hold",
+      "from": [
+        0.35,
+        0.3,
+        0.9
+      ]
+    },
+    {
+      "t": 2.84,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "foe"
+      ],
+      "size": "full",
+      "angle": 62,
+      "elev": 4,
+      "fov": 36,
+      "feel": "torpedo",
+      "note": "whip out as the slash fires"
+    },
+    {
+      "t": 3.5,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "foe"
+      ],
+      "size": "medium",
+      "angle": 40,
+      "elev": 2,
+      "fov": 32,
+      "feel": "handheld",
+      "note": "the bind"
+    },
+    {
+      "t": 4.6,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "foe"
+      ],
+      "size": "full",
+      "angle": 75,
+      "elev": -4,
+      "fov": 36,
+      "feel": "torpedo",
+      "note": "second cut"
+    },
+    {
+      "t": 5.5,
+      "rig": "orbit",
+      "subjects": [
+        "hero"
+      ],
+      "radius": 3.0,
+      "deg0": -60,
+      "deg1": -115,
+      "height": 1.15,
+      "fov": 34,
+      "feel": "crane",
+      "note": "zanshin orbit"
+    }
+  ],
+  "effects": {
+    "ribbon": {
+      "minSpeed": 5,
+      "frames": 3
+    },
+    "impactFrame": true,
+    "hitStop": {
+      "min": 3,
+      "max": 4
+    }
+  },
+  "sounds": [
+    {
+      "id": "wind-bed",
+      "query": "wind ambience",
+      "t": 0,
+      "len": 8,
+      "gain": 0.35,
+      "min": 8,
+      "max": 300,
+      "bed": true
+    }
+  ],
+  "autoSounds": {
+    "whoosh": {
+      "sfx": [
+        "whoosh-a",
+        "whoosh-b",
+        "whoosh-c"
+      ],
+      "on": 9,
+      "rearm": 6
+    },
+    "clash": {
+      "sfx": "clash-steel",
+      "light": "clash-light"
+    },
+    "scrape": {
+      "sfx": "steel-scrape"
+    }
+  },
+  "clashes": [
+    {
+      "t": 3.17,
+      "until": 4.45,
+      "attacker": "hero",
+      "defender": "foe",
+      "s": 0.55,
+      "ramp": 0.1,
+      "maxDeg": 50,
+      "note": "the block meets the kesa cut, then the blades stay crossed through the bind"
+    }
+  ]
+}

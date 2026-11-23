@@ -1,0 +1,37 @@
+{
+  "name": "Hana",
+  "colors": {
+    "robe": "#ece6da",
+    "sleeve": "#ece6da",
+    "sleeveHem": "#8e2420",
+    "hakama": {
+      "color": "#7a1f22",
+      "pattern": "sakura",
+      "fg": "#efe3d6",
+      "scale": 1.4
+    },
+    "hakamaFold": {
+      "color": "#6e1b1e",
+      "pattern": "sakura",
+      "fg": "#efe3d6",
+      "scale": 1.4
+    },
+    "skin": "#efe3cc",
+    "collar": "#8e2420",
+    "obi": "#2a2422",
+    "cord": "#9a2522",
+    "hair": "#2a2220",
+    "sandal": "#2a2320",
+    "strap": "#8e2420"
+  },
+  "accessories": {
+    "band": null,
+    "kasa": true,
+    "haori": null,
+    "hairLong": true,
+    "face": "eyes",
+    "kasaColor": "#2e2622"
+  },
+  "weapon": "shiokaze",
+  "_note": "Original character modelled on the owner's carved-paper reference figure (white kimono, crimson sakura hakama, dark kasa, long hair, red cord)."
+}

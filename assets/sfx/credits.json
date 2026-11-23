@@ -278,5 +278,47 @@
       "mean": -21.2,
       "max": -0.6
     }
+  },
+  "clash-steel": {
+    "title": "clash-steel",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "clash-light": {
+    "title": "clash-light",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "steel-scrape": {
+    "title": "steel-scrape",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "whoosh-a": {
+    "title": "whoosh-a",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "whoosh-b": {
+    "title": "whoosh-b",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "whoosh-c": {
+    "title": "whoosh-c",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "draw-shing": {
+    "title": "draw-shing",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
   }
 }

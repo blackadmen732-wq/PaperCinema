@@ -11,8 +11,10 @@
 | `STYLE-AND-FIGHT-SYSTEM.md` | deciding how it should look and feel | The Lantern Origami style, the Strike Grammar, lighting, story structure |
 | `SHIMI.md` | working on cuts, paint and stains | The slash sequence, SHIMI v2, the **KIZU** wound layer, presets, review, upgrade path |
 | `SHIMI-3D.md` | putting stains on 3D characters | UV-space simulation, cut mapping, gravity maps, Blender/three.js shading, milestones |
+| `FIX-LIST.md` | fixing stiff motion, silent clashes, framing | The review of what was wrong and the fixes, with status |
 | `EFFECTS-PLAN.md` | adding effects | The face-touch scene, slash v2, anime effects (flash-step, shadow-vanish…) |
 | `BLENDER-PLAN.md` | doing realistic renders | Blender pipeline, shaders, render costs, milestones M1–M8 |
+| `BLENDER-WORLD.md` | filming in the Blender world set, adding slash effects | The Ganryūjima set (run, contents, marks, camera anchors), paper materials, slash library, measured render times |
 | `STORY-BIBLE.md` | writing a story | World rules, characters, cursed swords (fiction), episode ideas |
 | `../research/` | making historical claims | Facts marked documented / tradition / our choice |
 

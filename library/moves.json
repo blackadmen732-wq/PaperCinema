@@ -25,23 +25,86 @@
  "jump-back": [
   {
    "dt": 0,
-   "pose": "crouch-load"
+   "pose": "chudan"
   },
   {
-   "dt": 0.2,
-   "pose": "airborne-guard",
-   "fwd": -0.55,
-   "y": 0.34
-  },
-  {
-   "dt": 0.42,
-   "pose": "land-guard",
-   "fwd": -1.1
-  },
-  {
-   "dt": 0.85,
+   "dt": 0.125,
    "pose": "chudan",
-   "fwd": -1.1
+   "fwd": 0.05,
+   "crouch": 0.3,
+   "weight": 0.55,
+   "stance": 0.42,
+   "tx": 0.22,
+   "cx": 0.18,
+   "nx": -0.15,
+   "rsx": -0.85,
+   "lsx": -0.85,
+   "rex": -0.75,
+   "lex": -0.75,
+   "rcz": 0.08,
+   "lcz": 0.08,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.208,
+   "pose": "chudan",
+   "fwd": -0.12,
+   "crouch": -0.02,
+   "weight": -0.6,
+   "stance": 0.7,
+   "rax": 0.5,
+   "tx": -0.05,
+   "cx": -0.12,
+   "ease": "in",
+   "drag": 0,
+   "arc": 0.22
+  },
+  {
+   "dt": 0.625,
+   "pose": "chudan",
+   "fwd": -1.27,
+   "crouch": 0.16,
+   "stance": 0.75,
+   "weight": -0.7,
+   "rsx": -1.35,
+   "lsx": -1.35,
+   "rex": -0.95,
+   "lex": -0.95,
+   "swayx": 0.25,
+   "drag": 0
+  },
+  {
+   "dt": 0.75,
+   "pose": "chudan",
+   "fwd": -1.42,
+   "crouch": 0.36,
+   "stance": 0.8,
+   "weight": -0.45,
+   "tx": 0.3,
+   "cx": 0.22,
+   "nx": -0.25,
+   "rsx": -0.95,
+   "lsx": -0.95,
+   "rex": -0.7,
+   "lex": -0.7,
+   "rwx": 0.25,
+   "ease": "out"
+  },
+  {
+   "dt": 0.958,
+   "pose": "chudan",
+   "fwd": -1.5,
+   "crouch": 0.18,
+   "weight": -0.2,
+   "tx": 0.12,
+   "cx": 0.05,
+   "settle": 1
+  },
+  {
+   "dt": 1.208,
+   "pose": "chudan",
+   "fwd": -1.5,
+   "settle": 0.6
   }
  ],
  "dodge-left": [

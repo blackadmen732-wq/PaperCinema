@@ -17,7 +17,9 @@ try { film = JSON.parse(fs.readFileSync(filmPath, 'utf8')); }
 catch (e) { console.log(`✗ ${filmPath}: cannot read or parse JSON (${e.message})`); process.exit(1); }
 const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
-const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight'];
+const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
+  'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid'];
+const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc'];   // anime motion layer (docs/ANIMATION.md §10)
 const D = film.duration;
 
 // --- basics
@@ -27,7 +29,7 @@ if (film.fps && (film.fps < 12 || film.fps > 60)) warn('fps', `${film.fps} is un
 
 // --- shots + camera
 const shots = film.shots ?? [];
-if (!shots.length) err('shots', 'a film needs at least one shot');
+if (!shots.length && !Array.isArray(film.camera)) err('shots', 'a film needs at least one shot (or a "camera" beat list on the motion page)');
 let prevEnd = 0;
 shots.forEach((s, i) => {
   const w = `shots[${i}] (${s.id ?? 'no id'})`;
@@ -107,7 +109,7 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (k.move && !moves[k.move]) err(kw, `unknown move "${k.move}". Known moves: ${Object.keys(moves).filter((n) => !n.startsWith('_')).join(', ')}`);
     if (k.move && k.pose) err(kw, 'use either "move" or "pose" on a key, not both');
     if (k.pose && !poses[k.pose]) err(kw, `unknown pose "${k.pose}". Known poses: ${Object.keys(poses).filter((n) => !n.startsWith('_')).join(', ')}`);
-    for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist'].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, note, ${JOINTS.join(', ')}`);
+    for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist', ...MOTION_FIELDS].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, note, ${MOTION_FIELDS.join(', ')}, ${JOINTS.join(', ')}`);
     if (j > 0 && isNum(k.t)) {
       const dt = k.t - keys[j - 1].t;
       const moved = ['x', 'z'].map((a) => (k[a] ?? null)).some((v) => v !== null);

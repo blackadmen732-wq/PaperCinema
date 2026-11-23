@@ -26,10 +26,18 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 const page = await browser.newPage({ viewport: VERT ? { width: 720, height: 1280 } : { width: film.width, height: film.height } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 page.on('console', (m) => { if (m.type() === 'error') console.error('console:', m.text()); });
-const pagePath = opt('page', 'engine/index.html');
+const pagePath = opt('page', film.page ?? 'engine/index.html');
 const extra = [opt('query', ''), VERT ? 'aspect=vertical' : (args.includes('--horizontal') ? 'aspect=horizontal' : '')].filter(Boolean).join('&');
 await page.goto(`http://localhost:${port}/${pagePath}?render=1&film=/${filmPath}${extra ? '&' + extra : ''}`);
-await page.waitForFunction('window.READY === true', null, { timeout: 120000 });
+await page.waitForFunction('window.READY === true', null, { timeout: 600000 });
+// pages that detect their own events (blade contacts, whooshes) publish them as window.EVENTS
+const events = await page.evaluate(() => window.EVENTS ?? null);
+if (events) {
+  fs.mkdirSync('output', { recursive: true });
+  const evOut = `output/${path.basename(filmPath, '.json')}.events.json`;
+  fs.writeFileSync(evOut, JSON.stringify(events, null, 2));
+  console.log(`events: ${events.contacts?.length ?? 0} contacts, ${events.cues?.length ?? 0} sound cues → ${evOut}`);
+}
 
 if (stills) {
   fs.mkdirSync('output/stills', { recursive: true });

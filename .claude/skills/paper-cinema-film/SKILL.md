@@ -58,3 +58,8 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
 - **A new pose:** add it to `library/poses.json`, then check it in the pose gallery.
 - **A new location:** sets are still code in `engine/world.js`. Build one there, or ask the owner.
 - **Realistic (Blender) renders:** follow `docs/BLENDER-PLAN.md`. Its scripts are not built yet (milestone M1 onward).
+
+## Anime motion and clashes (new)
+- Put `"motion": { "overlap": true }` in the film, and on strikes use `"ease": "snap"`, `"drag": 0` on the contact key, `"settle": true` after it, `"ease": "antic"` on the wind-up. Jumps: `"arc": <height m>` on the take-off key. See `docs/ANIMATION.md` §10.
+- For a clash, add `"clashes": [{ "t", "until", "attacker", "defender", "s" }]`. Contacts are detected, then they drive hit-stop, sparks, the impact frame and the clash sound (`output/<film>.events.json`, read by `sound.mjs`). Today this runs on the motion page (`"page": "engine/motion.html"`, example `film/motion-test.json`).
+- Sounds: use our synthesised `clash-steel`, `clash-light`, `steel-scrape`, `whoosh-a/b/c`, `draw-shing` via `"sfx"`; never the old `blade-clash` (it is a slice). Known problems and fixes: `docs/FIX-LIST.md`.

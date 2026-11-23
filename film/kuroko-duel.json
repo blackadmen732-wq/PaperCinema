@@ -323,8 +323,9 @@
           "move": "jump-back"
         },
         {
-          "t": 4.3,
-          "move": "step-in"
+          "t": 4.33,
+          "move": "step-in",
+          "dist": 2
         },
         {
           "t": 4.65,

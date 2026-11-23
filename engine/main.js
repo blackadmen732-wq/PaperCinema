@@ -134,7 +134,7 @@ const EV = film.events ?? {};
 const ev = (name, fallback) => EV[name] ?? fallback;
 const PERF = film.performances ?? {};
 const MOVES = await (await fetch('/library/moves.json')).json();
-const motionOf = (id) => makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES), POSES));
+const motionOf = (id) => makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES), POSES), film.motion ?? {});   // film.motion.overlap = anime layer
 const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');
 const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };
