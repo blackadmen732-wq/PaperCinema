@@ -65,14 +65,21 @@ def rng(section):
 
 
 # =========================================================================== scene + collections
-bpy.ops.wm.read_factory_settings(use_empty=True)
-scene = bpy.context.scene
-scene.name = 'Ganryujima'
+scene = None
 COLL = {}
-for name in ('SKY', 'SEA', 'ISLAND', 'ROCKS', 'PINES', 'MOUNTAINS', 'CLOUDS', 'FOG', 'MARKS', 'CAMERAS', 'STANDINS'):
-    c = bpy.data.collections.new(name)
-    scene.collection.children.link(c)
-    COLL[name] = c
+
+
+def init_scene():
+    """Fresh scene with the named collections (the CLI). blender/sets/kit.py imports this module instead and
+    points `scene` / `COLL` at its own set (kit piece `ganryujima`)."""
+    global scene
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    scene = bpy.context.scene
+    scene.name = 'Ganryujima'
+    for name in ('SKY', 'SEA', 'ISLAND', 'ROCKS', 'PINES', 'MOUNTAINS', 'CLOUDS', 'FOG', 'MARKS', 'CAMERAS', 'STANDINS'):
+        c = bpy.data.collections.new(name)
+        scene.collection.children.link(c)
+        COLL[name] = c
 
 
 def link(ob, coll):
@@ -625,40 +632,47 @@ def setup_render():
 
 
 # =========================================================================== build
-t0 = time.time()
-setup_render()
-build_sky()
-build_sea()
-build_island()
-build_rocks()
-build_pines()
-build_mountains()
-build_clouds()
-build_fog()
-build_marks()
-cam = build_cameras()
-if STANDINS:
-    build_standins()
-put_camera(cam, CAMS[0])
-scene.frame_set(FRAME)
-scene['lantern_origami_world'] = 'ganryujima'
-scene['seed'] = SEED
-build_s = time.time() - t0
-print(f'BUILT in {build_s:.1f}s  objects={len(bpy.data.objects)}')
+def main():
+    init_scene()
+    t0 = time.time()
+    setup_render()
+    build_sky()
+    build_sea()
+    build_island()
+    build_rocks()
+    build_pines()
+    build_mountains()
+    build_clouds()
+    build_fog()
+    build_marks()
+    cam = build_cameras()
+    if STANDINS:
+        build_standins()
+    put_camera(cam, CAMS[0])
+    scene.frame_set(FRAME)
+    scene['lantern_origami_world'] = 'ganryujima'
+    scene['seed'] = SEED
+    build_s = time.time() - t0
+    print(f'BUILT in {build_s:.1f}s  objects={len(bpy.data.objects)}')
 
-out = os.path.abspath(OUT)
-os.makedirs(os.path.dirname(out), exist_ok=True)
-bpy.context.preferences.filepaths.save_version = 0      # no .blend1 backups
-bpy.ops.wm.save_as_mainfile(filepath=out, compress=True)
-print('SAVED', out)
+    out = os.path.abspath(OUT)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    bpy.context.preferences.filepaths.save_version = 0      # no .blend1 backups
+    bpy.ops.wm.save_as_mainfile(filepath=out, compress=True)
+    print('SAVED', out)
 
-if PREVIEW:
-    for i, name in enumerate(CAMS):
-        put_camera(cam, name)
-        base, ext = os.path.splitext(os.path.abspath(PREVIEW))
-        scene.render.filepath = base + ('' if i == 0 else f'-{name}') + (ext or '.png')
-        os.makedirs(os.path.dirname(scene.render.filepath), exist_ok=True)
-        t = time.time()
-        bpy.ops.render.render(write_still=True)
-        print(f'RENDERED {name} -> {scene.render.filepath} in {time.time() - t:.1f}s '
-              f'({RES[0]}x{RES[1]}, {SAMPLES} spp, fog={FOG})')
+    if PREVIEW:
+        for i, name in enumerate(CAMS):
+            put_camera(cam, name)
+            base, ext = os.path.splitext(os.path.abspath(PREVIEW))
+            scene.render.filepath = base + ('' if i == 0 else f'-{name}') + (ext or '.png')
+            os.makedirs(os.path.dirname(scene.render.filepath), exist_ok=True)
+            t = time.time()
+            bpy.ops.render.render(write_still=True)
+            print(f'RENDERED {name} -> {scene.render.filepath} in {time.time() - t:.1f}s '
+                  f'({RES[0]}x{RES[1]}, {SAMPLES} spp, fog={FOG})')
+
+
+
+if __name__ == '__main__':
+    main()

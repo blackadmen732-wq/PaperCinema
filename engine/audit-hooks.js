@@ -65,7 +65,7 @@ export function installAudit(o) {
     if (!solids) solids = collect(roots);
     const camPos = camera.position.clone(), fwd = camera.getWorldDirection(new THREE.Vector3());
     const out = { t: +t.toFixed(4), tb: +(st.tb ?? t).toFixed(4), shot: st.shot ?? null, cut: !!st.cut, rate: st.rate ?? 1,
-      impactFrame: !!st.impactFrame, subjects: st.subjects ?? null,
+      impactFrame: !!st.impactFrame, free: !!st.free, subjects: st.subjects ?? null,
       cam: { pos: r3(camPos), dir: r3(fwd), fov: +camera.fov.toFixed(2), aspect: +(W / H).toFixed(4) }, fighters: {} };
     let nearestSubject = Infinity;
     for (const f of fighters) {
