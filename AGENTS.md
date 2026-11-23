@@ -27,7 +27,7 @@ folded/cut paper characters lit from inside, real-metal or demonic swords, data-
 | `engine/resolve-camera.mjs` | Resolves KUROKO cameras per frame (used by the playbook) |
 | `engine/thumbnail.py` | 16:9 and 9:16 thumbnails from the decisive-blow frame |
 | `blender/` | Blender scripts (headless). `demon_slash_test.py` = paint-not-blood slash lookdev |
-| `engine/shimi.py` | **SHIMI** stain simulator: paint bleeding into paper fibres (wicking, gravity rivulets, dark drying rims) |
+| `engine/shimi.py` | **SHIMI** stain simulator: paint bleeding into paper fibres (wicking, gravity rivulets, dark drying rims). Design + slash sequence: `docs/SHIMI.md` |
 | `docs/EFFECTS-PLAN.md` | SHIMI integration, the face-touch scene design, Blender slash v2, anime effects pack |
 | `docs/STORY-BIBLE.md` | Series world rules, characters, cursed swords (fiction), episode ideas |
 | `engine/validate.mjs` | Checks a film file and explains every mistake (run before rendering) |

@@ -13,7 +13,7 @@ Model (a simplified wet-paper simulation in the spirit of watercolour/ink resear
             faster where the water is thin → pigment collects at the edges (dark rims)
   colour  : paper colour × exp(−absorption × pigment) per channel (subtractive, like real paint), plus a wet sheen
 
-Deterministic (seeded). Output: an RGBA frame sequence, usable as a texture in three.js and Blender.
+Deterministic (seeded). Output: an RGBA frame sequence (shimi_*.png) plus 16-bit data maps (wet_*, pigment_*, everwet_*) for 3D shaders.
     python3 engine/shimi.py --out output/shimi/demo --frames 72 --size 512 --cut "0.15,0.25,0.85,0.7"
 """
 import argparse, json, math, os
@@ -72,7 +72,7 @@ Lc = math.hypot(dx, dy)
 u = ((xx - x0) * dx + (yy - y0) * dy) / (Lc * Lc)
 dist = np.abs((xx - x0) * dy - (yy - y0) * dx) / Lc
 on_cut = (u > 0) & (u < 1)
-# the wound opens unevenly: more paint where the cut is deepest (middle), with random pulses
+# the wound opens unevenly: more paint where the cut is deepest (middle)
 depth = np.maximum(np.sin(np.clip(u, 0, 1) * math.pi), 0) ** 0.7 * (0.6 + 0.8 * blur(rng.random((N, N)), 10))
 source = np.where(on_cut, np.exp(-(dist / 2.2) ** 2) * depth, 0.0).astype(np.float32)
 
@@ -102,7 +102,23 @@ for (ddy, ddx) in DIRS:
     cond.append(c.astype(np.float32))
 
 def shift(x, ddy, ddx):
-    return np.roll(np.roll(x, ddy, 0), ddx, 1)
+    """Move a field by (ddy, ddx) WITHOUT wrapping: what leaves the sheet is gone, nothing re-enters."""
+    y = np.roll(np.roll(x, ddy, 0), ddx, 1)
+    if ddy > 0: y[:ddy, :] = 0
+    if ddy < 0: y[ddy:, :] = 0
+    if ddx > 0: y[:, :ddx] = 0
+    if ddx < 0: y[:, ddx:] = 0
+    return y
+
+# flow is only allowed toward neighbours that are on the sheet
+inside = {}
+for (ddy, ddx) in [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]:
+    m = np.ones((N, N), np.float32)
+    if ddy > 0: m[-ddy:, :] = 0
+    if ddy < 0: m[:-ddy, :] = 0
+    if ddx > 0: m[:, -ddx:] = 0
+    if ddx < 0: m[:, :-ddx] = 0
+    inside[(ddy, ddx)] = m
 
 total_steps = a.frames * a.steps
 frames_meta = []
@@ -110,7 +126,7 @@ for frame in range(a.frames):
     for s in range(a.steps):
         k = frame * a.steps + s
         # 1. the cut wells paint for the first ~40% of the shot, in fading pulses
-        well = a.bleed * max(0.0, 1 - k / (0.4 * total_steps)) * (0.7 + 0.3 * math.sin(k * 0.37))
+        well = a.bleed * max(0.0, 1 - k / (0.4 * total_steps)) ** 1.5   # smooth decay (no pulsing: pulses read as a heartbeat)
         W += source * 0.22 * well
         P += source * 0.09 * well
         # 2. water flows to neighbours (only where there is more water than the neighbour; wet fronts pin)
@@ -119,13 +135,13 @@ for frame in range(a.frames):
         for (ddy, ddx), c in zip(DIRS, cond):
             Wn = shift(W, -ddy, -ddx)                            # neighbour in direction (ddy, ddx)
             flow = c * np.maximum(W - Wn - pin, 0) * 0.2         # flow out of this cell toward that neighbour
-            flow = np.minimum(flow, W * 0.11)
+            flow = np.minimum(flow, W * 0.11) * inside[(ddy, ddx)]
             dW -= flow; dW += shift(flow, ddy, ddx)
             pflow = flow * conc                                  # pigment rides with the water (upwind)
             dP -= pflow; dP += shift(pflow, ddy, ddx)
         # rivulets: where paint pools thicker than the paper can hold, gravity pulls it straight down
         if a.gravity > 0:
-            run = np.maximum(W - 0.035, 0) * a.gravity * 0.35 * perm
+            run = np.maximum(W - 0.035, 0) * a.gravity * 0.35 * perm * inside[(1, 0)]
             prun = run * conc
             dW -= run; dW += shift(run, 1, 0)
             dP -= prun; dP += shift(prun, 1, 0)
@@ -147,6 +163,9 @@ for frame in range(a.frames):
     alpha = np.clip(pig * 3 + wet[..., 0] * 0.6, 0, 1)
     img = np.dstack([np.clip(col, 0, 1), alpha])
     Image.fromarray((img * 255).astype(np.uint8), 'RGBA').save(f'{a.out}/shimi_{frame:04d}.png')
+    # data maps (16-bit) for the 3D paper shader: wetness → translucency/gloss, pigment → colour, everwet → tide line
+    for nm, field, scale in (('wet', W, 6.0), ('pigment', pig, 3.0), ('everwet', EVERWET.astype(np.float32), 1.0)):
+        Image.fromarray((np.clip(field * scale, 0, 1) * 65535).astype(np.uint16)).save(f'{a.out}/{nm}_{frame:04d}.png')
     frames_meta.append({'frame': frame, 'wet_area': float((W > 0.004).mean()), 'stain_area': float((pig > 0.05).mean())})
 
 json.dump({'args': vars(a), 'frames': frames_meta}, open(f'{a.out}/shimi.json', 'w'), indent=1)
