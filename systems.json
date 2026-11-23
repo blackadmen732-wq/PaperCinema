@@ -288,7 +288,7 @@
    ],
    "command": "node engine/render.mjs --film film/motion-test.json",
    "status": "built",
-   "status_note": "✅ (motion-test page; port to main engine next)"
+   "status_note": "✅ (motion page and main engine, via `engine/combat.js`)"
   },
   {
    "id": "COMBAT",
@@ -338,7 +338,7 @@
    ],
    "command": "nice -n 10 python3 tools/voice.py film/x.json",
    "status": "built",
-   "status_note": "✅ (eye pulse not wired into the renderers yet)"
+   "status_note": "✅ (wired into main.js and motion.js via fxBase / fx)"
   },
   {
    "id": "THUMB",
@@ -592,7 +592,7 @@
    ],
    "command": "node engine/render.mjs --page engine/fx-demo.html --film film/fx-demo.json --still 3.7,13.7 --prefix fx-",
    "status": "test",
-   "status_note": "🧪 demo page (wire into main.js / motion.js next)"
+   "status_note": "🧪 demo page (wired into main.js and motion.js)"
   }
  ],
  "connections": [
