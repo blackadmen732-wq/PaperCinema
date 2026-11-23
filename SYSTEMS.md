@@ -59,6 +59,7 @@ One command runs the solid path: `node engine/make.mjs film/<name>.json` (check 
 | `BLENDER` | **Blender (realistic)** | Headless Cycles renders; demon-slash test (cut paper, ink slash, paint) | `blender/*.py` | `docs/BLENDER-PLAN.md` | `blender -b -P blender/demon_slash_test.py -- --state impact` | 🧪 test |
 | `GPU` | **GPU jobs** | Rent/run/stop RunPod pods (self-destruct timer); TRELLIS image → 3D | `gpu/*.py` | `AGENTS.md` rules | `python3 gpu/pod.py status` | ✅ (paid: ask first) |
 | `MODELS` | **3D models** | 5 models from reference images (TRELLIS, MIT) | `assets/models/` | `assets/README.md` | | ✅ static (no rig yet) |
+| `ANATOMY` | **Anatomy (third-party skill)** | Interactive isometric explainer figures (SVG/WebGL), for example "anatomy of a katana" Shorts; MIT, by wheresryan22 | `.claude/skills/anatomy/SKILL.md` | `.claude/skills/anatomy/SKILL.md` | `/anatomy explain how a katana is built` | ✅ installed |
 | `STORY` | **Story bible** | World rules, characters, cursed swords (fiction), episode ideas | `docs/STORY-BIBLE.md` | | | ✅ |
 | `RESEARCH` | **Research** | History with confidence marks | `research/` | | | ✅ |
 | `EFFECTS` | **Effects plan** | Face-touch scene, slash v2, anime effects (flash-step, shadow-vanish, speed lines, impact frame) | `docs/EFFECTS-PLAN.md` | | | 📋 planned |

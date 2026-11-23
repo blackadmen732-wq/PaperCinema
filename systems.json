@@ -389,6 +389,20 @@
    "status_note": "✅ static (no rig yet)"
   },
   {
+   "id": "ANATOMY",
+   "name": "Anatomy (third-party skill)",
+   "does": "Interactive isometric explainer figures (SVG/WebGL), for example \"anatomy of a katana\" Shorts; MIT, by wheresryan22",
+   "files": [
+    ".claude/skills/anatomy/SKILL.md"
+   ],
+   "guide": [
+    ".claude/skills/anatomy/SKILL.md"
+   ],
+   "command": "/anatomy explain how a katana is built",
+   "status": "built",
+   "status_note": "✅ installed"
+  },
+  {
    "id": "STORY",
    "name": "Story bible",
    "does": "World rules, characters, cursed swords (fiction), episode ideas",
