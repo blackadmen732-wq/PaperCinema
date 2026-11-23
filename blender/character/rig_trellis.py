@@ -163,7 +163,7 @@ def import_trellis(model, spec):
     return mesh
 
 
-def paper_material(mesh, glow=1.6, translucency=0.07, demonic=False):
+def paper_material(mesh, glow=1.6, translucency=0.07, demonic=False, relight=0.85):
     """Keep the TRELLIS texture; make it washi: rough, a little light passes through (so the inner lantern shows),
     and the warm areas the reference painted (the lit collar, the sleeve mouths) really emit light."""
     m = mesh.data.materials[0]
@@ -177,6 +177,17 @@ def paper_material(mesh, glow=1.6, translucency=0.07, demonic=False):
         return m
     hsv = nt.nodes.new('ShaderNodeSeparateColor'); hsv.mode = 'HSV'
     nt.links.new(tex.outputs['Color'], hsv.inputs['Color'])
+    # RELIGHT: TRELLIS bakes the reference image's light and shadow into the texture (the unseen back and everything
+    # that was hidden behind the sleeves is brown or black). Keep the texture only as soft fold shading on clean
+    # paper, so OUR lights decide what is bright and what is dark.
+    shade = nt.nodes.new('ShaderNodeMapRange'); shade.inputs['To Min'].default_value = 1.0 - relight * 0.55; shade.inputs['To Max'].default_value = 1.0
+    nt.links.new(hsv.outputs['Blue'], shade.inputs['Value'])
+    pap = nt.nodes.new('ShaderNodeMixRGB'); pap.blend_type = 'MIX'; pap.inputs['Fac'].default_value = relight
+    pap.inputs['Color2'].default_value = (0.86, 0.82, 0.74, 1)
+    nt.links.new(tex.outputs['Color'], pap.inputs['Color1'])
+    mul = nt.nodes.new('ShaderNodeMixRGB'); mul.blend_type = 'MULTIPLY'; mul.inputs['Fac'].default_value = 1.0
+    nt.links.new(pap.outputs[0], mul.inputs['Color1']); nt.links.new(shade.outputs[0], mul.inputs['Color2'])
+    nt.links.new(mul.outputs[0], bsdf.inputs['Base Color'])
     # mask = saturated AND bright (the painted orange light); white paper and dark folds stay out
     sat = nt.nodes.new('ShaderNodeMapRange'); sat.inputs['From Min'].default_value = 0.50; sat.inputs['From Max'].default_value = 0.80
     val = nt.nodes.new('ShaderNodeMapRange'); val.inputs['From Min'].default_value = 0.45; val.inputs['From Max'].default_value = 0.85
@@ -191,7 +202,7 @@ def paper_material(mesh, glow=1.6, translucency=0.07, demonic=False):
     tr = nt.nodes.new('ShaderNodeBsdfTranslucent')
     warm = nt.nodes.new('ShaderNodeMixRGB'); warm.blend_type = 'MULTIPLY'; warm.inputs['Fac'].default_value = 1.0
     warm.inputs['Color2'].default_value = (1.0, 0.72, 0.5, 1)
-    nt.links.new(tex.outputs['Color'], warm.inputs['Color1']); nt.links.new(warm.outputs[0], tr.inputs['Color'])
+    nt.links.new(mul.outputs[0], warm.inputs['Color1']); nt.links.new(warm.outputs[0], tr.inputs['Color'])
     mix = nt.nodes.new('ShaderNodeMixShader'); mix.inputs['Fac'].default_value = translucency
     nt.links.new(bsdf.outputs[0], mix.inputs[1]); nt.links.new(tr.outputs[0], mix.inputs[2])
     nt.links.new(mix.outputs[0], out.inputs['Surface'])
@@ -279,23 +290,40 @@ def cut_panels(mesh, spec):
     k = spec['k']
     floor, chin, colx = spec['shell_floor'], spec['chin'], spec['column_x']
     cf = spec['column_front']
-    vz = [0.93 * k, 1.05 * k, 1.20 * k, 1.33 * k]
-    vw = [0.0, 0.05 * k, 0.13 * k, 0.20 * k]
     bm = bmesh.new(); bm.from_mesh(mesh.data)
+    v0 = 0.93 * k                                           # where the collar V closes (the joined hands)
+
+    def knife(co, no, keep):
+        """score the paper along a plane (only the faces `keep` accepts), so the cut edge is straight, not saw-toothed"""
+        fs = [f for f in bm.faces if keep(f.calc_center_median())]
+        geom = set(fs)
+        for f in fs:
+            geom.update(f.edges); geom.update(f.verts)
+        bmesh.ops.bisect_plane(bm, geom=list(geom), dist=1e-5, plane_co=co, plane_no=no, clear_inner=False, clear_outer=False)
+    front = 0.14 * k
+    knife((0, 0, 0), (1, 0, 0), lambda c: c.y < front and 0.15 * k < c.z < v0 + 0.08 * k and abs(c.x) < 0.1 * k)
+    knife((0, 0, v0), (-1, 0, 0.5), lambda c: c.y < front and v0 - 0.03 * k < c.z < chin + 0.04 * k and c.x > -0.02 * k)
+    knife((0, 0, v0), (1, 0, 0.5), lambda c: c.y < front and v0 - 0.03 * k < c.z < chin + 0.04 * k and c.x < 0.02 * k)
+    bm.faces.ensure_lookup_table(); bm.faces.index_update()
 
     def label(c):
         if c.z > chin:
             return 0
-        if c.z < floor:
+        if c.z < floor - 0.02 * k:
             yf = float(np.interp(c.z, [a for a, _ in cf], [b for _, b in cf]))
             drape = c.z > 0.19 * k and (abs(c.x) > colx or c.y < yf - 0.03 * k)
             return (1 if c.x > 0 else 2) if drape else 0
-        xb_front = float(np.interp(c.z, vz, vw))
+        xb_front = max(0.0, 0.5 * (c.z - v0))
         t = min(1.0, max(0.0, (c.y - 0.10 * k) / (0.10 * k)))
         xb = xb_front + (0.24 * k - xb_front) * t
-        if c.z < floor + 0.06 * k and math.hypot(c.x, c.y - 0.09 * k) < 0.22 * k:
-            return 0                                         # the top of the skirt column / the waist
         return 0 if abs(c.x) < xb else (1 if c.x > 0 else 2)
+    # the flat membrane TRELLIS closes the shell with (under the sleeves, around the waist) tears into shreds when a
+    # sleeve lifts: remove it. The opening it leaves is the sleeve mouth; the under-robe core shows inside.
+    axis_y = spec['hips'][1]
+    shreds = [f for f in bm.faces if abs(f.normal.z) > 0.55 and abs(f.calc_center_median().z - floor) < 0.07 * k
+              and math.hypot(f.calc_center_median().x, f.calc_center_median().y - axis_y) > 0.17 * k]
+    bmesh.ops.delete(bm, geom=shreds, context='FACES')
+    bm.faces.ensure_lookup_table(); bm.faces.index_update()
     lab = {f.index: label(f.calc_center_median()) for f in bm.faces}
     cut = []
     for e in bm.edges:
