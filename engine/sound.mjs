@@ -74,6 +74,16 @@ const evPath = opt('events', `output/${base}.events.json`);
 const evData = fs.existsSync(evPath) ? JSON.parse(fs.readFileSync(evPath, 'utf8')) : null;
 const autoCues = evData?.cues ?? [];
 if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
+// film.autoSounds.whoosh.earshot: [ids] → automatic whooshes come from the Earshot bank, peak aimed at the blade's
+// fastest moment (the analysis places whoosh cues 0.06 s before the speed peak; the apex puts the loudest point on it)
+const ES = film.autoSounds?.whoosh?.earshot;
+if (ES?.length) {
+  let n = 0;
+  for (const c of autoCues) if (/^auto-whoosh/.test(c.id)) {
+    Object.assign(c, { earshot: ES[n++ % ES.length], t: c.t + 0.06, apex: 0.2, len: 0.6 });
+    delete c.sfx; delete c.rate;
+  }
+}
 // A cue with "body": true is timed to the fighters' action (body time): it moves later by every hit-stop before it.
 const stops = evData?.stops ?? [];
 // With speed ramps (film.ramps, motion page) the events file carries a table: body time → film time ("warp").
@@ -89,9 +99,32 @@ const voicePath = opt('voice', `output/${base}.voice.json`);
 const voice = fs.existsSync(voicePath) ? JSON.parse(fs.readFileSync(voicePath, 'utf8')) : null;
 const voiceCues = voice?.cues ?? [];
 if (voiceCues.length) console.log(`+ ${voiceCues.length} voice lines from ${voicePath}`);
+function earshot(cue) {
+  const dur = cue.len ?? 0.8, apex = cue.apex ?? null;
+  const key = `${cue.earshot}-${dur}-${apex ?? 'x'}`.replace(/[^a-z0-9.-]+/gi, '_');
+  const file = path.join(dir, 'earshot', `${key}.wav`);
+  if (!fs.existsSync(file)) {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const a = ['sfx', 'render', cue.earshot, '-o', file, '--dur', String(dur)];
+    if (apex != null) a.push('--apex', String(apex));
+    try { execFileSync('earshot', a, { stdio: 'pipe' }); }
+    catch (e) { console.log(`✗ earshot ${cue.earshot}: ${String(e.stderr ?? e.message).slice(0, 160)}`); return null; }
+  }
+  credits[`earshot:${cue.earshot}`] = { title: cue.earshot, creator: 'Earshot sound bank (Leonxlnx/earshot)', license: 'MIT', source: 'https://github.com/Leonxlnx/earshot' };
+  console.log(`✓ ${cue.id.padEnd(13)} earshot ${cue.earshot}`);
+  return file;
+}
+
 const placed = [];
 for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
   // "sfx" reuses another sound by its id (one file, many cues); defaults for length checks
+  // "earshot": "<bank id>" renders a sound from the Earshot bank (MIT, github.com/Leonxlnx/earshot; 252 sounds,
+  // no network), aimed so its loudest moment ("apex", seconds into the sound) lands where the cue wants it.
+  if (cue.earshot) {
+    const f = earshot(cue);
+    if (f) placed.push({ cue: { ...cue, t: Math.max(0, cue.t - (cue.apex ?? 0)) }, f });
+    continue;
+  }
   const lib = cue.sfx ? { min: 0.2, max: 8, len: cue.len, query: cue.query ?? cue.sfx, ...cue, id: cue.sfx } : cue;
   const f = await find(lib);
   if (f) placed.push({ cue, f });

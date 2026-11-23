@@ -1,0 +1,563 @@
+{
+  "name": "castle-courtyard",
+  "about": "Inner castle courtyard at night: raked gravel, a stone path to a turret gate, battered ishigaki walls left and right, white plaster walls with tile caps, the keep rising behind under the moon, stone lanterns, a pine, ground fog. Duel line along X; the camera looks toward +Y (the keep).",
+  "seed": 7,
+  "clear": 1.8,
+  "lighting": {
+    "preset": "night",
+    "sun": {
+      "elev": 33,
+      "az": -20,
+      "color": [
+        0.55,
+        0.66,
+        1.0
+      ],
+      "energy": 0.55,
+      "angle": 1.2
+    },
+    "sky": {
+      "type": "night",
+      "zenith": [
+        0.004,
+        0.007,
+        0.02
+      ],
+      "horizon": [
+        0.03,
+        0.04,
+        0.065
+      ],
+      "stars": 1.0,
+      "strength": 1.0
+    },
+    "exposure": 1.6,
+    "bloom": 0.8,
+    "vignette": 0.45,
+    "fighter": {
+      "key": {
+        "offset": [
+          -1.6,
+          2.6,
+          2.6
+        ],
+        "energy": 60,
+        "color": [
+          1.0,
+          0.72,
+          0.45
+        ],
+        "size": 1.4
+      },
+      "rim": {
+        "offset": [
+          0.8,
+          -2.8,
+          2.8
+        ],
+        "energy": 160,
+        "color": [
+          0.55,
+          0.68,
+          1.0
+        ],
+        "size": 0.7
+      }
+    },
+    "pieces": [
+      {
+        "kit": "moon",
+        "name": "moon",
+        "params": {
+          "elev": 33,
+          "az": -20,
+          "size": 3.0,
+          "strength": 8.0
+        }
+      },
+      {
+        "kit": "fog",
+        "name": "fog",
+        "pos": [
+          0,
+          15,
+          0
+        ],
+        "params": {
+          "size": [
+            90,
+            90,
+            30
+          ],
+          "density": 0.045,
+          "height": 4.5,
+          "noise": 0.45,
+          "noise_scale": 0.08,
+          "color": [
+            0.75,
+            0.8,
+            0.92
+          ],
+          "anisotropy": 0.5
+        }
+      }
+    ]
+  },
+  "materials": {
+    "window_glow": {
+      "strength": 9.0
+    },
+    "gravel": {
+      "color": [
+        0.3,
+        0.29,
+        0.27
+      ]
+    }
+  },
+  "pieces": [
+    {
+      "kit": "ground",
+      "name": "courtyard",
+      "pos": [
+        0,
+        15,
+        0
+      ],
+      "params": {
+        "width": 90,
+        "depth": 90,
+        "key": "gravel",
+        "bumps": 0.03,
+        "res": 60
+      }
+    },
+    {
+      "kit": "paving",
+      "name": "path",
+      "pos": [
+        -5.5,
+        3.5,
+        0
+      ],
+      "rot": -18,
+      "params": {
+        "length": 15,
+        "width": 2.4
+      }
+    },
+    {
+      "kit": "ishigaki",
+      "name": "wall_left",
+      "pos": [
+        -9,
+        2,
+        0
+      ],
+      "rot": 90,
+      "params": {
+        "length": 26,
+        "height": 5.5,
+        "batter": 2.0,
+        "stone": 0.7,
+        "style": "nozura"
+      }
+    },
+    {
+      "kit": "ishigaki",
+      "name": "wall_right",
+      "pos": [
+        9,
+        2,
+        0
+      ],
+      "rot": -90,
+      "params": {
+        "length": 26,
+        "height": 4.6,
+        "batter": 1.7,
+        "stone": 0.65,
+        "style": "nozura"
+      }
+    },
+    {
+      "kit": "plaster_wall",
+      "name": "dobei_left",
+      "pos": [
+        -11.8,
+        2,
+        5.5
+      ],
+      "rot": 90,
+      "params": {
+        "length": 26,
+        "height": 2.4,
+        "sama": 8
+      }
+    },
+    {
+      "kit": "plaster_wall",
+      "name": "dobei_right",
+      "pos": [
+        11.4,
+        2,
+        4.6
+      ],
+      "rot": -90,
+      "params": {
+        "length": 26,
+        "height": 2.4,
+        "sama": 8
+      }
+    },
+    {
+      "kit": "yaguramon",
+      "name": "gate",
+      "pos": [
+        -4.5,
+        15.5,
+        0
+      ],
+      "params": {
+        "width": 9.5,
+        "passage": 3.6,
+        "depth": 6.0,
+        "base_h": 4.2,
+        "upper_h": 3.0,
+        "open": 0.3,
+        "lit": 0.6,
+        "overhang": 1.1
+      }
+    },
+    {
+      "kit": "ishigaki",
+      "name": "terrace",
+      "pos": [
+        5.0,
+        13.5,
+        0
+      ],
+      "params": {
+        "length": 9.0,
+        "height": 3.0,
+        "batter": 1.0,
+        "stone": 0.55,
+        "thickness": 3.0,
+        "style": "uchikomi"
+      }
+    },
+    {
+      "kit": "plaster_wall",
+      "name": "dobei_back",
+      "pos": [
+        5.0,
+        15.2,
+        3.0
+      ],
+      "params": {
+        "length": 9.0,
+        "height": 2.3,
+        "sama": 3
+      }
+    },
+    {
+      "kit": "tenshu",
+      "name": "keep",
+      "pos": [
+        4,
+        36,
+        0
+      ],
+      "params": {
+        "base_w": 19,
+        "base_d": 15.5,
+        "base_h": 9,
+        "storeys": 5,
+        "storey_h": 3.6,
+        "inset": 1.35,
+        "lit": 0.5,
+        "gables": [
+          1,
+          2,
+          3
+        ]
+      }
+    },
+    {
+      "kit": "treeline",
+      "name": "trees_back",
+      "pos": [
+        0,
+        56,
+        0
+      ],
+      "params": {
+        "width": 120,
+        "depth": 10,
+        "count": 60,
+        "height": [
+          10,
+          18
+        ]
+      }
+    },
+    {
+      "kit": "toro",
+      "name": "lantern_L",
+      "pos": [
+        -4.6,
+        2.8,
+        0
+      ],
+      "params": {
+        "energy": 22
+      }
+    },
+    {
+      "kit": "toro",
+      "name": "lantern_R",
+      "pos": [
+        4.6,
+        2.8,
+        0
+      ],
+      "params": {
+        "energy": 22
+      }
+    },
+    {
+      "kit": "toro",
+      "name": "lantern_gate_L",
+      "pos": [
+        -7.2,
+        10.5,
+        0
+      ],
+      "params": {
+        "energy": 16,
+        "height": 1.9
+      }
+    },
+    {
+      "kit": "toro",
+      "name": "lantern_gate_R",
+      "pos": [
+        -1.8,
+        10.5,
+        0
+      ],
+      "params": {
+        "energy": 16,
+        "height": 1.9
+      }
+    },
+    {
+      "kit": "pine",
+      "name": "pine",
+      "pos": [
+        6.6,
+        8.5,
+        0
+      ],
+      "params": {
+        "height": 7.0,
+        "spread": 4.6,
+        "lean": 22,
+        "lean_dir": 160,
+        "pads": 7
+      }
+    },
+    {
+      "kit": "rocks",
+      "name": "rocks_pine",
+      "pos": [
+        6.6,
+        8.0,
+        0
+      ],
+      "params": {
+        "count": 6,
+        "radius": 1.8,
+        "size": [
+          0.4,
+          1.0
+        ]
+      }
+    },
+    {
+      "kit": "particles",
+      "name": "embers",
+      "pos": [
+        0,
+        3,
+        0
+      ],
+      "params": {
+        "kind": "embers",
+        "area": [
+          12,
+          10,
+          3
+        ],
+        "count": 160,
+        "size": 0.012,
+        "velocity": [
+          0.15,
+          0.05,
+          0.25
+        ],
+        "random": 0.4,
+        "brownian": 0.5
+      }
+    }
+  ],
+  "marks": {
+    "MARK_hero": {
+      "pos": [
+        -1.8,
+        0,
+        0
+      ],
+      "face": [
+        1.8,
+        0
+      ],
+      "role": "hero, facing the foe (+X)"
+    },
+    "MARK_foe": {
+      "pos": [
+        1.8,
+        0,
+        0
+      ],
+      "face": [
+        -1.8,
+        0
+      ],
+      "role": "foe, facing the hero (-X)"
+    },
+    "MARK_center": {
+      "pos": [
+        0,
+        0,
+        0
+      ],
+      "face": [
+        0,
+        20
+      ],
+      "role": "midpoint of the duel line; the 180-degree line is X"
+    },
+    "MARK_gate": {
+      "pos": [
+        -4.5,
+        11.0,
+        0
+      ],
+      "face": [
+        0,
+        0
+      ],
+      "role": "walk-on from the gate"
+    }
+  },
+  "cameras": {
+    "CAM_wide": {
+      "pos": [
+        0.8,
+        -11.5,
+        1.6
+      ],
+      "look": [
+        0,
+        14,
+        7.5
+      ],
+      "lens": 24,
+      "note": "establishing: fighters small, gate, keep, moon"
+    },
+    "CAM_medium": {
+      "pos": [
+        0.6,
+        -7.5,
+        1.35
+      ],
+      "look_mark": "MARK_center",
+      "look_z": 1.7,
+      "lens": 30,
+      "fstop": 4.0,
+      "focus": "MARK_center",
+      "note": "both fighters full body, gate and keep behind"
+    },
+    "CAM_hero_ots": {
+      "pos": [
+        -3.7,
+        -1.5,
+        1.75
+      ],
+      "look": [
+        1.8,
+        0,
+        1.45
+      ],
+      "lens": 50,
+      "fstop": 2.8,
+      "focus": "MARK_foe",
+      "note": "over the hero's shoulder onto the foe"
+    },
+    "CAM_foe_ots": {
+      "pos": [
+        3.7,
+        -1.5,
+        1.75
+      ],
+      "look": [
+        -1.8,
+        0,
+        1.45
+      ],
+      "lens": 50,
+      "fstop": 2.8,
+      "focus": "MARK_hero",
+      "note": "over the foe's shoulder onto the hero"
+    },
+    "CAM_low": {
+      "pos": [
+        -1.0,
+        -4.2,
+        0.3
+      ],
+      "look": [
+        0,
+        8,
+        5.0
+      ],
+      "lens": 20,
+      "fstop": 0,
+      "note": "heroic low angle, fighters against the keep"
+    },
+    "CAM_keep": {
+      "pos": [
+        -1.0,
+        -4,
+        1.6
+      ],
+      "look": [
+        4,
+        36,
+        20
+      ],
+      "lens": 35,
+      "note": "the keep under the moon"
+    }
+  },
+  "preview_cams": [
+    "CAM_wide",
+    "CAM_medium"
+  ],
+  "render": {
+    "samples": 32,
+    "res": "540x960",
+    "volume_step_rate": 4.0
+  }
+}

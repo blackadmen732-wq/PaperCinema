@@ -17,3 +17,14 @@ Analysed with `tools/listen.py` (speech + sound timeline + frame sheet). Source:
 - **Motion:** little movement, but heavy (cape, cloth); one decisive gesture (sword raised) per video.
 - **Ending:** cut to black + small logo.
 - **Mapping to our style:** our paper characters' **eyes and seams glow from the inner lantern**: pulse the glow with the voice (like the helmet eye).
+
+## Second batch (owner, 5 videos)
+| Video | Lesson |
+|---|---|
+| Jellyfish "Creago" ad | Motion with no ease, no pull-back and no follow-through reads fake. Light: the eye goes to the brightest spot; cheap videos light everything the same (one key glow, the rest dark). Sound is half the experience; without it nothing has weight. **Movement, light, camera and sound are decided before frame one** (style presets). |
+| Spider-Man breakdown (rmt.motion) | **2.5D compositing**: flat images cut into layers placed in 3D space, a 3D camera moves through them (parallax), with keyframed curves visible in the graph editor; newspaper/wall props as image planes; a figure moving across layers. Fast and cinematic. |
+| Library of Alexandria (lumenline) | Same 2.5D method in DaVinci Resolve Fusion: image planes in 3D, camera dolly, fire/candle/feather particles, serif titles fading in per word, narration (2 lines, 14 s). |
+| Earshot (Claude Code tool) | An existing free tool that lets Claude Code listen to the timeline and place sound effects from a 250+ library or synthesise new ones. Use it instead of building our own. |
+| Blender Skills (arjun988/blender-skills, MIT) | 94 Blender skills for Claude Code (Blender MCP integrated). Use them for Blender work. |
+
+**Takeaways for us:** our paper-cut style is ideal for 2.5D: layered paper sets as image planes in Blender with a real 3D camera, plus our 3D characters in front. Decide movement/light/camera/sound per scene in a style preset before rendering. One bright glow, the rest dark.

@@ -401,7 +401,13 @@
         "whoosh-c"
       ],
       "on": 9,
-      "rearm": 6
+      "rearm": 6,
+      "earshot": [
+        "swish/blade",
+        "whoosh_fast/crisp",
+        "swish/zing",
+        "whoosh_fast/whip"
+      ]
     },
     "clash": {
       "sfx": "clash-steel",

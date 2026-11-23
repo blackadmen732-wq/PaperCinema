@@ -81,7 +81,13 @@
       ],
       "on": 11,
       "rearm": 6,
-      "maxPerSec": 2
+      "maxPerSec": 2,
+      "earshot": [
+        "swish/blade",
+        "whoosh_fast/crisp",
+        "swish/zing",
+        "whoosh_fast/whip"
+      ]
     },
     "clash": {
       "sfx": "clash-steel",

@@ -362,5 +362,29 @@
     "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
     "license": "own",
     "source": "synth"
+  },
+  "earshot:swish/blade": {
+    "title": "swish/blade",
+    "creator": "Earshot sound bank (Leonxlnx/earshot)",
+    "license": "MIT",
+    "source": "https://github.com/Leonxlnx/earshot"
+  },
+  "earshot:whoosh_fast/crisp": {
+    "title": "whoosh_fast/crisp",
+    "creator": "Earshot sound bank (Leonxlnx/earshot)",
+    "license": "MIT",
+    "source": "https://github.com/Leonxlnx/earshot"
+  },
+  "earshot:swish/zing": {
+    "title": "swish/zing",
+    "creator": "Earshot sound bank (Leonxlnx/earshot)",
+    "license": "MIT",
+    "source": "https://github.com/Leonxlnx/earshot"
+  },
+  "earshot:whoosh_fast/whip": {
+    "title": "whoosh_fast/whip",
+    "creator": "Earshot sound bank (Leonxlnx/earshot)",
+    "license": "MIT",
+    "source": "https://github.com/Leonxlnx/earshot"
   }
 }

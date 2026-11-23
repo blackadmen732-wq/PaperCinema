@@ -324,6 +324,35 @@
    "status_note": "✅"
   },
   {
+   "id": "EARSHOT",
+   "name": "Earshot sound bank (existing tool)",
+   "does": "252 code-made sound effects (MIT, github.com/Leonxlnx/earshot), each whoosh aimed so its loudest moment lands on the blade's fastest frame; cues use `\"earshot\": \"<id>\"`, automatic whooshes via `autoSounds.whoosh.earshot`",
+   "files": [
+    "engine/sound.mjs"
+   ],
+   "guide": [
+    "research/reference-videos.md"
+   ],
+   "command": "earshot sfx list",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "BLENDERSKILLS",
+   "name": "Blender Skills pack (existing tool)",
+   "does": "94 Blender skills for Claude Code (MIT, github.com/arjun988/blender-skills): camera-cinematography, animation, rigging, lighting, lookdev, materials, rendering, compositing, vfx-fx, cloth-sim, historical-worlds, qa-review…",
+   "files": [
+    ".claude/skills/",
+    "skills-lock.json"
+   ],
+   "guide": [
+    ".claude/skills/<name>/SKILL.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "VOICE",
    "name": "Voice (spoken lines)",
    "does": "Film `\"voice\"` lines → Kokoro-82M TTS (Apache-2.0, CPU) → cinematic chain (warmth, compression, hall, inner-monologue) → `output/<film>.voice.json`: cues mixed by SOUND with beds ducked 8 dB, plus 24 fps loudness envelopes to pulse the eyes",

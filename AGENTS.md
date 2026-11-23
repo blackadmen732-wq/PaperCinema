@@ -43,6 +43,7 @@ npm run preview                                          # live preview in a bro
 (Blender lives outside the repo. On a fresh machine, download Blender 4.5 LTS from download.blender.org.)
 
 ## 4. Rules (must follow)
+00. **Use what already exists and works first.** Before building a system, search for a proven tool, skill, library, plugin or technique (GitHub, Blender add-ons/skills, open-source AI tools) and use or adapt it; build our own only for what nothing covers (or what must stay ours, e.g. SHIMI, KUROKO). Check the licence (rule 6). Learn from the owner's reference videos and images (`research/reference-*.md`) instead of guessing taste.
 0. **Work autonomously.** When a fix or an improvement is clear, build it, verify it (stills, checker, audit) and report what changed. Do not wait for permission. Ask only for: spending money (rule 1), publishing anything publicly, deleting the owner's work, or a choice that changes the owner's design rules (rule 4).
 1. **Paid GPUs: ask the owner first, with the expected cost.** Default to the cheapest *community* GPU. Every pod gets
    the self-destruct timer (`sleep 3600; runpodctl remove pod $RUNPOD_POD_ID`) and is stopped (`python3 gpu/pod.py stop`)
