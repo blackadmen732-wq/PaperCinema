@@ -36,6 +36,7 @@ function stats(file) {
 }
 
 async function find(cue) {
+  if (cue.file) return fs.existsSync(cue.file) ? cue.file : (console.log(`✗ ${cue.id}: missing file ${cue.file}`), null);
   const file = path.join(dir, `${cue.id}.mp3`);
   if (fs.existsSync(file) && credits[cue.id] && !args.includes('--refresh')) return file;
   const url = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cue.query)}&license=cc0,by&page_size=20`;
@@ -72,8 +73,14 @@ async function find(cue) {
 const evPath = opt('events', `output/${base}.events.json`);
 const autoCues = fs.existsSync(evPath) ? (JSON.parse(fs.readFileSync(evPath, 'utf8')).cues ?? []) : [];
 if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
+// Spoken lines (VOICE, docs/VOICE.md) come from output/<film>.voice.json, written by tools/voice.py:
+// cues with a ready "file" (no search), plus the speech windows used to duck beds/music under the voice.
+const voicePath = opt('voice', `output/${base}.voice.json`);
+const voice = fs.existsSync(voicePath) ? JSON.parse(fs.readFileSync(voicePath, 'utf8')) : null;
+const voiceCues = voice?.cues ?? [];
+if (voiceCues.length) console.log(`+ ${voiceCues.length} voice lines from ${voicePath}`);
 const placed = [];
-for (const cue of [...(film.sounds ?? []), ...autoCues]) {
+for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
   // "sfx" reuses another sound by its id (one file, many cues); defaults for length checks
   const lib = cue.sfx ? { min: 0.2, max: 8, len: cue.len, query: cue.query ?? cue.sfx, ...cue, id: cue.sfx } : cue;
   const f = await find(lib);
@@ -94,9 +101,34 @@ placed.forEach(({ cue, f }, i) => {
     `afade=t=out:st=${(cue.len - fadeOut).toFixed(2)}:d=${fadeOut.toFixed(2)},volume=${cue.gain},` +
     `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}[a${i}]`);
 });
-const mixIn = placed.map((_, i) => `[a${i}]`).join('');
-filters.push(`${mixIn}amix=inputs=${placed.length}:normalize=0:dropout_transition=0,alimiter=limit=0.9,` +
+// DUCK: beds and music ("bed" or "music" cues) dip under speech by voice.duck.db (default 8 dB).
+// Default "exact": a volume curve from the known speech windows (precise depth, ramps of attack/release s).
+// --duck sidechain: ffmpeg sidechaincompress keyed by the voice bus (depth then follows the voice level).
+const duckIdx = placed.map(({ cue }, i) => (cue.bed || cue.music ? i : -1)).filter((i) => i >= 0);
+const voiceIdx = placed.map(({ cue }, i) => (cue.voice ? i : -1)).filter((i) => i >= 0);
+let mixIn = placed.map((_, i) => (duckIdx.includes(i) && voiceIdx.length ? '' : `[a${i}]`)).join('');
+let nIn = placed.length;
+if (voiceIdx.length && duckIdx.length) {
+  const d = voice.duck ?? {}, depth = 10 ** (-(d.db ?? 8) / 20), at = d.attack ?? 0.12, rl = d.release ?? 0.45;
+  const beds = duckIdx.map((i) => `[a${i}]`).join('');
+  filters.push(`${beds}amix=inputs=${duckIdx.length}:normalize=0:dropout_transition=0[beds]`);
+  if (opt('duck', 'exact') === 'sidechain') {
+    filters.push(`${voiceIdx.map((i) => `[a${i}]`).join('')}amix=inputs=${voiceIdx.length}:normalize=0,asplit=2[vkey][vsc]`);
+    filters.push(`[beds][vsc]sidechaincompress=threshold=0.015:ratio=8:attack=${at * 1000}:release=${rl * 1000}:knee=3[bedsd]`);
+    mixIn = mixIn.replace(voiceIdx.map((i) => `[a${i}]`).join(''), '') + '[vkey]';
+    nIn = nIn - duckIdx.length - voiceIdx.length + 2;
+  } else {
+    const wins = (voice.lines ?? []).map((l) => `clip(min((t-${(l.t0 - at).toFixed(3)})/${at},(${(l.t1 + rl).toFixed(3)}-t)/${rl}),0,1)`);
+    const amt = wins.reduce((a, w) => (a ? `max(${a},${w})` : w), '');
+    filters.push(`[beds]volume=eval=frame:volume='1-${(1 - depth).toFixed(4)}*${amt}'[bedsd]`);
+    nIn = nIn - duckIdx.length + 1;
+  }
+  mixIn += '[bedsd]';
+  console.log(`  ducking ${duckIdx.length} bed/music cue(s) by ${d.db ?? 8} dB under ${voiceIdx.length} voice line(s) (${opt('duck', 'exact')})`);
+}
+filters.push(`${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,alimiter=limit=0.9,` +
   `afade=t=out:st=${film.duration - 1.5}:d=1.5[mix]`);
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.join(';'),
   '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(film.duration), out]);
-console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length} sounds. Credits: ${creditsPath}`);
+console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length + autoCues.length + voiceCues.length} sounds` +
+  `${voiceCues.length ? ` (${voiceCues.length} voice lines)` : ''}. Credits: ${creditsPath}`);

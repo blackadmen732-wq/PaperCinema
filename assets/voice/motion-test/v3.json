@@ -1,0 +1,17 @@
+{
+ "hash": "a7dbb3cf9307",
+ "text": "Then the sea keeps your name.",
+ "voice": "bm_george",
+ "lang": "en-gb",
+ "delivery": {
+  "speed": 0.92,
+  "pitch": -1.0,
+  "wet": 0.16,
+  "gain": 0.0,
+  "comp": 3.0,
+  "warmth": 1.5,
+  "hp": 75,
+  "lp": 14000,
+  "inner": false
+ }
+}

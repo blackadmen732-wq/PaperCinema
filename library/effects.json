@@ -1,0 +1,927 @@
+{
+ "_about": "Paper Cinema effects catalogue (Lantern Origami). Each effect: what it looks like, when to use it, duration in frames at 24 fps, parameters with defaults, which renderer can do it, and status: built (in code and used), new (added with engine/fx.js), planned. Guide: docs/EFFECTS-CATALOG.md. Technique only; we copy no frames or assets. House rules: amber = human, crimson = demonic, paint and paper shards instead of blood.",
+ "fps": 24,
+ "effects": [
+  {
+   "id": "bloom",
+   "name": "Bloom",
+   "looks": "Bright parts (eye slits, emissive seams, sparks, the blade edge) bleed a soft halo of light into the dark around them.",
+   "use": "Always on, low (0.3–0.6) as the house lantern glow; raise to 1+ on a power-up or a decisive flare.",
+   "frames": "continuous",
+   "params": {
+    "strength": 0.5,
+    "radius": 0.4,
+    "threshold": 0.85
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js p.bloom (UnrealBloomPass, MIT)",
+   "sources": [
+    "https://threejs.org/docs/pages/UnrealBloomPass.html",
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "bloom-pulse",
+   "name": "Bloom pulse",
+   "looks": "The whole frame glows brighter for a moment, then settles.",
+   "use": "Impact, the \"decide\" eye flare, a demonic surge.",
+   "frames": "6–10",
+   "params": {
+    "amount": 1.2,
+    "dur": 0.4
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt effect \"bloom-pulse\""
+  },
+  {
+   "id": "grade",
+   "name": "Colour grade (mood LUT)",
+   "looks": "Lift/gamma/gain per channel, contrast, saturation; named moods: dawn, lantern, moonlit, demonic, kurosawa, ash.",
+   "use": "Sets the emotion of a scene: lantern = warm human resolve, moonlit = cold dread, demonic = crimson menace, ash = aftermath, kurosawa = memory/flashback.",
+   "frames": "continuous; cross-fade 24–48",
+   "params": {
+    "mood": "dawn",
+    "in": 1.0
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js MOODS + fxAt \"grade\"; ffmpeg: lut3d / colorbalance",
+   "sources": [
+    "https://shotkit.com/teal-orange-look/",
+    "https://www.masterclass.com/articles/how-to-color-grade-video-footage",
+    "research/anime-fight-craft.md §1c (Kurosawa Mode)"
+   ]
+  },
+  {
+   "id": "kurosawa-bw",
+   "name": "Kurosawa black and white",
+   "looks": "High-contrast monochrome with heavy grain, wind pushed up.",
+   "use": "Flashback, legend, a duel told as history.",
+   "frames": "continuous",
+   "params": {
+    "mood": "kurosawa",
+    "grain": 0.09
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js MOODS.kurosawa",
+   "sources": [
+    "research/anime-fight-craft.md §1c (Kurosawa Mode)"
+   ]
+  },
+  {
+   "id": "vignette",
+   "name": "Vignette",
+   "looks": "Corners and edges sink toward near-black (cos⁴-like falloff), drawing the eye to the centre.",
+   "use": "Moody close-ups, monologue, the 70%-darkness reference look.",
+   "frames": "continuous",
+   "params": {
+    "amount": 0.6,
+    "softness": 0.55,
+    "roundness": 0.6,
+    "color": [
+     0.02,
+     0.015,
+     0.01
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js p.vignette",
+   "sources": [
+    "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/lens/",
+    "research/reference-videos.md"
+   ]
+  },
+  {
+   "id": "film-grain",
+   "name": "Film grain",
+   "looks": "Fine per-frame noise, strongest in mid-tones, highlights protected.",
+   "use": "Every moody shot (0.04–0.07); heavier for flashback/black-and-white (0.09+). Hides banding in dark gradients.",
+   "frames": "continuous, re-seeded every frame",
+   "params": {
+    "amount": 0.05,
+    "size": 1.5
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js p.grain; ffmpeg: noise=alls=8:allf=t",
+   "sources": [
+    "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/lens/",
+    "https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@16.0/manual/camera-and-lens-effects.html"
+   ]
+  },
+  {
+   "id": "letterbox",
+   "name": "Letterbox strip",
+   "looks": "Black bars slide in top and bottom, leaving a cinematic strip inside the 9:16 frame (title text can sit above).",
+   "use": "Prestige moments: the monologue, the standoff, the hook. Slide in on a beat, never mid-action.",
+   "frames": "slide 12–15, then hold",
+   "params": {
+    "ratio": 1.0,
+    "y": 0,
+    "in": 0.6
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js p.letterbox / fxAt \"letterbox\"; ffmpeg: drawbox",
+   "sources": [
+    "https://www.adobe.com/au/creativecloud/video/discover/cinematic-black-bars.html",
+    "research/reference-videos.md"
+   ]
+  },
+  {
+   "id": "ca-flash",
+   "name": "Chromatic aberration flash",
+   "looks": "RGB channels split radially for a few frames: red pushed out, blue in; strongest at the edges.",
+   "use": "Impacts, clashes, a hit that rattles the lens. Never as a permanent look.",
+   "frames": "1 peak frame, decays over 6–8",
+   "params": {
+    "amount": 14,
+    "dur": 0.25,
+    "center": [
+     0.5,
+     0.5
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt \"ca-flash\"; ffmpeg: rgbashift",
+   "sources": [
+    "https://dev.epicgames.com/documentation/en-us/unreal-engine/post-process-effects-in-unreal-engine",
+    "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/lens/"
+   ]
+  },
+  {
+   "id": "flash",
+   "name": "White-amber flash",
+   "looks": "The frame washes to warm white for 1–2 frames.",
+   "use": "Blade contact, a lightning cut, the moment before an impact frame.",
+   "frames": "1–2",
+   "params": {
+    "amount": 0.85,
+    "color": [
+     1,
+     0.96,
+     0.9
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "built",
+   "where": "engine/fx.js fxAt \"flash\"; engine/motion.js #flash overlay",
+   "sources": [
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar"
+   ]
+  },
+  {
+   "id": "fade",
+   "name": "Fade to black",
+   "looks": "Frame fades to a colour (black by default).",
+   "use": "Ending, cut to logo, time skip.",
+   "frames": "12–24",
+   "params": {
+    "dur": 0.6,
+    "color": [
+     0,
+     0,
+     0
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt \"fade\"",
+   "sources": [
+    "research/reference-videos.md"
+   ]
+  },
+  {
+   "id": "ink-impact",
+   "name": "Ink impact frame",
+   "looks": "The picture becomes flat sumi ink on washi: darks to ink, lights to paper; the hottest glow (eyes) stays amber/crimson. invert:1 gives a negative frame.",
+   "use": "The decisive hit only (once or twice per film), on the contact frame.",
+   "frames": "1–3",
+   "params": {
+    "dur": 0.083,
+    "threshold": 0.42,
+    "invert": 0,
+    "accent": [
+     1,
+     0.62,
+     0.2
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt \"ink-impact\" (post, any page); engine/motion.js has a geometry version (fighters only)",
+   "sources": [
+    "https://knowyourmeme.com/memes/cultures/impact-frames",
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar",
+    "https://80.lv/articles/learn-how-to-add-accents-to-your-animations-with-impact-frames"
+   ]
+  },
+  {
+   "id": "speed-lines",
+   "name": "Speed lines (focus lines)",
+   "looks": "Tapered ink wedges radiate from a clear centre, redrawn on twos so they flicker.",
+   "use": "Dash, lunge, a sudden realisation; aim the centre at the target. Ink-dark on light sets, washi-pale on dark ones.",
+   "frames": "6–24, redrawn every 2",
+   "params": {
+    "amount": 0.9,
+    "center": [
+     0.5,
+     0.5
+    ],
+    "inner": 0.28,
+    "density": 90,
+    "width": 0.5,
+    "color": [
+     0.05,
+     0.04,
+     0.035
+    ],
+    "fps": 12
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt \"speed-lines\"",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Smear_frame"
+   ]
+  },
+  {
+   "id": "screen-shake",
+   "name": "Trauma screen shake",
+   "looks": "Camera jitters with smooth noise; offset ∝ trauma², with a small roll; decays.",
+   "use": "Heavy impacts, stomps, a body hitting the ground. Shake on ones even when bodies move on twos.",
+   "frames": "6–12",
+   "params": {
+    "trauma": 0.8,
+    "freq": 18,
+    "pos": 0.03,
+    "rollDeg": 2.5,
+    "decay": 0.45
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "new",
+   "where": "engine/fx.js shake() + traumaAt(); engine/motion.js has its own impact punch",
+   "sources": [
+    "https://forum.godotengine.org/t/game-feel-effects-that-stack-without-fighting-your-code-trauma-shake-real-time-hit-stop-and-apply-the-difference/146379",
+    "https://bevy.org/examples/camera/2d-screen-shake/",
+    "https://gamejuice.pages.dev/articles/screen-shake-guide",
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar"
+   ]
+  },
+  {
+   "id": "camera-punch",
+   "name": "Impact punch (fov kick)",
+   "looks": "FOV snaps tighter on the hit and springs back; roll wobble.",
+   "use": "Every clash, scaled by intensity.",
+   "frames": "2–14",
+   "params": {
+    "fov": -7,
+    "tau": 0.12,
+    "roll": 3
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "built",
+   "where": "engine/motion.js placeCamera()",
+   "sources": [
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "hit-stop",
+   "name": "Hit-stop",
+   "looks": "Fighters freeze for a few frames at contact (with a ±6 mm shiver) while camera, sparks and sound keep running.",
+   "use": "Every blade contact; longer for heavier hits.",
+   "frames": "3–4 (cap)",
+   "params": {
+    "min": 3,
+    "max": 4
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "built",
+   "where": "engine/motion.js stops/bodyT()",
+   "sources": [
+    "https://sourcegaming.info/2015/11/11/thoughts-on-hitstop-sakurais-famitsu-column-vol-490-1/",
+    "research/anime-fight-craft.md"
+   ]
+  },
+  {
+   "id": "smear-ribbon",
+   "name": "Smear ribbon",
+   "looks": "A tapering white (or red on the impact frame) paper strip swept behind the blade tip.",
+   "use": "Any fast swing above 5 m/s tip speed.",
+   "frames": "3-frame trail",
+   "params": {
+    "minSpeed": 5,
+    "frames": 3
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "built",
+   "where": "engine/motion.js updateRibbons(); Blender: blender/world/slash_fx.py",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Smear_frame",
+    "https://garagefarm.net/blog/smear-frames-enhancing-motion-in-animation"
+   ]
+  },
+  {
+   "id": "sparks",
+   "name": "Paper-shard sparks",
+   "looks": "White-gold paper shards burst from the contact point and fall.",
+   "use": "Blade-to-blade contact; count scales with intensity.",
+   "frames": "~13",
+   "params": {
+    "count": "24+40·I",
+    "life": 0.55
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "built",
+   "where": "engine/motion.js makeSparks()",
+   "sources": [
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar"
+   ]
+  },
+  {
+   "id": "light-shafts",
+   "name": "Light shafts (god-ray cards)",
+   "looks": "Soft additive beams from one high light, flickering slightly; each card turns to face the camera around its axis.",
+   "use": "The lone-hero reference look: dark hall, one shaft, sword raised into it. Revelation, prayer, entrance.",
+   "frames": "continuous; fade 24",
+   "params": {
+    "origin": [
+     -1.6,
+     5.2,
+     -2.2
+    ],
+    "target": [
+     0.4,
+     0,
+     0.8
+    ],
+    "count": 7,
+    "width": 0.5,
+    "spread": 1.2,
+    "intensity": 0.22,
+    "color": [
+     1,
+     0.78,
+     0.5
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.shafts() + p.shafts[name]",
+   "sources": [
+    "https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-13-volumetric-light-scattering-post-process",
+    "https://pmndrs.github.io/postprocessing/public/docs/file/src/effects/GodRaysEffect.js.html",
+    "https://www.studiobinder.com/blog/what-is-volumetric-lighting",
+    "research/reference-videos.md"
+   ]
+  },
+  {
+   "id": "godrays-screen",
+   "name": "Screen-space god rays",
+   "looks": "Radial blur of the bright sky/sun behind occluders, so the figure cuts dark streaks out of the light.",
+   "use": "Backlit dawn silhouettes.",
+   "frames": "continuous",
+   "params": {
+    "density": 0.9,
+    "decay": 0.95,
+    "samples": 60
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "planned: second ShaderPass with an occlusion pre-pass (GPU Gems 3 ch. 13)",
+   "sources": [
+    "https://developer.nvidia.com/gpugems/gpugems3/part-ii-light-and-shadows/chapter-13-volumetric-light-scattering-post-process",
+    "https://pmndrs.github.io/postprocessing/public/docs/file/src/effects/GodRaysEffect.js.html"
+   ]
+  },
+  {
+   "id": "volumetric-fog",
+   "name": "Volumetric fog",
+   "looks": "Depth haze plus light that scatters in the air; shafts become visible.",
+   "use": "Openings, establishing shots, the 70%-dark hall.",
+   "frames": "continuous",
+   "params": {
+    "density": 0.02,
+    "anisotropy": 0.6
+   },
+   "renderer": [
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "Blender: Volume Scatter in the world/hall (blender/world/build_world.py --fog); three.js uses scene.fog + light-shafts",
+   "sources": [
+    "https://theasc.com/blog/shot-craft/smoke-and-fog",
+    "https://media.disneyanimation.com/technology/publications/2021/the-atmosphere-of-raya-and-the-last-dragon.pdf"
+   ]
+  },
+  {
+   "id": "dust",
+   "name": "Dust motes",
+   "looks": "Tiny warm specks drifting and twinkling in the light.",
+   "use": "Quiet before the storm, interiors, a held stare. Needs a dark surround and a hard beam.",
+   "frames": "continuous",
+   "params": {
+    "count": 500,
+    "size": [
+     4,
+     3.2,
+     4
+    ],
+    "particleSize": 0.012
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"dust\"})",
+   "sources": [
+    "https://melies.co/cinematic-techniques/atmosphere/dust-motes"
+   ]
+  },
+  {
+   "id": "embers",
+   "name": "Embers",
+   "looks": "Glowing orange/crimson sparks rising and flickering.",
+   "use": "Demonic presence, a burning set, rage building; crimson for demons.",
+   "frames": "continuous",
+   "params": {
+    "count": 220,
+    "color": [
+     1,
+     0.28,
+     0.12
+    ]
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"ember\"})",
+   "sources": [
+    "https://melies.co/cinematic-techniques/atmosphere/dust-motes"
+   ]
+  },
+  {
+   "id": "petals",
+   "name": "Falling petals",
+   "looks": "Pale paper petals tumbling down on the wind.",
+   "use": "Farewell, a death, spring duels, a calm before the strike.",
+   "frames": "continuous",
+   "params": {
+    "count": 420,
+    "particleSize": 0.07
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"petal\"})"
+  },
+  {
+   "id": "snow",
+   "name": "Snow",
+   "looks": "Soft white flakes falling.",
+   "use": "Winter duels, isolation, silence.",
+   "frames": "continuous",
+   "params": {
+    "count": 900
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"snow\"})"
+  },
+  {
+   "id": "ash",
+   "name": "Ash",
+   "looks": "Grey flakes drifting down slowly.",
+   "use": "Aftermath, a burned village, black-and-white memory.",
+   "frames": "continuous",
+   "params": {
+    "count": 220
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"ash\"})"
+  },
+  {
+   "id": "paper-shards",
+   "name": "Paper shards",
+   "looks": "Small paper triangles falling and turning (house rule: shards, not blood).",
+   "use": "After a cut lands on a paper body; a torn banner.",
+   "frames": "24–48",
+   "params": {
+    "count": 140
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fx.particles({kind:\"shard\"})"
+  },
+  {
+   "id": "rain",
+   "name": "Rain",
+   "looks": "Thin bright streaks, slanted by wind, with splashes on the ground.",
+   "use": "Grief, a duel in a storm, heavy mood.",
+   "frames": "continuous",
+   "params": {
+    "count": 1500,
+    "angle": 12
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender",
+    "ffmpeg post"
+   ],
+   "status": "planned",
+   "where": "planned: LineSegments streaks in fx.js; Blender particle system"
+  },
+  {
+   "id": "glint",
+   "name": "Sword glint \"ping\"",
+   "looks": "A 4-ray star with a thin diagonal pair pops on the blade edge, peaks, rotates a little and dies.",
+   "use": "4–6 frames before a strike (warning), on a draw, a hero beauty shot. Pair with a high \"ping\" sound.",
+   "frames": "6–8",
+   "params": {
+    "size": 140,
+    "dur": 0.3,
+    "color": [
+     1,
+     0.93,
+     0.78
+    ],
+    "rot": 0.2
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "new",
+   "where": "engine/fx.js fxAt \"glint\" / fx.glint()",
+   "sources": [
+    "https://borisfx.com/documentation/sapphire/avx/glint/",
+    "https://tvtropes.org/pmwiki/pmwiki.php/Main/LensFlare",
+    "https://www.blendswap.com/blend/29361",
+    "research/anime-fight-craft.md"
+   ]
+  },
+  {
+   "id": "lens-flare",
+   "name": "Lens flare",
+   "looks": "A chain of soft ghosts and a streak across the frame from a bright source.",
+   "use": "Sunrise reveal, an Akira-style headlight moment; sparingly.",
+   "frames": "continuous",
+   "params": {
+    "ghosts": 5,
+    "streak": 0.6
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "planned",
+   "where": "planned: three/addons Lensflare (MIT) on the sun disc",
+   "sources": [
+    "https://tvtropes.org/pmwiki/pmwiki.php/Main/LensFlare"
+   ]
+  },
+  {
+   "id": "eye-glow-trail",
+   "name": "Eye glow trail",
+   "looks": "The glowing eye slits leave a short bright streak when the head whips.",
+   "use": "Head snap, a demon turning, the \"decide\" moment.",
+   "frames": "3–6",
+   "params": {
+    "frames": 4,
+    "minSpeed": 2
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: ribbon (like the smear ribbon) from the eye joints; bloom carries it",
+   "sources": [
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "aura",
+   "name": "Aura",
+   "looks": "A boiling halo of light leaking from the paper seams, with rising sparks; edges boil at 8–12 fps.",
+   "use": "Power-up, demonic possession, will to fight. Crimson = demonic, amber = human.",
+   "frames": "24–72",
+   "params": {
+    "color": [
+     1,
+     0.3,
+     0.15
+    ],
+    "boilFps": 12,
+    "strength": 1
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "planned: inflated back-face shell + noise + bloom, plus ember particles",
+   "sources": [
+    "https://www.premiumbeat.com/blog/how-to-create-line-boil-animations",
+    "https://aejuice.com/blog/how-to-make-a-super-saiyan-aura-in-after-effects/"
+   ]
+  },
+  {
+   "id": "afterimage",
+   "name": "Afterimages",
+   "looks": "2–4 fading paper copies trail a fast swing or dash.",
+   "use": "Superhuman speed, a feint.",
+   "frames": "4–8",
+   "params": {
+    "copies": 3,
+    "spacing": 0.03,
+    "fade": 0.5
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "planned: re-pose the figure at earlier body times (motion.js does this for the ribbon) with fading ghost materials; not AfterimagePass (feedback is not frame-independent)",
+   "sources": [
+    "https://actionnews-89l.pages.dev/anime/ufotable-studio-deep-dive-demon-slayer-fate-animation-style"
+   ]
+  },
+  {
+   "id": "flash-step",
+   "name": "Flash-step",
+   "looks": "The fighter folds flat, bursts into confetti, a light streak crosses the screen, he unfolds behind the target; the camera whips with it.",
+   "use": "Teleport-fast dash, a reversal.",
+   "frames": "6–10",
+   "params": {
+    "streak": 1,
+    "confetti": 80
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "docs/EFFECTS-PLAN.md §4: shards + speed-lines + flash + whip-pan",
+   "sources": [
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar"
+   ]
+  },
+  {
+   "id": "shadow-vanish",
+   "name": "Shadow vanish",
+   "looks": "The shadow slides away first, then the body dissolves into ink.",
+   "use": "Ninja/demon exit, an ambush set-up.",
+   "frames": "12–24",
+   "params": {
+    "delay": 0.2
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "docs/EFFECTS-PLAN.md §4"
+  },
+  {
+   "id": "ink-wipe",
+   "name": "Ink splash transition",
+   "looks": "A sumi-ink splash or brush stroke spreads across the frame as a matte, revealing the next shot.",
+   "use": "Scene changes, chapter cards, the title.",
+   "frames": "12–20",
+   "params": {
+    "matte": "brush-01",
+    "dir": "lr"
+   },
+   "renderer": [
+    "ffmpeg post",
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: high-contrast ink matte (SHIMI can generate one) → ffmpeg maskedmerge between shots",
+   "sources": [
+    "https://www.adobe.com/learn/premiere-pro/web/ink-transition"
+   ]
+  },
+  {
+   "id": "speed-ramp",
+   "name": "Speed ramp",
+   "looks": "Time slows into the moment of importance, then snaps back faster (1 → 0.25 → 1.15).",
+   "use": "The approach to the decisive blow; a dodge seen in slow motion.",
+   "frames": "24–48",
+   "params": {
+    "curve": [
+     [
+      0,
+      1
+     ],
+     [
+      0.4,
+      0.25
+     ],
+     [
+      0.8,
+      1.15
+     ]
+    ]
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: a body-time warp track like hit-stop in motion.js",
+   "sources": [
+    "https://www.premiumbeat.com/blog/alter-the-flow-of-time-with-speed-ramping/",
+    "https://tvtropes.org/pmwiki/pmwiki.php/Main/Ramping",
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "slow-mo",
+   "name": "Slow motion hold",
+   "looks": "Bodies at quarter speed while particles and camera keep a little faster.",
+   "use": "Grief, the moment after the cut, zanshin.",
+   "frames": "24–72",
+   "params": {
+    "rate": 0.25
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: body-time track (same as speed-ramp)"
+  },
+  {
+   "id": "dof",
+   "name": "Depth of field / rack focus",
+   "looks": "Shallow focus isolates a subject; a rack pulls focus from hand to eyes or to the opponent.",
+   "use": "Intimacy, realisation, linking two subjects without a cut.",
+   "frames": "continuous / rack 12–24",
+   "params": {
+    "focus": 2.0,
+    "aperture": 0.002,
+    "maxblur": 0.01
+   },
+   "renderer": [
+    "three.js preview",
+    "Blender"
+   ],
+   "status": "planned",
+   "where": "planned: three/addons BokehPass (MIT) inserted before bloom",
+   "sources": [
+    "https://www.studiobinder.com/blog/rack-focus-shot-camera-movement-angles/",
+    "https://nofilmschool.com/rack-focus-shot-definition-examples",
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "motion-blur",
+   "name": "Motion blur",
+   "looks": "Directional blur on fast camera whips and swings.",
+   "use": "Whip-pan cuts; never on the slash frame itself (the smear does that job).",
+   "frames": "2–4",
+   "params": {
+    "shutter": 0.5
+   },
+   "renderer": [
+    "Blender",
+    "ffmpeg post"
+   ],
+   "status": "planned",
+   "where": "Blender motion blur; ffmpeg tmix on whip pans",
+   "sources": [
+    "https://actionnews-89l.pages.dev/anime/ufotable-studio-deep-dive-demon-slayer-fate-animation-style"
+   ]
+  },
+  {
+   "id": "whip-pan",
+   "name": "Whip-pan cut",
+   "looks": "The camera swings fast with heavy blur and cuts at the blurriest frame.",
+   "use": "Change of fighter, match-cut eye → sun.",
+   "frames": "4–6",
+   "params": {
+    "deg": 60,
+    "frames": 5
+   },
+   "renderer": [
+    "three.js preview",
+    "ffmpeg post"
+   ],
+   "status": "planned",
+   "where": "docs/FIX-LIST.md camera technique 4",
+   "sources": [
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "dutch-tilt",
+   "name": "Dutch tilt",
+   "looks": "Camera rolled 12–18°.",
+   "use": "Unease, a bind, a demon's point of view.",
+   "frames": "continuous",
+   "params": {
+    "deg": 14
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: KUROKO roll channel",
+   "sources": [
+    "docs/FIX-LIST.md"
+   ]
+  },
+  {
+   "id": "on-twos",
+   "name": "Stepped timing (on twos)",
+   "looks": "Bodies update every second frame; camera and effects stay on ones.",
+   "use": "Gives the 3D preview the anime cadence; ones for the decisive cut.",
+   "frames": "continuous",
+   "params": {
+    "step": 2
+   },
+   "renderer": [
+    "three.js preview"
+   ],
+   "status": "planned",
+   "where": "planned: quantise body time in the page; fx.js already redraws speed lines on twos",
+   "sources": [
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar",
+    "research/anime-fight-craft.md"
+   ]
+  }
+ ]
+}

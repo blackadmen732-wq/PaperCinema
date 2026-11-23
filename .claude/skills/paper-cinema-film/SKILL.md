@@ -23,7 +23,7 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
    - Reaction
 
    Add `twoHand` windows while both hands hold the sword, and a `duels` entry so the fighters watch and react to each other.
-5. **Camera:** prefer KUROKO rigs (`docs/CAMERA.md` section 7): match the feel to the move:
+5. **Camera:** direct it with the `scene-direction` skill (shot list, style, light, rhythm; tested rigs in `library/shots.json`, guide `docs/DIRECTION.md`). Prefer KUROKO rigs (`docs/CAMERA.md` section 7): match the feel to the move:
    - orbit + crane for standoffs
    - frame + dolly for cuts
    - track + torpedo for dashes

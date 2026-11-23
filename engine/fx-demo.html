@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FX Demo</title>
+<style>
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage { position: relative; overflow: hidden; }
+  #c { display: block; }
+  #label { position: absolute; left: 0; right: 0; top: 4.5%; text-align: center; color: #f3e7cf; z-index: 5;
+           font: 22px "DejaVu Serif", "IPAGothic", serif; letter-spacing: 3px; text-shadow: 0 1px 8px #000, 0 0 2px #000; }
+  #label small { display: block; font-size: 14px; letter-spacing: 2px; opacity: 0.7; margin-top: 6px; }
+</style>
+<script type="importmap">{ "imports": {
+  "three": "/node_modules/three/build/three.module.js",
+  "three/addons/": "/node_modules/three/examples/jsm/"
+} }</script>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas><div id="label"></div></div>
+<script type="module" src="/engine/fx-demo.js"></script>
+</body>
+</html>

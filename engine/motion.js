@@ -18,12 +18,16 @@ import { makeKatana } from './props.js';
 import { loadCharacter } from './library.js';
 import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, smooth } from './figure.js';
 import { paper, rng } from './paper.js';
+import { loadVoice, voiceLevel } from './voice-env.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/motion-test.json')).json();
 const VERTICAL = params.get('aspect') === 'vertical' || (film.format === 'vertical' && params.get('aspect') !== 'horizontal');
 const W = VERTICAL ? 720 : film.width, H = VERTICAL ? 1280 : film.height;
 const FPS = film.fps, DUR = film.duration;
+const FILM_NAME = (params.get('film') ?? '/film/motion-test.json').split('/').pop().replace('.json', '');
+const VOICE = film.voice ? await loadVoice(FILM_NAME) : null;   // spoken lines → eyes pulse (docs/VOICE.md)
+let FILM_TIME = 0;                                                // film time of the frame being drawn (voice does not freeze in hit-stop)
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1);
@@ -69,7 +73,7 @@ function poseOf(c, tb) {
   p.rwx += 0.006 * Math.cos(tb * 2 * Math.PI * 0.7 + c.phase);
   const e = eyesAt(c, tb);
   p.lid = Math.max(p.lid, e.lid);
-  if (c.fig.eyeMat) c.fig.eyeMat.emissiveIntensity = e.g * (1 - 0.8 * p.lid);
+  if (c.fig.eyeMat) c.fig.eyeMat.emissiveIntensity = e.g * (1 + 0.8 * voiceLevel(VOICE, c.id, FILM_TIME)) * (1 - 0.8 * p.lid);
   // eyes on the opponent: neck takes 40% of the turn, head 60%
   const o = other(c.id).motion(tb);
   let yaw = Math.atan2(o.x - p.x, o.z - p.z) - p.ry - p.ty - p.cy;
@@ -421,6 +425,7 @@ const washi = new THREE.Color('#f1e7d3');
 // ---------- frame ----------
 const flashEl = document.getElementById('flash'), fadeEl = document.getElementById('fade');
 window.renderAt = (t) => {
+  FILM_TIME = t;
   world.update(t);
   const tb = bodyT(t);
   poseAll(tb);

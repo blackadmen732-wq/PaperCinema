@@ -306,6 +306,23 @@
    "status_note": "✅"
   },
   {
+   "id": "VOICE",
+   "name": "Voice (spoken lines)",
+   "does": "Film `\"voice\"` lines → Kokoro-82M TTS (Apache-2.0, CPU) → cinematic chain (warmth, compression, hall, inner-monologue) → `output/<film>.voice.json`: cues mixed by SOUND with beds ducked 8 dB, plus 24 fps loudness envelopes to pulse the eyes",
+   "files": [
+    "tools/voice.py",
+    "engine/voice-env.js",
+    "assets/voice/",
+    "film/voice-test.json"
+   ],
+   "guide": [
+    "docs/VOICE.md"
+   ],
+   "command": "nice -n 10 python3 tools/voice.py film/x.json",
+   "status": "built",
+   "status_note": "✅ (eye pulse not wired into the renderers yet)"
+  },
+  {
    "id": "THUMB",
    "name": "Thumbnails",
    "does": "16:9 + 9:16 from the decisive-blow frame, kanji title, brush swash",
@@ -488,6 +505,36 @@
    "status_note": "✅"
   },
   {
+   "id": "SCENE",
+   "name": "Scene writing",
+   "does": "Idea → logline → beat sheet (1 s hook, jo-ha-kyū) → voiced lines with timing and direction → moves, shot types, sounds, effects → film-JSON outline; 9 reusable templates, taste rules, checklist",
+   "files": [
+    ".claude/skills/scene-writing/SKILL.md",
+    "library/scene-templates.json"
+   ],
+   "guide": [
+    "docs/SCENE-WRITING.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "DIRECTION",
+   "name": "Scene direction",
+   "does": "Story beat → shot list → KUROKO rigs / motion-page camera beats → lighting mood → cut rhythm → taste review; 49 named shots (tested in 9:16 and 16:9), 17 direction styles (Kurosawa, Leone, Kubrick, Wong Kar-wai, Deakins, Spielberg, ufotable, MAPPA, Sword of the Stranger, Champloo, Shinkai, Kon, Itano, Arcane, Hong Kong, John Wick, dark monologue), 11 lighting moods, a fight-beat map",
+   "files": [
+    ".claude/skills/scene-direction/SKILL.md",
+    "library/shots.json"
+   ],
+   "guide": [
+    "docs/DIRECTION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "RESEARCH",
    "name": "Research",
    "does": "History with confidence marks",
@@ -510,6 +557,24 @@
    "command": null,
    "status": "planned",
    "status_note": "📋 planned"
+  },
+  {
+   "id": "FX",
+   "name": "FX post-processing (three.js preview)",
+   "does": "Deterministic effect stack any page can import: bloom (UnrealBloomPass), one lens pass (colour-grade moods, vignette, film grain, letterbox, chromatic-aberration flash, radial speed lines, ink impact frame, flash/fade), light-shaft cards, seeded particles (dust/ember/petal/snow/ash/shard), glint \"ping\", trauma shake; `fxAt()` turns film `fx` events into per-frame params; catalogue of 42 effects in `library/effects.json`",
+   "files": [
+    "engine/fx.js",
+    "engine/fx-demo.html",
+    "engine/fx-demo.js",
+    "film/fx-demo.json",
+    "library/effects.json"
+   ],
+   "guide": [
+    "docs/EFFECTS-CATALOG.md"
+   ],
+   "command": "node engine/render.mjs --page engine/fx-demo.html --film film/fx-demo.json --still 3.7,13.7 --prefix fx-",
+   "status": "test",
+   "status_note": "🧪 demo page (wire into main.js / motion.js next)"
   }
  ],
  "connections": [

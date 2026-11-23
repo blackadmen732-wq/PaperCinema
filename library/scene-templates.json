@@ -1,0 +1,154 @@
+{
+ "_about": "Reusable scene shapes for Paper Cinema Shorts. Procedure and taste rules: .claude/skills/scene-writing/SKILL.md; human guide: docs/SCENE-WRITING.md. Each beat: pct = [from, to] as % of the scene body (the 6 s signature opening comes before it, the 2.6 s end card overlays its end); purpose; lines = line ideas (rewrite them, never paste them as-is); moves = names from library/moves.json or library/poses.json (checked); shot = a shot type shared with library/shots.json (eye-reveal, blade-slide, low-hero-push, whip-reveal, orbit-zanshin, silhouette-wide, over-shoulder-standoff, impact-zoom); sound = ids in assets/sfx/ or a description for a new query; effect = what to show, with 'planned' where the engine cannot do it yet. jhk = jo / ha / kyu / zanshin phase (or ki / sho / ten / ketsu for kishotenketsu-shaped templates).",
+ "shotTypes": ["eye-reveal", "blade-slide", "low-hero-push", "whip-reveal", "orbit-zanshin", "silhouette-wide", "over-shoulder-standoff", "impact-zoom"],
+ "templates": [
+  {
+   "id": "standoff-and-single-cut",
+   "name": "Standoff and single cut",
+   "useWhen": "Two fighters, one decision. The classic samurai-film ending: a long stillness, one flash, the loser's light goes out late.",
+   "lengths": [30, 45, 60],
+   "voice": "Optional. A witness narrator works best; 3-5 lines; nothing in the 2 s before the cut.",
+   "references": "Sanjuro's final duel (about 20 s of stillness, one flash) [C]; Strike Grammar.",
+   "beats": [
+    {"pct": [0, 4], "jhk": "jo", "purpose": "Hook: the stake in one image and one line", "lines": ["Name the cost: 'Only one of them was getting back in the boat.'"], "moves": ["rest-hand-on-hilt"], "shot": "eye-reveal", "sound": "title-taiko, then wind-bed", "effect": "first frame lit"},
+    {"pct": [4, 30], "jhk": "jo", "purpose": "Distance: show the space between them and what each wants", "lines": ["One concrete detail about each fighter's weapon or habit (the set-up)"], "moves": ["chudan", "hasso"], "shot": "silhouette-wide", "sound": "wind-bed, sea-bed", "effect": "none"},
+    {"pct": [30, 55], "jhk": "ha", "purpose": "Pressure: a step, a shift of grip, a line that cuts deeper than steel", "lines": ["The provocation or the quiet verdict"], "moves": ["step-in", "jodan-high"], "shot": "over-shoulder-standoff", "sound": "steps-in", "effect": "glow brightens on both"},
+    {"pct": [55, 65], "jhk": "ha", "purpose": "Ma: nothing moves; one eye", "lines": [], "moves": ["jodan-high"], "shot": "eye-reveal", "sound": "music out, wind only", "effect": "eye glow brightest thing on screen"},
+    {"pct": [65, 75], "jhk": "kyu", "purpose": "The cut: once, frozen in hit-stop", "lines": [], "moves": ["jodan-high-wind-up", "shomen-strike"], "shot": "impact-zoom", "sound": "whoosh-b, impact, paper tear, wet splat 0.1 s later", "effect": "events.impact, shake 0.015, hit-stop, paper shards"},
+    {"pct": [75, 100], "jhk": "zanshin", "purpose": "Delayed result: the loser's paper splits or the light fades; the victor holds", "lines": ["One short line of aftermath, a noun at the end"], "moves": ["zanshin", "struck-reel", "kneel-collapse", "fallen"], "shot": "orbit-zanshin", "sound": "silence, then temple-bell", "effect": "light goes out (death); end card"}
+   ],
+   "pitfalls": ["A clash before the cut kills the stillness", "Showing the cut at normal speed in a wide", "Music over the ma"]
+  },
+  {
+   "id": "monologue-before-battle",
+   "name": "Monologue before battle",
+   "useWhen": "The owner's reference format: one character, 15-25 s of voice, slow dark heroic shots, one gesture.",
+   "lengths": [30, 45],
+   "voice": "4-6 lines, 3-12 words each, pauses 0.8-2.5 s, lines shorten toward the gesture; one triad at most.",
+   "references": "research/reference-videos.md (videos A and C); Henry V for anaphora and the triad [C].",
+   "beats": [
+    {"pct": [0, 15], "jhk": "jo", "purpose": "Hook: the eye and the first line, a personal concrete image", "lines": ["'My mother folded this armour from her prayers.'"], "moves": ["stand-blade-low"], "shot": "eye-reveal", "sound": "wind-bed, breath", "effect": "70% darkness; glow pulses with stressed words (planned)"},
+    {"pct": [15, 35], "jhk": "jo", "purpose": "Memory: what this person carries (the set-up)", "lines": ["A count, a habit, a place: 'One for every winter I came home.'"], "moves": [], "shot": "blade-slide", "sound": "paper creak", "effect": "light leaks through folds"},
+    {"pct": [35, 55], "jhk": "ha", "purpose": "The admission: the stake, said sideways (subtext)", "lines": ["'There are not enough for today.'"], "moves": ["stand-blade-low"], "shot": "low-hero-push", "sound": "low drone enters", "effect": "none"},
+    {"pct": [55, 75], "jhk": "kyu", "purpose": "The one gesture: sword raised into the single shaft of light", "lines": ["The resolve, rising: 'So I will spend them slowly.'"], "moves": ["jodan-high"], "shot": "low-hero-push", "sound": "drone rises, reveal-gong", "effect": "blade edge flares"},
+    {"pct": [75, 100], "jhk": "zanshin", "purpose": "Scale and loss: small figure in the dark or fog, the last line, cut to black", "lines": ["An order or a gift, ending on a noun: 'look for the light.'"], "moves": ["jodan-high"], "shot": "silhouette-wide", "sound": "music swells under the last line, then dead silence", "effect": "glow dims one step; fog (planned); end card"}
+   ],
+   "pitfalls": ["Speeches about honour or destiny", "More than one gesture", "Fast cutting; the voice drives the rhythm"]
+  },
+  {
+   "id": "cursed-blade-awakens",
+   "name": "Cursed blade awakens",
+   "useWhen": "Fiction thread: a cursed sword (library/swords) shows its hunger; the wielder chooses. The Ronin never speaks; the blade may whisper (our choice).",
+   "lengths": [30, 45],
+   "voice": "Another character states the legend as a threat; the sword gets 2-6 whispered words; the wielder says nothing.",
+   "references": "docs/STORY-BIBLE.md (Kurenai-oni cuts the light out of whatever it touches).",
+   "beats": [
+    {"pct": [0, 20], "jhk": "jo", "purpose": "Hook: the legend as a stake", "lines": ["'Every man who carried that sword is dead.'"], "moves": ["rest-hand-on-hilt", "hasso"], "shot": "over-shoulder-standoff", "sound": "sea-bed or wind-bed", "effect": "crimson leaks at the seam of the scabbard"},
+    {"pct": [20, 38], "jhk": "ha", "purpose": "The sword as a character: its want", "lines": ["Whisper, delighted: 'She is so bright.'"], "moves": [], "shot": "blade-slide", "sound": "low drone, whisper", "effect": "crimson travels the seam"},
+    {"pct": [38, 55], "jhk": "ha", "purpose": "The flicker: amber eyes go crimson for 2 frames", "lines": ["The other character pleads in one word"], "moves": ["rest-hand-on-hilt"], "shot": "eye-reveal", "sound": "wind only", "effect": "eye colour flicker"},
+    {"pct": [55, 63], "jhk": "ha", "purpose": "Ma before the draw", "lines": [], "moves": ["step-in"], "shot": "low-hero-push", "sound": "silence", "effect": "none"},
+    {"pct": [63, 72], "jhk": "kyu", "purpose": "The draw-cut: what he cuts is the choice (the pay-off)", "lines": [], "moves": ["iai-draw", "blade-out-recover", "uke-high"], "shot": "whip-reveal", "sound": "draw-shing, whoosh-a, paper tear", "effect": "crimson smear ribbon, ink impact frame, light of the cut object goes out"},
+    {"pct": [72, 100], "jhk": "zanshin", "purpose": "Cost: the eyes return to amber slowly, or do not", "lines": ["The sword, sulking: '...Next time.'"], "moves": ["zanshin", "stand-blade-low"], "shot": "orbit-zanshin", "sound": "temple-bell, steps-out", "effect": "crimson seam dims; end card"}
+   ],
+   "pitfalls": ["Explaining the colour code", "A demonic voice with heavy effects; keep the whisper human and close", "Letting the Ronin talk"]
+  },
+  {
+   "id": "duel-in-the-rain",
+   "name": "Duel in the rain",
+   "useWhen": "An exchange of 2-4 moves where weather is the obstacle and the clock: footing, sight, the paper getting wet. Only if the rain means something.",
+   "lengths": [45, 60],
+   "voice": "Little or none. Rain is the score; footsteps and clashes on its rhythm (Zatoichi 2003 lesson [C]).",
+   "references": "research/anime-fight-craft.md sound section; Strike Grammar exchange.",
+   "beats": [
+    {"pct": [0, 10], "jhk": "jo", "purpose": "Hook: a drop hits a blade edge and runs off as paint-red light", "lines": ["Optional: 'The paper was already soaking.'"], "moves": ["chudan"], "shot": "blade-slide", "sound": "rain on paper (new query: 'rain on roof light')", "effect": "rain (planned); wet darkening of washi (SHIMI, planned on 3D)"},
+    {"pct": [10, 30], "jhk": "jo", "purpose": "Distance and footing: who is standing where, and what water does to paper", "lines": [], "moves": ["chudan", "hasso"], "shot": "silhouette-wide", "sound": "rain bed", "effect": "none"},
+    {"pct": [30, 60], "jhk": "ha", "purpose": "Exchange, getting faster: attack, block, attack, dodge", "lines": [], "moves": ["lunge-shomen", "parry-high", "kesa-giri", "dodge-left", "tsuki", "jump-back"], "shot": "over-shoulder-standoff", "sound": "clash-steel, clash-light, steel-scrape on the rain rhythm", "effect": "sparks hiss; hit-stop short (3 frames)"},
+    {"pct": [60, 68], "jhk": "ha", "purpose": "The slip or the bind: the weather decides", "lines": [], "moves": ["bind", "stagger-back"], "shot": "eye-reveal", "sound": "rain drops out to near silence", "effect": "dutch roll on the stagger"},
+    {"pct": [68, 76], "jhk": "kyu", "purpose": "The cut", "lines": [], "moves": ["kesa-giri"], "shot": "impact-zoom", "sound": "impact, paper tear, splat", "effect": "paint diluted by rain runs (SHIMI)"},
+    {"pct": [76, 100], "jhk": "zanshin", "purpose": "The rain keeps falling; it washes the paint", "lines": ["One line, or the rain alone"], "moves": ["zanshin", "kneel-collapse"], "shot": "orbit-zanshin", "sound": "rain bed returns, softer", "effect": "light goes out; end card"}
+   ],
+   "pitfalls": ["Rain as decoration", "A clash every second with no rhythm", "Too long an exchange in a 45 s Short"]
+  },
+  {
+   "id": "master-and-student",
+   "name": "Master and student",
+   "useWhen": "A lesson told as a duel or a correction: the master wins without cutting. Kishotenketsu shape: the twist is what the lesson really was.",
+   "lengths": [45, 60],
+   "voice": "Dialogue, 4-6 lines total; the master speaks least; the last line is the student's, or silence.",
+   "references": "Kishotenketsu (introduction, development, twist, reconciliation) [C].",
+   "beats": [
+    {"pct": [0, 15], "jhk": "ki", "purpose": "Hook: the student attacks the master at full speed", "lines": ["Student: 'Again.'"], "moves": ["lunge-shomen", "dodge-left"], "shot": "whip-reveal", "sound": "whoosh-a, steps-in", "effect": "none"},
+    {"pct": [15, 45], "jhk": "sho", "purpose": "Development: every attack fails the same way", "lines": ["Master, one correction, concrete: 'Your feet arrive before your sword.'"], "moves": ["kesa-giri", "parry-high", "tsuki", "step-back"], "shot": "over-shoulder-standoff", "sound": "clash-light, steps", "effect": "student's glow flares with frustration"},
+    {"pct": [45, 70], "jhk": "ten", "purpose": "Twist: the master lowers the sword; the lesson was not about the cut", "lines": ["Master: 'Now. Don't.'"], "moves": ["low-ready", "stand-blade-low"], "shot": "eye-reveal", "sound": "silence", "effect": "none"},
+    {"pct": [70, 85], "jhk": "kyu", "purpose": "The student stops a cut a finger from the master's throat (the pay-off)", "lines": [], "moves": ["jodan-high-wind-up", "shomen-strike"], "shot": "impact-zoom", "sound": "whoosh-b cut off dead, no impact", "effect": "hit-stop with no contact; impact frame without shards"},
+    {"pct": [85, 100], "jhk": "ketsu", "purpose": "Reconciliation: both glows calm to the same amber", "lines": ["Student, quietly, the lesson in a noun"], "moves": ["zanshin", "neutral"], "shot": "orbit-zanshin", "sound": "temple-bell", "effect": "end card"}
+   ],
+   "pitfalls": ["The master giving a speech", "Stating the moral", "Making the student look stupid instead of eager"]
+  },
+  {
+   "id": "the-last-stand",
+   "name": "The last stand",
+   "useWhen": "One against many, or one holding a place: the stake is time, not victory. Ends in a light going out, or in dawn.",
+   "lengths": [45, 60],
+   "voice": "A short monologue (3-4 lines) before the stand, nothing during it, one line or none after.",
+   "references": "Story bible episode 4 (the Gold Armoured Samurai at Sekigahara); battle-speech rhythm (anaphora) [C].",
+   "beats": [
+    {"pct": [0, 10], "jhk": "jo", "purpose": "Hook: what is being protected, in one image", "lines": ["'They need until dawn. The bridge is narrow.'"], "moves": ["low-ready"], "shot": "low-hero-push", "sound": "wind-bed, distant drums", "effect": "none"},
+    {"pct": [10, 30], "jhk": "jo", "purpose": "The odds: silhouettes of many; the one", "lines": ["A count: 'Twelve on the bridge. One of me. One bridge.'"], "moves": ["chudan"], "shot": "silhouette-wide", "sound": "steps of many (new query)", "effect": "many lanterns in fog (planned)"},
+    {"pct": [30, 65], "jhk": "ha", "purpose": "The stand: exchanges, each costing light", "lines": [], "moves": ["parry-high", "kesa-giri", "bind", "tsuki", "stagger-back"], "shot": "over-shoulder-standoff", "sound": "clash-steel, blade-clash, steel-scrape", "effect": "his glow dims a step after each exchange"},
+    {"pct": [65, 75], "jhk": "kyu", "purpose": "The last cut, given everything", "lines": [], "moves": ["jodan-high-wind-up", "shomen-strike"], "shot": "impact-zoom", "sound": "silence, then impact-drum", "effect": "biggest shard burst of the episode"},
+    {"pct": [75, 100], "jhk": "zanshin", "purpose": "He stays standing as his light goes out; the sky lightens behind", "lines": ["None, or the first line returned (the loop)"], "moves": ["zanshin", "kneel-collapse"], "shot": "silhouette-wide", "sound": "wind, then temple-bell", "effect": "light goes out; dawn rises; end card"}
+   ],
+   "pitfalls": ["Killing faceless enemies for spectacle (no cruelty, story bible)", "Too many exchanges in a Short", "A triumphant ending that betrays the loss"]
+  },
+  {
+   "id": "iaido-draw",
+   "name": "Iaido draw",
+   "useWhen": "A single draw-cut from the scabbard as the whole scene: the weapon is the character. Good for sword introductions and episode teasers.",
+   "lengths": [30],
+   "voice": "None or one line before the draw. The sound of the draw is the line.",
+   "references": "Iaido sequence: draw, cut, chiburi (flick the blade clean), noto (re-sheathe) [C] (research/anime-fight-craft.md 1d).",
+   "beats": [
+    {"pct": [0, 20], "jhk": "jo", "purpose": "Hook: the hand rests on the hilt; the seam glows", "lines": ["Optional: the sword's name and one fact of its legend"], "moves": ["rest-hand-on-hilt"], "shot": "blade-slide", "sound": "wind-bed", "effect": "glow along the scabbard mouth"},
+    {"pct": [20, 50], "jhk": "ha", "purpose": "Waiting: breathing, the target (a falling leaf, a candle, a paper crane)", "lines": [], "moves": ["rest-hand-on-hilt"], "shot": "eye-reveal", "sound": "breath, one drip", "effect": "none"},
+    {"pct": [50, 60], "jhk": "kyu", "purpose": "The draw-cut, faster than the eye; hide it", "lines": [], "moves": ["iai-draw", "blade-out-recover"], "shot": "whip-reveal", "sound": "koiguchi tick, draw-shing, whoosh-c", "effect": "smear ribbon (amber or crimson)"},
+    {"pct": [60, 75], "jhk": "zanshin", "purpose": "Delayed result: the target falls in two a beat later", "lines": [], "moves": ["zanshin"], "shot": "impact-zoom", "sound": "paper tear late, then silence", "effect": "paper target splits, shards drift"},
+    {"pct": [75, 100], "jhk": "zanshin", "purpose": "Chiburi and noto: paint flicked off, blade home with a hard click", "lines": ["One line after the click, or none"], "moves": ["stand-blade-low", "rest-hand-on-hilt"], "shot": "orbit-zanshin", "sound": "flick whoosh, hard wooden click with no reverb", "effect": "paint flick (chiburi pose planned); end card"}
+   ],
+   "pitfalls": ["Showing the draw clearly at normal speed", "No delayed result", "A reverb tail on the sheathe click (it must feel final)"]
+  },
+  {
+   "id": "aftermath-zanshin",
+   "name": "Aftermath (zanshin)",
+   "useWhen": "The fight already happened (events with negative times). The scene is what remains: mono no aware, the pathos of things passing.",
+   "lengths": [30, 45],
+   "voice": "One survivor or witness, 3-5 lines, slow, tired; the lines are about objects, not feelings.",
+   "references": "Mono no aware and sabi (SEP Japanese Aesthetics) [D]; Harakiri's out-of-order telling [C].",
+   "beats": [
+    {"pct": [0, 15], "jhk": "jo", "purpose": "Hook: the result first, a fallen light or a broken blade", "lines": ["'It was over before the gulls came back.'"], "moves": ["zanshin", "fallen"], "shot": "silhouette-wide", "sound": "sea-bed, gulls (new query)", "effect": "one light out, one still on"},
+    {"pct": [15, 45], "jhk": "ha", "purpose": "Objects: what the fight left (a scabbard in the surf, a headband tail)", "lines": ["Three objects, one per line (the one triad)"], "moves": ["stand-blade-low"], "shot": "blade-slide", "sound": "splash, wind", "effect": "paint drying on paper (SHIMI tide line)"},
+    {"pct": [45, 60], "jhk": "ha", "purpose": "Ink-world flash: the moment, in sumi-e memory (1-2 s)", "lines": [], "moves": ["shomen-strike"], "shot": "impact-zoom", "sound": "the impact, muffled, as memory", "effect": "ink world black-and-white (story bible rule 4); grade planned"},
+    {"pct": [60, 80], "jhk": "kyu", "purpose": "The survivor turns away; the gesture of leaving", "lines": ["The shortest line: what he did next"], "moves": ["stand-blade-low"], "shot": "low-hero-push", "sound": "steps-out", "effect": "none"},
+    {"pct": [80, 100], "jhk": "zanshin", "purpose": "The place without them; the sea returns (the loop)", "lines": ["A last object kept: 'I kept the shavings.'"], "moves": [], "shot": "orbit-zanshin", "sound": "sea-bed, temple-bell", "effect": "crane up (KUROKO crane feel); end card"}
+   ],
+   "pitfalls": ["Grief stated aloud", "Lingering on the dead body (show the light going out instead)", "Too many flashbacks; one ink flash is enough"]
+  },
+  {
+   "id": "the-witness",
+   "name": "The witness",
+   "useWhen": "A historical duel told by a minor or fictional onlooker (boatman, retainer, child, the sea). The honest way to voice history: our words in a witness's mouth, tradition labelled.",
+   "lengths": [45, 60],
+   "voice": "The witness narrates in past tense, 5-8 lines; the historical figure speaks only a traditional line, labelled.",
+   "references": "research/ganryujima.md; worked example A in the scene-writing skill.",
+   "beats": [
+    {"pct": [0, 12], "jhk": "jo", "purpose": "Hook: the witness's relation to the hero, one line", "lines": ["'I rowed him to the island. He did not speak once.'"], "moves": ["stand-blade-low"], "shot": "over-shoulder-standoff", "sound": "rowing, sea-bed", "effect": "none"},
+    {"pct": [12, 30], "jhk": "jo", "purpose": "The detail only the witness saw (the set-up)", "lines": ["'He carved my spare oar into a sword.' (tradition, labelled)"], "moves": [], "shot": "blade-slide", "sound": "reveal-gong soft", "effect": "glow on the grain"},
+    {"pct": [30, 55], "jhk": "ha", "purpose": "The other side: the opponent waiting, the gesture that loses (scabbard thrown)", "lines": ["The traditional line, by the hero, cold: 'You have already lost.'"], "moves": ["iai-draw", "throw-scabbard", "blade-out-recover"], "shot": "silhouette-wide", "sound": "draw-shing, throw-whoosh, splash", "effect": "subtitle: 'As tradition tells it.'"},
+    {"pct": [55, 62], "jhk": "ha", "purpose": "Ma", "lines": [], "moves": ["jodan-high"], "shot": "eye-reveal", "sound": "wind only", "effect": "none"},
+    {"pct": [62, 72], "jhk": "kyu", "purpose": "The blow", "lines": [], "moves": ["jodan-high-wind-up", "shomen-strike"], "shot": "impact-zoom", "sound": "whoosh-b, impact", "effect": "events.impact, shake, shards"},
+    {"pct": [72, 100], "jhk": "zanshin", "purpose": "What the witness kept", "lines": ["'One blow. Then he asked me to row.'", "'I kept the shavings.'"], "moves": ["zanshin", "fallen"], "shot": "orbit-zanshin", "sound": "silence, temple-bell, sea-bed", "effect": "light goes out; end card"}
+   ],
+   "pitfalls": ["Captioning invented lines as the historical figure's quote", "The witness explaining the hero's psychology", "Unlabelled tradition"]
+  }
+ ]
+}

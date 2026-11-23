@@ -1,0 +1,4185 @@
+{
+ "_about": "Paper Cinema shot library: named, reusable camera moves for KUROKO (main engine, shot.rig) and the motion page (film.camera beats). Read docs/DIRECTION.md and .claude/skills/scene-direction/SKILL.md. Marks: D = documented in our own docs/tests, C = commonly reported (secondary sources), I = our inference.",
+ "_how_to_paste": [
+  "Main engine: copy 'rig' (tuned for 9:16 vertical, the default format) or 'rig_16x9' (when present, for horizontal films) into a shot: {\"id\":\"S3\",\"start\":4.6,\"end\":6.2,\"mode\":\"dawn\",\"rig\": <rig>}. Replace 'hero'/'foe' with your performer ids (parts: .head .chest .hips .hand .root).",
+  "Anchor rigs: beat 't' values here are seconds FROM THE SHOT START; add shot.start to each before pasting (the checker requires absolute times inside the shot).",
+  "Motion page (film/motion-test.json style): copy 'beat' into film.camera; 't' (and slide 'until') are absolute seconds: set them to your times. 'who' is the cast id.",
+  "'pair' = two rigs for the two sides of a cut (shot A, then shot B).",
+  "Style 'fx' ids and 'grade' moods refer to library/effects.json and engine/fx.js MOODS (status there: built / new / planned).",
+  "Every rig here was run through engine/validate.mjs and through KUROKO (engine/kuroko.js) against the film/kuroko-duel.json choreography in 9:16 and 16:9 on 2026-11-23: none loses its main subject. 'measured' = the far subject's body height as % of frame height and its margin (1 = centre, 0 = frame edge). Motion-page 'beat' objects follow film/motion-test.json but were not render-tested. The blade rig needs the live blade frame (main engine only)."
+ ],
+ "units": {
+  "duration_s": "seconds (24 fps; frames_24 = the same in frames)",
+  "fov": "vertical degrees (KUROKO clamps 10-80)",
+  "angle": "frame rig: degrees off profile, + toward subject[0]'s back; orbit deg = world azimuth",
+  "elevation": "degrees, + = camera above looking down"
+ },
+ "lens_equivalents": {
+  "_about": "fov -> full-frame lens. 9:16 uses the 36 mm side (rotated camera); 16:9 uses a 20.25 mm tall 16:9 crop.",
+  "rows": [
+   [
+    16,
+    128,
+    72
+   ],
+   [
+    18,
+    114,
+    64
+   ],
+   [
+    20,
+    102,
+    57
+   ],
+   [
+    24,
+    85,
+    48
+   ],
+   [
+    28,
+    72,
+    41
+   ],
+   [
+    32,
+    63,
+    35
+   ],
+   [
+    34,
+    59,
+    33
+   ],
+   [
+    36,
+    55,
+    31
+   ],
+   [
+    40,
+    49,
+    28
+   ],
+   [
+    42,
+    47,
+    26
+   ],
+   [
+    45,
+    43,
+    24
+   ],
+   [
+    50,
+    39,
+    22
+   ]
+  ],
+  "columns": [
+   "fov",
+   "mm_vertical_9x16",
+   "mm_horizontal_16x9"
+  ]
+ },
+ "shots": [
+  {
+   "id": "establishing-wide",
+   "name": "Establishing wide",
+   "family": "establish",
+   "purpose": "Show place, time and both fighters as small shapes in the world.",
+   "when": "First 2-4 s of the fight body, or after the hook. Once per film.",
+   "emotion": "scale, calm before the storm",
+   "duration_s": [
+    2.0,
+    4.0
+   ],
+   "frames_24": [
+    48,
+    96
+   ],
+   "fov": 42,
+   "distance": "fighters 15-25% of frame height",
+   "angle": "angle 20 (three-quarter)",
+   "elevation": "+12 deg (above, looking down)",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": 12,
+    "fov": 42,
+    "feel": "crane",
+    "behaviours": [],
+    "dist": 0.75
+   },
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": 12,
+    "fov": 42,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 23,
+     "far_margin": 0.47
+    },
+    "16x9": {
+     "far_subject_height_pct": 29,
+     "far_margin": 0.79
+    }
+   }
+  },
+  {
+   "id": "crane-reveal",
+   "name": "Crane reveal",
+   "family": "establish",
+   "purpose": "Start close and low, rise and pull back to reveal the setting and the opponent.",
+   "when": "Opening of a scene or the end of an aftermath. Hides information then pays it off.",
+   "emotion": "awe, arrival",
+   "duration_s": [
+    2.5,
+    5.0
+   ],
+   "frames_24": [
+    60,
+    120
+   ],
+   "fov": "34 -> 42",
+   "distance": "medium -> wide",
+   "angle": "20",
+   "elevation": "-4 -> +22 deg",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "anchor",
+    "feel": "crane",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 70,
+      "elevation": -4,
+      "fov": 34,
+      "dist": 0.4
+     },
+     {
+      "t": 1.2,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "size": "wide",
+      "angle": 20,
+      "elevation": 22,
+      "fov": 42,
+      "dist": 0.8
+     }
+    ]
+   },
+   "notes": "Anchor beat t values are seconds from the shot start: add shot.start before pasting. Crane spring (0.7 Hz) takes about 1 s to arrive, so give the shot at least 2.5 s.",
+   "rig_16x9": {
+    "type": "anchor",
+    "feel": "crane",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 20,
+      "elevation": -4,
+      "fov": 34
+     },
+     {
+      "t": 1.2,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "size": "wide",
+      "angle": 20,
+      "elevation": 22,
+      "fov": 42
+     }
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 58,
+     "far_margin": 0.14
+    },
+    "16x9": {
+     "far_subject_height_pct": 82,
+     "far_margin": 0.5
+    }
+   }
+  },
+  {
+   "id": "silhouette-wide",
+   "name": "Silhouette wide (profile)",
+   "family": "establish",
+   "purpose": "Two black shapes against a bright sky: pure pose and distance, no detail.",
+   "when": "Standoff, the moment before the decisive blow, or the hook frame. Strong in thumbnails.",
+   "emotion": "mythic, graphic, fated",
+   "duration_s": [
+    1.5,
+    4.0
+   ],
+   "frames_24": [
+    36,
+    96
+   ],
+   "fov": 38,
+   "distance": "full figures, 30-40% of frame height",
+   "angle": "0 (exact profile)",
+   "elevation": "0 deg (eye level, horizon low in frame)",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 0,
+    "lookUp": 0.25,
+    "fov": 38,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.65
+   },
+   "notes": "Profile is the only angle where both poses read as clean outlines. Light from behind (sun or backdrop glow), no front fill. In vertical the profile makes the pair small: use it as a held graphic beat, not as coverage.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 0,
+    "lookUp": 0.25,
+    "fov": 38,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 27,
+     "far_margin": 0.34
+    },
+    "16x9": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.57
+    }
+   }
+  },
+  {
+   "id": "telephoto-weather",
+   "name": "Telephoto weather wide (Kurosawa)",
+   "family": "establish",
+   "purpose": "Long-lens view through moving weather (wind, rain, paper snow, mist): the fighters stacked and compressed in layers.",
+   "when": "World beat or standoff; any shot that needs 'nature is watching'.",
+   "emotion": "fate, pressure, epic",
+   "duration_s": [
+    2.0,
+    4.5
+   ],
+   "frames_24": [
+    48,
+    108
+   ],
+   "fov": 18,
+   "distance": "far (frame rig puts the camera 2-3x further back at this fov)",
+   "angle": "15",
+   "elevation": "+2 deg",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 15,
+    "elevation": 2,
+    "fov": 18,
+    "feel": "crane",
+    "behaviours": [],
+    "dist": 0.6
+   },
+   "notes": "Long lens compresses depth so fore/background layers feel stacked. Needs moving weather particles in the set (not built in the browser set: wind lines, paper snow). [C] Kurosawa: long lens + multiple cameras from Seven Samurai on; weather in nearly every film.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 15,
+    "elevation": 2,
+    "fov": 18,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 29,
+     "far_margin": 0.31
+    },
+    "16x9": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.59
+    }
+   }
+  },
+  {
+   "id": "kubrick-one-point",
+   "name": "One-point symmetry",
+   "family": "establish",
+   "purpose": "Camera on the duel axis, horizon centred, the fighters stacked on the vanishing point: order, inevitability, unease.",
+   "when": "Arrival down a path, a formal bow, the frame before a death. Once per film at most.",
+   "emotion": "dread, ritual, control",
+   "duration_s": [
+    2.0,
+    5.0
+   ],
+   "frames_24": [
+    48,
+    120
+   ],
+   "fov": 36,
+   "distance": "full",
+   "angle": "75 (rig limit; nearly behind subject[0])",
+   "elevation": "0 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 75,
+    "elevation": 0,
+    "fov": 36,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.8
+   },
+   "notes": "The frame rig clamps angle at 75. For an exact axis view use an orbit with deg0 = deg1 pointing down the duel line (in our sets the line runs along z: deg 0 or 180), radius 4-6, height 0. Symmetric set dressing matters more than the camera.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 75,
+    "elevation": 0,
+    "fov": 36,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 37,
+     "far_margin": 0.76
+    },
+    "16x9": {
+     "far_subject_height_pct": 50,
+     "far_margin": 0.9
+    }
+   }
+  },
+  {
+   "id": "tiny-in-the-dark",
+   "name": "Small in the dark (final full body)",
+   "family": "establish",
+   "purpose": "One figure small in a sea of black, lit by a single source.",
+   "when": "Last shot before the end card; after a monologue.",
+   "emotion": "loneliness, aftermath, weight",
+   "duration_s": [
+    2.0,
+    4.0
+   ],
+   "frames_24": [
+    48,
+    96
+   ],
+   "fov": 38,
+   "distance": "figure 20-30% of frame height, 70% darkness",
+   "angle": "20",
+   "elevation": "+6 deg",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": 6,
+    "dist": 0.6,
+    "fov": 38,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "notes": "From research/reference-videos.md video C. Use the studio mode or a night set; the figure's inner lantern glow is the brightest thing on screen.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": 6,
+    "dist": 1.2,
+    "fov": 38,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 15,
+     "far_margin": 0.99
+    },
+    "16x9": {
+     "far_subject_height_pct": 23,
+     "far_margin": 0.98
+    }
+   }
+  },
+  {
+   "id": "eye-reveal",
+   "name": "Eye reveal",
+   "family": "tension",
+   "purpose": "Slow drift on the eyes; lids open or the glow rises on a beat.",
+   "when": "Hook (first second), before the draw, before any decisive strike.",
+   "emotion": "intent, focus, the decision",
+   "duration_s": [
+    0.6,
+    2.0
+   ],
+   "frames_24": [
+    14,
+    48
+   ],
+   "fov": 26,
+   "distance": "head fills the frame, eyes on the upper third",
+   "angle": "18 off the face line",
+   "elevation": "level (+0.03 m)",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "face",
+    "subject": "hero",
+    "angle": 18,
+    "dist": 0.62,
+    "height": 0.03,
+    "fov": 26,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "beat": {
+    "t": 0,
+    "rig": "face",
+    "who": "hero",
+    "dist": 0.62,
+    "fov": 26,
+    "angle": 18,
+    "lift": 0.03,
+    "feel": "crane"
+   },
+   "notes": "Motion-page beat aims at the real eye joint; the KUROKO face rig aims at the head. Pair with eye glow 'anticipation' 2.2 and a 'decide' flare 3.5 for one frame (docs/FIX-LIST.md).",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 611,
+     "far_margin": 0.7
+    },
+    "16x9": {
+     "far_subject_height_pct": 611,
+     "far_margin": 0.7
+    }
+   }
+  },
+  {
+   "id": "leone-eyes",
+   "name": "Extreme close-up eyes (Leone)",
+   "family": "tension",
+   "purpose": "Only the eyes, edge to edge. Intercut with the other fighter's eyes, getting closer each cut.",
+   "when": "Standoff build-up, 3-6 alternating inserts before the strike.",
+   "emotion": "suspense, duel of wills",
+   "duration_s": [
+    0.4,
+    1.5
+   ],
+   "frames_24": [
+    10,
+    36
+   ],
+   "fov": 18,
+   "distance": "extreme close: eye strip ~20 cm wide",
+   "angle": "0 (square on)",
+   "elevation": "level",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "face",
+    "subject": "hero",
+    "angle": 0,
+    "dist": 0.42,
+    "height": 0.04,
+    "fov": 18,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "beat": {
+    "t": 0,
+    "rig": "face",
+    "who": "hero",
+    "dist": 0.38,
+    "fov": 18,
+    "angle": 0,
+    "lift": 0.0,
+    "feel": "locked"
+   },
+   "notes": "Each inter-cut gets tighter (dist 0.6 -> 0.5 -> 0.42) and shorter (1.5 s -> 1.0 -> 0.6). Alternate hero/foe. Silence or one sustained note under it. [C] Leone: extreme long shot vs extreme close-up, moving closer to the eyes on every cut.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 1311,
+     "far_margin": 0.43
+    },
+    "16x9": {
+     "far_subject_height_pct": 1311,
+     "far_margin": 0.43
+    }
+   }
+  },
+  {
+   "id": "over-shoulder-standoff",
+   "name": "Over-the-shoulder standoff",
+   "family": "tension",
+   "purpose": "Near fighter's shoulder and blade in the foreground, opponent framed beyond: depth staging for 9:16.",
+   "when": "The default two-shot in vertical. Dialogue, sizing-up, the step before an attack.",
+   "emotion": "confrontation, threat seen through the hero's eyes",
+   "duration_s": [
+    1.5,
+    3.5
+   ],
+   "frames_24": [
+    36,
+    84
+   ],
+   "fov": 34,
+   "distance": "full on the far fighter (>= 45% frame height)",
+   "angle": "62 (over subject[0]'s shoulder)",
+   "elevation": "+4 deg",
+   "feel": "dolly",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 62,
+    "elevation": 4,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ],
+    "dist": 0.52
+   },
+   "notes": "docs/FIX-LIST.md: OTS 55-68 deg is the vertical fix. The first subject is the near (shoulder) fighter.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 62,
+    "elevation": 4,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 44,
+     "far_margin": 0.49
+    },
+    "16x9": {
+     "far_subject_height_pct": 52,
+     "far_margin": 0.81
+    }
+   }
+  },
+  {
+   "id": "reverse-over-shoulder",
+   "name": "Reverse over-the-shoulder",
+   "family": "tension",
+   "purpose": "The matching reverse: over the opponent's shoulder onto the hero, same side of the line.",
+   "when": "Cut back and forth with over-shoulder-standoff (shot / reverse shot).",
+   "emotion": "the answer, equal stakes",
+   "duration_s": [
+    1.0,
+    3.0
+   ],
+   "frames_24": [
+    24,
+    72
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "-62 (over subject[1]'s shoulder)",
+   "elevation": "+4 deg",
+   "feel": "dolly",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": -62,
+    "elevation": 4,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ],
+    "dist": 0.52
+   },
+   "notes": "Negative angle swings toward subject[1]'s back on the SAME side of the line, so screen direction holds (180-degree rule). Keep fov and elevation equal to the forward OTS so the pair matches.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": -62,
+    "elevation": 4,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 44,
+     "far_margin": 0.49
+    },
+    "16x9": {
+     "far_subject_height_pct": 52,
+     "far_margin": 0.81
+    }
+   }
+  },
+  {
+   "id": "standoff-orbit",
+   "name": "Standoff orbit",
+   "family": "tension",
+   "purpose": "Slow arc around both fighters as they circle: builds pressure without cutting.",
+   "when": "Opening of the standoff, 2-4 s; the camera circles, the fighters do not move much.",
+   "emotion": "rising tension, inevitability",
+   "duration_s": [
+    2.5,
+    4.5
+   ],
+   "frames_24": [
+    60,
+    108
+   ],
+   "fov": 34,
+   "distance": "radius 4.4 m",
+   "angle": "sweeps 50 deg of world azimuth on one side of the line",
+   "elevation": "+0.45 m above chest",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "orbit",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "radius": 5.0,
+    "height": 0.45,
+    "deg0": -20,
+    "deg1": -50,
+    "fov": 34,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "notes": "Orbit degrees are WORLD azimuth (0 = camera on +z of the target). Our sets stage the duel line along z, so keep both deg0 and deg1 inside (-180, 0) for the x<0 side or (0, 180) for x>0. Speed: 10-20 deg/s reads as deliberate; > 40 deg/s reads as action.",
+   "rig_16x9": {
+    "type": "orbit",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "radius": 4.4,
+    "height": 0.45,
+    "deg0": -55,
+    "deg1": -105,
+    "fov": 34,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 47,
+     "far_margin": 0.15
+    },
+    "16x9": {
+     "far_subject_height_pct": 60,
+     "far_margin": 0.5
+    }
+   }
+  },
+  {
+   "id": "profile-two-shot",
+   "name": "Profile two-shot (the line)",
+   "family": "tension",
+   "purpose": "Both fighters side-on, the gap between them is the subject.",
+   "when": "Standoff hold, measuring distance, the Sanjuro-style frozen moment.",
+   "emotion": "stillness, distance, equality",
+   "duration_s": [
+    1.5,
+    6.0
+   ],
+   "frames_24": [
+    36,
+    144
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "0 (profile)",
+   "elevation": "+1 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 1,
+    "fov": 34,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.65
+   },
+   "notes": "In 9:16 a profile two-shot leaves the fighters small (separation fills the narrow width). Prefer it for horizontal films, or as one held graphic beat in vertical.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 1,
+    "fov": 34,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 27,
+     "far_margin": 0.34
+    },
+    "16x9": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.57
+    }
+   }
+  },
+  {
+   "id": "telephoto-compress",
+   "name": "Telephoto compression two-shot",
+   "family": "tension",
+   "purpose": "Long lens makes the gap between the fighters look shorter than it is: they seem nose to nose.",
+   "when": "Just before the charge; makes a 3 m gap feel like no gap.",
+   "emotion": "claustrophobia, imminence",
+   "duration_s": [
+    1.0,
+    3.0
+   ],
+   "frames_24": [
+    24,
+    72
+   ],
+   "fov": 16,
+   "distance": "far (automatic)",
+   "angle": "15",
+   "elevation": "+1 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 55,
+    "elevation": 1,
+    "fov": 16,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.6
+   },
+   "notes": "Lens compression [C]. Handheld noise is scaled by fov, so even 'locked' is safest at this focal length.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 15,
+    "elevation": 1,
+    "fov": 16,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 39,
+     "far_margin": 0.46
+    },
+    "16x9": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.59
+    }
+   }
+  },
+  {
+   "id": "slow-push-monologue",
+   "name": "Slow push-in (monologue)",
+   "family": "tension",
+   "purpose": "A barely visible push toward one figure while it speaks or breathes; 2-5% closer per second.",
+   "when": "Under a voice line, a vow, the dark-monologue Shorts format.",
+   "emotion": "gravity, menace, interiority",
+   "duration_s": [
+    3.0,
+    8.0
+   ],
+   "frames_24": [
+    72,
+    192
+   ],
+   "fov": "32 -> 30",
+   "distance": "medium -> slightly tighter medium",
+   "angle": "20",
+   "elevation": "-6 deg (slightly low)",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "anchor",
+    "feel": "crane",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 20,
+      "elevation": -6,
+      "dist": 0.4,
+      "fov": 32
+     },
+     {
+      "t": 0.5,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 20,
+      "elevation": -6,
+      "dist": 0.33,
+      "fov": 30
+     }
+    ]
+   },
+   "notes": "Beat t relative to shot start. The crane spring turns the step at 0.5 s into a ~1.5 s glide; for a longer push add more beats every 1 s, each 4-6% closer (dist 0.82, 0.78, 0.74...). From research/reference-videos.md: push-in 2-5% per second.",
+   "rig_16x9": {
+    "type": "anchor",
+    "feel": "crane",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 20,
+      "elevation": -6,
+      "fov": 32
+     },
+     {
+      "t": 0.5,
+      "type": "frame",
+      "subjects": [
+       "hero"
+      ],
+      "size": "medium",
+      "angle": 20,
+      "elevation": -6,
+      "dist": 0.82,
+      "fov": 30
+     }
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 87,
+     "far_margin": 0.94
+    },
+    "16x9": {
+     "far_subject_height_pct": 110,
+     "far_margin": 0.92
+    }
+   }
+  },
+  {
+   "id": "hand-on-hilt",
+   "name": "Hand-on-hilt insert",
+   "family": "tension",
+   "purpose": "Tight insert on the hand tightening on the tsuka, thumb pushing the tsuba (koiguchi).",
+   "when": "6-10 frames before a draw or a strike; the cut that says 'now'.",
+   "emotion": "resolve, the trigger",
+   "duration_s": [
+    0.25,
+    0.8
+   ],
+   "frames_24": [
+    6,
+    19
+   ],
+   "fov": 28,
+   "distance": "extreme close (0.38 m wide)",
+   "angle": "60 (front-side; 0 would put the camera on the duel line, behind the opponent)",
+   "elevation": "+8 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero.hand"
+    ],
+    "size": "extreme",
+    "angle": 60,
+    "elevation": 8,
+    "fov": 28,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "notes": "docs/FIX-LIST.md: 6-10 frame inserts (eyes, hand tightening, foot grinding) before each strike. Sync the koiguchi click to the first frame.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 161,
+     "far_margin": 0.9
+    },
+    "16x9": {
+     "far_subject_height_pct": 439,
+     "far_margin": 0.72
+    }
+   }
+  },
+  {
+   "id": "foot-grind",
+   "name": "Foot-grind insert",
+   "family": "tension",
+   "purpose": "Low insert of the lead foot sliding forward or grinding into sand.",
+   "when": "Just before a lunge; replaces a wind-up you cannot see in a tight frame.",
+   "emotion": "coiled energy",
+   "duration_s": [
+    0.25,
+    0.7
+   ],
+   "frames_24": [
+    6,
+    17
+   ],
+   "fov": 30,
+   "distance": "close on the feet",
+   "angle": "single subject front",
+   "elevation": "+6 deg (rig height) - aim low",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero.root"
+    ],
+    "size": "close",
+    "elevation": 6,
+    "lookUp": 0.1,
+    "fov": 30,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "notes": "The ground guard keeps the camera above 0.15 m. Add a sand/paper-dust puff and a cloth-scuff sound.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 72,
+     "far_margin": 0.92
+    },
+    "16x9": {
+     "far_subject_height_pct": 227,
+     "far_margin": 0.74
+    }
+   }
+  },
+  {
+   "id": "low-hero-push",
+   "name": "Low hero push",
+   "family": "tension",
+   "purpose": "Camera near the ground looking up, pushing in: the fighter towers.",
+   "when": "Hero's resolve, a power-up, the winner standing after the blow.",
+   "emotion": "power, defiance",
+   "duration_s": [
+    1.0,
+    3.0
+   ],
+   "frames_24": [
+    24,
+    72
+   ],
+   "fov": 32,
+   "distance": "full -> medium",
+   "angle": "25",
+   "elevation": "-14 deg (camera ~0.3-0.5 m up)",
+   "feel": "dolly",
+   "behaviours": [
+    "push",
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero"
+    ],
+    "size": "full",
+    "angle": 25,
+    "elevation": -14,
+    "lookUp": 0.15,
+    "fov": 32,
+    "feel": "dolly",
+    "behaviours": [
+     "push",
+     "lead"
+    ],
+    "dist": 0.35
+   },
+   "notes": "docs/FIX-LIST.md camera technique 8: low-angle hero 0.2 m, -14 deg. To push without a lunge, use an anchor with a second beat at dist 0.8.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero"
+    ],
+    "size": "full",
+    "angle": 25,
+    "elevation": -14,
+    "lookUp": 0.15,
+    "fov": 32,
+    "feel": "dolly",
+    "behaviours": [
+     "push",
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.91
+    },
+    "16x9": {
+     "far_subject_height_pct": 61,
+     "far_margin": 0.9
+    }
+   }
+  },
+  {
+   "id": "high-vulnerable",
+   "name": "High angle (diminish)",
+   "family": "tension",
+   "purpose": "Camera above, looking down on one fighter: small, exposed, losing.",
+   "when": "The struck fighter, the moment of doubt, after a disarm.",
+   "emotion": "vulnerability, defeat",
+   "duration_s": [
+    1.0,
+    2.5
+   ],
+   "frames_24": [
+    24,
+    60
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "-20 (negative for the foe: keeps the same side of the line)",
+   "elevation": "+35 deg",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "foe"
+    ],
+    "size": "full",
+    "angle": -20,
+    "elevation": 35,
+    "fov": 34,
+    "feel": "crane",
+    "behaviours": [],
+    "dist": 0.35
+   },
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "foe"
+    ],
+    "size": "full",
+    "angle": -20,
+    "elevation": 35,
+    "fov": 34,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 54,
+     "far_margin": 0.97
+    },
+    "16x9": {
+     "far_subject_height_pct": 60,
+     "far_margin": 0.97
+    }
+   }
+  },
+  {
+   "id": "blade-slide",
+   "name": "Blade slide (arm to guard)",
+   "family": "weapon",
+   "purpose": "Camera travels along the arm, elbow to wrist to tsuba, then holds on the guard.",
+   "when": "The draw, the grip change, the 'weapon as a character' beat.",
+   "emotion": "ritual, craft, threat",
+   "duration_s": [
+    0.8,
+    1.4
+   ],
+   "frames_24": [
+    19,
+    34
+   ],
+   "fov": 32,
+   "distance": "0.4-0.7 m from the joint",
+   "angle": "from the fighter's right-front",
+   "elevation": "+0.3 (weight)",
+   "feel": "dolly",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "blade",
+    "subjects": [
+     "hero"
+    ],
+    "offset": [
+     -0.25,
+     0.08,
+     0.18
+    ],
+    "lookAlong": 0.6,
+    "fov": 30,
+    "feel": "locked"
+   },
+   "beat": {
+    "t": 0,
+    "rig": "slide",
+    "who": "hero",
+    "path": [
+     "elbow",
+     "wrist",
+     "tsuba"
+    ],
+    "until": 0.95,
+    "offset": 0.7,
+    "fov": 32,
+    "feel": "dolly",
+    "from": [
+     0.35,
+     0.3,
+     0.9
+    ]
+   },
+   "notes": "Motion-page beat: t and until are absolute seconds (add your start). Main-engine fallback: the blade rig (rides the drawn blade; falls back to a frame rig when no blade frame).",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 31,
+     "far_margin": 0.98
+    },
+    "16x9": {
+     "far_subject_height_pct": 96,
+     "far_margin": 0.94
+    }
+   }
+  },
+  {
+   "id": "draw-macro",
+   "name": "Draw macro (blade rider)",
+   "family": "weapon",
+   "purpose": "Lens rides just above the blade as it leaves the scabbard: steel fills the frame.",
+   "when": "Iai draw, the studio 'sword as a character' beat.",
+   "emotion": "precision, cold beauty",
+   "duration_s": [
+    0.6,
+    1.6
+   ],
+   "frames_24": [
+    14,
+    38
+   ],
+   "fov": 30,
+   "distance": "0.2-0.4 m from steel",
+   "angle": "blade space",
+   "elevation": "slightly above the spine",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "blade",
+    "subjects": [
+     "hero"
+    ],
+    "offset": [
+     -0.25,
+     0.08,
+     0.18
+    ],
+    "lookAlong": 0.6,
+    "fov": 30,
+    "feel": "locked"
+   },
+   "notes": "Sound: koiguchi click (-100 ms) -> slide -> tip-clear shing (docs/FIX-LIST.md).",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 31,
+     "far_margin": 0.98
+    },
+    "16x9": {
+     "far_subject_height_pct": 96,
+     "far_margin": 0.94
+    }
+   }
+  },
+  {
+   "id": "rack-focus-eye-to-blade",
+   "name": "Eye to blade (rack-focus feel)",
+   "family": "weapon",
+   "purpose": "Start on the eyes, slide down the arm to the blade: attention moves from intent to instrument.",
+   "when": "Just before the first strike; the 'look, then the sword answers' beat.",
+   "emotion": "intent becoming action",
+   "duration_s": [
+    1.0,
+    1.6
+   ],
+   "frames_24": [
+    24,
+    38
+   ],
+   "fov": "26 -> 32",
+   "distance": "close",
+   "angle": "from right-front",
+   "elevation": "+0.25",
+   "feel": "dolly",
+   "behaviours": [],
+   "engine": "approx: a true rack focus needs depth of field (BokehPass planned, docs/FIX-LIST.md item 10); today the camera slides instead",
+   "mark": "I",
+   "beat": {
+    "t": 0,
+    "rig": "slide",
+    "who": "hero",
+    "path": [
+     "eyes",
+     "elbow",
+     "wrist",
+     "tsuba"
+    ],
+    "until": 1.2,
+    "offset": 0.55,
+    "fov": 30,
+    "feel": "dolly",
+    "from": [
+     0.35,
+     0.25,
+     0.9
+    ]
+   },
+   "notes": "When DOF lands: hold framing, pull focus from eye (0.6 m) to tsuba (0.9 m) over 8-12 frames."
+  },
+  {
+   "id": "glint-insert",
+   "name": "Blade glint insert",
+   "family": "weapon",
+   "purpose": "Tight on the edge as a star of light runs along it.",
+   "when": "4-6 frames before contact, or as the hook's first frame.",
+   "emotion": "warning, danger",
+   "duration_s": [
+    0.17,
+    0.5
+   ],
+   "frames_24": [
+    4,
+    12
+   ],
+   "fov": 24,
+   "distance": "0.3 m",
+   "angle": "blade space, side",
+   "elevation": "level",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "approx: the glint effect itself is planned (research/anime-fight-craft.md section 5 item 7)",
+   "mark": "C",
+   "rig": {
+    "type": "blade",
+    "subjects": [
+     "hero"
+    ],
+    "offset": [
+     0.35,
+     0.04,
+     0.22
+    ],
+    "lookAlong": 0.3,
+    "fov": 24,
+    "feel": "locked"
+   },
+   "notes": "[C] Demon Slayer analysis: a glint warns of the strike, then light shapes and sparks.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 31,
+     "far_margin": 0.98
+    },
+    "16x9": {
+     "far_subject_height_pct": 96,
+     "far_margin": 0.94
+    }
+   }
+  },
+  {
+   "id": "lunge-dolly",
+   "name": "Lunge dolly two-shot",
+   "family": "exchange",
+   "purpose": "Clean three-quarter two-shot that follows a cut or lunge with a slight lag.",
+   "when": "Default coverage for a strike exchange.",
+   "emotion": "clarity, momentum",
+   "duration_s": [
+    1.0,
+    2.0
+   ],
+   "frames_24": [
+    24,
+    48
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "22",
+   "elevation": "+3 deg",
+   "feel": "dolly",
+   "behaviours": [
+    "reveal",
+    "push",
+    "jump",
+    "dutch",
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 55,
+    "elevation": 3,
+    "fov": 34,
+    "feel": "dolly",
+    "dist": 0.52
+   },
+   "notes": "Default behaviours on. 9:16 rig uses angle 55 (depth staging); 16:9 keeps 22.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 22,
+    "elevation": 3,
+    "fov": 34,
+    "feel": "dolly"
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 41,
+     "far_margin": 0.19
+    },
+    "16x9": {
+     "far_subject_height_pct": 53,
+     "far_margin": 0.47
+    }
+   }
+  },
+  {
+   "id": "torpedo-track",
+   "name": "Torpedo chase track",
+   "family": "exchange",
+   "purpose": "Camera rides behind and beside a dashing fighter, looking ahead of them.",
+   "when": "Tsuki dash, charge, a run across the set.",
+   "emotion": "speed, aggression",
+   "duration_s": [
+    0.8,
+    1.6
+   ],
+   "frames_24": [
+    19,
+    38
+   ],
+   "fov": 42,
+   "distance": "2.3-2.5 m behind",
+   "angle": "behind-left",
+   "elevation": "+0.2 m",
+   "feel": "torpedo",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "track",
+    "subject": "foe",
+    "offset": [
+     -0.95,
+     0.2,
+     -2.3
+    ],
+    "lookAhead": 1.4,
+    "fov": 42,
+    "feel": "torpedo",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 92,
+     "far_margin": 0.2
+    },
+    "16x9": {
+     "far_subject_height_pct": 92,
+     "far_margin": 0.75
+    }
+   }
+  },
+  {
+   "id": "leading-track",
+   "name": "Leading track (face the charge)",
+   "family": "exchange",
+   "purpose": "Camera backs away in front of a charging fighter: they come at the lens.",
+   "when": "The decisive charge, a run at the viewer, the hook.",
+   "emotion": "threat, adrenaline",
+   "duration_s": [
+    0.6,
+    1.4
+   ],
+   "frames_24": [
+    14,
+    34
+   ],
+   "fov": 38,
+   "distance": "2.4 m in front",
+   "angle": "front-right",
+   "elevation": "+0.15 m",
+   "feel": "torpedo",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "track",
+    "subject": "hero",
+    "offset": [
+     0.9,
+     0.15,
+     2.4
+    ],
+    "lookAhead": 0.2,
+    "fov": 38,
+    "feel": "torpedo",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "notes": "Torpedo spring overshoots ~8%: the fighter gains on the lens, which is the point. Guard keeps 0.8 m minimum.",
+   "rig_16x9": {
+    "type": "track",
+    "subject": "hero",
+    "offset": [
+     0.4,
+     0.15,
+     2.4
+    ],
+    "lookAhead": 0.2,
+    "fov": 38,
+    "feel": "torpedo",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 99,
+     "far_margin": 0.5
+    },
+    "16x9": {
+     "far_subject_height_pct": 102,
+     "far_margin": 0.9
+    }
+   }
+  },
+  {
+   "id": "whip-reveal",
+   "name": "Whip reveal",
+   "family": "exchange",
+   "purpose": "A very fast swing of view from one fighter to the other, ending on the threat.",
+   "when": "Answer to an attack, a surprise arrival, an off-screen strike.",
+   "emotion": "surprise, jolt",
+   "duration_s": [
+    0.4,
+    0.9
+   ],
+   "frames_24": [
+    10,
+    22
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "20 -> 65",
+   "elevation": "+3 deg",
+   "feel": "torpedo",
+   "behaviours": [],
+   "engine": "approx: real whip pans need motion blur (planned); the torpedo spring gives the snap",
+   "mark": "C",
+   "rig": {
+    "type": "anchor",
+    "feel": "torpedo",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 20,
+      "elevation": 3,
+      "fov": 34,
+      "dist": 0.7
+     },
+     {
+      "t": 0.12,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 62,
+      "elevation": 3,
+      "fov": 34,
+      "dist": 0.6
+     }
+    ]
+   },
+   "notes": "Beat t relative to the shot start. Best used as a CUT point: cut on the fastest frame of the whip (docs/FIX-LIST.md technique 4).",
+   "rig_16x9": {
+    "type": "anchor",
+    "feel": "torpedo",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 20,
+      "elevation": 3,
+      "fov": 34
+     },
+     {
+      "t": 0.12,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 65,
+      "elevation": 3,
+      "fov": 34
+     }
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 38,
+     "far_margin": 0.19
+    },
+    "16x9": {
+     "far_subject_height_pct": 52,
+     "far_margin": 0.59
+    }
+   }
+  },
+  {
+   "id": "handheld-clash",
+   "name": "Handheld clash",
+   "family": "exchange",
+   "purpose": "Loose, nervous framing on a blade-to-blade clash.",
+   "when": "Parry, block, the first contact.",
+   "emotion": "chaos, impact",
+   "duration_s": [
+    0.8,
+    1.8
+   ],
+   "frames_24": [
+    19,
+    43
+   ],
+   "fov": 32,
+   "distance": "full -> medium",
+   "angle": "-30 (other side of the same half)",
+   "elevation": "+2 deg",
+   "feel": "handheld",
+   "behaviours": [
+    "reveal",
+    "push",
+    "jump",
+    "dutch",
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": -55,
+    "elevation": 2,
+    "fov": 32,
+    "feel": "handheld",
+    "dist": 0.65
+   },
+   "notes": "Handheld is a spice: at most 1 in 4 shots, never on the standoff.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": -30,
+    "elevation": 2,
+    "fov": 32,
+    "feel": "handheld"
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 34,
+     "far_margin": 0.4
+    },
+    "16x9": {
+     "far_subject_height_pct": 53,
+     "far_margin": 0.53
+    }
+   }
+  },
+  {
+   "id": "dutch-bind",
+   "name": "Dutch bind",
+   "family": "exchange",
+   "purpose": "Tilted close two-shot on crossed blades and straining faces.",
+   "when": "Blade lock (tsubazeriai), the struggle beat.",
+   "emotion": "strain, imbalance",
+   "duration_s": [
+    1.0,
+    2.0
+   ],
+   "frames_24": [
+    24,
+    48
+   ],
+   "fov": 28,
+   "distance": "close",
+   "angle": "40",
+   "elevation": "+2 deg",
+   "feel": "handheld",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 58,
+    "elevation": 2,
+    "fov": 28,
+    "roll": 10,
+    "feel": "handheld",
+    "behaviours": [
+     "lead"
+    ],
+    "dist": 0.5
+   },
+   "notes": "docs/FIX-LIST.md asks 12-18 deg for a bind; KUROKO clamps roll at +-10, so 10 is the current maximum. Switch the roll sign when the advantage switches.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 40,
+    "elevation": 2,
+    "fov": 28,
+    "roll": 10,
+    "feel": "handheld",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 45,
+     "far_margin": 0.21
+    },
+    "16x9": {
+     "far_subject_height_pct": 58,
+     "far_margin": 0.55
+    }
+   }
+  },
+  {
+   "id": "stagger-dutch",
+   "name": "Stagger Dutch",
+   "family": "exchange",
+   "purpose": "The frame tilts as a fighter reels back.",
+   "when": "Stagger, a heavy hit taken, losing balance.",
+   "emotion": "disorientation",
+   "duration_s": [
+    1.0,
+    1.6
+   ],
+   "frames_24": [
+    24,
+    38
+   ],
+   "fov": 34,
+   "distance": "full",
+   "angle": "8",
+   "elevation": "+1 deg",
+   "feel": "handheld",
+   "behaviours": [
+    "reveal",
+    "dutch",
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 50,
+    "elevation": 1,
+    "fov": 34,
+    "feel": "handheld",
+    "behaviours": [
+     "reveal",
+     "dutch",
+     "lead"
+    ],
+    "dist": 0.6
+   },
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 8,
+    "elevation": 1,
+    "fov": 34,
+    "feel": "handheld",
+    "behaviours": [
+     "reveal",
+     "dutch",
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 33,
+     "far_margin": 0.28
+    },
+    "16x9": {
+     "far_subject_height_pct": 51,
+     "far_margin": 0.47
+    }
+   }
+  },
+  {
+   "id": "jump-back-reveal",
+   "name": "Jump-back reveal",
+   "family": "exchange",
+   "purpose": "Camera pulls back and rises as a fighter leaps away: shows the space surrendered.",
+   "when": "Jump-back, retreat, dodge.",
+   "emotion": "evasion, breath",
+   "duration_s": [
+    1.0,
+    1.8
+   ],
+   "frames_24": [
+    24,
+    43
+   ],
+   "fov": 34,
+   "distance": "full -> wide (+38%)",
+   "angle": "22",
+   "elevation": "+3 deg",
+   "feel": "dolly",
+   "behaviours": [
+    "reveal",
+    "jump",
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 50,
+    "elevation": 3,
+    "dist": 0.6,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "reveal",
+     "jump",
+     "lead"
+    ]
+   },
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "angle": 22,
+    "elevation": 3,
+    "dist": 0.9,
+    "fov": 34,
+    "feel": "dolly",
+    "behaviours": [
+     "reveal",
+     "jump",
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 33,
+     "far_margin": 0.33
+    },
+    "16x9": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.48
+    }
+   }
+  },
+  {
+   "id": "ufotable-glide",
+   "name": "Glide around the strike (3D-set orbit)",
+   "family": "exchange",
+   "purpose": "Fast, smooth arc around the strike: the 3D space turns while the action stays centred.",
+   "when": "A signature move, a breathing-style technique, one per fight.",
+   "emotion": "spectacle, flow",
+   "duration_s": [
+    0.8,
+    1.6
+   ],
+   "frames_24": [
+    19,
+    38
+   ],
+   "fov": 32,
+   "distance": "radius 3.6 m around the striker",
+   "angle": "sweeps 80 deg",
+   "elevation": "+0.3 m",
+   "feel": "dolly",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "orbit",
+    "target": "hero",
+    "radius": 3.6,
+    "height": 0.3,
+    "deg0": -30,
+    "deg1": -110,
+    "fov": 32,
+    "feel": "dolly",
+    "behaviours": []
+   },
+   "notes": "[C] ufotable: 2D characters inside 3D-built environments so the camera can move freely; action kept near frame centre. Our version: keep the subjects centred, move the world. Orbiting the striker (target) keeps them centred; orbiting the midpoint of two fighters at radius < 4 m loses one of them (found in testing). A continuous arc may cross the profile without breaking the 180-degree rule because the viewer sees the move.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 85,
+     "far_margin": 0.2
+    },
+    "16x9": {
+     "far_subject_height_pct": 85,
+     "far_margin": 0.75
+    }
+   }
+  },
+  {
+   "id": "itano-dive",
+   "name": "Itano dive",
+   "family": "exchange",
+   "purpose": "Camera flies through the action close to a fast body, wide lens, with trails crossing the frame.",
+   "when": "A flurry of thrown blades, paper shards or a multi-strike burst. Rare.",
+   "emotion": "vertigo, overload",
+   "duration_s": [
+    0.6,
+    1.4
+   ],
+   "frames_24": [
+    14,
+    34
+   ],
+   "fov": 50,
+   "distance": "1.4 m",
+   "angle": "behind-right, above",
+   "elevation": "+0.6 m",
+   "feel": "torpedo",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "approx: the many-projectile trails are not built; the camera part works",
+   "mark": "C",
+   "rig": {
+    "type": "track",
+    "subject": "hero",
+    "offset": [
+     0.6,
+     0.6,
+     -1.4
+    ],
+    "lookAhead": 1.2,
+    "fov": 50,
+    "feel": "torpedo",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "notes": "[C] Itano circus: many fast projectiles on crossing 3D paths with trails, camera flying among them (fan sources only).",
+   "rig_16x9": {
+    "type": "track",
+    "subject": "hero",
+    "offset": [
+     0.6,
+     0.6,
+     -1.4
+    ],
+    "lookAhead": 1.8,
+    "fov": 50,
+    "feel": "torpedo",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 117,
+     "far_margin": 0.22
+    },
+    "16x9": {
+     "far_subject_height_pct": 119,
+     "far_margin": 0.47
+    }
+   }
+  },
+  {
+   "id": "wick-wide-oner",
+   "name": "Wide action hold (no cut)",
+   "family": "exchange",
+   "purpose": "A full-figure frame held through 2-4 moves so the choreography reads as real.",
+   "when": "A sequence of 3+ strikes that is good enough to show whole.",
+   "emotion": "credibility, skill",
+   "duration_s": [
+    3.0,
+    8.0
+   ],
+   "frames_24": [
+    72,
+    192
+   ],
+   "fov": 40,
+   "distance": "full, both bodies head to toe",
+   "angle": "35",
+   "elevation": "+4 deg",
+   "feel": "dolly",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 55,
+    "elevation": 4,
+    "dist": 0.75,
+    "fov": 40,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "notes": "[C] Stahelski: block with the camera, wide shot then dolly in, fewer cuts. Only for choreography that holds up at full body.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 35,
+    "elevation": 4,
+    "dist": 1.1,
+    "fov": 40,
+    "feel": "dolly",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 29,
+     "far_margin": 0.49
+    },
+    "16x9": {
+     "far_subject_height_pct": 48,
+     "far_margin": 0.61
+    }
+   }
+  },
+  {
+   "id": "anchor-oner",
+   "name": "One-take exchange (Spielberg-style oner)",
+   "family": "exchange",
+   "purpose": "One continuous shot that becomes a two-shot, a close and a wide by moving, not cutting.",
+   "when": "The decisive exchange or a long build where cuts would break tension.",
+   "emotion": "immersion, inevitability",
+   "duration_s": [
+    3.0,
+    6.0
+   ],
+   "frames_24": [
+    72,
+    144
+   ],
+   "fov": "34 -> 28 -> 38",
+   "distance": "full -> close -> wide",
+   "angle": "15 -> 32 -> 28",
+   "elevation": "0 -> -3 -> +12",
+   "feel": "dolly",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "anchor",
+    "feel": "dolly",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 50,
+      "fov": 34,
+      "dist": 0.65
+     },
+     {
+      "t": 0.75,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 62,
+      "elevation": -3,
+      "fov": 28,
+      "dist": 0.5
+     },
+     {
+      "t": 1.5,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "size": "wide",
+      "elevation": 12,
+      "angle": 45,
+      "fov": 38,
+      "dist": 0.8
+     }
+    ]
+   },
+   "notes": "Beat t relative to the shot start. [C] Spielberg oners: blocking delivers the angles that would otherwise need cuts. Each beat should be a composition you would accept as its own shot.",
+   "rig_16x9": {
+    "type": "anchor",
+    "feel": "dolly",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 15,
+      "fov": 34
+     },
+     {
+      "t": 0.75,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 32,
+      "elevation": -3,
+      "fov": 28,
+      "dist": 0.85
+     },
+     {
+      "t": 1.5,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "size": "wide",
+      "elevation": 12,
+      "angle": 28,
+      "fov": 38
+     }
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 31,
+     "far_margin": 0.21
+    },
+    "16x9": {
+     "far_subject_height_pct": 43,
+     "far_margin": 0.4
+    }
+   }
+  },
+  {
+   "id": "hk-double-hit",
+   "name": "Hong Kong double hit (cut pair)",
+   "family": "exchange",
+   "purpose": "Show one big hit twice: end shot A on the contact, start shot B 2-4 frames before it from 30+ degrees away.",
+   "when": "The biggest non-final hit, at most twice per film.",
+   "emotion": "emphasis, crunch",
+   "duration_s": [
+    0.4,
+    1.0
+   ],
+   "frames_24": [
+    10,
+    24
+   ],
+   "fov": "34 then 28",
+   "distance": "full then medium",
+   "angle": "25 then 60 (>= 30 deg change)",
+   "elevation": "+3 then -6 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "approx: the body timeline cannot rewind per shot yet; approximate by placing the cut 1-2 frames after contact and replaying the impact flash",
+   "mark": "C",
+   "pair": [
+    {
+     "type": "frame",
+     "subjects": [
+      "hero",
+      "foe"
+     ],
+     "angle": 25,
+     "elevation": 3,
+     "dist": 0.7,
+     "fov": 34,
+     "feel": "locked",
+     "behaviours": []
+    },
+    {
+     "type": "frame",
+     "subjects": [
+      "hero",
+      "foe"
+     ],
+     "size": "medium",
+     "angle": 60,
+     "elevation": -6,
+     "dist": 0.5,
+     "fov": 28,
+     "feel": "locked",
+     "behaviours": []
+    }
+   ],
+   "notes": "[C] Hong Kong cutting holds shots long enough to feel the rhythm (pause-burst-pause, Bordwell); the overlapping 'hit twice' cut is commonly reported."
+  },
+  {
+   "id": "impact-zoom",
+   "name": "Impact zoom (crash zoom)",
+   "family": "impact",
+   "purpose": "Snap the lens tighter in 2-frame steps on the hit: 34 -> 24 -> 16.",
+   "when": "The decisive blow, or the first clash. Once or twice per film.",
+   "emotion": "shock",
+   "duration_s": [
+    0.5,
+    1.2
+   ],
+   "frames_24": [
+    12,
+    29
+   ],
+   "fov": "34 -> 24 -> 16",
+   "distance": "full -> close",
+   "angle": "35",
+   "elevation": "+2 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "approx: frame-fill moves the camera back as fov shrinks; a true zoom (fixed position) needs a keyframe shot. Keyframe version: same pos, fov 34/24/16 at t, t+2f, t+4f, ease linear",
+   "mark": "D",
+   "rig": {
+    "type": "anchor",
+    "feel": "locked",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 55,
+      "elevation": 2,
+      "fov": 34,
+      "dist": 0.65
+     },
+     {
+      "t": 0.083,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 55,
+      "elevation": 2,
+      "fov": 24,
+      "dist": 0.65
+     },
+     {
+      "t": 0.167,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 55,
+      "elevation": 2,
+      "fov": 16,
+      "dist": 0.65
+     }
+    ]
+   },
+   "notes": "Beat t relative to shot start; put the first beat on the impact frame. docs/FIX-LIST.md technique 6. Add a shakes entry (amp 0.012-0.015) at the same t; KUROKO adds its own 7 deg punch.",
+   "rig_16x9": {
+    "type": "anchor",
+    "feel": "locked",
+    "beats": [
+     {
+      "t": 0.0,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 35,
+      "elevation": 2,
+      "fov": 34
+     },
+     {
+      "t": 0.083,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 35,
+      "elevation": 2,
+      "fov": 24
+     },
+     {
+      "t": 0.167,
+      "type": "frame",
+      "subjects": [
+       "hero",
+       "foe"
+      ],
+      "angle": 35,
+      "elevation": 2,
+      "fov": 16
+     }
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 55,
+     "far_margin": 0.53
+    },
+    "16x9": {
+     "far_subject_height_pct": 64,
+     "far_margin": 0.68
+    }
+   }
+  },
+  {
+   "id": "impact-close",
+   "name": "Impact close-up",
+   "family": "impact",
+   "purpose": "Close two-shot locked on the contact point exactly on the hit frame.",
+   "when": "Every important hit (keyframe on the hit second).",
+   "emotion": "force",
+   "duration_s": [
+    0.5,
+    1.2
+   ],
+   "frames_24": [
+    12,
+    29
+   ],
+   "fov": 28,
+   "distance": "close (~1.6 m)",
+   "angle": "35",
+   "elevation": "+2 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 55,
+    "elevation": 2,
+    "dist": 0.42,
+    "fov": 28,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "notes": "Pair with a shakes entry; hit-stop 3-4 frames. Do NOT frame two .hand points: the hand-to-hand axis flips during a strike and the camera jumps across the line (found in testing).",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 35,
+    "elevation": 2,
+    "dist": 0.6,
+    "fov": 28,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 79,
+     "far_margin": 0.35
+    },
+    "16x9": {
+     "far_subject_height_pct": 148,
+     "far_margin": 0.48
+    }
+   }
+  },
+  {
+   "id": "freeze-orbit",
+   "name": "Orbit through the hit-stop",
+   "family": "impact",
+   "purpose": "While bodies freeze on contact, the camera keeps moving around them: time stops, space doesn't.",
+   "when": "The decisive contact only (needs hit-stop on the motion page).",
+   "emotion": "suspended time, awe",
+   "duration_s": [
+    0.5,
+    1.2
+   ],
+   "frames_24": [
+    12,
+    29
+   ],
+   "fov": 30,
+   "distance": "radius 1.8 m",
+   "angle": "sweeps 35 deg",
+   "elevation": "+0.2 m",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "approx in the main engine: hit-stop freezes bodies only on the motion page today",
+   "mark": "D",
+   "rig": {
+    "type": "orbit",
+    "target": "hero.hand",
+    "radius": 1.8,
+    "height": 0.2,
+    "deg0": -70,
+    "deg1": -105,
+    "fov": 30,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "beat": {
+    "t": 0,
+    "rig": "orbit",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "radius": 1.8,
+    "deg0": -70,
+    "deg1": -105,
+    "height": 1.3,
+    "fov": 30,
+    "feel": "dolly"
+   },
+   "notes": "docs/FIX-LIST.md technique 9. Motion-page orbit progresses until the END of the film, so put it last or keep the sweep small.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 181,
+     "far_margin": 0.44
+    },
+    "16x9": {
+     "far_subject_height_pct": 181,
+     "far_margin": 0.82
+    }
+   }
+  },
+  {
+   "id": "impact-silhouette",
+   "name": "Ink impact frame",
+   "family": "impact",
+   "purpose": "One frame: washi-white page, fighters as flat ink silhouettes, a red streak along the cut.",
+   "when": "The decisive contact; at most 1-2 per film.",
+   "emotion": "the instant",
+   "duration_s": [
+    0.042,
+    0.083
+   ],
+   "frames_24": [
+    1,
+    2
+   ],
+   "fov": 34,
+   "distance": "keep the current shot",
+   "angle": "keep",
+   "elevation": "keep",
+   "feel": "keep",
+   "behaviours": [],
+   "engine": "ready on the motion page (effects.impactFrame); not a camera move: keep the current shot's rig",
+   "mark": "C",
+   "notes": "[C] Impact frames: 1 to a few frames of extreme value contrast at contact (Demon Slayer analysis credits Nozomu Abe). Set film.effects.impactFrame = true."
+  },
+  {
+   "id": "delayed-reaction-hold",
+   "name": "Frozen pass hold (delayed reaction)",
+   "family": "aftermath",
+   "purpose": "Both fighters frozen after passing each other, backs turned; nothing moves for a long beat, then one falls or the paint blooms.",
+   "when": "Right after the decisive blow.",
+   "emotion": "dread, release",
+   "duration_s": [
+    1.5,
+    3.5
+   ],
+   "frames_24": [
+    36,
+    84
+   ],
+   "fov": 36,
+   "distance": "full",
+   "angle": "0 (profile)",
+   "elevation": "+2 deg",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 2,
+    "fov": 36,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.65
+   },
+   "notes": "[C] Sanjuro's final duel: a long stillness (reported 20-36 s) before one sudden cut. For Shorts: 1.5-3 s of silence + wind only, then the paint (KIZU onset 80-200 ms).",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "full",
+    "angle": 0,
+    "elevation": 2,
+    "fov": 36,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 45,
+     "far_margin": 0.55
+    },
+    "16x9": {
+     "far_subject_height_pct": 64,
+     "far_margin": 0.8
+    }
+   }
+  },
+  {
+   "id": "orbit-zanshin",
+   "name": "Zanshin orbit",
+   "family": "aftermath",
+   "purpose": "Slow arc around the winner holding the finishing posture.",
+   "when": "After the decisive cut, 1-2 s of zanshin before chiburi or noto.",
+   "emotion": "mastery, grief, completion",
+   "duration_s": [
+    1.5,
+    3.0
+   ],
+   "frames_24": [
+    36,
+    72
+   ],
+   "fov": 34,
+   "distance": "radius 3.0 m",
+   "angle": "sweeps 55 deg",
+   "elevation": "+1.15 m look height",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "orbit",
+    "target": "hero",
+    "radius": 3.0,
+    "height": 0.1,
+    "deg0": -60,
+    "deg1": -115,
+    "fov": 34,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "beat": {
+    "t": 0,
+    "rig": "orbit",
+    "subjects": [
+     "hero"
+    ],
+    "radius": 3.0,
+    "deg0": -60,
+    "deg1": -115,
+    "height": 1.15,
+    "fov": 34,
+    "feel": "crane"
+   },
+   "notes": "As in film/motion-test.json. [C] Zanshin: alert posture held after the technique.",
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 96,
+     "far_margin": 0.98
+    },
+    "16x9": {
+     "far_subject_height_pct": 96,
+     "far_margin": 0.98
+    }
+   }
+  },
+  {
+   "id": "crane-out-end",
+   "name": "Crane out to the end card",
+   "family": "aftermath",
+   "purpose": "Rise and pull back over the scene, leave the fighters small.",
+   "when": "Final 2-3 s before the end card.",
+   "emotion": "closure, the world goes on",
+   "duration_s": [
+    2.0,
+    3.5
+   ],
+   "frames_24": [
+    48,
+    84
+   ],
+   "fov": 40,
+   "distance": "wide (+35%)",
+   "angle": "-20",
+   "elevation": "+20 deg",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "D",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "elevation": 20,
+    "dist": 1.1,
+    "angle": -20,
+    "fov": 40,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "elevation": 20,
+    "dist": 1.35,
+    "angle": -20,
+    "fov": 40,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 27,
+     "far_margin": 0.75
+    },
+    "16x9": {
+     "far_subject_height_pct": 22,
+     "far_margin": 0.93
+    }
+   }
+  },
+  {
+   "id": "walk-away",
+   "name": "Walk away (back to camera)",
+   "family": "aftermath",
+   "purpose": "Follow the survivor from behind as they walk off into the light.",
+   "when": "Ending; the winner leaves, the loser stays in frame.",
+   "emotion": "solitude, cost",
+   "duration_s": [
+    2.0,
+    4.0
+   ],
+   "frames_24": [
+    48,
+    96
+   ],
+   "fov": 36,
+   "distance": "3.2 m behind",
+   "angle": "behind",
+   "elevation": "+0.4 m",
+   "feel": "crane",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "ready",
+   "mark": "I",
+   "rig": {
+    "type": "track",
+    "subject": "hero",
+    "offset": [
+     0.0,
+     0.4,
+     -3.2
+    ],
+    "lookAhead": 3.0,
+    "fov": 36,
+    "feel": "crane",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 84,
+     "far_margin": 0.81
+    },
+    "16x9": {
+     "far_subject_height_pct": 84,
+     "far_margin": 0.81
+    }
+   }
+  },
+  {
+   "id": "sky-tilt",
+   "name": "Sky tilt (Shinkai light)",
+   "family": "aftermath",
+   "purpose": "Tilt up off the figures into the sky, sun or lantern-light rays.",
+   "when": "Transition out of a scene, a passage of time, the last beat before the title.",
+   "emotion": "longing, beauty",
+   "duration_s": [
+    1.5,
+    3.0
+   ],
+   "frames_24": [
+    36,
+    72
+   ],
+   "fov": 40,
+   "distance": "wide",
+   "angle": "20",
+   "elevation": "-8 deg, look lifted 2.5 m",
+   "feel": "crane",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": -8,
+    "lookUp": 2.5,
+    "fov": 40,
+    "feel": "crane",
+    "behaviours": [],
+    "dist": 0.8
+   },
+   "notes": "[C] Shinkai: lens flares, god rays, light as the subject. Needs a bright sky element in frame (paper sun in the dawn set).",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "wide",
+    "angle": 20,
+    "elevation": -8,
+    "lookUp": 2.5,
+    "fov": 40,
+    "feel": "crane",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 39,
+     "far_margin": 0.02
+    },
+    "16x9": {
+     "far_subject_height_pct": 31,
+     "far_margin": 0.19
+    }
+   }
+  },
+  {
+   "id": "kon-match-cut",
+   "name": "Graphic match cut (Satoshi Kon)",
+   "family": "transition",
+   "purpose": "End shot A on a shape (glowing eye), start shot B on the same shape in the same screen place and size (the lantern sun).",
+   "when": "Hook -> world, scene -> scene, memory -> present.",
+   "emotion": "connection, dream logic",
+   "duration_s": [
+    0.4,
+    1.2
+   ],
+   "frames_24": [
+    10,
+    29
+   ],
+   "fov": "18 then 40",
+   "distance": "extreme close then wide",
+   "angle": "0 then 20",
+   "elevation": "level then -8",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "pair": [
+    {
+     "type": "face",
+     "subject": "hero",
+     "angle": 0,
+     "dist": 0.42,
+     "fov": 18,
+     "feel": "locked",
+     "behaviours": []
+    },
+    {
+     "type": "frame",
+     "subjects": [
+      "hero",
+      "foe"
+     ],
+     "size": "wide",
+     "angle": 20,
+     "elevation": -8,
+     "lookUp": 2.0,
+     "dist": 0.8,
+     "fov": 40,
+     "feel": "crane",
+     "behaviours": []
+    }
+   ],
+   "notes": "[C] Kon's transitions: general match cut, exact graphic match, intercutting mirrored times (Every Frame a Painting). The match is about screen position: check both stills and line the shapes up within ~5% of frame width."
+  },
+  {
+   "id": "hook-flash-forward",
+   "name": "Hook flash-forward (0-1 s)",
+   "family": "transition",
+   "purpose": "The first second of the Short shows the most violent frame (impact or ink frame), then cuts back to the eye.",
+   "when": "Always: the first 0.4-1.0 s of every Short.",
+   "emotion": "curiosity, 'what was that?'",
+   "duration_s": [
+    0.3,
+    1.0
+   ],
+   "frames_24": [
+    7,
+    24
+   ],
+   "fov": 28,
+   "distance": "close",
+   "angle": "35",
+   "elevation": "+2",
+   "feel": "locked",
+   "behaviours": [],
+   "engine": "ready",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 55,
+    "elevation": 2,
+    "fov": 28,
+    "feel": "locked",
+    "behaviours": [],
+    "dist": 0.45
+   },
+   "notes": "docs/FIX-LIST.md opening: 0-0.4 s ink impact frame -> 0.4-1.0 s eye close-up -> whip match-cut. [C] Shorts: viewers decide within ~1 s; start mid-action.",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "close",
+    "angle": 35,
+    "elevation": 2,
+    "fov": 28,
+    "feel": "locked",
+    "behaviours": []
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 47,
+     "far_margin": 0.33
+    },
+    "16x9": {
+     "far_subject_height_pct": 56,
+     "far_margin": 0.65
+    }
+   }
+  },
+  {
+   "id": "foreground-wipe",
+   "name": "Foreground wipe (kuroko cloth)",
+   "family": "transition",
+   "purpose": "Something dark passes very close to the lens (a sleeve, a kuroko cloth, a pine) and the cut hides inside it.",
+   "when": "Invisible cuts in a 'one-take', change of scene.",
+   "emotion": "flow, invisibility",
+   "duration_s": [
+    0.2,
+    0.5
+   ],
+   "frames_24": [
+    5,
+    12
+   ],
+   "fov": 34,
+   "distance": "object < 0.5 m from lens",
+   "angle": "any",
+   "elevation": "any",
+   "feel": "dolly",
+   "behaviours": [],
+   "engine": "needs engine: no foreground-object rig yet (docs/FIX-LIST.md technique 7)",
+   "mark": "C",
+   "notes": "Kurosawa used screen wipes as transitions [C]; this is the in-camera cousin."
+  },
+  {
+   "id": "cut-on-action",
+   "name": "Cut on action (match on motion)",
+   "family": "transition",
+   "purpose": "Cut mid-swing from one angle to another (>= 30 deg change) so the motion carries the eye across the cut.",
+   "when": "Every cut inside an exchange.",
+   "emotion": "invisible flow",
+   "duration_s": [
+    0.0,
+    0.0
+   ],
+   "frames_24": [
+    0,
+    0
+   ],
+   "fov": "any",
+   "distance": "any",
+   "angle": "change >= 30 deg",
+   "elevation": "any",
+   "feel": "any",
+   "behaviours": [],
+   "engine": "ready: it is an editing rule (choose shot start/end on the fastest frame)",
+   "mark": "C",
+   "notes": "[C] 30-degree rule avoids jump cuts; Kurosawa tends to cut on movement (Every Frame a Painting)."
+  },
+  {
+   "id": "wkw-drift",
+   "name": "Drift and smear (Wong Kar-wai)",
+   "family": "exchange",
+   "purpose": "Handheld medium where the body moves in stutter (step-printed) while the background streaks.",
+   "when": "A memory, a dream fight, a moment of time distortion.",
+   "emotion": "melancholy, time out of joint",
+   "duration_s": [
+    1.0,
+    2.5
+   ],
+   "frames_24": [
+    24,
+    60
+   ],
+   "fov": 30,
+   "distance": "medium",
+   "angle": "30",
+   "elevation": "+2 deg",
+   "feel": "handheld",
+   "behaviours": [
+    "lead"
+   ],
+   "engine": "approx: step-printing = body poses on 3s/4s with camera on 1s; needs a render option for stepped body time",
+   "mark": "C",
+   "rig": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "medium",
+    "angle": 50,
+    "elevation": 2,
+    "fov": 30,
+    "feel": "handheld",
+    "behaviours": [
+     "lead"
+    ],
+    "dist": 0.52
+   },
+   "notes": "[C] Wong + Doyle: undercranking + step printing (e.g. shoot 12 fps, print each frame twice).",
+   "rig_16x9": {
+    "type": "frame",
+    "subjects": [
+     "hero",
+     "foe"
+    ],
+    "size": "medium",
+    "angle": 30,
+    "elevation": 2,
+    "fov": 30,
+    "feel": "handheld",
+    "behaviours": [
+     "lead"
+    ]
+   },
+   "measured": {
+    "9x16": {
+     "far_subject_height_pct": 40,
+     "far_margin": 0.17
+    },
+    "16x9": {
+     "far_subject_height_pct": 56,
+     "far_margin": 0.52
+    }
+   }
+  }
+ ],
+ "styles": [
+  {
+   "id": "ufotable-flow",
+   "inspired_by": "ufotable (Demon Slayer)",
+   "mark": "C",
+   "sources": [
+    "https://jbsiraudin.github.io/blog/demon-slayer-visual-grammar",
+    "https://www.animenewsnetwork.com/encyclopedia/people.php?id=58110"
+   ],
+   "summary": "Action centred in frame, smooth glides through a 3D world, stepped body motion with smooth camera, glint -> strike -> sparks, colour-coded light.",
+   "shots": [
+    "eye-reveal",
+    "glint-insert",
+    "ufotable-glide",
+    "lunge-dolly",
+    "impact-zoom",
+    "impact-silhouette",
+    "freeze-orbit",
+    "orbit-zanshin"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.8,
+     1.6
+    ],
+    "pattern": "long prepare (1-2 s) / single-frame strike / long relax (1-2 s); ~5 attacks per 8 s in a flurry",
+    "body_on": "twos (12 fps), slow-mo on ones",
+    "camera_on": "ones"
+   },
+   "camera": {
+    "feels": [
+     "dolly",
+     "crane"
+    ],
+    "fov": [
+     28,
+     36
+    ],
+    "shake": "on ones over twos, kicked in the strike direction"
+   },
+   "lighting": "rim-glow",
+   "colour": "deep blue-teal night, warm amber blade light, gold sparks; crimson only for the demonic side",
+   "effects": [
+    "glint 4-6 f before contact",
+    "smear ribbon",
+    "ink impact frame on the decisive hit",
+    "hit-stop 3-4 f",
+    "water/flame-like paper ribbon along the technique"
+   ],
+   "sound": "silence before the technique name / strike, then a big layered clash",
+   "fx": [
+    "glint",
+    "smear-ribbon",
+    "sparks",
+    "hit-stop",
+    "ink-impact",
+    "camera-punch",
+    "bloom",
+    "on-twos"
+   ],
+   "grade": "moonlit"
+  },
+  {
+   "id": "mappa-kinetic",
+   "inspired_by": "MAPPA (Jujutsu Kaisen, Sunghoo Park)",
+   "mark": "C",
+   "sources": [
+    "https://AnimeNewsNetwork.com/this-week-in-anime/2024-02-15/.207600",
+    "https://slashfilm.com/1019970/adapting-jujutsu-kaisens-fight-scenes-to-anime-was-the-easy-part"
+   ],
+   "summary": "Erratic, mobile camera with a strong sense of 3D space; heavy blows; spatial continuity over abrupt cuts.",
+   "shots": [
+    "torpedo-track",
+    "leading-track",
+    "whip-reveal",
+    "handheld-clash",
+    "itano-dive",
+    "impact-close",
+    "low-hero-push"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.6,
+     1.2
+    ],
+    "pattern": "bursts of 3-5 short shots, then one 2-3 s moving take that shows where everyone is"
+   },
+   "camera": {
+    "feels": [
+     "torpedo",
+     "handheld"
+    ],
+    "fov": [
+     34,
+     50
+    ],
+    "shake": "big, directional, on impacts only"
+   },
+   "lighting": "hard-contrast",
+   "colour": "desaturated base, saturated power colour (amber or crimson) on hits",
+   "effects": [
+    "speed lines (planned)",
+    "impact frames",
+    "smear"
+   ],
+   "sound": "punchy, lots of low-mid weight on hits",
+   "fx": [
+    "speed-lines",
+    "screen-shake",
+    "camera-punch",
+    "ink-impact",
+    "smear-ribbon",
+    "ca-flash"
+   ],
+   "grade": "demonic"
+  },
+  {
+   "id": "kurosawa-weather",
+   "inspired_by": "Akira Kurosawa (Seven Samurai, Sanjuro)",
+   "mark": "C",
+   "sources": [
+    "https://Www.Wikipedia.org/wiki/Filmmaking_technique_of_Kurosawa",
+    "https://www.bfi.org.uk/features/how-akira-kurosawa-films-command-weather",
+    "https://bfi.org.uk/sight-and-sound/features/last-duel-ending-sanjuro"
+   ],
+   "summary": "Moving weather in every frame, long lenses compressing layers, cuts on movement, long stillness then one violent instant.",
+   "shots": [
+    "telephoto-weather",
+    "telephoto-compress",
+    "profile-two-shot",
+    "wick-wide-oner",
+    "delayed-reaction-hold",
+    "cut-on-action",
+    "foreground-wipe"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     2.5,
+     6.0
+    ],
+    "pattern": "long holds; cut on movement; the decisive blow is one short shot inside a very long still one"
+   },
+   "camera": {
+    "feels": [
+     "locked",
+     "crane"
+    ],
+    "fov": [
+     14,
+     24
+    ],
+    "shake": "none, the weather moves instead"
+   },
+   "lighting": "overcast-grey",
+   "colour": "monochrome or near-monochrome; Ghost of Tsushima 'Kurosawa Mode' style grade with grain",
+   "effects": [
+    "wind lines and blowing paper",
+    "rain/snow particles",
+    "mud/paint spray"
+   ],
+   "sound": "wind bed loud, music absent; one sound for the cut",
+   "fx": [
+    "kurosawa-bw",
+    "film-grain",
+    "rain",
+    "dust",
+    "hit-stop"
+   ],
+   "grade": "kurosawa"
+  },
+  {
+   "id": "leone-standoff",
+   "inspired_by": "Sergio Leone (The Good, the Bad and the Ugly)",
+   "mark": "C",
+   "sources": [
+    "https://www.rogerebert.com/scanners/opening-shots-the-good-the-bad-and-the-ugly",
+    "https://www.premiumbeat.com/blog/how-to-shoot-close-up-shots-like-sergio-leone"
+   ],
+   "summary": "Extreme wide vs extreme close-up; the standoff tightens toward the eyes on every cut while the cuts get shorter.",
+   "shots": [
+    "establishing-wide",
+    "silhouette-wide",
+    "leone-eyes",
+    "hand-on-hilt",
+    "foot-grind",
+    "telephoto-compress",
+    "impact-zoom"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.5,
+     3.0
+    ],
+    "pattern": "accelerating: 3.0, 2.0, 1.5, 1.0, 0.7, 0.5 s ... then the shot, then a long hold"
+   },
+   "camera": {
+    "feels": [
+     "locked"
+    ],
+    "fov": [
+     16,
+     42
+    ],
+    "shake": "only on the final hit"
+   },
+   "lighting": "hard-sun",
+   "colour": "bleached warm, deep shadows",
+   "effects": [
+    "dust/paper flecks in the wind"
+   ],
+   "sound": "music swells with the cutting, cuts to silence on the strike",
+   "fx": [
+    "dust",
+    "film-grain",
+    "vignette",
+    "letterbox"
+   ],
+   "grade": "dawn"
+  },
+  {
+   "id": "kubrick-symmetry",
+   "inspired_by": "Stanley Kubrick (one-point perspective)",
+   "mark": "C",
+   "sources": [
+    "https://filmmakermagazine.com/?p=85083",
+    "https://screencrush.com/kubrick-one-point-perspective-mashup/"
+   ],
+   "summary": "Centred, symmetric, one-point compositions and slow, mechanical moves; dread through order.",
+   "shots": [
+    "kubrick-one-point",
+    "slow-push-monologue",
+    "profile-two-shot",
+    "delayed-reaction-hold",
+    "tiny-in-the-dark"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     4.0,
+     8.0
+    ],
+    "pattern": "few cuts, each one a hard jolt"
+   },
+   "camera": {
+    "feels": [
+     "locked",
+     "crane"
+    ],
+    "fov": [
+     34,
+     42
+    ],
+    "shake": "none"
+   },
+   "lighting": "practical-symmetry",
+   "colour": "controlled palette, one strong accent",
+   "effects": [
+    "none, or a single impact frame"
+   ],
+   "sound": "drones; silence",
+   "fx": [
+    "vignette",
+    "flash"
+   ],
+   "grade": "neutral"
+  },
+  {
+   "id": "wkw-smear",
+   "inspired_by": "Wong Kar-wai / Christopher Doyle",
+   "mark": "C",
+   "sources": [
+    "https://www.bfi.org.uk/sight-and-sound/features/poet-time-wong-kar-wai-chungking-express",
+    "https://www.bfi.org.uk/interviews/christopher-doyle-shooting-chungking-express"
+   ],
+   "summary": "Step-printed stutter motion with continuous camera, handheld intimacy, saturated colour, time stretched.",
+   "shots": [
+    "wkw-drift",
+    "handheld-clash",
+    "eye-reveal",
+    "sky-tilt"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     1.5,
+     4.0
+    ],
+    "pattern": "lingering; stutter slow-mo on the key moment"
+   },
+   "camera": {
+    "feels": [
+     "handheld"
+    ],
+    "fov": [
+     26,
+     34
+    ],
+    "shake": "breathing only"
+   },
+   "lighting": "neon-lantern",
+   "colour": "saturated green/amber/red, smoky",
+   "effects": [
+    "body on 3s/4s (planned)",
+    "smear"
+   ],
+   "sound": "one song carries the whole sequence",
+   "fx": [
+    "on-twos",
+    "motion-blur",
+    "bloom",
+    "film-grain"
+   ],
+   "grade": "lantern"
+  },
+  {
+   "id": "deakins-low-key",
+   "inspired_by": "Denis Villeneuve / Roger Deakins (Sicario, Blade Runner 2049)",
+   "mark": "C",
+   "sources": [
+    "https://theasc.com/articles/deakins-blade-runner-2049",
+    "https://theasc.com/blog/the-film-book/sicario-interview-with-roger-deakins-asc-bsc"
+   ],
+   "summary": "Few sources, big negative space, silhouettes, slow deliberate moves, composition that lets the dark do the work.",
+   "shots": [
+    "silhouette-wide",
+    "tiny-in-the-dark",
+    "slow-push-monologue",
+    "kubrick-one-point",
+    "walk-away"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     3.0,
+     7.0
+    ],
+    "pattern": "patient; the threat is felt before it is seen"
+   },
+   "camera": {
+    "feels": [
+     "crane",
+     "locked"
+    ],
+    "fov": [
+     30,
+     40
+    ],
+    "shake": "rare and small"
+   },
+   "lighting": "silhouette",
+   "colour": "one dominant hue per scene (amber haze or cold blue), black shadows",
+   "effects": [
+    "haze/fog",
+    "god rays through a gap"
+   ],
+   "sound": "deep drones, sub-heavy hits",
+   "fx": [
+    "volumetric-fog",
+    "light-shafts",
+    "vignette",
+    "bloom"
+   ],
+   "grade": "moonlit"
+  },
+  {
+   "id": "spielberg-oner",
+   "inspired_by": "Steven Spielberg (the oner)",
+   "mark": "C",
+   "sources": [
+    "https://nofilmschool.com/2014/05/study-steven-spielbergs-cinematography-help-you-master-long-take",
+    "https://nofilmschool.com/spielberg-oner-raiders"
+   ],
+   "summary": "One moving take that finds wide, two-shot and close through blocking; invisible.",
+   "shots": [
+    "anchor-oner",
+    "wick-wide-oner",
+    "crane-reveal"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     4.0,
+     10.0
+    ],
+    "pattern": "one take per dramatic unit; cut only when the story turns"
+   },
+   "camera": {
+    "feels": [
+     "dolly"
+    ],
+    "fov": [
+     28,
+     40
+    ],
+    "shake": "none"
+   },
+   "lighting": "dawn-gold",
+   "colour": "naturalistic warm",
+   "effects": [
+    "none"
+   ],
+   "sound": "score-led",
+   "fx": [
+    "lens-flare",
+    "dust"
+   ],
+   "grade": "dawn"
+  },
+  {
+   "id": "stranger-nakamura",
+   "inspired_by": "Sword of the Stranger (Bones, action director Yutaka Nakamura)",
+   "mark": "C",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Yutaka_Nakamura",
+    "https://dotandline.net/the-greatest-sword-fight-ever-animated/"
+   ],
+   "summary": "Bodies fly and the camera flies with them; luminous blade arcs; terrain (snow) bursting with each move; no dialogue in fights.",
+   "shots": [
+    "torpedo-track",
+    "ufotable-glide",
+    "jump-back-reveal",
+    "impact-close",
+    "wick-wide-oner",
+    "orbit-zanshin"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.8,
+     2.0
+    ],
+    "pattern": "fluid runs of 2-3 s with the camera following, punctuated by 2-4 f impact shots"
+   },
+   "camera": {
+    "feels": [
+     "torpedo",
+     "dolly"
+    ],
+    "fov": [
+     34,
+     45
+    ],
+    "shake": "medium"
+   },
+   "lighting": "snow-cold",
+   "colour": "cold white/blue world, amber blade light",
+   "effects": [
+    "paper-snow bursts on footwork and impacts",
+    "bright blade arcs (ribbon)"
+   ],
+   "sound": "no score under the fight; steel and breath",
+   "fx": [
+    "snow",
+    "smear-ribbon",
+    "sparks",
+    "hit-stop",
+    "paper-shards"
+   ],
+   "grade": "moonlit"
+  },
+  {
+   "id": "champloo-scratch",
+   "inspired_by": "Samurai Champloo (Shinichiro Watanabe)",
+   "mark": "C",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Samurai_Champloo",
+    "https://animationobsessive.substack.com/p/the-music-of-samurai-champloo"
+   ],
+   "summary": "Break-dance swordplay, cuts and transitions on turntable scratches, beats with abrupt endings.",
+   "shots": [
+    "whip-reveal",
+    "handheld-clash",
+    "low-hero-push",
+    "hk-double-hit",
+    "kon-match-cut"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.5,
+     1.5
+    ],
+    "pattern": "on the music grid: cut on beats, a scratch = a rewind/repeat cut"
+   },
+   "camera": {
+    "feels": [
+     "torpedo",
+     "handheld"
+    ],
+    "fov": [
+     30,
+     45
+    ],
+    "shake": "on beats"
+   },
+   "lighting": "hard-sun",
+   "colour": "warm, graphic, flat-ish",
+   "effects": [
+    "freeze frames",
+    "rewind cuts (needs engine)"
+   ],
+   "sound": "hip-hop beat drives all timing",
+   "fx": [
+    "flash",
+    "speed-lines",
+    "screen-shake"
+   ],
+   "grade": "dawn"
+  },
+  {
+   "id": "shinkai-light",
+   "inspired_by": "Makoto Shinkai",
+   "mark": "C",
+   "sources": [
+    "https://vfxvoice.com/suzume-is-hardly-disastrous-for-makoto-shinkai/",
+    "https://www.nippon.com/en/articles/-/12665"
+   ],
+   "summary": "Light is the subject: lens flares, god rays, bloom, drifting clouds; quiet camera, sky tilts.",
+   "shots": [
+    "sky-tilt",
+    "crane-reveal",
+    "establishing-wide",
+    "eye-reveal",
+    "walk-away"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     2.0,
+     5.0
+    ],
+    "pattern": "lyrical; cut on music phrases"
+   },
+   "camera": {
+    "feels": [
+     "crane"
+    ],
+    "fov": [
+     36,
+     45
+    ],
+    "shake": "none"
+   },
+   "lighting": "god-rays",
+   "colour": "saturated dawn: gold, pink, deep sky blue",
+   "effects": [
+    "bloom",
+    "lens flare",
+    "drifting paper clouds"
+   ],
+   "sound": "piano/strings, soft",
+   "fx": [
+    "lens-flare",
+    "godrays-screen",
+    "light-shafts",
+    "bloom",
+    "petals"
+   ],
+   "grade": "dawn"
+  },
+  {
+   "id": "kon-match",
+   "inspired_by": "Satoshi Kon (Paprika, Perfect Blue)",
+   "mark": "C",
+   "sources": [
+    "https://cartoonbrew.com/anime/learn-how-satoshi-kon-edited-space-and-time-102014.html",
+    "https://kotaku.com/see-how-an-anime-master-manipulated-space-and-time-1611087301"
+   ],
+   "summary": "Every scene change is a match: shape, position, motion or time mirrored across the cut.",
+   "shots": [
+    "kon-match-cut",
+    "hook-flash-forward",
+    "eye-reveal",
+    "cut-on-action"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     1.0,
+     3.0
+    ],
+    "pattern": "each cut lines up a shape in the same screen place"
+   },
+   "camera": {
+    "feels": [
+     "locked",
+     "dolly"
+    ],
+    "fov": [
+     18,
+     40
+    ],
+    "shake": "minimal"
+   },
+   "lighting": "any (match the two sides of the cut)",
+   "colour": "match colour across the cut too",
+   "effects": [
+    "graphic matches"
+   ],
+   "sound": "carry a sound across the cut (J/L cut)",
+   "fx": [
+    "fade",
+    "flash"
+   ],
+   "grade": "neutral"
+  },
+  {
+   "id": "itano-circus",
+   "inspired_by": "Ichiro Itano (Macross)",
+   "mark": "C",
+   "sources": [
+    "https://www.goodreads.com/author_blog_posts/773828-entering-the-itano-circus"
+   ],
+   "summary": "Many fast projectiles on crossing curved paths with trails; the camera dives among them.",
+   "shots": [
+    "itano-dive",
+    "torpedo-track",
+    "impact-zoom"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     0.5,
+     1.2
+    ],
+    "pattern": "one long dive, then a hard cut to the result"
+   },
+   "camera": {
+    "feels": [
+     "torpedo"
+    ],
+    "fov": [
+     45,
+     60
+    ],
+    "shake": "speed buzz"
+   },
+   "lighting": "rim-glow",
+   "colour": "dark background, bright trails",
+   "effects": [
+    "thrown blades / paper shards with ribbons (planned)"
+   ],
+   "sound": "layered whooshes panned by screen position",
+   "fx": [
+    "smear-ribbon",
+    "paper-shards",
+    "speed-lines",
+    "bloom"
+   ],
+   "grade": "demonic"
+  },
+  {
+   "id": "arcane-painterly",
+   "inspired_by": "Arcane (Fortiche)",
+   "mark": "C",
+   "sources": [
+    "https://80.lv/articles/arcane-artists-show-how-they-combine-traditional-art-3d-for-backgrounds",
+    "https://www.creativebloq.com/art/2d-animation/how-the-creative-team-behind-netflixs-arcane-pushed-the-animation-even-further-for-the-second-season"
+   ],
+   "summary": "3D sets with painted projection, hand-directed light and colour per shot, 2D effects over 3D bodies.",
+   "shots": [
+    "over-shoulder-standoff",
+    "slow-push-monologue",
+    "low-hero-push",
+    "impact-close",
+    "sky-tilt"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     1.5,
+     3.5
+    ],
+    "pattern": "classic coverage; style lives in light and texture"
+   },
+   "camera": {
+    "feels": [
+     "dolly",
+     "crane"
+    ],
+    "fov": [
+     28,
+     40
+    ],
+    "shake": "small"
+   },
+   "lighting": "chiaroscuro",
+   "colour": "complementary pairs per scene (amber vs teal), painted gradients",
+   "effects": [
+    "hand-drawn-looking smoke/sparks over 3D",
+    "painted backdrops"
+   ],
+   "sound": "score-led",
+   "fx": [
+    "bloom",
+    "embers",
+    "grade",
+    "vignette"
+   ],
+   "grade": "lantern"
+  },
+  {
+   "id": "hk-rhythm",
+   "inspired_by": "Hong Kong action (Jackie Chan, Sammo Hung; Bordwell's pause-burst-pause)",
+   "mark": "C",
+   "sources": [
+    "https://nofilmschool.com/2014/12/jackie-chans-9-principles-action-comedy",
+    "https://www.davidbordwell.net/blog/2011/01/14/planet-hong-kong-the-dragon-dances/"
+   ],
+   "summary": "Hold the shot long enough to feel the rhythm; pause-burst-pause; show a big hit twice.",
+   "shots": [
+    "wick-wide-oner",
+    "lunge-dolly",
+    "hk-double-hit",
+    "impact-close",
+    "profile-two-shot"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     1.5,
+     3.0
+    ],
+    "pattern": "pause (0.5-1 s still) / burst (3-6 moves in one shot) / pause"
+   },
+   "camera": {
+    "feels": [
+     "locked",
+     "dolly"
+    ],
+    "fov": [
+     32,
+     40
+    ],
+    "shake": "on hits only"
+   },
+   "lighting": "dawn-gold",
+   "colour": "naturalistic",
+   "effects": [
+    "hit-stop"
+   ],
+   "sound": "every hit audible and distinct",
+   "fx": [
+    "hit-stop",
+    "camera-punch",
+    "dust"
+   ],
+   "grade": "dawn"
+  },
+  {
+   "id": "wick-wide",
+   "inspired_by": "John Wick (Chad Stahelski, 87eleven)",
+   "mark": "C",
+   "sources": [
+    "https://www.motionpictures.org/?p=31074",
+    "https://cinemablend.com/movies/john-wick-why-keanu-reeves-action-sequences-are-often-shot-in-the-wide",
+    "https://soc.org/project/john-wick-chapter-4-8/"
+   ],
+   "summary": "Wide, full-body frames and long takes so the viewer believes the performer does the fight; colour-saturated low light.",
+   "shots": [
+    "wick-wide-oner",
+    "anchor-oner",
+    "lunge-dolly",
+    "silhouette-wide",
+    "walk-away"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     3.0,
+     6.0
+    ],
+    "pattern": "shots rarely under ~5 s inside a sequence"
+   },
+   "camera": {
+    "feels": [
+     "dolly"
+    ],
+    "fov": [
+     38,
+     45
+    ],
+    "shake": "almost none"
+   },
+   "lighting": "neon-lantern",
+   "colour": "saturated amber/teal against black",
+   "effects": [
+    "rain",
+    "practical light sources in frame"
+   ],
+   "sound": "music-driven, hits on beats",
+   "fx": [
+    "rain",
+    "bloom",
+    "vignette"
+   ],
+   "grade": "lantern"
+  },
+  {
+   "id": "knightfall-dark-monologue",
+   "inspired_by": "owner's reference Shorts (research/reference-videos.md)",
+   "mark": "I",
+   "sources": [
+    "research/reference-videos.md"
+   ],
+   "summary": "15-25 s voice-led Short: 70% darkness, one shaft of light, strong rim, glowing eye ECU, slow push 2-5%/s, one decisive gesture, cut to black + small logo.",
+   "shots": [
+    "eye-reveal",
+    "leone-eyes",
+    "slow-push-monologue",
+    "low-hero-push",
+    "silhouette-wide",
+    "tiny-in-the-dark"
+   ],
+   "cut_rhythm": {
+    "asl_s": [
+     2.5,
+     5.0
+    ],
+    "pattern": "one shot per voice line (4-6 lines), cut in the pause between lines; the gesture lands on the last line"
+   },
+   "camera": {
+    "feels": [
+     "crane"
+    ],
+    "fov": [
+     18,
+     36
+    ],
+    "shake": "none until the gesture"
+   },
+   "lighting": "chiaroscuro",
+   "colour": "near black with one warm key (amber) and a cool or crimson rim; glow is the brightest thing",
+   "effects": [
+    "volumetric fog",
+    "eye/seam glow pulsing with the voice",
+    "letterbox strip inside 9:16 (needs engine: main.js disables letterbox in vertical)"
+   ],
+   "sound": "voice first, music swells under the last line, then silence and the logo",
+   "fx": [
+    "light-shafts",
+    "volumetric-fog",
+    "bloom-pulse",
+    "vignette",
+    "letterbox",
+    "film-grain"
+   ],
+   "grade": "lantern"
+  }
+ ],
+ "lighting": [
+  {
+   "id": "chiaroscuro",
+   "key_fill": "8:1 or higher",
+   "key": "one hard side/three-quarter key (45-90 deg)",
+   "rim": "yes, opposite the key",
+   "fog": "light",
+   "today": "studio mode (dark glowing backdrop) + inner lantern glow; Blender: one area light + interior lights",
+   "mark": "C",
+   "source": "https://www.wikipedia.org/wiki/Low-key_lighting",
+   "grade": "lantern"
+  },
+  {
+   "id": "rim-glow",
+   "key_fill": "no front fill",
+   "key": "backlight above-behind",
+   "rim": "strong, warm (amber) or crimson for demonic",
+   "fog": "medium",
+   "today": "dawn mode with the sun behind the fighters; camera angle 0-30 so the sun sits behind them",
+   "mark": "C",
+   "source": "https://www.videomaker.com/article/12995-specialty-lighting/",
+   "grade": "dawn"
+  },
+  {
+   "id": "silhouette",
+   "key_fill": "subject unlit (key removed), background 3+ stops brighter",
+   "key": "none on subject",
+   "rim": "optional thin edge",
+   "fog": "medium-heavy",
+   "today": "dawn mode, camera low and facing the sun / bright backdrop; elevation <= 0",
+   "mark": "C",
+   "source": "https://www.videomaker.com/article/12995-specialty-lighting/",
+   "grade": "dawn"
+  },
+  {
+   "id": "god-rays",
+   "key_fill": "high",
+   "key": "sun/lantern behind an occluder (pines, shoji, cloud gap)",
+   "rim": "yes",
+   "fog": "required (rays need particles)",
+   "today": "Blender volume + light behind occluder; not in the browser preview",
+   "mark": "I",
+   "source": "https://colorculture.org/your-name-cinematography-analysis/",
+   "grade": "dawn"
+  },
+  {
+   "id": "dawn-gold",
+   "key_fill": "3:1",
+   "key": "low sun at 10-20 deg elevation, side or behind",
+   "rim": "warm",
+   "fog": "sea haze",
+   "today": "dawn mode (default set)",
+   "mark": "I",
+   "source": "",
+   "grade": "dawn"
+  },
+  {
+   "id": "hard-sun",
+   "key_fill": "4:1",
+   "key": "high sun, hard shadows",
+   "rim": "small",
+   "fog": "none",
+   "today": "dawn mode; needs a midday variant (not built)",
+   "mark": "I",
+   "source": "",
+   "grade": "neutral"
+  },
+  {
+   "id": "overcast-grey",
+   "key_fill": "2:1",
+   "key": "soft top light",
+   "rim": "none",
+   "fog": "rain/mist",
+   "today": "needs a grey/rain set (not built); grade to monochrome in post",
+   "mark": "I",
+   "source": "",
+   "grade": "kurosawa"
+  },
+  {
+   "id": "neon-lantern",
+   "key_fill": "6:1",
+   "key": "practical lanterns in frame, saturated",
+   "rim": "coloured",
+   "fog": "light",
+   "today": "needs a night set with lantern practicals (not built)",
+   "mark": "I",
+   "source": "",
+   "grade": "lantern"
+  },
+  {
+   "id": "snow-cold",
+   "key_fill": "3:1",
+   "key": "cold skylight",
+   "rim": "warm blade glow as the only warm source",
+   "fog": "falling paper snow",
+   "today": "not built",
+   "mark": "I",
+   "source": "",
+   "grade": "moonlit"
+  },
+  {
+   "id": "hard-contrast",
+   "key_fill": "6:1",
+   "key": "hard side key",
+   "rim": "yes",
+   "fog": "none",
+   "today": "studio mode or Blender",
+   "mark": "I",
+   "source": "",
+   "grade": "demonic"
+  },
+  {
+   "id": "practical-symmetry",
+   "key_fill": "4:1",
+   "key": "symmetric practicals (two lanterns)",
+   "rim": "none",
+   "fog": "none",
+   "today": "Blender",
+   "mark": "I",
+   "source": "",
+   "grade": "neutral"
+  }
+ ],
+ "beat_map": {
+  "hook (0-1 s)": [
+   "hook-flash-forward",
+   "impact-silhouette",
+   "eye-reveal",
+   "glint-insert"
+  ],
+  "world": [
+   "establishing-wide",
+   "crane-reveal",
+   "telephoto-weather",
+   "kubrick-one-point",
+   "sky-tilt"
+  ],
+  "weapon": [
+   "draw-macro",
+   "blade-slide",
+   "glint-insert",
+   "hand-on-hilt"
+  ],
+  "arrival": [
+   "walk-away",
+   "kubrick-one-point",
+   "silhouette-wide",
+   "low-hero-push"
+  ],
+  "tension": [
+   "standoff-orbit",
+   "over-shoulder-standoff",
+   "reverse-over-shoulder",
+   "leone-eyes",
+   "telephoto-compress",
+   "foot-grind",
+   "rack-focus-eye-to-blade"
+  ],
+  "exchange": [
+   "lunge-dolly",
+   "handheld-clash",
+   "jump-back-reveal",
+   "torpedo-track",
+   "dutch-bind",
+   "stagger-dutch",
+   "whip-reveal",
+   "wick-wide-oner",
+   "hk-double-hit",
+   "ufotable-glide"
+  ],
+  "decisive": [
+   "eye-reveal",
+   "leading-track",
+   "impact-zoom",
+   "impact-silhouette",
+   "freeze-orbit",
+   "anchor-oner"
+  ],
+  "aftermath": [
+   "delayed-reaction-hold",
+   "orbit-zanshin",
+   "high-vulnerable",
+   "crane-out-end",
+   "walk-away",
+   "tiny-in-the-dark"
+  ],
+  "transition": [
+   "kon-match-cut",
+   "cut-on-action",
+   "whip-reveal",
+   "foreground-wipe"
+  ]
+ }
+}

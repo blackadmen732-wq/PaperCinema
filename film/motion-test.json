@@ -363,7 +363,7 @@
       ],
       "radius": 3.0,
       "deg0": -60,
-      "deg1": -115,
+      "deg1": -92,
       "height": 1.15,
       "fov": 34,
       "feel": "crane",
@@ -421,6 +421,28 @@
       "ramp": 0.1,
       "maxDeg": 50,
       "note": "the block meets the kesa cut, then the blades stay crossed through the bind"
+    }
+  ],
+  "voice": [
+    {
+      "id": "v1",
+      "who": "hero",
+      "t": 0.2,
+      "text": "Ten winters... to reach this shore.",
+      "voice": "ronin",
+      "speed": 0.9,
+      "style": "low, slow, menacing",
+      "pitch": -2
+    },
+    {
+      "id": "v3",
+      "who": "foe",
+      "t": 5.3,
+      "text": "Then the sea keeps your name.",
+      "voice": "elder",
+      "speed": 0.92,
+      "style": "deep, cold",
+      "pitch": -1
     }
   ]
 }

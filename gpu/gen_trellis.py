@@ -10,7 +10,11 @@ from trellis.pipelines import TrellisImageTo3DPipeline
 from trellis.utils import postprocessing_utils, render_utils
 
 os.makedirs('/workspace/out', exist_ok=True)
-pipe = TrellisImageTo3DPipeline.from_pretrained('microsoft/TRELLIS-image-large')
+MODEL = os.environ.get('TRELLIS_MODEL', 'microsoft/TRELLIS-image-large')
+if not os.path.isdir(MODEL):   # download once to disk: newer huggingface_hub breaks TRELLIS's repo-path loader
+    from huggingface_hub import snapshot_download
+    MODEL = snapshot_download(MODEL, local_dir='/workspace/trellis-image-large')
+pipe = TrellisImageTo3DPipeline.from_pretrained(MODEL)
 pipe.cuda()
 for name in sys.argv[1:]:
     t = time.time()

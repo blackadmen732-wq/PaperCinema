@@ -1,0 +1,17 @@
+{
+ "hash": "57db343b61a6",
+ "text": "Ten winters... to reach this shore.",
+ "voice": "am_onyx",
+ "lang": "en-us",
+ "delivery": {
+  "speed": 0.81,
+  "pitch": -2.0,
+  "wet": 0.1,
+  "gain": 0.0,
+  "comp": 4.0,
+  "warmth": 4.5,
+  "hp": 75,
+  "lp": 14000,
+  "inner": false
+ }
+}
