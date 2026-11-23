@@ -246,6 +246,7 @@ function joint(c, name) {
   throw new Error('unknown joint ' + name);
 }
 const UP = new THREE.Vector3(0, 1, 0);
+const GROUND_Y = (x, z) => ((film.mode ?? 'dawn') === 'dawn' ? world.groundAt(x, z) : 0);
 const lerp = (a, b, k) => a + (b - a) * k;
 // guards: is the straight line from the lens to the subject clear of the props? (cylinders from TREES[].solids)
 function losClear(pos, P, solids) {
@@ -253,7 +254,7 @@ function losClear(pos, P, solids) {
     const dx = P.x - pos.x, dz = P.z - pos.z, L2 = dx * dx + dz * dz || 1e-9;
     const k = clamp(((c.x - pos.x) * dx + (c.z - pos.z) * dz) / L2, 0, 0.93);       // stop short of the subject itself
     const px = pos.x + dx * k, pz = pos.z + dz * k, py = pos.y + (P.y - pos.y) * k;
-    if (Math.hypot(px - c.x, pz - c.z) < c.r + 0.06 && py > c.y0 - 0.1 && py < c.y1 + 0.1) return false;
+    if (Math.hypot(px - c.x, pz - c.z) < c.r + 0.3 && py > c.y0 - 0.1 && py < c.y1 + 0.25) return false;
   }
   return true;
 }
@@ -323,7 +324,8 @@ function rigTarget(b, t, tb, s) {
       }
       const off = right.clone().multiplyScalar((0.5 - sx) * 2 * dist * th).addScaledVector(up, (sy - 0.5) * 2 * dist * tv);
       const pos = P.clone().addScaledVector(dir, dist).add(off);
-      if (pos.y < (b.minY ?? 0.14)) pos.y = b.minY ?? 0.14;                               // never under the sand
+      const minY = GROUND_Y(pos.x, pos.z) + (b.minY ?? 0.14);
+      if (pos.y < minY) pos.y = minY;                                                     // never under the sand
       return { pos, look: P.clone().add(off) };
     };
     const az = L('az', 90);
@@ -331,7 +333,8 @@ function rigTarget(b, t, tb, s) {
     if (b.guard !== false) {
       // props out of the lens: swing round the subject (a few degrees at a time) until the line of sight is clear,
       // then step back out of any prop the lens ended up inside
-      for (const d of [0, 7, -7, 14, -14, 22, -22, 32, -32, 45, -45, 60, -60]) { const c2 = build(az + d); if (losClear(c2.pos, P, solids)) { best = c2; break; } }
+      const pts = c ? [P, new THREE.Vector3(P.x, c.fig.root.position.y + 0.2, P.z), worldOf(c.fig.head, 0, 0.1, 0)] : [P];   // middle, feet, head
+      for (const d of [0, 7, -7, 14, -14, 22, -22, 32, -32, 45, -45, 60, -60]) { const c2 = build(az + d); if (pts.every((q) => losClear(c2.pos, q, solids))) { best = c2; break; } }
       for (const q of solids) {
         const dx = best.pos.x - q.x, dz = best.pos.z - q.z, d = Math.hypot(dx, dz) || 1e-6, keep = q.r + 0.3;
         if (d < keep && best.pos.y > q.y0 - 0.2 && best.pos.y < q.y1 + 0.2) { best.pos.x = q.x + (dx / d) * keep; best.pos.z = q.z + (dz / d) * keep; }
@@ -419,7 +422,7 @@ const camPath = [];
         if (Math.abs(ny) > tg.keep[1]) { const m = (ny - Math.sign(ny) * tg.keep[1]) * zc * tv; P.addScaledVector(u, m); Lk.addScaledVector(u, m); }
       }
     }
-    P.y = Math.max(0.12, P.y);                             // guard: never under the sand
+    P.y = Math.max(GROUND_Y(P.x, P.z) + 0.12, P.y);        // guard: never under the sand
     camPath.push({ pos: P, look: Lk, fov, roll, beat: b.i });
   }
 }
@@ -479,7 +482,7 @@ function stage(t) {
   if (inStop) { hero.fig.root.updateMatrixWorld(true); }
   for (const tr of TREES) tr.update(s);
   SHADOWS?.update();
-  GHOSTS?.update(tb, G.speedAt);
+  GHOSTS?.update(tb, G.speedAt, R.rateAt(t));
   DUST?.update(s);
   const fl = Math.max(SPARKS.update(s), SPARKS2.update(s));  // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
@@ -489,7 +492,7 @@ function stage(t) {
 window.renderAt = (t) => {
   const { tb, impactFrame } = stage(t);
   if (impactFrame) {
-    combat.renderInkFrame(renderer, scene, camera, [...Object.values(cast).filter((c) => !c.hidden).map((c) => c.fig.root), ...TREES.map((x) => x.root)], ribbons);
+    combat.renderInkFrame(renderer, scene, camera, [...Object.values(cast).filter((c) => !c.hidden).map((c) => c.fig.root), ...(film.effects?.inkProps ? TREES.map((x) => x.root) : [])], ribbons);   // fighters only: one clean silhouette
     return;
   }
   if (FX) {

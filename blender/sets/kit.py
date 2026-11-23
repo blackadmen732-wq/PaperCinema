@@ -19,6 +19,7 @@ import math
 import os
 import random
 import sys
+import zlib
 
 try:
     import bmesh
@@ -199,7 +200,7 @@ class MB:
 
     def __init__(self, ctx, name, rnd=None):
         self.ctx, self.name = ctx, name
-        self.rnd = rnd or random.Random(name)
+        self.rnd = rnd or random.Random(zlib.crc32(name.encode()))
         self.bm = bmesh.new()
         self.pl = self.bm.faces.layers.float.new(pm.PIECE_ATTR)
         self.keys = []
@@ -310,7 +311,7 @@ class MB:
             me.materials.append(self.ctx.mat(k))
         for p in me.polygons:
             p.use_smooth = smooth
-        pm.add_facet_attribute(ob, hash(self.name) & 0xffff)
+        pm.add_facet_attribute(ob, zlib.crc32(self.name.encode()) & 0xffff)
         ob.visible_shadow = shadow
         return self.ctx.link(ob, parent)
 
@@ -356,10 +357,11 @@ def tile_patch(mb, E0, E1, R0, R1, *, tile_w=0.30, tile_l=0.34, amp=0.07, v_max=
         p = p + n_up * (tile_profile(um, amp) + step)
         return p
 
-    def prf(i, j):
-        um = int(i / res)
-        vm = int(j / 3)
-        return random.Random(um * 7919 + vm * 104729 + hash(mb.name) % 997).random()
+    hseed = zlib.crc32(mb.name.encode()) % 997
+
+    def prf(i, j):                    # one stable random per tile (cheap integer hash, deterministic)
+        k = (int(i / res) * 7919 + int(j / 3) * 104729 + hseed) * 2654435761
+        return (k % 4294967296) / 4294967296.0
     mb.grid(key, P, nu, nv, prf)
     if end_caps:                      # round end tiles (nokigawara) along the eave, facing out
         out = (E0 + E1) / 2 - (R0 + R1) / 2
@@ -1038,7 +1040,7 @@ def room(ctx, P, rnd):
                     mb.box(P['wall_key'], sz(b - a, wt * 0.9, ztop - P['wainscot']), loc=at(c, pos, (ztop + P['wainscot']) / 2), pr=rnd.random())
                 if style == 'renji' and ztop < H - 0.3:
                     z1 = P['window_z'] + P['window_h']
-                    _bars(mb, 'wood_post', a, b, P['window_z'], z1, pos, 7, 0.045, 0.06, axis=ax)
+                    _bars(mb, 'wood_post', a, b, P['window_z'], z1, pos, 5, 0.05, 0.07, axis=ax)
                     mb.box(P['wall_key'], sz(b - a, wt * 0.9, H - 0.28 - z1 - 0.14), loc=at(c, pos, (H - 0.28 + z1 + 0.14) / 2), pr=rnd.random())
                     mb.box(P['beam_key'], sz(b - a, 0.17, 0.06), loc=at(c, pos, P['window_z'] - 0.03))
             elif style == 'shoji':

@@ -150,3 +150,7 @@ A full 1080×1920 frame would be about 4× the 540×960 time (4–5 min). Fine f
 - Clouds are low-poly blobs; they read as paper only when lit from the side.
 - The stand-ins are blocks for scale, not characters. The amber slash's ink edge is subtle.
 - No character, sword or timeline import yet: the next step is `blender/build_film.py` from `BLENDER-PLAN.md` §A.
+
+**Update:** the world is now also the kit piece `ganryujima` of the set system (`library/sets/ganryujima-beach.json`,
+`docs/SETS.md`), with realistic sand, rocks, bark and a calmer sea, characters on the marks and ground-snapped marks.
+`build_world.py` still runs on its own; importing it no longer builds anything (`main()` runs only as a script).

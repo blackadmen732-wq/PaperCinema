@@ -53,3 +53,16 @@ node engine/make.mjs film/my-film.json         # full pipeline: render → sound
 **Today's limit:** the world (island, sea, studio) and the props' special effects (boat, thrown scabbard,
 headband) are built in `engine/world.js` and `engine/main.js` for Ganryūjima. A film in a new location
 needs a new set builder there; the camera, motion, titles and sound already come from the file.
+
+## Motion-page extras (films with `"page": "engine/motion.html"`)
+| Field | What |
+|---|---|
+| `cameraOpts.solver: 2`, `camera[]` beats with `rig: "compose"`, `cut`, `act` | the cinematographer camera (`CAMERA.md` §8) |
+| `ramps: [{ t, rate, in, hold, out }]` | speed ramps; `t` in action time, the rest in screen seconds (`STUDIO-STANDARD.md` §4) |
+| `fade: { in, out }` | fade from / to black in seconds (default 0.6 / 0.6; a Short uses `in: 0`) |
+| `light: { sun, hemi, fill, ground }` | multiplies the dawn lights, sets the shadow tint (`STUDIO-STANDARD.md` §8) |
+| `props.trees[]` `{ id, x, z, height, crown, color, cut { t, y, tilt, delay, dir, fall }, split { t, world, side, speed, up } }` | a tree that can be cut and split (times in action time) |
+| `impacts[]` `{ t, at, intensity, light, shards, colors, life, ring, ink, sparks, fx }` | hits that are not blade-on-blade (action time) |
+| `effects` `ribbon`, `afterimage`, `ground`, `contactShadow`, `speedLines`, `glints`, `contactFx`, `sparkLight`, `inkProps` | `EFFECTS-CATALOG.md`, last section |
+| `sounds[].body: true`, `sounds[].layer` | the cue follows hit-stops and speed ramps; `layer` names the cue it belongs to (same hit) |
+| `audit.waive: [{ check, from, to, why }]` | a deliberate exception for the studio audit (`AUDIT.md`) |

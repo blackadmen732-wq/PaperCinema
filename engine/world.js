@@ -215,8 +215,13 @@ export function buildWorld(scene) {
     ...[[2.6, 2.2, 0.35], [-3.2, 1.6, 0.25], [4.2, -1.5, 0.45], [-1.7, 3.3, 0.2]].map(([x, z, r]) => ({ x, z, r: r + 0.05, y0: 0, y1: r * 1.5 })),
     ...[[-4.6, -7.6, 3.4], [-2.1, -10, 4.2], [3.4, -8.8, 3.8], [6.1, -6.4, 3.1], [-6.8, -4.6, 2.8], [1.2, -11, 3.6]].flatMap(([x, z, h]) => [{ x, z, r: 0.25, y0: 0, y1: h }, { x, z, r: 1.2, y0: h * 0.6, y1: h * 1.15 }]),
   ];
+  // height of the sand at (x, z) in the dawn set: the island top is 0, the two stacked dune layers are 0.12 and 0.24
+  const groundAt = (x, z) => {
+    const inL = (rad, zc) => ((x / (rad * 1.5)) ** 2 + ((z - zc) / (rad * 1.15)) ** 2) < 1;
+    return inL(3.6, -9.2) ? 0.24 : inL(5.2, -8) ? 0.12 : 0;
+  };
   return {
-    dawn, studio, sun, hemi, fill, obstacles,
+    dawn, studio, sun, hemi, fill, obstacles, groundAt,
     /** film.light = { sun, hemi, fill } multiplies the dawn lights (lift the shadows, soften the sun); call after setMode */
     setLight(o = {}) { sun.intensity *= o.sun ?? 1; hemi.intensity *= o.hemi ?? 1; fill.intensity *= o.fill ?? 1; if (o.ground) hemi.groundColor.set(o.ground); },
     setMode(mode) {

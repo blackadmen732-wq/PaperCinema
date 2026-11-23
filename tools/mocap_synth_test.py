@@ -4,9 +4,11 @@
 Our own figure performs known moves (film/mocap-synth.json, locked camera). We know every channel on every
 frame (tools/mocap_truth.mjs), so we can measure what the capture gets back:
   A. solver only: the figure's true joint positions -> solve() -> channels   (checks the maths and the signs)
-  B. full chain:  rendered video -> MediaPipe -> solve() -> channels          (what a real clip gets)
+  C. after the network: true joints projected through the film camera + MediaPipe-sized noise and swaps -> process()
+  B. full chain:  rendered video -> MediaPipe -> channels (MediaPipe does not see our paper figure as a person:
+     B fails and shows that; see docs/MOCAP.md section 5)
 
-    python3 tools/mocap_synth_test.py                 # A, and B if output/mocap/synth.mp4 exists
+    python3 tools/mocap_synth_test.py                 # A and C, and B if output/mocap/synth.mp4 exists
     python3 tools/mocap_synth_test.py --render        # renders the video first (~10 min on 4 CPU cores)
 """
 import argparse
@@ -99,6 +101,64 @@ def test_solver(frames):
     return report('A. solver only (true joints -> channels)', tr, rec, skip=('rwx',))
 
 
+def fill33(j):
+    """Truth joints -> the 33 MediaPipe landmarks (paper figure: no fingers, eyes or mouth; fill them near their joints)."""
+    P = np.zeros((33, 3))
+    for name, idx in MAP.items():
+        for i in idx:
+            P[i] = j[name]
+    for wr, el, pi, ix, th in ((M.RWR, M.REL, M.RPI, M.RIN, 22), (M.LWR, M.LEL, M.LPI, M.LIN, 21)):
+        d = M.unit(P[wr] - P[el])
+        P[pi] = P[ix] = P[wr] + 0.08 * d
+        P[th] = P[wr] + 0.04 * d
+    for i in (1, 2, 3, 4, 5, 6, 9, 10):
+        P[i] = P[M.NOSE]
+    return P
+
+
+def test_projected(frames, film, seed=1):
+    """C: the whole chain after the network. The true joints are projected through the film's own camera
+    (orbit round the still target), with MediaPipe-sized errors: 2D jitter 2 px, 3D landmarks 3 cm per joint per
+    frame plus a slow 2 cm drift, and 3 % of frames with left/right swapped (step 3 must undo them)."""
+    rng = np.random.default_rng(seed)
+    cam = film['camera'][0]
+    tk = film['performances']['target']['keys'][0]
+    look = np.array([tk['x'], cam.get('height', 1.1), tk['z']])
+    a = math.radians(cam['deg0'])
+    C = look + np.array([math.sin(a) * cam['radius'], 0.15, math.cos(a) * cam['radius']])
+    fw = M.unit(look - C); r = M.unit(np.cross(fw, [0, 1, 0])); u = np.cross(r, fw)
+    W, H = film['width'], film['height']
+    f = (H / 2) / math.tan(math.radians(cam.get('fov', 36)) / 2)
+    hfov = math.degrees(2 * math.atan((W / 2) / f))
+    N = len(frames)
+    t = np.array([fr['t'] for fr in frames])
+    drift = np.cumsum(rng.normal(0, 0.004, (N, 33, 3)), axis=0)
+    drift = 0.02 * drift / max(1e-9, np.abs(drift).max())
+    img = np.zeros((N, 33, 3)); world = np.zeros((N, 33, 3))
+    for n, fr in enumerate(frames):
+        P = fill33(fr['joints'])
+        d = P - C
+        X, Y, Z = d @ r, -(d @ u), d @ fw                     # camera axes: x right, y down, z away
+        img[n, :, 0] = (X / Z * f + W / 2 + rng.normal(0, 2, 33)) / W
+        img[n, :, 1] = (Y / Z * f + H / 2 + rng.normal(0, 2, 33)) / H
+        img[n, :, 2] = 0.95
+        cam_p = np.stack([X, Y, Z], axis=1)
+        pel = 0.5 * (cam_p[M.LHIP] + cam_p[M.RHIP])
+        world[n] = cam_p - pel + rng.normal(0, 0.03, (33, 3)) + drift[n]
+        if rng.random() < 0.03:
+            world[n] = M.swap(world[n], M.PAIRS); img[n] = M.swap(img[n], M.PAIRS)
+    args = M.parser().parse_args(['x', '--out', 'x', '--hfov', f'{hfov}', '--facing', 'auto', '--leg', '0.90', '--nose-pitch', '0'])
+    out = M.process(t, img, world, (W, H), film['fps'], args)
+    ch = out[6]
+    x0, z0, ry0 = frames[0]['ch']['x'], frames[0]['ch']['z'], frames[0]['ch']['ry']
+    rec = []
+    for i in range(N):
+        k = {c: float(v[i]) for c, v in ch.items()}
+        k['x'] += x0; k['z'] += z0; k['ry'] += ry0
+        rec.append(k)
+    return report(f'C. chain after the network (projected truth + MediaPipe-sized noise, {hfov:.1f} deg lens)', [fr['ch'] for fr in frames], rec, skip=('rwx',))
+
+
 def test_video(frames, hfov):
     cap = json.load(open(CAP))
     keys = cap['keys']
@@ -119,12 +179,13 @@ def test_video(frames, hfov):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--render', action='store_true', help='render output/mocap/synth.mp4 first')
-    ap.add_argument('--model', default='full')
+    ap.add_argument('--model', default='heavy')
     args = ap.parse_args()
     os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
     frames = truth_frames()
     test_solver(frames)
     film = json.load(open(FILM))
+    test_projected(frames, film)
     # the film's camera: vertical fov 40 on a 960 x 720 frame -> horizontal fov
     vf = film['camera'][0].get('fov', 36)
     hfov = math.degrees(2 * math.atan(math.tan(math.radians(vf) / 2) * film['width'] / film['height']))
@@ -133,7 +194,7 @@ def main():
                         '--frames', 'output/mocap/synth-frames'], check=True)
     if os.path.exists(VIDEO):
         subprocess.run([sys.executable, 'tools/mocap.py', VIDEO, '--out', CAP, '--hfov', f'{hfov:.2f}', '--model', args.model,
-                        '--facing', 'auto'], check=True)
+                        '--facing', 'auto', '--leg', '0.90', '--nose-pitch', '0'], check=True)   # the hakama hides the knees: give the leg length
         test_video(frames, hfov)
     else:
         print(f'\n(no {VIDEO}: run with --render for the full-chain test)')

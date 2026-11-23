@@ -128,3 +128,16 @@ ink wipes: <https://www.adobe.com/learn/premiere-pro/web/ink-transition> · lett
 aura and boil: <https://www.premiumbeat.com/blog/how-to-create-line-boil-animations>, <https://aejuice.com/blog/how-to-make-a-super-saiyan-aura-in-after-effects/>.
 Firecrawl was out of credits, so this research used plain web search. Most sources are tutorials or blogs [C], not
 primary studio documents.
+
+## Effects are light (studio standard §7)
+Owner's art direction: characters and world are paper, effects are light and energy. Built outside `fx.js`, all
+deterministic and set from `film.effects`:
+| Effect | Module | Film data |
+|---|---|---|
+| Slash smear: crescent of light (white core, amber or crimson glow, filaments, afterglow) | `engine/combat.js` `makeRibbons` | `effects.ribbon { minSpeed, afterglow, color, gain, style: "light" \| "paper" }`, `cast.<id>.demonic` |
+| Shockwave ring, sparks with a palette and lifetime, flash light per impact | `engine/combat.js` `makeSparks` | `impacts[] { intensity, light, shards, colors, life, ring, ink, fx }`, `effects.sparkLight`, `effects.contactFx { ca, caI, bloom, bloomI }` |
+| Blade glint travelling along the steel | `engine/combat.js` `bladeGlints` + `fx.js` glint | `effects.glints [{ t, who, dur, from, to }]` (+ one per speed ramp) |
+| Afterimages of light behind a fast body | `engine/groundfx.js` `makeAfterimages` | `effects.afterimage { minSpeed, count, gap, opacity, color }` |
+| Dust: kick-up, wake line, skid spray, landing ring (sand, not light) | `engine/groundfx.js` `makeDust` | `effects.ground { amount, colors, dashSpeed }` |
+| Contact shadow pool | `engine/groundfx.js` `makeContactShadows` | `effects.contactShadow { opacity, color }` |
+| Speed lines on every dash | `fx.js` speed-lines, triggered by ground events | `effects.speedLines { amount }` |

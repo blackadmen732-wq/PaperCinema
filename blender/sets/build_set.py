@@ -232,6 +232,28 @@ def make_marks(scene, coll, marks, clear_r):
     return out
 
 
+SKIP_SNAP = ('fog', 'mist', 'dust', 'emitter', 'rain', 'MOON', 'PI_', 'leaves', 'needles', 'blossom', 'crown')
+
+
+def snap_marks(scene, marks):
+    """Put every mark on the surface below it (terrain, floor, sand), ignoring fog, particles and foliage."""
+    bpy.context.view_layer.update()
+    dg = bpy.context.evaluated_depsgraph_get()
+    for name, m in marks.items():
+        p = m.location + Vector((0, 0, 40))
+        for _ in range(12):
+            hit, loc, nrm, idx, ob, mx = scene.ray_cast(dg, p, Vector((0, 0, -1)))
+            if not hit:
+                break
+            if any(k in ob.name for k in SKIP_SNAP):
+                p = loc - Vector((0, 0, 0.01))
+                continue
+            if abs(loc.z - m.location.z) > 0.005:
+                print(f'  mark {name}: snapped z {m.location.z:.2f} -> {loc.z:.2f} ({ob.name})')
+            m.location.z = loc.z
+            break
+
+
 def make_cameras(scene, coll, cams, marks):
     anchors = {}
     for name, c in cams.items():
@@ -358,6 +380,8 @@ def main():
         tp = time.time()
         kit.build_piece(ctx, spec)
         counts[spec.get('name', spec['kit'])] = round(time.time() - tp, 2)
+    if S.get('snap_marks', True):
+        snap_marks(scene, marks)
     for i, L in enumerate(Lg.get('lights', [])):
         kit.build_piece(ctx, {'kit': 'light', 'name': L.get('name', f'light_{i}'), 'pos': L['pos'], 'params': {k: v for k, v in L.items() if k not in ('pos', 'name')}})
     cam, anchors = make_cameras(scene, colls['CAMERAS'], S.get('cameras', {}), marks)

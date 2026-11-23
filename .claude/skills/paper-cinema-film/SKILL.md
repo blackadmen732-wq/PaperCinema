@@ -33,6 +33,11 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
    Keyframes are for hand-made moves. Add a `shakes` entry on every hit.
 6. **Sound:** add `sounds` cues at the same seconds as the actions (swing, impact, steps, bed loops).
 7. **Validate:** `node engine/validate.mjs film/<name>.json`. Fix every ✗ before rendering.
+7b. **Audit (mandatory before any full render):** `node tools/audit.mjs film/<name>.json` (guide `docs/AUDIT.md`,
+   rules `docs/STUDIO-STANDARD.md`). It measures every frame without drawing it: subject visible and not hidden,
+   size in frame, lens in props or under the ground, pops, foot slide, blade teleports, smear, hook, cut rhythm,
+   slow-motion share, and the sound cues. **Exit 1 = a critical finding: fix it.** Fix every major, or waive it with a
+   reason in `film.audit.waive`. After the full render and the sound mix, run it again with `--frames <frames dir>`.
 8. **Review stills (mandatory before any full render):** `node engine/render.mjs --film film/<name>.json --still auto`,
    then LOOK at every image in `output/stills/`. Check:
    - **Subject in frame:** fix `look`, `pos` or `fov`.
@@ -46,6 +51,8 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
 12. **Commit and push.** Report what changed, where the video is, and which sounds need CC-BY credit (`assets/sfx/CREDITS.md`).
 
 ## Quality rules
+- **The studio standard is the bar:** `docs/STUDIO-STANDARD.md` (hook in second 1, beat → camera table, timing tables, effects are light, sound). Its checklist §11 is the still review.
+- Motion-page films: `"cameraOpts": { "solver": 2 }`, `compose` beats and `ramps` (`docs/CAMERA.md` §8). Every dash, skid and landing gets dust; every fast tip gets the light smear; every hit gets a sound on its frame (`"body": true`).
 - Amber glow = human, crimson = demonic power. Paper shards or red paint, never blood.
 - Keep the camera on one side of the fighters' line unless crossing it on purpose.
 - Every hit gets: a camera key on the hit second, a shake, an impact sound and a hit-stop (held pose).

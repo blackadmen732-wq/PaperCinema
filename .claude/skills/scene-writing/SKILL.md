@@ -268,6 +268,8 @@ Write the **body** as its own file starting at `t = 0` (`film/<name>-body.json`)
 ---
 
 ## 10. Quality checklist (every "no" is a rewrite)
+The finished film must also pass `docs/STUDIO-STANDARD.md` (§1 idea and hook: one sentence, a readable first frame, an event within 2 s) and the automated audit (`node tools/audit.mjs`, checks `hook-black`, `hook-no-subject`, `hook-slow`, `speech-over-action`).
+
 
 **Story**
 - [ ] One sentence says who wants what and what it costs.

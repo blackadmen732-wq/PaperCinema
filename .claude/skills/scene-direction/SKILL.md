@@ -153,6 +153,8 @@ Pick one mood per scene from `library/shots.json → lighting` and say it in the
 ---
 
 ## 7. Taste rules and review checklist
+**The studio standard comes first:** `docs/STUDIO-STANDARD.md` (§3 has the beat → camera table: dash = side track with lead room or front-low pull-back, turn = behind then over the shoulder, jump = low looking up then circling above, slash = over the shoulder into the impact, landing = low wide; §3b the moves and their limits; §4 speed ramps). On the motion page use the `compose` framing solver (`docs/CAMERA.md` §8). Then measure your camera: `node tools/audit.mjs film/<name>.json` (`docs/AUDIT.md`).
+
 
 ### Cinematic vs amateur
 | Cinematic | Amateur |

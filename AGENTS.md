@@ -36,6 +36,7 @@ node engine/render.mjs --film film/<name>.json --vertical | --horizontal   # for
 python3 engine/thumbnail.py film/<name>.json             # 16:9 + 9:16 thumbnails
 python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut     # SHIMI stain (presets in the file)
 python3 docs/build_playbook.py film/<name>.json          # refresh the playbook page
+node tools/audit.mjs film/<name>.json                    # studio QA: visibility, camera, pops, smear, sound… (docs/AUDIT.md)
 python3 tools/build_systems.py                           # refresh systems.json after editing SYSTEMS.md
 /opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/demon_slash_test.py -- --state impact   # Blender test
 npm run preview                                          # live preview in a browser
@@ -51,6 +52,9 @@ npm run preview                                          # live preview in a bro
    before any long wait. An idle pod once cost $3 by mistake.
 2. **Free compute first:** this machine, then Kaggle (free GPU, phone-verified account).
 3. **Validate, then look at stills, before any full render.** A 36 s render takes about 55 min on CPU.
+3b. **Every video passes the studio standard:** read `docs/STUDIO-STANDARD.md` before directing, and run
+   `node tools/audit.mjs film/<name>.json` before any full render (no critical finding; fix or waive every major) and
+   again with `--frames` after it. Characters and world are paper; **effects are light**.
 4. **Keep the owner's design decisions:** the style, amber = human / crimson = demonic, paint and paper shards
    instead of blood, vertical-first, the signature opening and end card.
 5. **History:** claims go in `research/` with a confidence mark. Never present tradition as documented fact.
@@ -67,9 +71,11 @@ npm run preview                                          # live preview in a bro
   - articulated skeleton (spine, neck, clavicles, twists, wrists, ankles, glowing eyes) + anime motion layer (lag, snap, settle, jump arcs)
   - motion-test page (`engine/motion.js`): blade-contact detection, clash aim, hit-stop, smear ribbon, ink impact frame, auto sound cues, eye-to-blade camera
   - our own synthesised sword sounds (`tools/synth_sfx.sh`); Blender world set + slash FX (`blender/world/`, v1)
+  - studio standard + automated audit (`docs/STUDIO-STANDARD.md`, `tools/audit.mjs`); cinematographer camera (`compose` solver, speed ramps); light smear, shock ring, glints; dust, contact shadows, afterimages (`engine/groundfx.js`)
+  - Blender SETS: data-driven locations from a kit (`library/sets/*.json`, `blender/sets/`, guide `docs/SETS.md`): castle courtyard, dojo, bamboo forest, Ganryūjima beach, a 2.5D paper-cut skyline; origami samurai on the marks
 - **Next** (see `docs/EFFECTS-PLAN.md`, `docs/SHIMI.md`, `docs/BLENDER-PLAN.md`):
   - the face-touch scene; SHIMI on the 3D body
   - the anime effects pack; a 3-second Shorts opening; Blender slash v2
   - rigging the TRELLIS models
 - **Next first:** re-render the duel (`film/kuroko-duel.json` now uses the shared combat layer `engine/combat.js`: clashes, hit-stop, eyes, auto sounds, FX); then the items marked next in `docs/FIX-LIST.md`.
-- **Limits:** the browser preview's set is still code in `engine/world.js`; the Blender set (`blender/world/build_world.py`) does not yet import characters or a film timeline.
+- **Limits:** the browser preview's set is still code in `engine/world.js`; Blender sets (`blender/sets/build_set.py`) place posed characters on marks but do not yet play a film timeline.

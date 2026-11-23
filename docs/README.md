@@ -6,9 +6,13 @@
 | `../SYSTEMS.md` | looking for where something lives | Every system, its files, guide, command and connections (+ `../systems.json`) |
 | `playbook.html` | learning the pipeline visually | Interactive: 9 steps, live camera plot, motion and sound timeline, new-chat prompt |
 | `FILM-FORMAT.md` | writing or editing a film file | Every field of `film/*.json` and the golden path |
-| `CAMERA.md` | directing the camera | Keyframes (§1–6) and the **KUROKO** automatic operator (§7) |
+| `CAMERA.md` | directing the camera | Keyframes (§1–6), the **KUROKO** automatic operator (§7), motion-page beats with the `compose` framing solver and speed ramps (§8) |
 | `DIRECTION.md` | choosing shots, cuts, rhythm and light for a scene | Film grammar (sizes, lenses, 180°/30° rules, coverage, match and J/L cuts), 17 direction styles (Kurosawa, Leone, ufotable, MAPPA…), shots per fight beat, lighting moods, Shorts rules, sources (procedure: `../.claude/skills/scene-direction/SKILL.md`, data: `../library/shots.json`) |
+| `STUDIO-STANDARD.md` | making or reviewing ANY video | The rules every video must pass (taste + numbers): hook, staging, beat → camera table, camera moves, composition, timing tables (dash, turn, jump, slash, landing), posing, effects are light, shadow / paper look, cut props, sound and mix, the gate |
+| `AUDIT.md` | about to render, or reviewing a render | The automated studio QA `tools/audit.mjs`: usage, every check with its number and severity, waivers, adding checks or page hooks |
+| `AUDIT-dash-test.md` | wanting an example of a full review | The dash-test audit: 27 problems with frames, root causes and fixes, scores before / after, what was built |
 | `ANIMATION.md` | making characters move | Skeleton with legs, poses, balance, moves, the draw, two-hand grip, reactions |
+| `MOCAP.md` | turning a phone video of a move into motion data | How to film, `tools/mocap.py` options and outputs, how it solves our channels, limits, measured accuracy, clean-up and anime timing on top |
 | `STYLE-AND-FIGHT-SYSTEM.md` | deciding how it should look and feel | The Lantern Origami style, the Strike Grammar, lighting, story structure |
 | `SHIMI.md` | working on cuts, paint and stains | The slash sequence, SHIMI v2, the **KIZU** wound layer, presets, review, upgrade path |
 | `SHIMI-3D.md` | putting stains on 3D characters | UV-space simulation, cut mapping, gravity maps, Blender/three.js shading, milestones |

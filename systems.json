@@ -172,6 +172,27 @@
    "status_note": "✅"
   },
   {
+   "id": "MOCAP",
+   "name": "Motion capture from video",
+   "does": "Film a move with a phone → MediaPipe Pose Landmarker (Apache-2.0, CPU) per frame → left/right flip fix, zero-phase one-euro + Savitzky-Golay smoothing, ground contact → our channels (ry, waist/chest, shoulders + elbows by bounded IK fit, head, stance/crouch/weight, root travel, jumps) inside the joint limits → a performance key list (every frame, `--tol`, or `--keys N`) or a move (`--as-move`, relative fwd/side/turn); a film that replays it from where the phone stood; source/ours contact sheets; synthetic accuracy test on our own figure",
+   "files": [
+    "tools/mocap.py",
+    "tools/mocap_film.py",
+    "tools/mocap_sheet.py",
+    "tools/mocap_truth.mjs",
+    "tools/mocap_synth_test.py",
+    "film/mocap-test.json",
+    "film/mocap-synth.json",
+    "library/mocap/"
+   ],
+   "guide": [
+    "docs/MOCAP.md"
+   ],
+   "command": "python3 tools/mocap.py clip.mp4 --out library/mocap/<name>.json --tol 0.05",
+   "status": "test",
+   "status_note": "🧪 v1"
+  },
+  {
    "id": "REACT",
    "name": "Reaction layer",
    "does": "Fighters watch each other; delayed threat response (function react)",
@@ -307,6 +328,68 @@
    "command": "node engine/render.mjs --film film/kuroko-duel.json --vertical --still auto --prefix kd2-",
    "status": "built",
    "status_note": "✅ (main engine + motion page)"
+  },
+  {
+   "id": "AUDIT",
+   "name": "Studio audit (automated QA)",
+   "does": "Runs on any film without drawing it: per-frame camera, joints on screen, lines of sight, foreground blockers, lens in geometry / under ground, pops, foot slide, blade teleports, smear, dead holds, 180° line, cut rhythm, slow-motion share, hook; pixel checks (black, burnt-out, flat); sound checks (hit has a transient, 9 dB over the whoosh, mush, loudness, stale mix). Scored report, exit 1 on a critical finding. Pages expose `window.AUDIT` through `engine/audit-hooks.js`",
+   "files": [
+    "tools/audit.mjs",
+    "engine/audit-hooks.js"
+   ],
+   "guide": [
+    "docs/AUDIT.md",
+    "docs/STUDIO-STANDARD.md"
+   ],
+   "command": "node tools/audit.mjs film/x.json",
+   "status": "built",
+   "status_note": "✅ (motion page and main engine)"
+  },
+  {
+   "id": "STANDARD",
+   "name": "Studio standard",
+   "does": "The rules every video must pass, taste + numbers; effects are light, characters are paper; beat → camera table; timing tables; the gate before a render",
+   "files": [
+    "docs/STUDIO-STANDARD.md"
+   ],
+   "guide": [
+    "docs/STUDIO-STANDARD.md",
+    "docs/AUDIT-dash-test.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "GROUNDFX",
+   "name": "Ground FX + afterimages",
+   "does": "From the motion alone: dash kick-up, wake line, skid spray, take-off and landing rings of sand, contact shadow pools, afterimages of light, and their sound cues (`dash-burst`, `skid-dust`, `jump-push`, `land-thud`)",
+   "files": [
+    "engine/groundfx.js"
+   ],
+   "guide": [
+    "docs/STUDIO-STANDARD.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅ (motion page: on by default; main engine: opt-in `effects.ground`, `effects.contactShadow`)"
+  },
+  {
+   "id": "CINECAM",
+   "name": "Cinematographer camera (motion page)",
+   "does": "`cameraOpts.solver: 2` (subject-relative spring, hard cuts, in-frame / ground / prop guards) + the `compose` framing solver (screen position, size, lead room, orbit, crane, push-in, dolly-zoom) + speed ramps `film.ramps` (film → world → body clocks)",
+   "files": [
+    "engine/motion.js",
+    "engine/combat.js",
+    "film/dash-test.json"
+   ],
+   "guide": [
+    "docs/CAMERA.md",
+    "docs/STUDIO-STANDARD.md"
+   ],
+   "command": "node engine/render.mjs --film film/dash-test.json --still 1.5,4.1",
+   "status": "built",
+   "status_note": "✅ (motion page)"
   },
   {
    "id": "SYNTHSFX",
@@ -790,6 +873,14 @@
   [
    "SETS",
    "BLENDER"
+  ],
+  [
+   "MOCAP",
+   "MOVES"
+  ],
+  [
+   "MOCAP",
+   "FILM"
   ]
  ]
 }

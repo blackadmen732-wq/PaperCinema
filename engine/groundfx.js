@@ -192,7 +192,7 @@ export function makeAfterimages(scene, fighters, o = {}) {
     }
     return { f, ghosts };
   });
-  function update(tb, speedAt) {
+  function update(tb, speedAt, rate = 1) {                // rate = the speed-ramp rate: slow motion has little blur
     for (const { f, ghosts } of sets) {
       const k = Math.max(0, Math.min(1, (speedAt(f.id, tb) - minSpeed) / 6));
       const now = f.motion(tb);
@@ -203,7 +203,7 @@ export function makeAfterimages(scene, fighters, o = {}) {
         gh.fig.root.visible = kk > 0.03 && far > 0.12 && tg > 0;
         if (!gh.fig.root.visible) return;
         applyPose(gh.fig, p);
-        gh.mat.opacity = (o.opacity ?? 0.16) * kk * Math.pow(0.58, i);
+        gh.mat.opacity = (o.opacity ?? 0.16) * kk * Math.pow(0.58, i) * Math.pow(rate, 0.8);
       });
     }
   }

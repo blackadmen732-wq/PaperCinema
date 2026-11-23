@@ -61,9 +61,16 @@ changes too fast (clamp) · strobing at 30 m/s (the ribbon).
 | Port all of that into `main.js`: shared module `engine/combat.js` used by `main.js` and `motion.js` (motion page renders pixel-identical); `film.cast` (`face: "eyes"`, `weapon`), `clashes`, hit-stop on body time (shots and authored action times follow it), ribbon, sparks, ink frame (`effects.impactFrame` `{minIntensity, max, at}`), camera punch, eye states + voice pulse, `window.EVENTS` auto cues (bokken = wood `clap` at rate 0.8 + `clash-light`), `solveArm` two-hand grip; `film/kuroko-duel.json` uses all of it | ✅ built |
 | FX (`engine/fx.js`) in `main.js` and `motion.js` behind `fxBase` / `fx` (CA flash + bloom pulse on contacts, `"body": true` events follow hit-stops); checker knows `cast`, `clashes`, `voice`, `fx`, `fxBase`, `effects`, `autoSounds`, motion-page `camera` | ✅ built |
 | Vertical framing in `kuroko.js` (`W = sep·\|cos\| + 1.1`, 55° default in 9:16) | ✅ in code; far frames can still land in the pines (S7 of kuroko-duel uses `dist` 0.5–0.65) |
-| Ducking, pan, limiter/loudnorm | next |
-| Jump-back beat sheet (`arc`, foot channels, cloth spring) | next |
+| Ducking, pan, limiter/loudnorm | next (the audit now flags loudness, clipping and hits under 9 dB: `tools/audit.mjs`) |
+| Jump-back beat sheet (`arc`, foot channels, cloth spring) | next (`arc` / `arcTo` / `hang` exist; foot-lift channels and a cloth spring do not) |
 | Eye glow states, blink, bloom | ✅ built (auto states from contacts when a performance has no `eyes` list) |
 | Eye glow trail, pupils leading the head | next |
-| Camera pack 3–10 | next |
+| Camera pack 3–10 | 3 speed ramps ✅ (`film.ramps`), 4 whip ✅ (`feel: "whip"`), 5 dutch ✅ (`roll0/1`), 6 impact zoom (punch) ✅, 8 low-angle hero ✅, 9 orbit through slow motion ✅, dolly-zoom ✅: all on the motion page via the `compose` rig (`docs/CAMERA.md` §8); 7 foreground wipe and 10 rack focus: next; KUROKO (main engine) does not have ramps or `compose` yet |
 | New opening | next |
+| **Studio audit of the dash test** (`docs/AUDIT-dash-test.md`): 27 problems, scores 4.1 → 7.2 | ✅ fixed in `film/dash-test.json` and the engine |
+| Studio standard (`docs/STUDIO-STANDARD.md`) + automated QA (`tools/audit.mjs`, `engine/audit-hooks.js`, `docs/AUDIT.md`) | ✅ built; mandatory before a full render |
+| Camera loses the subject / flies through props, ground, body (`cameraOpts.solver: 2`, `compose` framing solver, guards, hard cuts) | ✅ motion page |
+| Effects are light: crescent smear with core, glow, filaments and afterglow; shockwave ring; travelling blade glint; afterimages (`engine/combat.js`, `engine/groundfx.js`) | ✅ both engines (afterimages and glints: motion page) |
+| Dust: dash kick-up, wake, skid spray, landing ring; contact shadow pool; ground sound cues (`engine/groundfx.js`, `tools/synth_sfx.sh`) | ✅ motion page by default, main engine opt-in (`effects.ground`, `effects.contactShadow`) |
+| Cut props: halves fly apart in world space, land and stay (`props.trees[].split.world`); ink frame shows fighters only | ✅ |
+| Foot skating in a dash (needs a sprint cycle or a leap), true motion blur, soft shadow penumbra, rack focus, origami figure in the preview | next |

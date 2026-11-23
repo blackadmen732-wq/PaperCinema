@@ -156,6 +156,12 @@ for (const r of runs(F, (d) => !free(d) && subjectsOf(d).length > 0 && sizeOf(d)
   if (m < RULE.sizeTiny && sec > 0.4) add('subject-tiny', 'staging', 'major', r.frames[0].t, r.frames[r.frames.length - 1].t, `the subject is only ${(m * 100).toFixed(0)}% of the frame height for ${sec.toFixed(1)} s`, 'vertical frames need the fighter at 45% or more in action and 12% or more in the widest shot');
   else if (sec > 1.0) add('subject-small', 'staging', 'minor', r.frames[0].t, r.frames[r.frames.length - 1].t, `the subject is ${(m * 100).toFixed(0)}% of the frame height for ${sec.toFixed(1)} s`, 'fine for one establishing shot; otherwise move in');
 }
+// V4: the body is cut by the frame while it acts (a turn, a step, a jump shown as a close-up of the chest)
+{
+  const acting = (d, i) => { const id = subjectsOf(d)[0], p = F[i - 1]; if (!id || !i || !p.fighters[id]?.visible) return false; const f = d.fighters[id], q = p.fighters[id]; return Math.abs(f.ry - q.ry) / DT > 1.5 || dist(f.root, q.root) / DT > 1.2; };
+  for (const r of runs(F, (d, i) => !free(d) && acting(d, i) && sizeOf(d) > 1.3 && subjectsOf(d).some((id) => d.fighters[id].onScreen < 0.75)))
+    if (r.frames.length * STEP >= 5) add('action-cropped', 'staging', 'minor', r.frames[0].t, r.frames[r.frames.length - 1].t, `the body turns or travels while the frame cuts it off (the figure is ${(Math.max(...r.frames.map(sizeOf)) * 100).toFixed(0)}% of the frame height)`, 'show a turn, a step or a jump full figure (size 0.5–0.7); keep close-ups for stillness');
+}
 // C1–C4: where the lens is
 for (const r of runs(F, (d) => d.cam.underGround || (d.cam.ground !== null && d.cam.pos[1] < d.cam.ground + RULE.camGroundClear)))
   add('camera-under-ground', 'camera', 'critical', r.frames[0].t, r.frames[r.frames.length - 1].t, `the camera is at or under the ground (${Math.min(...r.frames.map((d) => d.cam.pos[1] - (d.cam.ground ?? 0))).toFixed(2)} m above it)`, 'raise the camera (minY) or lower the elevation angle');

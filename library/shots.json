@@ -4181,5 +4181,149 @@
    "whip-reveal",
    "foreground-wipe"
   ]
+ },
+ "beatCamera": {
+  "_about": "Which camera for which action beat (docs/STUDIO-STANDARD.md §3a). 'compose' = motion-page beat (film.camera, cameraOpts.solver 2); 'kuroko' = the closest main-engine rig.",
+  "calm": {
+   "camera": "over the shoulder towards the target, slow push-in",
+   "compose": {
+    "rig": "compose",
+    "basis": "target",
+    "az0": 196,
+    "az1": 189,
+    "elev": -3,
+    "size0": 0.62,
+    "size1": 0.7,
+    "screen": [
+     0.36,
+     0.55
+    ],
+    "fov": 34,
+    "feel": "dolly",
+    "ease": "linear"
+   },
+   "kuroko": "frame, angle 55-68, feel crane"
+  },
+  "dash": {
+   "camera": "side track at knee height with lead room; arc to the front during the slow motion",
+   "compose": {
+    "rig": "compose",
+    "cut": true,
+    "az0": 96,
+    "az1": 62,
+    "elev": -4,
+    "size": 0.56,
+    "lead": 0.17,
+    "fov": 40,
+    "feel": "torpedo",
+    "lag": 0.018,
+    "_note": "az is world degrees: 90 off the direction of the run"
+   },
+   "kuroko": "track, feel torpedo"
+  },
+  "skid": {
+   "camera": "front, low, pull-back",
+   "compose": {
+    "rig": "compose",
+    "cut": true,
+    "basis": "facing",
+    "az0": 18,
+    "az1": -12,
+    "elev": -6,
+    "size0": 0.8,
+    "size1": 0.5,
+    "fov": 30,
+    "feel": "dolly",
+    "ease": "out"
+   },
+   "kuroko": "frame close then reveal"
+  },
+  "turn": {
+   "camera": "start behind, end over the shoulder; dolly-zoom for the realisation",
+   "compose": {
+    "rig": "compose",
+    "basis": "target",
+    "az0": 196,
+    "az1": 204,
+    "elev": 3,
+    "size": 0.5,
+    "screen": [
+     0.34,
+     0.56
+    ],
+    "fov0": 36,
+    "fov1": 24,
+    "feel": "dolly"
+   },
+   "kuroko": "frame, angle 60, slow push"
+  },
+  "jump-takeoff": {
+   "camera": "low side, looking up",
+   "compose": {
+    "rig": "compose",
+    "cut": true,
+    "az0": -28,
+    "az1": -6,
+    "elev": -16,
+    "size": 0.5,
+    "lead": 0.1,
+    "fov": 40,
+    "feel": "torpedo",
+    "lag": 0.03
+   },
+   "kuroko": "frame low, behaviours rise"
+  },
+  "jump-apex-slash": {
+   "camera": "during the slow motion, circle from below to above and behind, over the shoulder into the cut",
+   "compose": {
+    "rig": "compose",
+    "az0": -6,
+    "az1": 68,
+    "elev0": -16,
+    "elev1": 24,
+    "size0": 0.5,
+    "size1": 0.62,
+    "fov": 40,
+    "feel": "dolly",
+    "ease": "inOut"
+   },
+   "kuroko": "orbit through the hit-stop"
+  },
+  "landing": {
+   "camera": "low, wide, from the front, handheld settle",
+   "compose": {
+    "rig": "compose",
+    "cut": true,
+    "basis": "facing",
+    "az0": -4,
+    "az1": 6,
+    "elev": -5,
+    "size0": 0.56,
+    "size1": 0.6,
+    "screen": [
+     0.5,
+     0.6
+    ],
+    "fov": 32,
+    "feel": "handheld"
+   },
+   "kuroko": "frame wide low, feel handheld"
+  },
+  "zanshin": {
+   "camera": "slow arc, crane up, push in",
+   "compose": {
+    "rig": "compose",
+    "az0": 276,
+    "az1": 232,
+    "elev0": -5,
+    "elev1": 7,
+    "size0": 0.6,
+    "size1": 0.8,
+    "lead": 0.1,
+    "fov": 32,
+    "feel": "crane"
+   },
+   "kuroko": "orbit, feel crane"
+  }
  }
 }

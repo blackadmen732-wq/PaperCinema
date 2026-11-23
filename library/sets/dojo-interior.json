@@ -6,14 +6,14 @@
   "lighting": {
     "preset": "day",
     "sun": {
-      "elev": 30,
-      "az": -100,
+      "elev": 19,
+      "az": -105,
       "color": [
         1.0,
         0.86,
         0.68
       ],
-      "energy": 6.0,
+      "energy": 14.0,
       "angle": 0.6
     },
     "sky": {
@@ -82,14 +82,14 @@
             11.4,
             3.6
           ],
-          "density": 0.05,
+          "density": 0.035,
           "color": [
             1.0,
             0.95,
             0.88
           ],
-          "anisotropy": 0.6,
-          "noise": 0.3,
+          "anisotropy": 0.55,
+          "noise": 0.2,
           "noise_scale": 0.4
         }
       },
@@ -129,7 +129,7 @@
           1.4
         ],
         "type": "AREA",
-        "energy": 1600,
+        "energy": 900,
         "color": [
           1.0,
           0.88,
@@ -216,8 +216,8 @@
           "right": "shoji",
           "front": "shoji"
         },
-        "window_z": 2.15,
-        "window_h": 0.8
+        "window_z": 1.95,
+        "window_h": 1.15
       }
     },
     {

@@ -127,15 +127,16 @@ def estimate(video, start=0.0, end=None, mirror=False, variant='full'):
     return np.array(ts), np.array(imgs, float), np.array(worlds, float), (W, H), fps
 
 
-def fill_gaps(t, a):
+def fill_gaps(t, a, quiet=False):
     """Linear interpolation over frames with no detection (NaN). a: (N, ...)."""
     flat = a.reshape(len(t), -1)
     bad = np.isnan(flat[:, 0])
     if bad.all():
         sys.exit('no person found in the clip')
     if bad.any():
-        gaps = np.diff(np.flatnonzero(np.diff(np.r_[0, bad.astype(int), 0])))
-        log(f'{bad.sum()} frames without a person (longest gap {gaps.max() if len(gaps) else 0} frames): interpolated')
+        edges = np.flatnonzero(np.diff(np.r_[0, bad.astype(int), 0]))      # run starts and ends, alternating
+        longest = int((edges[1::2] - edges[0::2]).max())
+        quiet or log(f'{bad.sum()} of {len(t)} frames without a person (longest gap {longest} frames): interpolated')
         for j in range(flat.shape[1]):
             flat[bad, j] = np.interp(t[bad], t[~bad], flat[~bad, j])
     return flat.reshape(a.shape)
@@ -167,9 +168,7 @@ def to_ours(p, tilt_deg=0.0):
     tilt: the phone looks down by this many degrees (rotates the world back to level)."""
     q = p * np.array([1.0, -1.0, -1.0])
     if tilt_deg:
-        a = math.radians(tilt_deg)
-        Rx = np.array([[1, 0, 0], [0, math.cos(a), -math.sin(a)], [0, math.sin(a), math.cos(a)]])
-        q = q @ Rx.T
+        q = q @ Rx(-math.radians(tilt_deg)).T      # straight ahead of a phone looking down is below level
     return q
 
 
@@ -297,6 +296,29 @@ def arm_angles(u, f, prev_rsy=0.0):
     return a, b, c, rex
 
 
+def arm_fit(u, f, side, seeds, prev=None):
+    """Refine (rsx, rsy, rsz, rex) inside the joint limits: least squares on the upper-arm and forearm directions,
+    with a light pull toward the previous frame (no flips between Euler twins). seeds: starting guesses."""
+    from scipy.optimize import least_squares
+    lo = [LIMITS[side + k][0] for k in ('sx', 'sy', 'sz', 'ex')]
+    hi = [LIMITS[side + k][1] for k in ('sx', 'sy', 'sz', 'ex')]
+    down = np.array([0.0, -1.0, 0.0])
+
+    def res(q):
+        R = euler_xyz(q[0], q[1], q[2])
+        r = np.r_[R @ down - u, 0.8 * (R @ Rx(q[3]) @ down - f)]
+        if prev is not None:
+            r = np.r_[r, 0.06 * (q - prev)]
+        return r
+    best = None
+    for s0 in seeds:
+        x0 = np.clip(np.asarray(s0, float), np.array(lo) + 1e-6, np.array(hi) - 1e-6)
+        sol = least_squares(res, x0, bounds=(lo, hi), xtol=1e-6, max_nfev=60)
+        if best is None or sol.cost < best.cost:
+            best = sol
+    return best.x
+
+
 def wrist_angle(R_fore, hand_vec):
     """rwx: hand flex in the forearm frame (rest hand along -y; +rwx swings it toward -z... see Rx)."""
     h = R_fore.T @ unit(hand_vec)
@@ -305,31 +327,64 @@ def wrist_angle(R_fore, hand_vec):
 
 # ---------------------------------------------------------------------------------------------------------
 # 5 + 6. CONTACTS AND SOLVE
-def solve(t, P, root, opts):
-    """P: (N,33,3) landmarks in our axes around the pelvis (metres, performer size); root: (N,3) pelvis
-    position in our world. Returns dict channel -> (N,) and the per-frame contacts."""
-    N = len(t)
-    leg = np.r_[np.linalg.norm(P[:, LHIP] - P[:, LKN], axis=1) + np.linalg.norm(P[:, LKN] - P[:, LAN], axis=1),
-                np.linalg.norm(P[:, RHIP] - P[:, RKN], axis=1) + np.linalg.norm(P[:, RKN] - P[:, RAN], axis=1)]
-    s = LEG_LEN / float(np.median(leg)) if opts.get('scale') is None else opts['scale']
-    G = (P + root[:, None, :]) * s                           # landmarks in our world, scaled to our figure
-    # ground contact per foot: height above the ground (a low percentile of the lowest foot) and speed
-    foot = {'r': [RAN, RHE, RTO], 'l': [LAN, LHE, LTO]}
-    # The ground is a PLANE fitted to the lowest foot over the clip (robust lower envelope): monocular depth error
-    # and a tilted phone both make a level floor look like a slope, which would otherwise read as jumps.
-    low = np.stack([G[:, foot['r'] + foot['l'], 1].min(axis=1), G[:, RAN, 0] * 0 + G[:, [RAN, LAN], 0].mean(axis=1),
-                    G[:, [RAN, LAN], 2].mean(axis=1)], axis=1)               # (y, x, z) of the lowest foot per frame
-    A = np.c_[np.ones(N), low[:, 1], low[:, 2]]
-    keep = np.ones(N, bool)
+FEET = [RAN, RHE, RTO, LAN, LHE, LTO]
+
+
+def ground_plane(G, slope=False):
+    """Floor y = c0 + c1 x + c2 z under the lowest foot of each frame (iterated lower envelope).
+    A slope is only fitted along an axis the feet travel at least 1 m."""
+    low = np.stack([G[:, FEET, 1].min(axis=1), G[:, [RAN, LAN], 0].mean(axis=1), G[:, [RAN, LAN], 2].mean(axis=1)], axis=1)
+    A = np.c_[np.ones(len(G)), low[:, 1], low[:, 2]]
+    keep = np.ones(len(G), bool)
     for _ in range(4):
         coef = np.linalg.lstsq(A[keep], low[keep, 0], rcond=None)[0]
         res = low[:, 0] - A @ coef
         keep = res <= np.percentile(res, 40) + 0.02
     spread = np.ptp(low[:, 1:], axis=0)
-    if spread[0] < 0.6: coef[1] = 0.0                                        # too little travel to fit a slope that way
-    if spread[1] < 0.6: coef[2] = 0.0
+    for k in (0, 1):                                   # a slope needs 1 m of travel along that axis, and stays gentle
+        coef[1 + k] = 0.0 if (not slope or spread[k] < 1.0) else float(np.clip(coef[1 + k], -0.3, 0.3))
     coef[0] = float(np.percentile(low[:, 0] - A[:, 1:] @ coef[1:], 5))
-    gy = lambda x, z: coef[0] + coef[1] * x + coef[2] * z                     # ground height under (x, z)
+    return coef, low
+
+
+def level(P, root):
+    """Auto tilt: people stand upright, so the median direction ankles -> hips over the frames with straight legs
+    is the true up (world landmarks: no depth noise in it). Rotate the capture so it points up. Returns the
+    rotation too (the phone turns with the world). Capped at 25 degrees."""
+    ang_k = []
+    for h, k, a in ((LHIP, LKN, LAN), (RHIP, RKN, RAN)):
+        u = P[:, h] - P[:, k]; v = P[:, a] - P[:, k]
+        c = (u * v).sum(1) / (np.linalg.norm(u, axis=1) * np.linalg.norm(v, axis=1) + 1e-9)
+        ang_k.append(np.degrees(np.arccos(np.clip(c, -1, 1))))
+    straight = (ang_k[0] > 165) & (ang_k[1] > 165)
+    if straight.sum() < 5:
+        straight = (ang_k[0] + ang_k[1]) >= np.percentile(ang_k[0] + ang_k[1], 70)
+    upv = 0.5 * (P[:, LHIP] + P[:, RHIP]) - 0.5 * (P[:, LAN] + P[:, RAN])
+    upv = upv[straight] / np.linalg.norm(upv[straight], axis=1, keepdims=True)
+    n = unit(np.median(upv, axis=0))
+    ang = math.degrees(math.acos(min(1.0, n[1])))
+    if ang < 0.5 or ang > 25:
+        if ang > 25:
+            log(f'the body leans {ang:.0f} deg on average: too much to call it tilt, left as filmed (use --tilt)')
+        return P, root, np.eye(3)
+    R = Rotation.align_vectors([[0, 1, 0]], [n])[0].as_matrix()
+    log(f'auto tilt: levelled by {ang:.1f} deg (from {straight.sum()} straight-leg frames)')
+    return P @ R.T, root @ R.T, R
+
+
+def solve(t, P, root, opts):
+    """P: (N,33,3) landmarks in our axes around the pelvis (metres, performer size); root: (N,3) pelvis
+    position in our world. Returns dict channel -> (N,), the per-frame contacts and the scale."""
+    N = len(t)
+    leg = np.r_[np.linalg.norm(P[:, LHIP] - P[:, LKN], axis=1) + np.linalg.norm(P[:, LKN] - P[:, LAN], axis=1),
+                np.linalg.norm(P[:, RHIP] - P[:, RKN], axis=1) + np.linalg.norm(P[:, RKN] - P[:, RAN], axis=1)]
+    s = LEG_LEN / float(np.median(leg)) if opts.get('scale') is None else opts['scale']
+    G = (P + root[:, None, :]) * s                           # landmarks in our world, scaled to our figure
+    foot = {'r': [RAN, RHE, RTO], 'l': [LAN, LHE, LTO]}
+    # Ground contact. The floor is a PLANE fitted to the lowest foot over the clip (robust lower envelope): monocular
+    # depth error makes a level floor look like a slope, which would otherwise read as jumps.
+    coef, low = ground_plane(G, opts.get('floor_slope', False))
+    gy = lambda x, z: coef[0] + coef[1] * x + coef[2] * z                     # floor height under (x, z)
     fh, contact = {}, {}
     for k, v in foot.items():
         pos = G[:, v].mean(axis=1)
@@ -337,8 +392,11 @@ def solve(t, P, root, opts):
         sp = np.r_[0, np.linalg.norm(np.diff(pos[:, [0, 2]], axis=0), axis=1) / np.maximum(1e-4, np.diff(t))]
         contact[k] = (fh[k] < 0.08) & (sp < 1.2)
     lift = np.minimum(fh['r'], fh['l'])
-    # airborne: both feet clear 12 cm for at least 0.1 s, or it is depth noise (a real jump clears that easily)
-    air = ~(contact['r'] | contact['l']) & (lift > opts.get('jump_min', 0.12))
+    # airborne: both feet clear 12 cm for at least 0.1 s AND the pelvis rides above its usual height. Otherwise it is
+    # depth noise: in a deep crouch the solved pelvis drops less than it should, so the feet seem to rise.
+    pel = 0.5 * (G[:, LHIP] + G[:, RHIP])
+    ph = pel[:, 1] - gy(pel[:, 0], pel[:, 2])
+    air = ~(contact['r'] | contact['l']) & (lift > opts.get('jump_min', 0.12)) & (ph > np.median(ph) + 0.05)
     i = 0
     while i < N:
         if air[i]:
@@ -350,15 +408,16 @@ def solve(t, P, root, opts):
             i = j
         else:
             i += 1
-    ground = float(coef[0] + coef[1] * low[0, 1] + coef[2] * low[0, 2])
+    on = contact['r'] | contact['l']
+    ground = float(np.median(low[on, 0])) if on.any() else float(np.percentile(low[:, 0], 5))   # floor height (phone height)
 
     ch = {c: np.zeros(N) for c in CHANNELS}
-    prev = {'r': 0.0, 'l': 0.0}
+    prev = {'r': None, 'l': None}
     up = np.array([0.0, 1.0, 0.0])
     for i in range(N):
         g = G[i]
         pel = 0.5 * (g[LHIP] + g[RHIP])
-        # facing: the pelvis line, helped by the shoulder line (hips are hard to see side-on)
+        # facing: the pelvis line, helped a little by the shoulder line (hips are hard to see side-on)
         xh = g[LHIP] - g[RHIP]; xs = g[LSH] - g[RSH]
         hw = opts.get('hip_weight', 0.85)
         xl = unit(np.array([xh[0], 0, xh[2]])) * hw + unit(np.array([xs[0], 0, xs[2]])) * (1 - hw)
@@ -377,15 +436,13 @@ def solve(t, P, root, opts):
         ank = min(g[RAN][1], g[LAN][1])
         crouch = HIP_FOOT_REST - (pel[1] - ank)
         y = float(lift[i]) if air[i] else 0.0
-        # spine: chest frame from the shoulders; split the pelvis->chest rotation half waist, half chest
+        # spine: chest frame from the shoulders; the pelvis->chest rotation goes half to the waist, half to the chest
         sh = 0.5 * (g[LSH] + g[RSH])
         Rchest = frame_from(xs, sh - pel)
-        Rrel = Rroot.T @ Rchest
-        Hh = half(Rrel)
-        e = to_euler_xyz(Hh)
-        tx, ty, tz = e[0] - weight * 0.05, e[1], e[2]
+        e = to_euler_xyz(half(Rroot.T @ Rchest))
         cx, cy, cz = e
-        # clamp the chest, give the rest to the waist (small-angle: Euler angles add)
+        tx, ty, tz = e[0] - weight * 0.05, e[1], e[2]
+        # clamp the chest, give the rest to the waist (small angles: Euler angles add)
         cxc, cyc, czc = (float(np.clip(cx, *LIMITS['cx'])), float(np.clip(cy, *LIMITS['cy'])), float(np.clip(cz, *LIMITS['cz'])))
         tx, ty, tz = tx + (cx - cxc), ty + (cy - cyc), tz + (cz - czc)
         tx, ty, tz = (float(np.clip(tx, *LIMITS['tx'])), float(np.clip(ty, *LIMITS['ty'])), float(np.clip(tz, *LIMITS['tz'])))
@@ -395,15 +452,15 @@ def solve(t, P, root, opts):
                    stance=stance, stride=stride, phase=-math.pi / 2, weight=weight, crouch=crouch)
         for side, S, E, Wr, Pi, In in (('r', RSH, REL, RWR, RPI, RIN), ('l', LSH, LEL, LWR, LPI, LIN)):
             u = unit(Rm.T @ (g[E] - g[S])); f = unit(Rm.T @ (g[Wr] - g[E]))
-            a, b, c, rex = arm_angles(u, f, prev[side])
-            a = float(np.clip(a, *LIMITS[side + 'sx'])); c = float(np.clip(c, *LIMITS[side + 'sz']))
-            rex = float(np.clip(rex, *LIMITS[side + 'ex']))
-            prev[side] = b
+            a, b, c, rex = arm_angles(u, f, prev[side][1] if prev[side] is not None else 0.0)
+            seeds = [(a, b, c, rex)] + ([prev[side]] if prev[side] is not None else [])
+            a, b, c, rex = (float(v) for v in arm_fit(u, f, side, seeds, prev[side]))
+            prev[side] = np.array([a, b, c, rex])
             Rf = Rm @ euler_xyz(a, b, c) @ Rx(rex)
             hand = 0.5 * (g[Pi] + g[In]) - g[Wr]
             wx = float(np.clip(0.7 * wrist_angle(Rf, hand), *LIMITS[side + 'wx'])) if opts.get('wrists', True) else 0.0
             out.update({side + 'sx': a, side + 'sy': b, side + 'sz': c, side + 'ex': rex, side + 'wx': wx})
-        # head: ears give the side axis, the nose the front (the nose sits ~0.25 rad below the ear line)
+        # head: ears give the side axis, the nose the front (on a person the nose sits ~0.25 rad below the ear line)
         if opts.get('head', True):
             xe = g[LEAR] - g[REAR]
             fz = g[NOSE] - 0.5 * (g[LEAR] + g[REAR])
@@ -424,7 +481,7 @@ def post(ch, t, window_s=0.15):
     for k, v in ch.items():
         if k == 'phase':
             continue
-        if len(v) > win and k not in ('y',):
+        if len(v) > win and k != 'y':
             v = savgol_filter(v, win, 2)
         if k in LIMITS:
             v = np.clip(v, *LIMITS[k])
@@ -442,7 +499,6 @@ def orient(ch, mode, cam):
     want = 0.0 if mode == 'auto' else math.radians(float(mode))
     d = want - ry0
     x0, z0 = ch['x'][0], ch['z'][0]
-    dx, dz = ch['x'] - x0, ch['z'] - z0
     c, s = math.cos(d), math.sin(d)
     rot = lambda px, pz: (c * (px - x0) + s * (pz - z0), -s * (px - x0) + c * (pz - z0))
     ch['x'], ch['z'] = rot(ch['x'], ch['z'])                   # rotate about +y by d (same sense as ry)
@@ -495,22 +551,36 @@ def rnd(v, k):
 
 def build(args):
     t, img, world, size, sfps = estimate(args.video, args.start or 0.0, args.end, args.mirror, args.model)
+    return process(t, img, world, size, sfps, args)
+
+
+def process(t, img, world, size, sfps, args):
+    """Everything after the estimator (steps 2-7): also used by tools/mocap_synth_test.py on projected truth."""
     img = fill_gaps(t, img)
-    world = fill_gaps(t, world)
+    world = fill_gaps(t, world, quiet=True)
     world, img = fix_flips(world, img)
     T = solve_translation(img, world, size, args.hfov)
-    P = to_ours(world, args.tilt)
-    root = to_ours(T, args.tilt)
+    tilt = 0.0 if args.tilt == 'auto' else float(args.tilt)
+    P = to_ours(world, tilt)
+    root = to_ours(T, tilt)
+    Rt = Rx(-math.radians(tilt))
     # smoothing: landmarks (shape) and the pelvis path (noisier: monocular depth) separately
     P = zero_phase_euro(P, t, mincutoff=args.mincutoff, beta=args.beta)
     root = zero_phase_euro(root, t, mincutoff=args.mincutoff * 0.5, beta=args.beta * 0.5)
+    Rlev = Rt
+    if args.tilt == 'auto':
+        P, root, Rlev = level(P, root)
     if args.no_root:
         root[:] = root.mean(axis=0) * np.array([1, 0, 1]) + root * np.array([0, 1, 0])
-    ch, cont, s = solve(t, P, root, {'head': not args.no_head, 'wrists': not args.no_wrists})
+    ch, cont, s = solve(t, P, root, {'head': not args.no_head, 'wrists': not args.no_wrists, 'floor_slope': args.floor_slope,
+                                     'jump_min': args.jump_min, 'scale': LEG_LEN / args.leg if args.leg else None,
+                                     'nose_pitch': args.nose_pitch})
     ch = post(ch, t)
     # the phone in our world: at the origin of the camera axes, lifted so the ground is y = 0, looking along -z
+    # (turned by the auto tilt)
     h = -cont['ground']
-    cam = {'pos': [0.0, h, 0.0], 'look': [0.0, h, -1.0]}
+    lk = Rlev @ np.array([0.0, 0.0, -1.0])
+    cam = {'pos': [0.0, h, 0.0], 'look': [float(lk[0]), h + float(lk[1]), float(lk[2])]}
     ch, cam = orient(ch, args.facing, cam)
     if args.at:
         ax, az = (float(v) for v in args.at.split(','))
@@ -520,7 +590,7 @@ def build(args):
     return t, img, world, P, root, T, ch, cont, s, size, sfps
 
 
-def main():
+def parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('video')
     ap.add_argument('--out', required=True, help='library/mocap/<name>.json')
@@ -536,14 +606,23 @@ def main():
     ap.add_argument('--pose', help='named pose under every key (gives the channels mocap does not solve: wrist roll, clavicles)')
     ap.add_argument('--model', default='full', choices=['lite', 'full', 'heavy'], help='landmarker size (heavy = best, ~3x slower)')
     ap.add_argument('--hfov', type=float, default=65.0, help='camera horizontal field of view in degrees (phone main camera ~65)')
-    ap.add_argument('--tilt', type=float, default=0.0, help='degrees the phone looks down (0 = level tripod)')
+    ap.add_argument('--tilt', default='0', help='degrees the phone looks down (0 = level tripod, the default), or "auto" '
+                                               '(guess from the straight-leg frames: rough, check the stills)')
     ap.add_argument('--mincutoff', type=float, default=1.7, help='one-euro: lower = smoother when slow')
     ap.add_argument('--beta', type=float, default=0.4, help='one-euro: higher = less lag on fast moves')
+    ap.add_argument('--floor-slope', action='store_true', help='fit a sloped floor (long walks toward / away from the lens)')
+    ap.add_argument('--jump-min', type=float, default=0.12, help='both feet must clear this (m) to count as a jump')
+    ap.add_argument('--leg', type=float, help='performer hip-to-ankle length in metres (default: measured; wide trousers fool it)')
+    ap.add_argument('--nose-pitch', type=float, default=0.25, help='radians the nose sits below the ear line (head pitch zero)')
     ap.add_argument('--no-root', action='store_true', help='keep the root still (only the body moves)')
     ap.add_argument('--no-head', action='store_true', help='do not solve the head (faces turned away, hats)')
     ap.add_argument('--no-wrists', action='store_true')
     ap.add_argument('--no-raw', action='store_true', help='do not store the raw landmarks')
-    args = ap.parse_args()
+    return ap
+
+
+def main():
+    args = parser().parse_args()
 
     t, img, world, P, root, T, ch, cont, s, size, sfps = build(args)
     # resample to the output rate

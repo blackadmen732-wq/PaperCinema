@@ -159,3 +159,58 @@ All triggers **look ahead 3 frames**: the operator knows the choreography and st
 
 Working example of every rig: `film/kuroko-duel.json`. Check rigs with stills (`--still auto`); see their resolved
 paths in the playbook (`python3 docs/build_playbook.py film/kuroko-duel.json` → `docs/playbook-kuroko-duel.html`).
+
+## 8. Motion-page camera beats, the `compose` framing solver and speed ramps
+Films on the motion page (`"page": "engine/motion.html"`) direct the camera with `film.camera`: a list of beats.
+Which camera for which beat, and the limits of each move: `STUDIO-STANDARD.md` §3. Working example of everything
+below: `film/dash-test.json`.
+
+```json
+"cameraOpts": { "solver": 2 },
+"camera": [
+  { "act": 0,    "rig": "compose", "subjects": ["hero"], "basis": "target", "target": "sakura",
+    "az0": 196, "az1": 189, "elev": -3, "size0": 0.62, "size1": 0.7, "screen": [0.36, 0.55], "fov": 34, "feel": "dolly" },
+  { "act": 0.72, "cut": true, "rig": "compose", "subjects": ["hero"], "az0": 186, "az1": 152, "elev": -4,
+    "size": 0.56, "lead": 0.17, "fov": 40, "feel": "torpedo", "lag": 0.018, "untilAct": 1.2 }
+]
+```
+
+| Field | Meaning |
+|---|---|
+| `t` or `act` | when the beat starts: film seconds, or **action time** (`act`, follows the speed ramps: "when the blade lands") |
+| `until` / `untilAct` | when its 0 → 1 moves finish (default: the next beat) |
+| `rig` | `compose` (below), or the older `frame`, `orbit`, `face`, `slide` |
+| `feel` | the spring: `locked`, `dolly`, `crane`, `handheld`, `torpedo`, `whip` (3–6 frame move) |
+| `cut` | `true` = hard cut (needs `cameraOpts.solver: 2`); without it the camera travels to the new beat |
+| `lag` | seconds the camera trails the subject (0.02; a dash can use 0.015–0.03) |
+
+**`cameraOpts.solver: 2`** = the cinematographer's spring: it works on the camera's offset from the subject, so a
+21 m/s dash cannot out-run it; a guard keeps the subject inside the frame (`keep: [0.72, 0.8]`), the lens 0.12 m
+above the sand (dunes included) and out of trees and rocks. Without it, a film renders with the old world-space
+spring, exactly as before.
+
+**`compose`: say what the frame should look like.**
+| Field | Meaning |
+|---|---|
+| `subjects` | `[who]` (first = the framed subject; a tree id also works) |
+| `size` | share of the frame height filled by `span` metres (default 1.8 = the whole figure): 0.45 wide, 0.6 full, 1.2 medium, 2.5 close |
+| `screen` | `[sx, sy]` where the middle of the subject sits (0.5, 0.5 = centre; 0.36 = left third) |
+| `lead` | automatic lead room instead of `screen`: 0.16 puts the subject off-centre with space in front of its motion (or its gaze when still) |
+| `az`, `elev` | degrees around the subject (0 = the +z side, 90 = +x) and up (negative = low angle) |
+| `basis` | `world` (default) · `facing` (az 0 = in front of the subject, frozen at the beat's start) · `target` (az 180 = over the shoulder towards `target`) |
+| `aim`, `span` | a joint instead of the whole body (`eyes`, `head`, `chest`, `wrist`, `tsuba`, `tip`, `hips`) and how many metres `size` measures |
+| `fov`, `roll` | lens (22–45) and dutch tilt |
+| pairs | every number takes `…0` / `…1`: `az0 → az1` orbit, `elev0 → elev1` crane, `size0 → size1` push-in / pull-back, `fov0 → fov1` with a fixed size = dolly-zoom; `ease`: `inOut` (default), `in`, `out`, `linear` |
+| `guard` | `false` = no prop avoidance (a deliberate over-the-prop shot) |
+
+**Speed ramps** (`film.ramps`): the body slows, the camera keeps moving in real time.
+```json
+"ramps": [ { "t": 1.06, "rate": 0.2, "in": 0.04, "hold": 0.5, "out": 0.16 } ]
+```
+`t` = action time where the slow-down starts; `rate` 0.2–0.35 (key moment) or 0.45–0.6 (a breath); `in`, `hold`,
+`out` = screen seconds. Three clocks: film time (camera, sound, post FX) → world time (sparks, dust, props, impacts)
+→ body time (keys; hit-stops). Authored `impacts`, `props` and sounds marked `"body": true` are in action time and
+move with the ramps (`output/<film>.events.json` carries the table as `warp`).
+
+Check every camera with `node tools/audit.mjs film/<name>.json` (`AUDIT.md`): it measures visibility, size, lead
+room, blockers, lens-in-geometry, pops and the share of slow motion.
