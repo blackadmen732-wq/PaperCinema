@@ -162,7 +162,7 @@ export const BASE_POSE = {
   rsx: 0.05, rsz: 0.12, rex: -0.15,
   lsx: 0.05, lsz: -0.12, lex: -0.15,
   rwx: 0, lwx: 0,
-  sway: 0,
+  sway: 0, swayx: 0,
 };
 
 export function applyPose(f, p) {
@@ -177,6 +177,7 @@ export function applyPose(f, p) {
   f.rH.rotation.x = p.rwx;
   f.lH.rotation.x = p.lwx;
   f.hakama.rotation.z = p.sway;
+  f.hakama.rotation.x = p.swayx ?? 0;
 }
 
 export const smooth = (k) => k * k * (3 - 2 * k);
@@ -195,4 +196,109 @@ export function track(keys, t) {
     }
   }
   return { ...full[full.length - 1][1] };
+}
+
+// ---------------------------------------------------------------------------
+// SMOOTH MOTION
+// A performance is a list of keys: { t, pose: "name", ...overrides }.
+// Each joint channel is interpolated with a monotone cubic curve (Fritsch–Carlson):
+// velocity is continuous through every key (no robotic stop at each pose) and the
+// curve never overshoots a key (no wobble). Holding a pose = two keys with the same pose.
+// ---------------------------------------------------------------------------
+const CHANNELS = Object.keys(BASE_POSE);
+
+function monotoneTangents(ts, vs) {
+  const n = ts.length, m = new Array(n).fill(0), d = [];
+  for (let k = 0; k < n - 1; k++) d.push((vs[k + 1] - vs[k]) / (ts[k + 1] - ts[k]));
+  for (let k = 1; k < n - 1; k++) {
+    if (d[k - 1] * d[k] <= 0) continue;            // turning point or hold → stop there smoothly
+    const h0 = ts[k] - ts[k - 1], h1 = ts[k + 1] - ts[k];
+    const w1 = 2 * h1 + h0, w2 = h1 + 2 * h0;
+    m[k] = (w1 + w2) / (w1 / d[k - 1] + w2 / d[k]);
+  }
+  return m;                                         // first/last tangent 0 = start and end at rest
+}
+
+/** Build a motion from resolved keys [[t, fullPose], ...]; returns (t) => pose. */
+export function makeMotion(keys) {
+  const ts = keys.map((k) => k[0]);
+  const curves = {};
+  for (const c of CHANNELS) {
+    const vs = keys.map((k) => k[1][c] ?? BASE_POSE[c]);
+    curves[c] = { vs, m: monotoneTangents(ts, vs) };
+  }
+  return (t) => {
+    const out = {};
+    const n = ts.length;
+    let i = 0;
+    while (i < n - 2 && t >= ts[i + 1]) i++;
+    for (const c of CHANNELS) {
+      const { vs, m } = curves[c];
+      if (n === 1 || t <= ts[0]) { out[c] = vs[0]; continue; }
+      if (t >= ts[n - 1]) { out[c] = vs[n - 1]; continue; }
+      const h = ts[i + 1] - ts[i], u = (t - ts[i]) / h;
+      const h00 = 2 * u ** 3 - 3 * u ** 2 + 1, h10 = u ** 3 - 2 * u ** 2 + u, h01 = -2 * u ** 3 + 3 * u ** 2, h11 = u ** 3 - u ** 2;
+      out[c] = h00 * vs[i] + h10 * h * m[i] + h01 * vs[i + 1] + h11 * h * m[i + 1];
+    }
+    return out;
+  };
+}
+
+/** Resolve data keys ({ t, pose, ...overrides }) against the pose library. */
+export function resolveKeys(keys, poses) {
+  let last = { ...BASE_POSE };
+  return keys.map((k) => {
+    const named = k.pose ? poses[k.pose] : {};
+    if (k.pose && !named) throw new Error(`Unknown pose "${k.pose}" at t=${k.t}`);
+    // x / z / ry (where the body stands and faces) carry over from the previous key unless given.
+    // y / rx / rz (crouch, tilt) reset to 0 unless given. Joints come from the named pose,
+    // or from the previous key when the key has no pose (an "overrides only" key).
+    const joints = k.pose ? { ...BASE_POSE, ...named } : { ...last };
+    const full = { ...joints, x: last.x, z: last.z, ry: last.ry, y: 0, rx: 0, rz: 0 };
+    for (const [key, v] of Object.entries(k)) if (key in BASE_POSE) full[key] = v;
+    last = full;
+    return [k.t, full];
+  });
+}
+
+/** Weight 0..1 inside time windows [[t0, t1], ...] with soft edges. */
+export function windowWeight(windows, t, fade = 0.15) {
+  let w = 0;
+  for (const [a, b] of windows ?? []) {
+    if (t < a - fade || t > b + fade) continue;
+    w = Math.max(w, Math.min(1, (t - (a - fade)) / fade, ((b + fade) - t) / fade));
+  }
+  return Math.max(0, Math.min(1, w));
+}
+
+// ---------------------------------------------------------------------------
+// TWO-HAND GRIP (inverse kinematics)
+// Moves the left shoulder + elbow so the left hand lands on a world-space target
+// (the end of the sword handle). Small deterministic search, starting from the
+// animated pose every frame, so the result is the same on every render.
+// ---------------------------------------------------------------------------
+const _hand = new THREE.Vector3();
+export function reachLeftHand(f, target, weight = 1) {
+  if (weight <= 0) return;
+  const start = [f.lS.rotation.x, f.lS.rotation.z, f.lE.rotation.x];
+  const p = start.slice();
+  const err = (q) => {
+    f.lS.rotation.x = q[0];
+    f.lS.rotation.z = q[1];
+    f.lE.rotation.x = Math.max(-2.6, Math.min(0, q[2]));
+    f.lS.updateMatrixWorld(true);
+    f.lH.getWorldPosition(_hand);
+    return _hand.distanceToSquared(target);
+  };
+  let best = err(p), step = 0.35;
+  for (let it = 0; it < 40 && step > 0.003; it++) {
+    let improved = false;
+    for (let k = 0; k < 3; k++) for (const dir of [1, -1]) {
+      const q = p.slice(); q[k] += dir * step;
+      const e = err(q);
+      if (e < best) { best = e; p[k] = q[k]; improved = true; }
+    }
+    if (!improved) step *= 0.5;
+  }
+  err(start.map((s, k) => s + (p[k] - s) * weight));
 }

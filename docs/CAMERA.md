@@ -86,7 +86,7 @@ lines with corners. The `fov` blends between keyframes. The shot's `ease` contro
 
 | Thing | Where it lives |
 |---|---|
-| Camera paths, lenses, cuts, easing, shakes, titles, sounds | **Data** (`film/*.json`) |
+| Camera paths, lenses, cuts, easing, shakes, events, titles, sounds | **Data** (`film/*.json`) |
 | Swords, characters, outfits, patterns | **Data** (`library/`) |
-| Character choreography (poses over time) | **Code** (`engine/main.js`, `kojiroKeys` / `musashiKeys`). Next step: move it to data too. |
+| Character choreography (poses over time) | **Data** (`film/*.json → performances`, poses in `library/poses.json`). See `docs/ANIMATION.md`. |
 | Planned camera modes from `docs/STYLE-AND-FIGHT-SYSTEM.md` (blade-follow, face-snap, continuous one-take anchor) | **Not built yet.** Today they're made by hand with keyframes as above. |

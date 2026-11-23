@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { buildWorld, STUDIO_X } from './world.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
-import { makeFigure, holdInHand, applyPose, track, smooth } from './figure.js';
+import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, reachLeftHand, BASE_POSE } from './figure.js';
 import { paper, rng } from './paper.js';
 
 const params = new URLSearchParams(location.search);
@@ -61,7 +61,8 @@ const musashi = makeFigure({
   skin: '#efe3cc', collar: '#d9d2c2', obi: '#1f1b19', band: '#f3eee2',
 });
 scene.add(musashi.root);
-holdInHand(musashi.rH, makeBokken(), -0.05);
+const musashiBokken = makeBokken();
+holdInHand(musashi.rH, musashiBokken, -0.05);
 const flyingTail = new THREE.Group();
 for (const sgn of [1, -1]) {
   const tp = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.16, 0.006), paper('#f3eee2', { repeat: 6 }));
@@ -113,44 +114,35 @@ function makeBurst(n, colors, seed, power = 1) {
 const impactBurst = makeBurst(80, ['#a8322d', '#efe6d4', '#c49a45', '#f6eedf'], 9, 1);
 const splashBurst = makeBurst(36, ['#f3ecdd', '#dfe6ee', '#efe5d0'], 21, 0.7);
 
-// ---------- choreography (absolute seconds) ----------
+// ---------- choreography: read from the film file (performances + events) ----------
 const PI = Math.PI;
-const K0 = { z: -0.8, rsx: -0.35, rsz: 0.5, rex: -0.9, lsx: -0.25, lsz: -0.25, lex: -1.1 };
-const K_JODAN = { z: -0.8, rsx: -2.6, rsz: 0.32, rex: -0.85, lsx: -2.6, lsz: -0.32, lex: -0.85, tx: -0.08 };
-const K_CUT = { z: -0.25, y: -0.14, rsx: -1.05, rsz: 0.3, rex: -0.15, lsx: -1.05, lsz: -0.3, lex: -0.15, tx: 0.55, rwx: 0.6 };
-const kojiroKeys = [
-  [0, K0], [18.15, K0],
-  [18.6, { ...K0, rsx: -1.7, rsz: -0.1, rex: -0.2, tx: -0.05, ty: 0.25 }],
-  [19.1, { ...K0, rsx: -1.3, rsz: 0.1, rex: -0.4, ty: 0.1, lsx: -0.5, lsz: -0.15, lex: -1.0 }],
-  [19.7, { ...K0, rsx: -1.3, rsz: 0.1, rex: -0.4, ty: 0.1, lsx: -0.6, lsz: -0.2, lex: -0.9 }],
-  [20.05, { ...K0, rsx: -1.3, rsz: 0.1, rex: -0.4, ty: -0.3, lsx: -1.6, lsz: -1.2, lex: -0.1 }],
-  [20.6, { ...K0, rsx: -1.3, rsz: 0.1, rex: -0.4, lsx: -0.3, lsz: -0.3, lex: -0.6 }],
-  [21.8, K_JODAN], [24.0, K_JODAN],
-  [24.8, { ...K_JODAN, z: -0.35, tx: 0 }],
-  [25.05, { ...K_JODAN, z: -0.35, rsx: -2.85, lsx: -2.85, tx: -0.12 }],
-  [25.45, K_CUT], [25.6, K_CUT],
-  [26.3, { ...K_CUT, hx: -0.35, tx: -0.12, rsx: -0.6, lsx: -0.6 }],
-  [27.2, { ...K_CUT, y: -0.38, tx: 0.45, hx: 0.2, rsx: -0.3, lsx: -0.3, rex: -0.3, lex: -0.3 }],
-  [28.2, { ...K_CUT, y: -0.06, x: 0.1, rz: -1.42, tx: 0.2, hx: 0.2, rsx: -0.3, lsx: -0.2, rex: -0.3, lex: -0.3 }],
-];
-const M_STAND = { x: 0, z: 1.5, ry: PI, rsx: -0.25, rsz: 0.25, rex: -0.4 };
-const M_JODAN = { x: 0, z: 1.5, ry: PI, rsx: -2.65, rsz: 0.3, rex: -0.8, lsx: -2.65, lsz: -0.3, lex: -0.8 };
-const M_STRIKE = { x: 0, z: 0.85, y: -0.08, ry: PI, rsx: -2.15, rsz: 0.3, rex: -0.05, lsx: -2.15, lsz: -0.3, lex: -0.05, tx: 0.25, rwx: 1.35 };
-const M_REST = { ...M_STRIKE, y: 0, tx: 0.05, rsx: -0.5, lsx: -0.4, rex: -0.3, rwx: 0.3 };
-const M_CARRY = { x: 0, z: 0.85, ry: 2 * PI, rsx: -0.25, rsz: 0.25, rex: -0.4 };
-const musashiKeys = [
-  [16.6, { ...M_STAND, x: 0.6, y: -0.12, z: 4.85 }],
-  [19.6, M_STAND], [21.6, M_STAND], [22.8, M_JODAN], [24.0, M_JODAN],
-  [24.8, { ...M_JODAN, z: 0.95 }],
-  [25.2, { ...M_JODAN, z: 0.95, rsx: -2.85, lsx: -2.85, tx: -0.1 }],
-  [25.6, M_STRIKE], [27.6, M_STRIKE], [29.0, M_REST], [29.8, M_REST],
-  [30.6, M_CARRY], [34.4, { ...M_CARRY, x: 0.5, z: 4.6, y: -0.1 }],
-];
-const walking = (t) => (t > 16.6 && t < 19.6) || (t > 30.6 && t < 34.4);
+const POSES = await (await fetch('/library/poses.json')).json();
+const EV = film.events ?? {};
+const ev = (name, fallback) => EV[name] ?? fallback;
+const PERF = film.performances ?? {};
+const motionOf = (id) => makeMotion(resolveKeys(PERF[id].keys, POSES));
+const kojiroMotion = motionOf('kojiro');
+const musashiMotion = motionOf('musashi');
+const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };
+
+/** Life on top of the keyed motion: breathing while still, cloth trailing behind movement. */
+function addLife(motion, t, pose, phase) {
+  const prev = motion(t - 1 / 24);
+  const vx = (pose.x - prev.x) * 24, vz = (pose.z - prev.z) * 24;
+  const fwd = vx * Math.sin(pose.ry) + vz * Math.cos(pose.ry);      // speed along facing
+  const side = vx * Math.cos(pose.ry) - vz * Math.sin(pose.ry);
+  const still = Math.max(0, 1 - Math.hypot(vx, vz) * 3);
+  pose.tx += 0.012 * Math.sin(t * 1.9 + phase) * still;            // breathing
+  pose.hx += 0.008 * Math.sin(t * 1.9 + phase + 0.6) * still;
+  pose.swayx += Math.max(-0.25, Math.min(0.25, -fwd * 0.12));      // hakama trails behind the step
+  pose.sway += Math.max(-0.2, Math.min(0.2, side * 0.1));
+  return pose;
+}
 
 function boatZ(t) {
-  if (t < 12.5) return 17.5;
-  if (t < 16.4) { const k = (t - 12.5) / 3.9; return 17.5 + (5.4 - 17.5) * (1 - Math.pow(1 - k, 3)); }
+  const t0 = ev('boat-arrives', 12.5);
+  if (t < t0) return 17.5;
+  if (t < t0 + 3.9) { const k = (t - t0) / 3.9; return 17.5 + (5.4 - 17.5) * (1 - Math.pow(1 - k, 3)); }
   return 5.4;
 }
 
@@ -201,49 +193,59 @@ window.renderAt = (t) => {
   world.update(t);
 
   // studio sword: draw the blade 9.6s → 11.8s
-  studioKatana.sword.position.x = -0.78 * smooth(Math.min(1, Math.max(0, (t - 9.6) / 2.2)));
+  studioKatana.sword.position.x = -0.78 * smooth(Math.min(1, Math.max(0, (t - ev('studio-blade-draw', 9.6)) / 2.2)));
 
   // boat + boatman
   boat.position.set(0.6, -0.2 + 0.04 * Math.sin(t * 1.6), boatZ(t));
   boat.rotation.set(0.02 * Math.sin(t * 1.1), 0, 0.03 * Math.sin(t * 1.3));
-  const row = t < 16.4 ? Math.sin(t * 2.4) : 0;
+  const row = t < ev('boat-arrives', 12.5) + 3.9 ? Math.sin(t * 2.4) : 0;
   oar.rotation.set(0.45, 0.25 * row, 0);
   applyPose(boatman, track([[0, { rsx: -0.9 + 0.3 * row, rsz: 0.3, rex: -0.6, lsx: -0.9 + 0.3 * row, lsz: -0.2, lex: -0.6, tx: 0.15 + 0.1 * row }]], t));
   boatman.root.position.set(0, 0.06, 1.0);
   boatman.root.rotation.y = PI;
 
-  // Kojirō
-  applyPose(kojiro, track(kojiroKeys, t));
-  hipKatana.sword.position.x = -0.75 * smooth(Math.min(1, Math.max(0, (t - 18.25) / 0.37)));
-  hipKatana.sword.visible = t < 18.62;
-  handKatana.sword.visible = t >= 18.62;
-  hipKatana.saya.visible = t < 20.05;
+  // Kojirō: keyed motion from the film file + life
+  applyPose(kojiro, addLife(kojiroMotion, t, kojiroMotion(t), 0));
+  const tDraw = ev('kojiro-draw', 18.25), tThrow = ev('kojiro-throws-scabbard', 20.05);
+  hipKatana.sword.position.x = -0.75 * smooth(Math.min(1, Math.max(0, (t - tDraw) / 0.37)));
+  hipKatana.sword.visible = t < tDraw + 0.37;
+  handKatana.sword.visible = t >= tDraw + 0.37;
+  hipKatana.saya.visible = t < tThrow;
   // thrown scabbard
-  const ks = (t - 20.05) / 1.35;
+  const ks = (t - tThrow) / 1.35;
   flyingSaya.visible = ks >= 0 && ks <= 1.0;
   if (flyingSaya.visible) {
     const a = new THREE.Vector3(0.35, 1.0, -0.6), b = new THREE.Vector3(1.9, -0.25, 6.4);
     flyingSaya.position.copy(a.lerp(b, ks)).add(new THREE.Vector3(0, 2.4 * 4 * ks * (1 - ks), 0));
     flyingSaya.rotation.set(0.3, 1.4 + ks * 2, ks * 11);
   }
-  splashBurst(t, 21.4, new THREE.Vector3(1.9, -0.15, 6.4));
+  splashBurst(t, ev('scabbard-splash', 21.4), new THREE.Vector3(1.9, -0.15, 6.4));
 
-  // Musashi: rides the boat until he steps off at 16.6s
+  // Musashi: rides the boat until rideBoatUntil, then keyed motion + walk cycle + life
   let mp;
-  if (t < 16.6) {
-    mp = { ...track([[0, M_STAND]], t), x: boat.position.x, y: boat.position.y + 0.08, z: boat.position.z - 0.55, rz: boat.rotation.z };
+  const boatUntil = PERF.musashi.rideBoatUntil ?? 0;
+  if (t < boatUntil) {
+    mp = { ...boatPose, x: boat.position.x, y: boat.position.y + 0.08, z: boat.position.z - 0.55, ry: PI, rz: boat.rotation.z };
   } else {
-    mp = track(musashiKeys, t);
-    if (walking(t)) {
+    mp = addLife(musashiMotion, t, musashiMotion(t), 1.3);
+    if (windowWeight(PERF.musashi.walk, t, 0.01) > 0) {
       const ph = t * PI * 2 * 1.7;
       mp.y += Math.abs(Math.sin(ph)) * 0.025;
-      mp.sway = Math.sin(ph) * 0.06;
+      mp.sway += Math.sin(ph) * 0.06;
       mp.lsx += Math.sin(ph) * 0.25;
     }
   }
   applyPose(musashi, mp);
-  musashi.bandTail.visible = t < 25.45;
-  const kt = (t - 25.45) / 3;
+
+  // two-hand grip: left hand finds the end of the handle (inverse kinematics)
+  kojiro.root.updateMatrixWorld(true);
+  musashi.root.updateMatrixWorld(true);
+  if (handKatana.sword.visible) reachLeftHand(kojiro, handKatana.sword.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), windowWeight(PERF.kojiro.twoHand, t));
+  reachLeftHand(musashi, musashiBokken.localToWorld(tmp.set(-0.26, 0.002, 0)).clone(), windowWeight(PERF.musashi.twoHand, t));
+
+  const tCut = ev('headband-cut', 25.45);
+  musashi.bandTail.visible = t < tCut;
+  const kt = (t - tCut) / 3;
   flyingTail.visible = kt >= 0 && kt < 1;
   if (flyingTail.visible) {
     flyingTail.position.set(-0.7 * kt + 0.12 * Math.sin(kt * 14), 1.78 - 1.75 * smooth(kt), 0.9 + 1.2 * kt);
@@ -251,9 +253,8 @@ window.renderAt = (t) => {
   }
 
   // impact: paper shards burst from the point of the blow
-  kojiro.root.updateMatrixWorld(true);
   kojiro.head.getWorldPosition(tmp);
-  impactBurst(t, 25.6, tmp.clone().add(new THREE.Vector3(0, 0.22, 0)));
+  impactBurst(t, ev('impact', 25.6), tmp.clone().add(new THREE.Vector3(0, 0.22, 0)));
 
   // camera path from the shot list, then any shakes listed in film.shakes
   placeCamera(shot, t);
@@ -276,7 +277,8 @@ window.renderAt = (t) => {
   for (const e of edges) fade = Math.max(fade, 1 - Math.abs(t - e) / 0.35);
   fade = Math.max(fade, 1 - t / 0.8, (t - (film.duration - 1)) / 1);
   fadeEl.style.opacity = Math.min(1, Math.max(0, fade));
-  flashEl.style.opacity = t > 25.6 && t < 25.95 ? 0.55 * (1 - (t - 25.6) / 0.35) : 0;
+  const tHit = ev('impact', 25.6);
+  flashEl.style.opacity = t > tHit && t < tHit + 0.35 ? 0.55 * (1 - (t - tHit) / 0.35) : 0;
 
   renderer.render(scene, camera);
 };

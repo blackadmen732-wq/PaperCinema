@@ -32,7 +32,11 @@ await page.waitForFunction('window.READY === true', null, { timeout: 120000 });
 
 if (stills) {
   fs.mkdirSync('output/stills', { recursive: true });
-  for (const t of stills.split(',').map(Number)) {
+  // --still auto = the middle of every shot plus every impact (a quick visual check of the whole film)
+  const list = stills === 'auto'
+    ? [...film.shots.map((s) => +((s.start + s.end) / 2).toFixed(2)), ...(film.shakes ?? []).map((s) => +(s.t + 0.1).toFixed(2))]
+    : stills.split(',').map(Number);
+  for (const t of list) {
     await page.evaluate((t) => window.renderAt(t), t);
     await page.screenshot({ path: `output/stills/${opt('prefix', '')}t${t}.png` });
     console.log('still', t);

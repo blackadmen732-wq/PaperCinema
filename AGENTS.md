@@ -6,13 +6,18 @@ folded/cut paper characters lit from inside, real-metal or demonic swords, data-
 ## Read these first
 0. `docs/playbook.html`: **visual playbook**: the 9-step pipeline, live camera-path plot, fight beats, sound cues, new-chat prompt (rebuild with `python3 docs/build_playbook.py`)
 1. `docs/STYLE-AND-FIGHT-SYSTEM.md`: the look, the 6-beat Strike Grammar, camera modes, lighting rules
-2. `docs/CAMERA.md`: **how to control the camera** (all camera moves are JSON data)
-3. `research/`: historical facts, each marked *documented* / *tradition* / *our choice*
+2. `docs/FILM-FORMAT.md`: **every field of a film file** + the golden path for a new film
+3. `docs/CAMERA.md`: **how to control the camera** (all camera moves are JSON data)
+4. `docs/ANIMATION.md`: **skeleton, poses, smooth motion, two-hand grip** (all character motion is JSON data)
+5. `research/`: historical facts, each marked *documented* / *tradition* / *our choice*
 
 ## Project map
 | Path | What |
 |---|---|
-| `film/*.json` | A film: shots (camera keyframes), shakes, titles, sound cues |
+| `film/*.json` | A film: shots (camera), shakes, events, performances (motion), titles, sound cues |
+| `library/poses.json` | Named poses for the shared skeleton (stances, cuts, reactions) |
+| `engine/validate.mjs` | Checks a film file and explains every mistake (run before rendering) |
+| `engine/make.mjs` | Whole pipeline in one command: check → stills → render → sound → playbook |
 | `engine/main.js` | Film engine: world, cast, choreography, camera, overlays; exposes `window.renderAt(t)` |
 | `engine/world.js` | Layered paper sea, island, coasts, sun, dark sword studio |
 | `engine/figure.js` | Shared rigged paper body + pose system (`track`, `applyPose`, `holdInHand`) |
@@ -29,12 +34,14 @@ folded/cut paper characters lit from inside, real-metal or demonic swords, data-
 
 ## Commands
 ```bash
-npm install                                   # once
-node engine/render.mjs --still 2,11.5,25.7    # quick check → output/stills/
-npm run render                                # full film → output/ganryujima.mp4
-node engine/sound.mjs                         # add sound → output/ganryujima-sound.mp4
-python3 docs/build_playbook.py                # refresh the visual playbook from the film data
-npm run preview                               # live preview in a browser
+npm install                                        # once
+npm run validate                                   # check film/ganryujima.json (explains mistakes)
+npm run check                                      # validate + one still per shot → output/stills/
+node engine/render.mjs --still 25.7                # one frame
+node engine/render.mjs --from 24 --to 30 --out output/clip.mp4   # a section
+npm run film                                       # whole pipeline → output/ganryujima-sound.mp4
+node engine/make.mjs film/<name>.json              # whole pipeline for another film
+npm run preview                                    # live preview in a browser
 ```
 
 ## Rules (must follow)
@@ -42,13 +49,14 @@ npm run preview                               # live preview in a browser
    Every pod must have the self-destruct timer (`sleep 3600; runpodctl remove pod $RUNPOD_POD_ID`) and must be
    stopped (`python3 gpu/pod.py stop`) before any long wait. An idle pod once cost $3 by mistake.
 2. Prefer free compute: this machine, then Kaggle (free GPU, phone-verified account).
-3. **Check stills before full renders.** A full 36 s render takes ~55 min on CPU.
+3. **Validate, then check stills, before full renders.** A full 36 s render takes ~55 min on CPU.
 4. Keep the owner's design decisions (style, amber = human / crimson = demonic glow, paper shards instead of blood).
 5. Historical claims go in `research/` with a confidence mark. Never present tradition as documented fact.
 6. Licences: only commercial-safe models and assets (MIT/Apache/CC0/CC-BY). Credit CC-BY sounds.
 7. Never commit secrets. API keys are injected by the environment's network proxy, never written in files.
 
 ## Status / next steps
-- Done: preview engine, camera-from-data, libraries (swords, characters, outfits, patterns), sound pipeline, 5 TRELLIS models.
-- Next: rig `assets/models/ronin_base.glb`, generate sword motion (Kaggle), Blender render, AI restyle (Wan VACE).
-- Choreography still lives in code (`engine/main.js`). Moving it into `film/*.json` is planned.
+- Done: preview engine; camera, motion (poses + smooth curves + two-hand grip), events, titles and sound all from data;
+  libraries (swords, characters, outfits, patterns, poses); checker; one-command pipeline; 5 TRELLIS models; visual playbook.
+- Next: rig `assets/models/*.glb` with the same skeleton layout (Blender), real motion capture (Kaggle), Blender render, AI restyle (Wan VACE).
+- Sets (island, sea, studio) and prop effects (boat, thrown scabbard) are still built in code for Ganryūjima.

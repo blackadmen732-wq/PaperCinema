@@ -5,9 +5,14 @@
   "description": "Paper-craft cinematic animation system: shot list -> 3D paper world -> MP4",
   "type": "module",
   "scripts": {
-    "preview": "node engine/serve.mjs",
+    "check": "node engine/validate.mjs && node engine/render.mjs --still auto",
+    "validate": "node engine/validate.mjs",
     "still": "node engine/render.mjs --still",
-    "render": "node engine/render.mjs"
+    "render": "node engine/render.mjs",
+    "sound": "node engine/sound.mjs",
+    "playbook": "python3 docs/build_playbook.py",
+    "film": "node engine/make.mjs",
+    "preview": "node engine/serve.mjs"
   },
   "dependencies": {
     "three": "0.170.0"

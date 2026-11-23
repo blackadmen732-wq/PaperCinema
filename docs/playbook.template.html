@@ -151,6 +151,7 @@ footer { padding-top: 30px; border-top: 1px solid var(--rule); color: var(--ink-
       <span><i style="background:var(--amber)"></i>Sound cue</span>
       <span><i style="background:var(--crimson)"></i>Shake / impact</span>
       <span><i style="background:var(--ink-2)"></i>On-screen title</span>
+      <span><i style="background:var(--indigo); height:7px; width:7px; border-radius:50%"></i>Pose key (shaded = two-hand grip)</span>
     </div>
     <div class="now-grid">
       <div class="shotcard">
@@ -247,7 +248,7 @@ footer { padding-top: 30px; border-top: 1px solid var(--rule); color: var(--ink-
   <div class="copybox">
     <div class="bar"><b>Prompt</b><button class="ghost" id="copy-btn" type="button">Copy prompt</button></div>
     <pre id="prompt">Work in the repo blackadmen732-wq/papi.
-Read AGENTS.md first, then docs/CAMERA.md, docs/STYLE-AND-FIGHT-SYSTEM.md and docs/playbook.html.
+Read AGENTS.md first, then docs/FILM-FORMAT.md, docs/CAMERA.md, docs/ANIMATION.md, docs/STYLE-AND-FIGHT-SYSTEM.md and docs/playbook.html.
 
 Make a new Lantern Origami film, 30–40 seconds, about: [YOUR STORY HERE].
 
@@ -255,10 +256,10 @@ Follow the playbook steps in order:
 1. Research the history. Write research/&lt;name&gt;.md, marking each fact documented / tradition / our choice.
 2. Copy film/ganryujima.json to film/&lt;name&gt;.json. Write the shots (camera keyframes), titles, shakes and sound cues.
 3. Pick characters, outfits and swords from library/ (add presets there if needed).
-4. Write the choreography with the 6-beat Strike Grammar (hit-stop on every hit).
-5. Check still frames with node engine/render.mjs --film film/&lt;name&gt;.json --still ... and fix the framing before any full render.
-6. Render, then run node engine/sound.mjs --film film/&lt;name&gt;.json.
-7. Rebuild the playbook: python3 docs/build_playbook.py film/&lt;name&gt;.json
+4. Write the performances (second + pose) with the 6-beat Strike Grammar timing (hit-stop on every hit).
+5. Run node engine/validate.mjs film/&lt;name&gt;.json and fix every ✗.
+6. Check still frames: node engine/render.mjs --film film/&lt;name&gt;.json --still auto. Fix the framing before any full render.
+7. Run the whole pipeline: node engine/make.mjs film/&lt;name&gt;.json
 Rules: never start a paid GPU without asking me first and stating the cost. Commit and push when done.</pre>
   </div>
 </section>
@@ -293,16 +294,16 @@ const STEPS = [
   ["Research", "Find the real history. Mark each fact documented, tradition or our choice.", "research/*.md", "done"],
   ["Film file", "One JSON file holds the shots, camera keyframes, titles, shakes and sound cues.", "film/<name>.json", "done"],
   ["Cast & props", "Characters share one body; outfits, patterns and swords are swapped by data.", "library/ · engine/library.js", "done"],
-  ["Choreography", "Poses over time, built from the 6-beat Strike Grammar. Still code for now.", "engine/main.js (kojiroKeys, musashiKeys)", "todo"],
+  ["Choreography", "Second + pose name per key. Smooth curves, breathing, cloth follow-through and a two-hand grip are automatic.", "film/<name>.json → performances · library/poses.json", "done"],
   ["Camera", "Keyframes of position, target and lens per shot. Smooth curve, cuts between shots.", "film/<name>.json → shots[].camera", "done"],
-  ["Check stills", "Render a few frames in seconds and fix the framing before committing an hour.", "node engine/render.mjs --still 3,25.7", "done"],
-  ["Render", "Headless Chrome renders every frame, ffmpeg encodes the MP4.", "npm run render", "done"],
+  ["Check", "The checker explains every mistake; then one still per shot shows the framing in seconds.", "npm run check", "done"],
+  ["Render", "Headless Chrome renders every frame, ffmpeg encodes the MP4. Or run the whole pipeline at once.", "npm run render · npm run film", "done"],
   ["Sound", "Find on Openverse, check with ffmpeg, place at cue times, mix.", "node engine/sound.mjs", "done"],
   ["Publish", "Upload the video; paste the CC-BY credits into the description.", "assets/sfx/CREDITS.md", "done"],
 ];
 const UP = [
   ["3D characters", "TRELLIS turns a reference image into a textured 3D model (MIT licence).", "gpu/gen_trellis.py → assets/models/", "done"],
-  ["Rig", "Give the model a skeleton so arms, body and legs bend.", "Blender (free)", "todo"],
+  ["Rig", "Give the 3D models the same skeleton as the paper body, so every pose in library/poses.json drives them.", "Blender (free)", "todo"],
   ["Motion", "Real human sword motion from a text-to-motion model or video capture.", "Kaggle free GPU", "todo"],
   ["Realistic render + restyle", "Blender for light through paper; Wan VACE repaints frames to match the reference image.", "Kaggle free GPU", "todo"],
 ];
@@ -376,7 +377,10 @@ cues.forEach((c) => {
   c._row = r;
 });
 const rowH = 11;
-const lanes = { Shots: 22, Titles: 62, Sound: 88 };
+const PERFS = Object.entries(FILM.performances || {});
+const lanes = { Shots: 22, Titles: 58 };
+PERFS.forEach(([id], i) => { lanes[id[0].toUpperCase() + id.slice(1)] = 80 + i * 20; });
+lanes.Sound = 84 + PERFS.length * 20;
 lanes.Impacts = lanes.Sound + rows.length * rowH + 10;
 const H = lanes.Impacts + 26;
 tl.setAttribute('viewBox', `0 0 1000 ${H}`);
@@ -385,6 +389,13 @@ for (let s = 0; s <= D; s += 2) {
   el('line', { x1: tx(s), x2: tx(s), y1: 14, y2: H - 4, stroke: 'var(--rule)', 'stroke-width': s % 10 ? 0.6 : 1.2 });
   const lb = el('text', { x: tx(s) + (s === D ? -2 : 2), y: 10, 'text-anchor': s === D ? 'end' : 'start' }); lb.textContent = s + 's';
 }
+PERFS.forEach(([id, p], i) => {
+  const y = 80 + i * 20 + 9;
+  const ks = p.keys || [];
+  if (ks.length > 1) el('line', { x1: tx(ks[0].t), x2: tx(ks[ks.length - 1].t), y1: y, y2: y, stroke: 'var(--rule)', 'stroke-width': 2 });
+  (p.twoHand || []).forEach(([a, b]) => el('rect', { x: tx(a), y: y - 5, width: tx(b) - tx(a), height: 10, rx: 5, fill: 'var(--indigo)', opacity: 0.15 }));
+  ks.forEach((k) => { const c = el('circle', { cx: tx(k.t), cy: y, r: 3.5, fill: 'var(--indigo)' }); const tt = el('title', {}, c); tt.textContent = `${id} · ${k.t}s · ${k.pose || 'overrides'}`; });
+});
 FILM.shots.forEach((s, i) => {
   el('rect', { x: tx(s.start) + 1, y: lanes.Shots, width: tx(s.end) - tx(s.start) - 2, height: 26, rx: 4,
     fill: s.mode === 'studio' ? 'var(--ink)' : 'var(--indigo)', opacity: 0.9 });
@@ -492,6 +503,10 @@ function setT(t) {
   document.getElementById('r-f').textContent = c.fov.toFixed(1) + '°';
   const live = cues.filter((q) => T >= q.t && T < q.t + q.len).map((q) => `<span class="chip sfx">${q.id}</span>`);
   (FILM.shakes || []).forEach((sh) => { if (T >= sh.t && T < sh.t + sh.dur) live.unshift('<span class="chip hit">shake</span>'); });
+  PERFS.forEach(([id, p]) => {
+    const k = (p.keys || []).filter((q) => q.t <= T).pop();
+    if (k && k.pose) live.push(`<span class="chip">${id}: ${k.pose}</span>`);
+  });
   (FILM.titles || []).forEach((ti) => { if (T >= ti.start && T < ti.end) live.push(`<span class="chip">title: ${(ti.en || ti.jp || '').slice(0, 34)}…</span>`); });
   document.getElementById('live').innerHTML = live.join('') || '<span class="muted" style="font-size:.85rem">Nothing triggered at this moment</span>';
 }

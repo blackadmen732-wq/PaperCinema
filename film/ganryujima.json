@@ -383,6 +383,194 @@
       "note": "impact of the decisive blow"
     }
   ],
+  "events": {
+    "studio-blade-draw": 9.6,
+    "boat-arrives": 12.5,
+    "kojiro-draw": 18.25,
+    "kojiro-throws-scabbard": 20.05,
+    "scabbard-splash": 21.4,
+    "headband-cut": 25.45,
+    "impact": 25.6
+  },
+  "performances": {
+    "kojiro": {
+      "character": "kojiro",
+      "twoHand": [
+        [
+          21.0,
+          26.2
+        ]
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "rest-hand-on-hilt",
+          "x": 0,
+          "z": -0.8,
+          "ry": 0
+        },
+        {
+          "t": 18.15,
+          "pose": "rest-hand-on-hilt"
+        },
+        {
+          "t": 18.6,
+          "pose": "iai-draw"
+        },
+        {
+          "t": 19.1,
+          "pose": "blade-out-hand-on-saya"
+        },
+        {
+          "t": 19.7,
+          "pose": "blade-out-hand-on-saya"
+        },
+        {
+          "t": 20.05,
+          "pose": "throw-scabbard"
+        },
+        {
+          "t": 20.6,
+          "pose": "blade-out-recover"
+        },
+        {
+          "t": 21.8,
+          "pose": "jodan"
+        },
+        {
+          "t": 24.0,
+          "pose": "jodan"
+        },
+        {
+          "t": 24.8,
+          "pose": "jodan",
+          "z": -0.35,
+          "tx": 0
+        },
+        {
+          "t": 25.05,
+          "pose": "jodan-wind-up"
+        },
+        {
+          "t": 25.45,
+          "pose": "shomen-cut-finish",
+          "z": -0.25,
+          "y": -0.14
+        },
+        {
+          "t": 25.6,
+          "pose": "shomen-cut-finish",
+          "y": -0.14
+        },
+        {
+          "t": 26.3,
+          "pose": "struck-reel",
+          "y": -0.14
+        },
+        {
+          "t": 27.2,
+          "pose": "kneel-collapse",
+          "y": -0.38
+        },
+        {
+          "t": 28.2,
+          "pose": "fallen",
+          "y": -0.06,
+          "x": 0.1,
+          "rz": -1.42
+        }
+      ]
+    },
+    "musashi": {
+      "character": "musashi",
+      "rideBoatUntil": 16.6,
+      "boatPose": "stand-blade-low",
+      "walk": [
+        [
+          16.6,
+          19.6
+        ],
+        [
+          30.6,
+          34.4
+        ]
+      ],
+      "twoHand": [
+        [
+          22.4,
+          29.0
+        ]
+      ],
+      "keys": [
+        {
+          "t": 16.6,
+          "pose": "stand-blade-low",
+          "x": 0.6,
+          "y": -0.12,
+          "z": 4.85,
+          "ry": 3.14159
+        },
+        {
+          "t": 19.6,
+          "pose": "stand-blade-low",
+          "x": 0,
+          "z": 1.5
+        },
+        {
+          "t": 21.6,
+          "pose": "stand-blade-low"
+        },
+        {
+          "t": 22.8,
+          "pose": "jodan-high"
+        },
+        {
+          "t": 24.0,
+          "pose": "jodan-high"
+        },
+        {
+          "t": 24.8,
+          "pose": "jodan-high",
+          "z": 0.95
+        },
+        {
+          "t": 25.2,
+          "pose": "jodan-high-wind-up"
+        },
+        {
+          "t": 25.6,
+          "pose": "shomen-strike",
+          "z": 0.85,
+          "y": -0.08
+        },
+        {
+          "t": 27.6,
+          "pose": "shomen-strike",
+          "y": -0.08
+        },
+        {
+          "t": 29.0,
+          "pose": "zanshin"
+        },
+        {
+          "t": 29.8,
+          "pose": "zanshin"
+        },
+        {
+          "t": 30.6,
+          "pose": "stand-blade-low",
+          "ry": 6.28319
+        },
+        {
+          "t": 34.4,
+          "pose": "stand-blade-low",
+          "x": 0.5,
+          "z": 4.6,
+          "y": -0.1
+        }
+      ]
+    }
+  },
   "titles": [
     {
       "start": 0.8,
@@ -580,7 +768,7 @@
       "query": "temple bell",
       "min": 3000,
       "max": 40000,
-      "len": 5,
+      "len": 2.2,
       "gain": 0.7
     }
   ]
