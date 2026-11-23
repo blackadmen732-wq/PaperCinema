@@ -17,7 +17,7 @@ for (const [id, p] of Object.entries(film.performances ?? {})) motions[id] = mak
 const pair = {};
 for (const d of film.duels ?? []) { pair[d.a] = d.b; pair[d.b] = d.a; }
 const impacts = [...new Set([...(film.shakes ?? []).map((s) => s.t), ...(film.events?.impact !== undefined ? [film.events.impact] : [])])];
-const aspect = (process.argv.includes('--vertical') ? 720 / 1280 : film.width / film.height);
+const aspect = (process.argv.includes('--vertical') || film.format === 'vertical' ? 720 / 1280 : film.width / film.height);
 const kuroko = makeKuroko({ motions, impacts, pair, aspect });
 const r = (v) => Math.round(v * 1000) / 1000;
 

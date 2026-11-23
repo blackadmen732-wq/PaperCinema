@@ -22,6 +22,7 @@ const D = film.duration;
 
 // --- basics
 for (const k of ['fps', 'width', 'height', 'duration']) if (!isNum(film[k]) || film[k] <= 0) err(k, `must be a positive number (got ${JSON.stringify(film[k])})`);
+if (film.format && !['vertical', 'horizontal'].includes(film.format)) err('format', `must be "vertical" (9:16 Shorts/TikTok/Reels) or "horizontal" (16:9) (got ${JSON.stringify(film.format)})`);
 if (film.fps && (film.fps < 12 || film.fps > 60)) warn('fps', `${film.fps} is unusual; films use 24`);
 
 // --- shots + camera

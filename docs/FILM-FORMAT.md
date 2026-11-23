@@ -18,7 +18,7 @@ Use `film/ganryujima.json` as the working example.
 
 | Section | Item fields | Rules |
 |---|---|---|
-| top level | `fps` (24), `width`, `height` (1280×720 or 1920×1080), `letterbox` (2.39 = cinema bars), `duration` (s) | all positive numbers |
+| top level | `format` (`vertical` = 9:16 Shorts/TikTok/Reels, the default for new films; `horizontal` = 16:9), `fps` (24), `width`, `height` (1280×720 or 1920×1080), `letterbox` (2.39 = cinema bars), `duration` (s) | all positive numbers |
 | `shots[]` | `id`, `name`, `mode` (`dawn` / `studio`), `start`, `end`, `ease` (`inOut` / `linear`), `camera[]` | shots touch end to end; ≥ 2 camera keys inside the shot, in time order |
 | `shots[].rig` | KUROKO automatic camera (instead of `camera`): `type`, `subjects`, `feel`, `behaviours`, … | see `docs/CAMERA.md` section 7 |
 | `shots[].camera[]` | `t`, `pos` [x,y,z], `look` [x,y,z], `fov` (10–90) | metres, y up, ground 0 |

@@ -41,6 +41,7 @@ const E = D - endcard.duration;
 const film = {
   ...body,
   title: `${vars.en} — ${vars.sub}`.replace(/ — $/, ''),
+  format: opt('format', 'vertical'),   // Shorts / TikTok / Reels by default; --format horizontal for YouTube 16:9
   duration: D,
   shots: [...opening.shots, ...body.shots],
   titles: [...opening.titles, ...body.titles, ...endcard.titles.map((t) => ({ ...t, start: +(E + t.start).toFixed(3), end: +(E + t.end).toFixed(3) }))],

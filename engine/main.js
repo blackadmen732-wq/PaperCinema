@@ -11,7 +11,7 @@ import { paper, rng } from './paper.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/ganryujima.json')).json();
-const VERTICAL = params.get('aspect') === 'vertical';
+const VERTICAL = params.get('aspect') === 'vertical' || (film.format === 'vertical' && params.get('aspect') !== 'horizontal');
 const W = VERTICAL ? 720 : film.width, H = VERTICAL ? 1280 : film.height;
 if (VERTICAL) { film.letterbox = 0; document.body.classList.add('vertical'); }
 
