@@ -456,7 +456,14 @@ export function makeMotion(keys, opts = {}) {
     const e = typeof mt.ease === 'string' ? EASES[mt.ease] : mt.ease;
     return e ? bezier(...e) : null;
   });
-  const arcs = meta.map((mt) => mt.arc ?? 0);
+  const arcs = meta.map((mt, i) => (mt.arcTo ? 0 : mt.arc ?? 0));
+  const jumps = [];
+  meta.forEach((mt, i) => {
+    if (!mt.arc || !mt.arcTo) return;
+    let i1 = ts.findIndex((x) => Math.abs(x - mt.arcTo) < 1e-6);
+    if (i1 <= i) throw new Error(`arcTo ${mt.arcTo}: no key at that time after ${ts[i]}`);
+    jumps.push({ t0: ts[i], t1: ts[i1], i0: i, i1, h: mt.arc, hang: Math.min(0.8, mt.hang ?? 0) });
+  });
   const curves = {};
   for (const c of CHANNELS) {
     const vs = keys.map((k) => k[1][c] ?? BASE_POSE[c]);
@@ -470,6 +477,15 @@ export function makeMotion(keys, opts = {}) {
     if (t >= ts[n - 1]) return vs[n - 1];
     const i = seg(t);
     const h = ts[i + 1] - ts[i], u = (t - ts[i]) / h;
+    // "arc": h + "arcTo": t = one jump spanning several keys (poses change in the air, the flight stays one
+    // parabola). "hang": 0..0.8 slows the middle of the flight (anime hang time at the top).
+    for (const J of jumps) {
+      if (t < J.t0 || t >= J.t1 || (c !== 'x' && c !== 'z' && c !== 'y')) continue;
+      let w = (t - J.t0) / (J.t1 - J.t0);
+      w += J.hang * Math.sin(2 * Math.PI * w) / (2 * Math.PI);   // hang: slow near the apex
+      const a = curves[c].vs[J.i0], b2 = curves[c].vs[J.i1];
+      return a + (b2 - a) * w + (c === 'y' ? 4 * J.h * w * (1 - w) : 0);
+    }
     // "arc": h on a key = a jump to the next key: constant speed across the ground, parabolic height
     if (arcs[i]) {
       if (c === 'x' || c === 'z') return vs[i] + (vs[i + 1] - vs[i]) * u;
@@ -520,7 +536,7 @@ export function resolveKeys(keys, poses) {
     const full = { ...joints, x: last.x, z: last.z, ry: last.ry, y: 0, rx: 0, rz: 0 };
     for (const [key, v] of Object.entries(k)) if (key in BASE_POSE) full[key] = v;
     last = full;
-    return [k.t, full, { ease: k.ease, drag: k.drag, settle: k.settle, arc: k.arc }];
+    return [k.t, full, { ease: k.ease, drag: k.drag, settle: k.settle, arc: k.arc, arcTo: k.arcTo, hang: k.hang }];
   });
 }
 

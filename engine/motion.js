@@ -12,6 +12,7 @@
 //      spring smooths the path at 240 Hz; impacts add a punch, shake and roll.
 //   5. EFFECTS: smear ribbon behind the blade tip, sparks, one-frame ink impact frame.
 import * as THREE from 'three';
+import { paper } from './paper.js';
 import { buildWorld } from './world.js';
 import { expandMoves } from './moves.js';
 import { makeKatana } from './props.js';
@@ -60,7 +61,8 @@ for (const [id, c] of Object.entries(film.cast)) {
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
   const motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
-  cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, phase: Object.keys(cast).length * 1.7 };
+  if (c.hidden) fig.root.visible = false;               // an invisible target (e.g. the tree) the hero looks at
+  cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, hidden: !!c.hidden, phase: Object.keys(cast).length * 1.7 };
 }
 const ids = Object.keys(cast);
 const other = (id) => cast[ids.find((x) => x !== id)];
@@ -98,10 +100,76 @@ function poseAll(tb) {
 
 // ---------- 3. EVENTS: contacts, whooshes, scrapes (in body time, 240 Hz) → window.EVENTS ----------
 const hero = cast[ids[0]], foe = cast[ids[1]];
-const C = combat.analyse({ film, fighters: [hero, foe], pose: poseAll, fps: FPS, dur: DUR });
+console.log('[motion] cast ready, analysing', performance.now() | 0);
+const C = combat.analyse({ film, fighters: [hero, foe], pose: poseAll, fps: FPS, dur: DUR, armed: hero.hidden || foe.hidden ? () => false : null });
 const { contacts, stops, bodyT } = C;
 CONTACTS = contacts;
 window.EVENTS = C.events;
+
+// ---------- PROPS: cuttable paper trees (film.props.trees) ----------
+// { id, x, z, height, color, cut: { t, y, tilt, delay, dir }, split: { t } }
+//   cut: the blade passes at t; a thin glowing seam shows, then after "delay" the top slides along the cut and
+//   topples over (heavy, slow, anime timing); split: the falling top is cut again in the air and flies apart.
+const TREES = (film.props?.trees ?? []).map((tr) => makeTree(tr));
+// authored impacts: { t, intensity, at: "<tree id>" | [x,y,z], ink, sparks } → camera punch, paper chips, ink frame
+const IMPACTS = (film.impacts ?? []).map((i) => {
+  const tr = TREES.find((x) => x.tr.id === i.at);
+  const p = Array.isArray(i.at) ? i.at : tr ? tr.point().toArray() : [0, 1, 0];
+  return { intensity: 0.6, ...i, point: p };
+});
+function makeTree(tr) {
+  const P = (hex, o = {}) => paper(hex, { repeat: 4, ...o });
+  const root = new THREE.Group(); root.position.set(tr.x, 0, tr.z); scene.add(root);
+  const H = tr.height ?? 3.2, cy = tr.cut?.y ?? 1.1, trunkR = 0.16;
+  const mk = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o; };
+  const base = mk(new THREE.CylinderGeometry(trunkR * 0.95, trunkR * 1.2, cy, 6), P('#4a3426'));
+  base.position.y = cy / 2; root.add(base);
+  const top = new THREE.Group(); top.position.y = cy; root.add(top);           // pivot at the cut
+  const halves = [-1, 1].map((sgn) => { const h = new THREE.Group(); top.add(h); return h; });
+  const sc = tr.crown ?? 0.7;   // crown size
+  const tiers = [[0.5, 1.15, 0.9], [0.95, 0.95, 0.85], [1.35, 0.72, 0.75], [1.7, 0.45, 0.6]].map(([y, r, h]) => [y, r * sc, h * sc]);
+  const col = tr.color ?? '#e9a3b4';
+  halves.forEach((h, k) => {
+    const trunk = mk(new THREE.CylinderGeometry(trunkR * 0.7, trunkR * 0.95, H - cy, 6, 1, false, k * Math.PI, Math.PI), P('#4a3426'));
+    trunk.position.y = (H - cy) / 2; h.add(trunk);
+    for (const [y, r, hh] of tiers) {
+      const cone = mk(new THREE.ConeGeometry(r, hh, 9, 1, false, k * Math.PI, Math.PI), P(col, { glow: 0.08 }));
+      cone.position.y = y + (H - cy - 2.0); h.add(cone);
+    }
+  });
+  const seam = new THREE.Mesh(new THREE.TorusGeometry(trunkR * 1.02, 0.008, 4, 16), paper('#ffd9a0', { glow: 3, fog: false }));
+  seam.rotation.x = Math.PI / 2; seam.position.y = cy; seam.visible = false; root.add(seam);
+  const dir = new THREE.Vector3(...(tr.cut?.dir ?? [0, 0, 1])).normalize();     // where the top slides and falls
+  const axis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+  const tilt = ((tr.cut?.tilt ?? 10) * Math.PI) / 180;
+  return {
+    tr, root, top, halves,
+    point: () => new THREE.Vector3(tr.x, cy, tr.z),
+    update(t) {
+      top.position.set(0, cy, 0); top.quaternion.identity(); halves.forEach((h) => { h.position.set(0, 0, 0); h.rotation.set(0, 0, 0); });
+      seam.visible = false;
+      if (!tr.cut || t < tr.cut.t) return;
+      const tau = t - tr.cut.t, d = tr.cut.delay ?? 0.45;
+      seam.visible = tau < d + 0.3; seam.material.emissiveIntensity = 3 * Math.max(0, 1 - tau / (d + 0.3));
+      if (tau < d) { top.position.y = cy + 0.003 * Math.sin(tau * 120); return; }   // the cut has happened; nothing moves yet
+      const u = tau - d;
+      const slide = Math.min(0.25, 0.9 * u * u);                                      // slides along the tilted cut
+      const topple = (Math.PI / 2) * Math.min(1, Math.pow(Math.max(0, u - 0.15) / (tr.cut.fall ?? 1.6), 2));   // tips over, slowly then fast
+      top.position.addScaledVector(dir, slide).y -= Math.tan(tilt) * slide;
+      top.quaternion.setFromAxisAngle(axis, topple);
+      const ground = Math.max(0, topple - 1.1) * 0.9;                                 // the top drops as it lies down
+      top.position.y = Math.max(0.15, top.position.y - ground);
+      if (tr.split && t >= tr.split.t) {                                              // cut again in the air: halves fly apart
+        const v = t - tr.split.t;
+        halves.forEach((h, k) => {
+          const sg = k ? 1 : -1;
+          h.position.set(sg * (1.6 * v), -2.5 * v * v, 0.4 * v);
+          h.rotation.set(sg * 1.2 * v, 0, sg * 2.2 * v);
+        });
+      }
+    },
+  };
+}
 
 // ---------- 4. CAMERA: rigs aim at real joints, then a spring smooths it ----------
 const FEELS = { locked: [6, 1], dolly: [1.8, 1], crane: [0.7, 1.1], handheld: [2.5, 0.7], torpedo: [4, 0.62] };
@@ -146,15 +214,21 @@ function rigTarget(b, t, tb) {
     const off = right.multiplyScalar(wr).addScaledVector(fwd, wf).add(new THREE.Vector3(0, wu, 0)).normalize().multiplyScalar(b.offset ?? 0.4);
     return { pos: p.clone().add(off), look: ahead, fov: vfov };
   }
-  const subs = (b.subjects ?? ids).map((id) => cast[id]);
-  const center = subs.reduce((s, c) => s.add(joint(c, 'hips')), new THREE.Vector3()).multiplyScalar(1 / subs.length);
+  const subIds = b.subjects ?? ids;
+  const hipsOf = (id) => { const tr = TREES.find((x) => x.tr.id === id); return tr ? tr.root.position.clone().setY(0.95) : joint(cast[id], 'hips'); };
+  const subs = subIds.map((id) => cast[id] ?? { id });
+  const center = subIds.reduce((s, id) => s.add(hipsOf(id)), new THREE.Vector3()).multiplyScalar(1 / subIds.length);
   if (b.rig === 'orbit') {
-    const a = ((b.deg0 + (b.deg1 - b.deg0) * smooth(clamp((t - b.t) / (DUR - b.t), 0, 1))) * Math.PI) / 180;
-    const look = center.clone().setY(b.height ?? 1.1);
-    return { pos: look.clone().add(new THREE.Vector3(Math.sin(a) * b.radius, 0.15, Math.cos(a) * b.radius)), look, fov: vfov };
+    const a = ((b.deg0 + ((b.deg1 ?? b.deg0) - b.deg0) * smooth(clamp((t - b.t) / ((b.until ?? DUR) - b.t), 0, 1))) * Math.PI) / 180;
+    // follow: the look point rides with the subject (jumps), camY = camera height relative to it (negative = looking up)
+    const look = b.follow ? center.clone().add(new THREE.Vector3(0, b.lookUp ?? 0.35, 0)) : center.clone().setY(b.height ?? 1.1);
+    const camY = b.follow ? (b.camY ?? 0) : 0.15;
+    const pos = look.clone().add(new THREE.Vector3(Math.sin(a) * b.radius, camY, Math.cos(a) * b.radius));
+    pos.y = Math.max(0.12, pos.y);                                                    // never under the ground
+    return { pos, look, fov: vfov };
   }
   // frame: both fighters, seen from "angle" degrees off the side view (0 = side-on, 90 = behind the hero)
-  const axis = joint(subs[subs.length - 1], 'hips').sub(joint(subs[0], 'hips')).setY(0);
+  const axis = hipsOf(subIds[subIds.length - 1]).sub(hipsOf(subIds[0])).setY(0);
   const sep = axis.length(); axis.normalize();
   const sideDir = new THREE.Vector3().crossVectors(UP, axis).normalize();   // points to one side of the duel line
   const a = (b.angle ?? 30) * Math.PI / 180;
@@ -163,12 +237,14 @@ function rigTarget(b, t, tb) {
   const halfH = full ? 1.05 : 0.62, halfW = (sep * Math.cos(a)) / 2 + (full ? 0.6 : 0.4);
   const tv = Math.tan((vfov * Math.PI) / 360), th = tv * (W / H);
   const dist = Math.max(halfH / tv, halfW / th) * 1.05;
-  const look = center.clone().setY(full ? 1.0 : 1.4);
+  const look = center.clone().setY((full ? 1.0 : 1.4) + (b.lookUp ?? 0));
   const e = (b.elev ?? 0) * Math.PI / 180;
   const pos = look.clone().addScaledVector(dir, dist * Math.cos(e)).add(new THREE.Vector3(0, dist * Math.sin(e), 0));
+  pos.y = Math.max(0.25, pos.y);                                                     // never under the sand
   return { pos, look, fov: vfov };
 }
 // integrate the spring at 240 Hz with a 1 s pre-roll; the look point is 1.5x stiffer than the body
+console.log('[motion] analysis done, camera', performance.now() | 0);
 const camPath = [];
 {
   let pos = null, look = null, fov = 0;
@@ -199,7 +275,7 @@ function placeCamera(t) {
   const x = clamp(t * RATE, 0, camPath.length - 1), i = Math.floor(x), k = x - i, a = camPath[i], b = camPath[Math.min(i + 1, camPath.length - 1)];
   camera.position.copy(a.pos).lerp(b.pos, k);
   const look = a.look.clone().lerp(b.look, k);
-  const { fov, roll } = combat.punch(contacts, t, camera, a.fov + (b.fov - a.fov) * k);   // impact punch: fov kick, shake, roll
+  const { fov, roll } = combat.punch([...contacts, ...IMPACTS], t, camera, a.fov + (b.fov - a.fov) * k);   // impact punch: fov kick, shake, roll
   camera.fov = fov;
   camera.updateProjectionMatrix();
   camera.up.set(0, 1, 0);
@@ -208,6 +284,7 @@ function placeCamera(t) {
 }
 
 // ---------- 5. EFFECTS: smear ribbon, sparks (engine/combat.js); post FX (engine/fx.js) when the film has fxBase / fx ----------
+const SPARKS2 = combat.makeSparks(scene, camera, IMPACTS.filter((i) => i.sparks !== false));
 const RIB = combat.makeRibbons(scene, Object.values(cast), { ribbon: film.effects?.ribbon, fps: FPS, pose: poseAll, tipSpeedAt: C.tipSpeedAt });
 const ribbons = RIB.meshes;
 const SPARKS = combat.makeSparks(scene, camera, contacts);
@@ -229,14 +306,15 @@ window.renderAt = (t) => {
     for (const c of Object.values(cast)) c.fig.root.updateMatrixWorld(true);
   }
   placeCamera(t);
-  const impactFrame = combat.isImpactFrame(film, contacts, t, FPS);
+  const impactFrame = combat.isImpactFrame(film, contacts, t, FPS) || IMPACTS.some((i) => i.ink && t >= i.t && t < i.t + 1 / FPS);
   RIB.update(tb, impactFrame);
   if (inStop) { hero.fig.root.updateMatrixWorld(true); }
-  const fl = SPARKS.update(t);                              // sparks + flash light
+  for (const tr of TREES) tr.update(t);
+  const fl = Math.max(SPARKS.update(t), SPARKS2.update(t));  // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
   fadeEl.style.opacity = clamp(Math.max(1 - t / 0.6, (t - (DUR - 0.6)) / 0.6), 0, 1);
   if (impactFrame) {
-    combat.renderInkFrame(renderer, scene, camera, Object.values(cast).map((c) => c.fig.root), ribbons);
+    combat.renderInkFrame(renderer, scene, camera, [...Object.values(cast).filter((c) => !c.hidden).map((c) => c.fig.root), ...TREES.map((x) => x.root)], ribbons);
     return;
   }
   if (FX) FX.render(t, fxAt(t, FX_TRACK, film.fxBase, FPS));
@@ -256,6 +334,7 @@ window.probe = (tb) => {
 await document.fonts.ready;
 window.FILM = film;
 window.READY = true;
+console.log('[motion] ready', performance.now() | 0);
 if (!params.has('render')) {
   if (params.has('t')) window.renderAt(parseFloat(params.get('t')));
   else { const t0 = performance.now(); const loop = () => { window.renderAt(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); }; loop(); }

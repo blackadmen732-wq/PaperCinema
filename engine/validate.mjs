@@ -19,7 +19,7 @@ const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
 const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
   'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid'];
-const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc'];   // anime motion layer (docs/ANIMATION.md §10)
+const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang'];   // anime motion layer (docs/ANIMATION.md §10)
 const D = film.duration;
 // Joint limits (radians / metres): what the paper body can do without looking broken. Outside = a warning.
 // Same limits the poses in library/cuts.json were solved with (docs/ANIMATION.md §11).
@@ -100,7 +100,8 @@ if (film.camera !== undefined) {
       for (const n of b.path ?? []) if (!['eyes', 'shoulder', 'elbow', 'wrist', 'tsuba', 'tip', 'hips', 'head'].includes(n)) err(w, `unknown joint "${n}" in path (eyes, shoulder, elbow, wrist, tsuba, tip, hips, head)`);
       if (!Array.isArray(b.path) || b.path.length < 2) err(w, 'a slide needs a "path" of at least 2 joints');
     }
-    for (const n of b.subjects ?? []) if (!PERFS[n]) err(w, `subject "${n}" is not a performer`);
+    const PROPS = (film.props?.trees ?? []).map((tr) => tr.id);
+    for (const n of b.subjects ?? []) if (!PERFS[n] && !PROPS.includes(n)) err(w, `subject "${n}" is not a performer or a prop (film.props.trees ids)`);
     if (b.fov !== undefined && (!isNum(b.fov) || b.fov < 10 || b.fov > 80)) err(w, 'fov must be 10–80');
   });
 }
@@ -210,6 +211,7 @@ const ids = new Set();
   else if (ids.has(c.id)) err(w, `id "${c.id}" is used twice; each cue needs its own id`);
   ids.add(c.id);
   if (!isNum(c.t) || c.t < 0 || c.t > D) err(w, `t must be within 0–${D}s`);
+  if (c.sfx) return;                        // reuses a sound already in assets/sfx by id: no search needed
   if (!c.query) err(w, 'needs "query" search words, e.g. "sword unsheath"');
   if (!isNum(c.len) || c.len <= 0) err(w, 'len (seconds used) must be > 0');
   if (!isNum(c.min) || !isNum(c.max) || c.max <= c.min) err(w, 'min/max (milliseconds) must be numbers with max > min');

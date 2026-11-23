@@ -1,0 +1,464 @@
+{
+  "title": "Dash test: dash, cut the tree, turn, jump, aerial cut",
+  "page": "engine/motion.html",
+  "fps": 24,
+  "width": 1280,
+  "height": 720,
+  "format": "vertical",
+  "duration": 6.8,
+  "mode": "dawn",
+  "motion": {
+    "overlap": true
+  },
+  "cast": {
+    "hero": {
+      "character": "kojiro",
+      "face": "eyes"
+    },
+    "target": {
+      "character": "musashi",
+      "hidden": true
+    }
+  },
+  "props": {
+    "trees": [
+      {
+        "id": "sakura",
+        "x": -0.55,
+        "z": 0.8,
+        "height": 3.2,
+        "color": "#e9a3b4",
+        "cut": {
+          "t": 1.56,
+          "y": 1.1,
+          "tilt": 12,
+          "delay": 0.45,
+          "dir": [
+            -1,
+            0,
+            0.25
+          ],
+          "fall": 1.6
+        },
+        "split": {
+          "t": 3.58
+        },
+        "crown": 0.6
+      }
+    ]
+  },
+  "performances": {
+    "hero": {
+      "twoHand": [
+        [
+          0,
+          5.25
+        ]
+      ],
+      "eyes": [
+        [
+          0,
+          1.0
+        ],
+        [
+          1.0,
+          1.4
+        ],
+        [
+          1.2,
+          2.2
+        ],
+        [
+          1.55,
+          3.5
+        ],
+        [
+          1.7,
+          1.6
+        ],
+        [
+          2.9,
+          2.2
+        ],
+        [
+          3.56,
+          3.5
+        ],
+        [
+          3.8,
+          1.6
+        ],
+        [
+          6.8,
+          1.2
+        ]
+      ],
+      "blinks": [
+        0.5,
+        4.6
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "calm-low",
+          "x": 0,
+          "z": -4.0,
+          "ry": 0,
+          "note": "calm before the storm"
+        },
+        {
+          "t": 1.0,
+          "pose": "calm-low"
+        },
+        {
+          "t": 1.25,
+          "pose": "drive-load",
+          "z": -4.1,
+          "crouch": 0.38,
+          "ease": "antic",
+          "note": "sink: anticipation"
+        },
+        {
+          "t": 1.42,
+          "pose": "waki-right",
+          "z": -2.2,
+          "ease": "in",
+          "note": "dash: accelerates out of the sink"
+        },
+        {
+          "t": 1.56,
+          "pose": "yoko-contact",
+          "z": 0.75,
+          "ease": "snap",
+          "drag": 0,
+          "note": "cut the tree while passing"
+        },
+        {
+          "t": 1.72,
+          "pose": "yoko-finish",
+          "z": 1.9,
+          "settle": true,
+          "note": "skid"
+        },
+        {
+          "t": 1.9,
+          "pose": "yoko-finish",
+          "z": 2.3,
+          "crouch": 0.3
+        },
+        {
+          "t": 2.05,
+          "pose": "chudan",
+          "z": 2.4,
+          "ry": 0
+        },
+        {
+          "t": 2.4,
+          "pose": "chudan",
+          "z": 2.45,
+          "ry": 3.14159,
+          "ease": "out",
+          "settle": true,
+          "note": "turn around: head leads, body follows"
+        },
+        {
+          "t": 2.95,
+          "pose": "crouch-load",
+          "z": 2.45,
+          "ry": 3.14159,
+          "ease": "antic",
+          "note": "jump anticipation"
+        },
+        {
+          "t": 3.12,
+          "pose": "airborne-guard",
+          "z": 2.3,
+          "drag": 0,
+          "arc": 1.5,
+          "arcTo": 3.95,
+          "hang": 0.6,
+          "note": "take off: one parabola, hang time at the top"
+        },
+        {
+          "t": 3.35,
+          "pose": "furikaburi",
+          "z": 1.6,
+          "x": -0.4
+        },
+        {
+          "t": 3.58,
+          "pose": "kiri-oroshi-contact",
+          "z": 1.1,
+          "ease": "snap",
+          "drag": 0,
+          "note": "aerial cut through the falling top",
+          "x": -0.8
+        },
+        {
+          "t": 3.95,
+          "pose": "land-guard",
+          "z": 0.9,
+          "drag": 0,
+          "crouch": 0.36,
+          "note": "land: absorb",
+          "x": -1.0
+        },
+        {
+          "t": 4.3,
+          "pose": "kiri-oroshi-finish",
+          "z": 1.3,
+          "settle": true
+        },
+        {
+          "t": 5.3,
+          "move": "chiburi"
+        },
+        {
+          "t": 6.9,
+          "pose": "chiburi-finish"
+        }
+      ]
+    },
+    "target": {
+      "keys": [
+        {
+          "t": 0,
+          "pose": "neutral",
+          "x": -0.55,
+          "z": 0.8,
+          "ry": 0
+        },
+        {
+          "t": 6.9,
+          "pose": "neutral"
+        }
+      ]
+    }
+  },
+  "camera": [
+    {
+      "t": 0,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "sakura"
+      ],
+      "size": "full",
+      "angle": -68,
+      "elev": 2,
+      "fov": 36,
+      "feel": "crane",
+      "note": "low wide: hero far, tree near"
+    },
+    {
+      "t": 1.05,
+      "rig": "orbit",
+      "subjects": [
+        "hero"
+      ],
+      "follow": true,
+      "radius": 3.4,
+      "deg0": 90,
+      "until": 1.8,
+      "lookUp": 0.25,
+      "camY": -0.2,
+      "fov": 40,
+      "feel": "torpedo",
+      "note": "side track: the camera races with the dash"
+    },
+    {
+      "t": 1.8,
+      "rig": "orbit",
+      "subjects": [
+        "hero"
+      ],
+      "follow": true,
+      "radius": 2.5,
+      "deg0": 90,
+      "deg1": 195,
+      "until": 2.6,
+      "lookUp": 0.35,
+      "camY": 0.05,
+      "fov": 36,
+      "feel": "dolly",
+      "note": "orbit through the skid and the turn"
+    },
+    {
+      "t": 2.6,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "sakura"
+      ],
+      "size": "full",
+      "angle": 25,
+      "elev": 4,
+      "fov": 36,
+      "feel": "dolly",
+      "note": "over his shoulder: the top slides off"
+    },
+    {
+      "t": 3.0,
+      "rig": "orbit",
+      "subjects": [
+        "hero"
+      ],
+      "follow": true,
+      "radius": 3.6,
+      "deg0": 150,
+      "deg1": 210,
+      "until": 4.0,
+      "lookUp": 0.2,
+      "camY": -1.0,
+      "fov": 42,
+      "feel": "torpedo",
+      "note": "low angle, looking up as he flies"
+    },
+    {
+      "t": 3.95,
+      "rig": "frame",
+      "subjects": [
+        "hero",
+        "sakura"
+      ],
+      "size": "full",
+      "angle": 40,
+      "elev": -4,
+      "fov": 36,
+      "feel": "handheld",
+      "note": "landing"
+    },
+    {
+      "t": 4.6,
+      "rig": "orbit",
+      "subjects": [
+        "hero"
+      ],
+      "follow": true,
+      "radius": 3.0,
+      "deg0": 200,
+      "deg1": 290,
+      "lookUp": 0.35,
+      "camY": 0.1,
+      "fov": 34,
+      "feel": "crane",
+      "note": "zanshin orbit"
+    }
+  ],
+  "impacts": [
+    {
+      "t": 1.56,
+      "at": "sakura",
+      "intensity": 0.5
+    },
+    {
+      "t": 3.58,
+      "at": [
+        -1.3,
+        1.5,
+        1.0
+      ],
+      "intensity": 1,
+      "ink": true
+    },
+    {
+      "t": 3.95,
+      "at": [
+        -1.0,
+        0.05,
+        0.9
+      ],
+      "intensity": 0.7,
+      "sparks": false
+    }
+  ],
+  "effects": {
+    "ribbon": {
+      "minSpeed": 5,
+      "frames": 3
+    },
+    "impactFrame": false
+  },
+  "fxBase": {
+    "grade": "dawn",
+    "bloom": {
+      "strength": 0.35,
+      "radius": 0.4,
+      "threshold": 0.9
+    },
+    "vignette": {
+      "amount": 0.45
+    },
+    "grain": {
+      "amount": 0.04
+    }
+  },
+  "sounds": [
+    {
+      "id": "wind-bed",
+      "query": "wind ambience",
+      "t": 0,
+      "len": 6.8,
+      "gain": 0.35,
+      "min": 8,
+      "max": 300,
+      "bed": true
+    },
+    {
+      "id": "cut-tree",
+      "sfx": "clap",
+      "t": 1.56,
+      "len": 0.6,
+      "gain": 0.9,
+      "rate": 0.75
+    },
+    {
+      "id": "cut-tree-shing",
+      "sfx": "draw-shing",
+      "t": 1.57,
+      "len": 1.2,
+      "gain": 0.5
+    },
+    {
+      "id": "tree-crack",
+      "sfx": "clap",
+      "t": 2.01,
+      "len": 0.5,
+      "gain": 0.6,
+      "rate": 0.55
+    },
+    {
+      "id": "air-cut",
+      "sfx": "clash-light",
+      "t": 3.58,
+      "len": 0.6,
+      "gain": 0.6,
+      "rate": 0.8
+    },
+    {
+      "id": "land",
+      "sfx": "fall",
+      "t": 3.95,
+      "len": 0.8,
+      "gain": 1.6
+    },
+    {
+      "id": "tree-down",
+      "sfx": "impact",
+      "t": 3.85,
+      "len": 1.0,
+      "gain": 0.7
+    }
+  ],
+  "autoSounds": {
+    "whoosh": {
+      "sfx": [
+        "whoosh-a",
+        "whoosh-b",
+        "whoosh-c"
+      ],
+      "on": 9,
+      "rearm": 6
+    }
+  }
+}
