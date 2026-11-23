@@ -280,14 +280,14 @@
   "cameras": {
     "CAM_wide": {
       "pos": [
-        0.4,
-        -6.0,
-        1.4
+        -2.0,
+        -4.6,
+        1.35
       ],
       "look": [
-        0,
-        10,
-        4.5
+        0.6,
+        9,
+        4.2
       ],
       "lens": 22,
       "note": "down the path into the light; culms frame both sides"

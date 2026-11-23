@@ -6,7 +6,7 @@ fights. Guide: docs/CHARACTER-BLENDER.md.
   nice -n 10 $B -b -t 2 -P blender/character/rig_trellis.py -- --model ronin_base --pose jodan --out output/character/rig-jodan.png
   # one moment of a film (needs output/<film>.motion.json from tools/export_motion.mjs)
   nice -n 10 $B -b -t 2 -P blender/character/rig_trellis.py -- --motion output/dash-test.motion.json --t 1.11 --out output/character/rig-cut.png
-  options: --mode panels|cloak|heat|rigid (how the mesh follows the bones) · --view front|q|side|back · --save file.blend
+  options: --mode heat|panels|cloak|rigid (how the mesh follows the bones; heat is the default) · --view front|q|side|back · --save file.blend
 
 From another Blender script:
   import sys; sys.path.insert(0, 'blender/character'); import rig_trellis as rt
@@ -24,11 +24,14 @@ How it works
     is exact; legs are two-bone IK to the engine's foot placement, scaled to this model's shorter legs.
   * Axis conversion three.js → Blender: position (x, y, z) → (x, -z, y); quaternion (x, y, z, w) → (w, x, -z, y)
     (the same thing as Euler (rx, ry, rz) → (rx, -rz, ry) in mode 'YZX').
-  * Skin, mode "cloak" (default): TRELLIS gives one fused shell (robe + sleeves + folded arms are one surface), so the
-    mesh is skinned by region with our own smooth weights: the upper shell follows chest and arms like a cloak, the
-    hanging sleeve ends follow two sleeve bones that stay near vertical and swing late, the skirt follows the legs like
-    hakama. "heat" = Blender's automatic weights (kept for comparison), "rigid" = one bone per vertex (hard origami
-    panels; faces that span two panels are removed, which opens gaps).
+  * Skin. TRELLIS gives ONE fused shell (robe + sleeves + folded arms are a single surface; there is no body under
+    it), so the robe is skinned as cloth. Four ways were tried on stills (output/character/rig/attempts-sheet.png):
+      "heat"   (default) weld the ~370 loose patches, Blender's automatic bone-heat weights, then a scripted cleanup
+               (rigid head + kasa, 4 bones per vertex). The robe drapes from the arms as one cloth. Cleanest.
+      "panels" the shell is knife-cut along the collar V, between the hands and under the sleeves; our own region
+               weights; an under-robe core glows in the gaps. More origami, but the cut edges look torn.
+      "cloak"  our own smooth region weights with no cuts (also the fallback when bone heat fails on a mesh).
+      "rigid"  one bone per vertex (hard panels; the faces between panels are removed, so it opens holes).
 """
 import json
 import math
@@ -482,7 +485,35 @@ def make_fists(rig, spec, P):
     return out
 
 
-def skin(mesh, rig, spec, P, mode='panels'):
+def _clean_heat(mesh, spec):
+    """Weight cleanup after bone heat (the "manual" pass, written down so it repeats on every model):
+    the kasa and the head are one rigid folded piece (head bone only), the collar blends over a short band,
+    and every vertex keeps its 4 strongest bones."""
+    k, chin = spec['k'], spec['chin']
+    vg = {g.name: g for g in mesh.vertex_groups}
+    if 'head' not in vg:
+        vg['head'] = mesh.vertex_groups.new(name='head')
+    hi = vg['head'].index
+    for v in mesh.data.vertices:
+        z, ax = v.co.z, abs(v.co.x)
+        t = min(1.0, max(0.0, (z - (chin + 0.01 * k)) / (0.07 * k)))
+        if z < chin + 0.10 * k and ax > 0.19 * k:           # the collar wings beside the neck stay with the robe
+            t = 0.0
+        if t <= 0:
+            continue
+        t = t * t * (3 - 2 * t)
+        for g in v.groups:
+            if g.group != hi:
+                g.weight *= (1 - t)
+        vg['head'].add([v.index], max(t, next((g.weight for g in v.groups if g.group == hi), 0.0)), 'REPLACE')
+    bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.view_layer.objects.active = mesh
+    mesh.select_set(True)
+    bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
+    bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
+
+
+def skin(mesh, rig, spec, P, mode='heat'):
     bpy.ops.object.select_all(action='DESELECT')
     if mode == 'heat':
         # Blender's automatic (bone heat) weights; the mesh is welded first because TRELLIS exports ~370 loose patches
@@ -500,10 +531,15 @@ def skin(mesh, rig, spec, P, mode='panels'):
         except Exception as e:                              # noqa: BLE001
             print('[rig_trellis] bone heat failed:', e)
             ok = False
-        if not ok:
-            print('[rig_trellis] bone heat gave no weights; falling back to envelope weights')
-            bpy.ops.object.parent_set(type='ARMATURE_ENVELOPE')
-        return
+        if ok:
+            _clean_heat(mesh, spec)
+            return 'heat'
+        print('[rig_trellis] bone heat gave no weights: using our own cloak weights instead')
+        mesh.parent = None
+        for md in list(mesh.modifiers):
+            mesh.modifiers.remove(md)
+        mesh.vertex_groups.clear()
+        mode = 'cloak'
     labels = cut_panels(mesh, spec) if mode == 'panels' else None
     W = cloak_weights(mesh, spec, P, labels, power=6 if mode == 'panels' else 4)
     if mode == 'rigid':
@@ -531,6 +567,7 @@ def skin(mesh, rig, spec, P, mode='panels'):
     mesh.parent = rig
     md = mesh.modifiers.new('Armature', 'ARMATURE')
     md.object = rig
+    return mode
 
 
 # ----------------------------------------------------------------------------------------------- props: katana, feet
@@ -670,12 +707,12 @@ def make_feet(rig, spec, P):
 
 
 # ----------------------------------------------------------------------------------------------- the character
-def build_character(model='ronin_base', mode='panels', height=None, name=None, demonic=False, glow=1.6, katana=True):
+def build_character(model='ronin_base', mode='heat', height=None, name=None, demonic=False, glow=1.6, katana=True):
     spec = model_spec(model, height)
     mesh = import_trellis(model, spec)
     mat = paper_material(mesh, glow=glow, demonic=demonic)
     rig, rest, P = build_armature(spec, name=(name or 'RIG_' + model))
-    skin(mesh, rig, spec, P, mode)
+    mode = skin(mesh, rig, spec, P, mode)
     feet = make_feet(rig, spec, P)
     core = make_core(rig, spec) if mode in ('panels', 'rigid') else None
     fists = make_fists(rig, spec, P) if katana else []
@@ -1061,7 +1098,7 @@ def _main():
     arg = lambda n, d=None: argv[argv.index('--' + n) + 1] if '--' + n in argv else d
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
-    ch = build_character(arg('model', 'ronin_base'), mode=arg('mode', 'panels'), demonic='--demonic' in argv)
+    ch = build_character(arg('model', 'ronin_base'), mode=arg('mode', 'heat'), demonic='--demonic' in argv)
     centre = Vector((0, 0, 0.95))
     if arg('motion'):
         mo = load_motion(arg('motion'))

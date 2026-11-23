@@ -76,10 +76,14 @@ python3 blender/sets/kit.py            # list every kit piece and its parameters
 }
 ```
 
+(The `//` comments are explanations only; real JSON files have none.)
+
 Rules of thumb:
 - Units are metres, Z up. Every piece is built in its own frame with its **front facing -Y**; `rot` (degrees about Z)
   turns it: `rot: 90` faces +X, `-90` faces -X, `180` faces +Y. `pos` is its origin (base centre).
 - `seed` per piece re-rolls only that piece; the set `seed` re-rolls all. Same seeds = identical set.
+- Marks are snapped onto the surface below them (terrain, floor, sand; fog, particles and foliage ignored),
+  searching from `snap_reach` (2.5 m) above the mark so roofs over an interior never catch them. `"snap_marks": false` turns it off.
 - Scatter pieces (bamboo, rocks) keep `clear` metres free around `MARK_hero`, `MARK_foe`, `MARK_center`.
 - Materials are keys (below); `"materials": {"key": {kwarg: value}}` overrides a recipe for the whole set, and
   `"stone#2"` makes a second copy of a recipe with its own overrides.
@@ -172,11 +176,38 @@ the brightest of the three at night. Compositor: bloom (glare) and a soft vignet
 Cycles CPU, OpenImageDenoise, adaptive sampling, light tree, volume step rate 2–4, 6 bounces (volume 0: single
 scattering is enough for shafts). Container with 4 shared CPUs, `nice -n 15`, `-t 2`.
 
-RENDER_TIMES_TABLE
+Measured 2026-11-23. "Quick" = `--quick` (270×480, 12 spp) on a lightly loaded machine; "Final" = 540×960,
+24 spp, while another agent was also rendering (load 11–15 on 4 CPUs), so expect them faster on a quiet machine.
+All include the two origami samurai.
+
+| Set | Build (s) | Faces | Quick still | Final still (540×960, 24 spp) |
+|---|---|---|---|---|
+| `castle-skyline-2d5` (2.5D) | 0.4 | 7 k | 7.6 s | CAM_wide 112 s, CAM_medium 116 s |
+| `castle-courtyard` (full 3D, fog) | 35–55 (the keep's tiled roofs: 30–50) | 237 k | 14–15 s | CAM_wide 204 s, CAM_medium 281 s |
+| `dojo-interior` (fog, sun shafts) | 1.8 | 14 k | 20–21 s | CAM_wide DOJO_FINAL |
+| `bamboo-forest` (mist, 520 culms, 1.2 M faces) | 5–6 | 1.2 M | 16–34 s | CAM_wide BAMBOO_FINAL |
+| `ganryujima-beach` (ocean) | 0.5 | 21 k | 10 s | CAM_medium 124 s |
+
+2.5D versus full 3D at the same framing and size: about half the render time (112 s vs 204 s for CAM_wide under
+the same load) and 0.4 s vs 35–55 s to build, with 3 % of the faces.
 
 A 1080×1920 frame costs about 4× the 540×960 time. Fog volumes are the main cost; `--no-fog` for layout checks.
 The 2.5D cards cost almost nothing: the `castle-skyline-2d5` skyline is cheaper than the courtyard's keep alone.
 
 ## 7. Known weaknesses
 
-KNOWN_WEAKNESSES
+- **Characters**: the origami samurai (`blender/character/origami_samurai.py`) is still a set of crude boxes and
+  frustums; it is now matte paper with a soft inner glow (`fighter.lamp_scale`, `seam_glow`, `inner_glow`), but it
+  does not yet have the crisp folded facets of `research/ref-origami-samurai-standing.jpg`. It is the weakest
+  element in every still.
+- Castle: the wide shot has too much empty gravel in the lower third (dress it: a lantern or rocks near the camera,
+  raked gravel lines); pine pads read as dark blobs at night; roof tile relief only reads in close shots; the keep
+  takes 30–50 s to build (Python bmesh, not instanced).
+- Bamboo: the canopy is dense now but the low backlit sun gives soft mist rather than crisp god rays; add `light`
+  SPOT pieces in the mist for hero shafts. 1.2 M faces: the heaviest set to load.
+- Dojo: volumetric shafts are faint (the floor stripes carry the effect); fog density 0.05+ shows beams but greys
+  the room.
+- Ganryujima: the v1 torn-paper foam strips at the waterline still look like white flakes in low shots.
+- 2.5D cards are flat colour with a fibre bump; image layers (`shape: image`) are supported but no images are
+  committed yet. Particles (embers, petals, dust) are pre-rolled per render; they move when you render later frames.
+- Everything is CPU Cycles: a 1080×1920 frame is about 4× the times above. Films belong on a GPU (BLENDER-PLAN §I).

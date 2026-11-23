@@ -1,0 +1,289 @@
+{
+ "about": "Blender camera moves for blender/film_blender.py (guide: docs/CHARACTER-BLENDER.md). Every move is an arc around the hero: az = degrees around him (0 = in front of him, 90 = his left, 180 = behind), dist = metres, height = lens height, look = height of the point the lens aims at, fov = vertical degrees. A pair [a, b] moves from a to b over the beat. basis: hero0 = his facing when the beat starts, hero = follows his facing, world = fixed. breathe = the lens moves in with the blade's speed (0.3 = up to 30% closer). lead = aims ahead of his travel.",
+ "moves": {
+  "circle": {
+   "az": [
+    20,
+    380
+   ],
+   "dist": 3.4,
+   "height": [
+    0.5,
+    1.9
+   ],
+   "look": 1.05,
+   "fov": 38,
+   "ease": "linear",
+   "note": "a full circle that rises: for slow motion and for the stillness after a kill"
+  },
+  "half-circle": {
+   "az": [
+    150,
+    -10
+   ],
+   "dist": [
+    3.6,
+    2.6
+   ],
+   "height": [
+    0.45,
+    1.5
+   ],
+   "look": 1.05,
+   "fov": 36,
+   "ease": "inout",
+   "note": "from behind him to his front while the action is slow: the cut happens as the lens arrives"
+  },
+  "come-back": {
+   "az": [
+    14,
+    24
+   ],
+   "dist": [
+    1.5,
+    5.6
+   ],
+   "height": [
+    1.05,
+    1.5
+   ],
+   "look": 1.0,
+   "fov": [
+    42,
+    30
+   ],
+   "ease": "out",
+   "note": "coming back: starts on the face or the blade, pulls away fast, then settles wide (after an impact)"
+  },
+  "go-front": {
+   "az": [
+    120,
+    8
+   ],
+   "dist": [
+    4.6,
+    2.0
+   ],
+   "height": [
+    1.3,
+    0.9
+   ],
+   "look": 1.1,
+   "fov": [
+    32,
+    40
+   ],
+   "ease": "inout",
+   "note": "going front: swings from his side to straight in front and closes in (before the strike)"
+  },
+  "push-pull": {
+   "az": [
+    28,
+    20
+   ],
+   "dist": 3.6,
+   "height": 0.9,
+   "look": 1.05,
+   "fov": 36,
+   "breathe": 0.35,
+   "note": "the lens breathes with the blade: in on every cut, back out as it settles"
+  },
+  "low-hero": {
+   "az": [
+    36,
+    22
+   ],
+   "dist": [
+    3.3,
+    2.3
+   ],
+   "height": 0.16,
+   "look": 1.2,
+   "fov": 30,
+   "follow_y": 0.2,
+   "note": "low angle, slow push-in: the reference videos' hero shot"
+  },
+  "high-crane": {
+   "az": [
+    30,
+    62
+   ],
+   "dist": [
+    3.0,
+    4.6
+   ],
+   "height": [
+    1.6,
+    5.6
+   ],
+   "look": 0.85,
+   "fov": 36,
+   "ease": "out",
+   "follow_y": 0.0,
+   "note": "cranes up and away: landing, aftermath, loneliness"
+  },
+  "top-down": {
+   "az": 0,
+   "dist": 0.35,
+   "height": [
+    6.0,
+    7.5
+   ],
+   "look": 0.2,
+   "fov": 38,
+   "follow_y": 0.0,
+   "follow_look": 0.0,
+   "roll": [
+    0,
+    25
+   ],
+   "note": "straight down, slowly rolling: the cut as a line drawn on the ground"
+  },
+  "side-track": {
+   "az": 90,
+   "dist": 4.4,
+   "height": 0.5,
+   "look": 0.95,
+   "fov": 40,
+   "lead": 0.6,
+   "smooth": 2,
+   "basis": "hero0",
+   "note": "knee-height profile, racing with a dash; aims ahead of him"
+  },
+  "over-shoulder": {
+   "az": [
+    162,
+    150
+   ],
+   "dist": [
+    1.5,
+    1.25
+   ],
+   "height": 1.42,
+   "look": 1.2,
+   "fov": 46,
+   "note": "behind his shoulder: what he sees, the target small ahead"
+  },
+  "blade-close": {
+   "az": [
+    64,
+    50
+   ],
+   "dist": 1.25,
+   "height": 0.95,
+   "look": 1.02,
+   "fov": 50,
+   "breathe": 0.2,
+   "note": "close on the hands and the steel"
+  },
+  "jump-under": {
+   "az": [
+    70,
+    150
+   ],
+   "dist": [
+    2.6,
+    2.0
+   ],
+   "height": [
+    0.12,
+    0.3
+   ],
+   "look": 1.3,
+   "fov": 34,
+   "follow_y": 0.0,
+   "follow_look": 1.0,
+   "note": "from under a jump, turning: he passes over the lens"
+  }
+ },
+ "plans": {
+  "dash-test": [
+   {
+    "t": 0.0,
+    "move": "low-hero",
+    "cut": true,
+    "note": "calm before the storm: low push-in"
+   },
+   {
+    "t": 0.72,
+    "move": "side-track",
+    "cut": true,
+    "note": "the dash: knee-height profile racing with him"
+   },
+   {
+    "t": 1.06,
+    "move": "half-circle",
+    "az": [
+     95,
+     5
+    ],
+    "dist": [
+     4.0,
+     2.5
+    ],
+    "cut": false,
+    "until": 1.83,
+    "note": "time slows on the cut: the lens goes front"
+   },
+   {
+    "t": 1.83,
+    "move": "come-back",
+    "cut": true,
+    "note": "skid: coming back, the falling tree behind him"
+   },
+   {
+    "t": 2.29,
+    "move": "over-shoulder",
+    "basis": "hero",
+    "cut": true,
+    "note": "the look over the shoulder"
+   },
+   {
+    "t": 3.18,
+    "move": "low-hero",
+    "az": [
+     70,
+     55
+    ],
+    "dist": [
+     3.4,
+     3.0
+    ],
+    "cut": true,
+    "note": "squash and take-off from the ground"
+   },
+   {
+    "t": 3.72,
+    "move": "circle",
+    "az": [
+     150,
+     330
+    ],
+    "dist": [
+     3.0,
+     2.5
+    ],
+    "height": [
+     0.3,
+     2.6
+    ],
+    "follow_y": 0.6,
+    "cut": false,
+    "until": 4.72,
+    "note": "slow motion: circling under and over the aerial cut"
+   },
+   {
+    "t": 4.72,
+    "move": "high-crane",
+    "cut": true,
+    "note": "landing: crane up"
+   },
+   {
+    "t": 5.6,
+    "move": "push-pull",
+    "cut": false,
+    "note": "zanshin and chiburi: the lens breathes with the blade"
+   }
+  ]
+ }
+}
