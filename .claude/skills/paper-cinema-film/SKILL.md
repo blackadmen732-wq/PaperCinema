@@ -6,7 +6,7 @@ description: Make or change a Lantern Origami sword-duel film in this repo (Pape
 # Making a Paper Cinema film
 
 Everything in a film is **data** in `film/<name>.json`. You direct it by editing JSON, then the engine renders.
-Read `AGENTS.md` once per session; this skill is the working procedure.
+Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this skill is the working procedure.
 
 ## Procedure (do every step, in order)
 
@@ -53,6 +53,8 @@ Read `AGENTS.md` once per session; this skill is the working procedure.
 - Never start a paid GPU without the owner's explicit yes and a cost estimate (rule 1 in `AGENTS.md`).
 
 ## When something is missing
+- **Where does X live?** `SYSTEMS.md` (or `systems.json`).
+- **Cut wounds / paint stains:** `docs/SHIMI.md` (SHIMI presets and the frame-by-frame slash sequence).
 - **A new pose:** add it to `library/poses.json`, then check it in the pose gallery.
 - **A new location:** sets are still code in `engine/world.js`. Build one there, or ask the owner.
 - **Realistic (Blender) renders:** follow `docs/BLENDER-PLAN.md`. Its scripts are not built yet (milestone M1 onward).

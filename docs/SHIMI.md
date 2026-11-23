@@ -36,6 +36,28 @@ Paper answers in a fixed order: **light → fibre → liquid → shape.**
 
 **Guardrails:** opaque, bright, slightly thick paint. No pulsing rhythm (it reads as a heartbeat). Always show paper layers in the gap.
 
+## 1b. Presets (call by name: `python3 engine/shimi.py --preset <name> --out output/shimi/<name>`)
+| Preset | Fight event | Ready for |
+|---|---|---|
+| `kesa-cut` | Diagonal cut on a standing body | Mid and wide shots |
+| `heavy-drip` | Deep cut, paint runs down in drips with beads | Mid shots |
+| `x-cut` | Two crossing cuts | Mid shots |
+| `tsuki-stab` | Thrust: a point wound with a halo and drips | Mid shots (after the review fixes) |
+| `table-flat` | Paper lying flat, no gravity | Wide shots |
+| `ink-wound` | Black sumi ink (cursed blade) | Mid and wide shots |
+| `graze` | A light graze, short welling | Wide shots |
+
+Options: `--cut "x0,y0,x1,y1;…"`, `--stab "x,y,r;…"`, `--gravity`, `--bleed`, `--drips`, `--paint vermilion|crimson|ink`, `--seed`, `--size`.
+
+**Review** (Fable, first gallery): about 6/10 on a phone, 4.5/10 against real paint on washi. Fixed after the review:
+- pigment lags the water (damp halo)
+- ragged cut edges, unblurred fibres, visible fibre texture
+- pigment saturation (no black cores) and clamped overlapping cuts
+- fat, straight drips ending in beads
+- a ragged stab, and a short graze
+
+Still to do before macro close-ups: two water layers, √t wicking, edge-driven evaporation (proper tide lines), granulation, 1024² with every constant scaled to the resolution, and a side-by-side check against photos of real paint on washi.
+
 ## 2. SHIMI upgrades (ranked by payoff per effort)
 1. ✅ **Data maps:** `wet_*`, `pigment_*`, `everwet_*` (16-bit) are exported next to the colour frames.
 2. ✅ **No wrap-around:** stains no longer re-enter from the opposite border.

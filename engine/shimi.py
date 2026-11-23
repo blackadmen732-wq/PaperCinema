@@ -25,13 +25,30 @@ ap.add_argument('--out', default='output/shimi/demo')
 ap.add_argument('--size', type=int, default=512)
 ap.add_argument('--frames', type=int, default=72)
 ap.add_argument('--steps', type=int, default=8, help='simulation steps per frame')
-ap.add_argument('--cut', default='0.15,0.22,0.85,0.72', help='cut line x0,y0,x1,y1 in 0..1 (y down)')
+ap.add_argument('--cut', default='0.15,0.22,0.85,0.72', help='cut line(s) x0,y0,x1,y1 in 0..1 (y down); several cuts: separate with ;')
+ap.add_argument('--stab', default='', help='stab wound(s) x,y,radius in 0..1; several: separate with ;')
+ap.add_argument('--preset', default='', help='named scenario from PRESETS below (overrides cut/stab/gravity/bleed/paint)')
 ap.add_argument('--paper', default='#e4d8bf')
 ap.add_argument('--paint', default='vermilion', help='vermilion | crimson | ink')
 ap.add_argument('--gravity', type=float, default=0.35, help='0 = flat on a table, 0.35 = standing paper')
 ap.add_argument('--seed', type=int, default=7)
 ap.add_argument('--bleed', type=float, default=1.0, help='how much paint wells out of the cut')
+ap.add_argument('--drips', type=int, default=3, help='number of beads that get heavy and run down as separate drips')
 a = ap.parse_args()
+
+# Named scenarios: what a fight event produces on the paper. Any AI can call these by name.
+PRESETS = {
+    'kesa-cut':     dict(cut='0.15,0.22,0.85,0.72', stab='', gravity=0.35, bleed=1.0, paint='vermilion'),  # diagonal cut, standing body
+    'heavy-drip':   dict(cut='0.2,0.3,0.8,0.36', stab='', gravity=0.45, bleed=1.1, paint='vermilion', drips=9),  # lots of paint: beads run down as drips
+    'x-cut':        dict(cut='0.2,0.2,0.8,0.75;0.8,0.2,0.2,0.75', stab='', gravity=0.35, bleed=0.9, paint='crimson'),
+    'tsuki-stab':   dict(cut='', stab='0.5,0.4,0.025', gravity=0.5, bleed=1.0, paint='vermilion', drips=2),           # thrust: point wound
+    'table-flat':   dict(cut='0.15,0.5,0.85,0.5', stab='', gravity=0.0, bleed=1.0, paint='vermilion', drips=0),   # paper lying flat: spreads evenly
+    'ink-wound':    dict(cut='0.25,0.25,0.75,0.75', stab='', gravity=0.3, bleed=1.0, paint='ink'),        # black sumi ink (cursed blade)
+    'graze':        dict(cut='0.1,0.6,0.9,0.52', stab='', gravity=0.25, bleed=0.25, paint='vermilion', drips=0),   # light graze: thin line, little bleed
+}
+if a.preset:
+    for k, v in PRESETS[a.preset].items():
+        setattr(a, k, v)
 
 rng = np.random.default_rng(a.seed)
 N = a.size
@@ -58,27 +75,49 @@ for _ in range(int(N * N / 90)):
     xs = (x + np.cos(ang) * np.arange(L)).astype(int) % N
     ys = (y + np.sin(ang) * np.arange(L)).astype(int) % N
     fib[ys, xs] += rng.uniform(0.6, 1.0)
-fib = np.clip(blur(fib, 1), 0, None)
+fib = np.clip(fib, 0, None)   # not blurred: fibre-scale detail makes hairy edges
 fib = fib / (fib.max() + 1e-6)
 perm = 0.35 + 0.65 * np.clip(fib * 1.6 + blur(rng.random((N, N)), 6) * 0.4, 0, 1)   # permeability
 sizing = blur(rng.random((N, N)), 3)                                               # resists wetting (pinning)
 pin = 0.0004 + 0.009 * (sizing > np.percentile(sizing, 55))
 
-# ------------------------------------------------------------------ paint source: along the cut
-x0, y0, x1, y1 = [float(v) * N for v in a.cut.split(',')]
+# ------------------------------------------------------------------ paint sources: cuts (lines) and stabs (points)
 yy, xx = np.mgrid[0:N, 0:N].astype(np.float32)
-dx, dy = x1 - x0, y1 - y0
-Lc = math.hypot(dx, dy)
-u = ((xx - x0) * dx + (yy - y0) * dy) / (Lc * Lc)
-dist = np.abs((xx - x0) * dy - (yy - y0) * dx) / Lc
-on_cut = (u > 0) & (u < 1)
-# the wound opens unevenly: more paint where the cut is deepest (middle)
-depth = np.maximum(np.sin(np.clip(u, 0, 1) * math.pi), 0) ** 0.7 * (0.6 + 0.8 * blur(rng.random((N, N)), 10))
-source = np.where(on_cut, np.exp(-(dist / 2.2) ** 2) * depth, 0.0).astype(np.float32)
+source = np.zeros((N, N), np.float32)
+for seg in [c for c in a.cut.split(';') if c.strip()]:
+    x0, y0, x1, y1 = [float(v) * N for v in seg.split(',')]
+    dx, dy = x1 - x0, y1 - y0
+    Lc = math.hypot(dx, dy)
+    u = ((xx - x0) * dx + (yy - y0) * dy) / (Lc * Lc)
+    dist = np.abs((xx - x0) * dy - (yy - y0) * dx) / Lc
+    dist = np.abs(dist + blur(rng.standard_normal((N, N)), max(2, N // 64)) * N * 0.004)   # ragged, not a ruler line
+    on_cut = (u > 0) & (u < 1)
+    # the wound opens unevenly: more paint where the cut is deepest (middle)
+    depth = np.maximum(np.sin(np.clip(u, 0, 1) * math.pi), 0) ** 0.7 * (0.6 + 0.8 * blur(rng.random((N, N)), 10))
+    width = N * 0.0057 * (0.7 + 0.6 * blur(rng.random((N, N)), max(2, N // 40)))            # width varies along the cut
+    source += np.where(on_cut, np.exp(-(dist / width) ** 2) * depth, 0.0).astype(np.float32)
+for st in [c for c in a.stab.split(';') if c.strip()]:
+    sx, sy, sr = [float(v) for v in st.split(',')]
+    ragged = 1 + 0.45 * blur(rng.standard_normal((N, N)), max(2, N // 80)) * 6
+    d2 = ((xx - sx * N) ** 2 + (yy - sy * N) ** 2) / (sr * N * 1.6) ** 2 * np.maximum(ragged, 0.3)
+    source += (np.exp(-d2) * 1.2).astype(np.float32)
+source = np.minimum(source, 1.0)   # overlapping cuts do not add up to black
+
+# ------------------------------------------------------------------ drips: beads that get heavy and run
+# Each drip starts on the wound, waits until its bead "fills", then runs down in stick-slip, wandering a little
+# along the fibres and thinning until the paper has drunk it. The paint it leaves is then soaked by the simulation.
+drips = []
+if a.gravity > 0 and a.drips > 0:
+    ys_, xs_ = np.nonzero(source > 0.35 * source.max())
+    for i in range(a.drips):
+        j = rng.integers(0, len(ys_))
+        col = xs_ == xs_[j]
+        drips.append(dict(x=float(xs_[j]), y=float(ys_[col].max()) + N * 0.01, wx=0.0, v=rng.uniform(0.8, 1.4) * a.gravity * 1.6,
+                          load=rng.uniform(0.7, 1.3), start=int(rng.uniform(0.08, 0.45) * a.frames * a.steps), slip=rng.uniform(0, 6.28)))
 
 PAINTS = {   # absorption per channel (R, G, B): high G/B absorption = red
     'vermilion': np.array([0.25, 3.2, 3.6], np.float32),
-    'crimson':   np.array([0.9, 4.2, 3.4], np.float32),
+    'crimson':   np.array([0.3, 3.4, 2.9], np.float32),
     'ink':       np.array([3.2, 3.2, 3.0], np.float32),
 }
 absorb = PAINTS[a.paint]
@@ -95,10 +134,10 @@ cond = []
 for (ddy, ddx) in DIRS:
     ang = math.atan2(ddy, ddx)
     along = np.cos(theta - ang) ** 2                           # 1 when the step follows the fibre
-    c = perm * (0.06 + 2.4 * along * fib ** 1.5)               # fibres carry liquid much faster (hairy edges)
+    c = perm * (0.02 + 2.6 * along * fib ** 2)                 # fibres carry liquid much faster (hairy edges)
     c /= math.hypot(ddx, ddy)
     if ddy > 0: c *= (1 + a.gravity * ddy)                      # gravity: easier downhill (y down)
-    if ddy < 0: c *= (1 - a.gravity * 0.6)
+    if ddy < 0: c *= (1 - a.gravity * 0.3)
     cond.append(c.astype(np.float32))
 
 def shift(x, ddy, ddx):
@@ -126,7 +165,7 @@ for frame in range(a.frames):
     for s in range(a.steps):
         k = frame * a.steps + s
         # 1. the cut wells paint for the first ~40% of the shot, in fading pulses
-        well = a.bleed * max(0.0, 1 - k / (0.4 * total_steps)) ** 1.5   # smooth decay (no pulsing: pulses read as a heartbeat)
+        well = a.bleed * max(0.0, 1 - k / ((0.15 + 0.25 * min(a.bleed, 1)) * total_steps)) ** 1.5   # smooth decay (no pulsing: pulses read as a heartbeat)
         W += source * 0.22 * well
         P += source * 0.09 * well
         # 2. water flows to neighbours (only where there is more water than the neighbour; wet fronts pin)
@@ -137,7 +176,7 @@ for frame in range(a.frames):
             flow = c * np.maximum(W - Wn - pin, 0) * 0.2         # flow out of this cell toward that neighbour
             flow = np.minimum(flow, W * 0.11) * inside[(ddy, ddx)]
             dW -= flow; dW += shift(flow, ddy, ddx)
-            pflow = flow * conc                                  # pigment rides with the water (upwind)
+            pflow = flow * conc * 0.6 * (W > 0.01)               # pigment lags the water: a pale damp halo runs ahead
             dP -= pflow; dP += shift(pflow, ddy, ddx)
         # rivulets: where paint pools thicker than the paper can hold, gravity pulls it straight down
         if a.gravity > 0:
@@ -146,6 +185,25 @@ for frame in range(a.frames):
             dW -= run; dW += shift(run, 1, 0)
             dP -= prun; dP += shift(prun, 1, 0)
         W += dW; P += dP
+        # drips: run down, leaving a thin wet trail of paint
+        for dr in drips:
+            if k < dr['start'] or dr['load'] <= 0.02: continue
+            stick = 0.55 + 0.45 * math.sin(k * 0.21 + dr['slip'])          # stick-slip: speeds up and pauses
+            dr['y'] += dr['v'] * stick
+            dr['wx'] = dr['wx'] * 0.9 + rng.normal(0, 0.06)                # zero-mean, damped wander: falls straight down
+            dr['x'] += dr['wx']
+            if dr['y'] >= N - 3: dr['load'] = 0; continue
+            iy, ix = int(dr['y']), int(dr['x'])
+            r = max(1, int(N * 0.008 * (0.6 + 0.6 * dr['load'])))         # soft disc, fatter while loaded (bead head)
+            ys0, ys1, xs0, xs1 = max(iy - r, 0), min(iy + r + 1, N), max(ix - r, 0), min(ix + r + 1, N)
+            disc = np.exp(-(((yy[ys0:ys1, xs0:xs1] - dr['y']) ** 2 + (xx[ys0:ys1, xs0:xs1] - dr['x']) ** 2) / (r * r)))
+            amt = 0.09 * dr['load']
+            W[ys0:ys1, xs0:xs1] += amt * disc
+            P[ys0:ys1, xs0:xs1] += amt * 0.9 * disc
+            dr['load'] *= 0.99                                            # the paper drinks the bead as it runs
+            dr['v'] *= 0.997
+            if dr['load'] <= 0.02:                                        # the bead stops: a final fat drop
+                W[ys0:ys1, xs0:xs1] += 0.25 * disc; P[ys0:ys1, xs0:xs1] += 0.22 * disc
         np.maximum(W, 0, out=W); np.maximum(P, 0, out=P)
         EVERWET |= W > 0.004
         # 3. evaporation: thin water dries faster → pigment deposits at the edges (dark rims)
@@ -155,9 +213,10 @@ for frame in range(a.frames):
         D += dep; P -= dep
         W = np.maximum(W - evap * (W > 0), 0)
     # ---- colour (subtractive pigment + wet sheen + fibre texture)
-    pig = D + 0.6 * P
+    pig_raw = D + 0.6 * P
+    pig = 0.7 * (1 - np.exp(-pig_raw / 0.7))          # saturates like real paint: no black cores
     col = paper[None, None, :] * np.exp(-absorb[None, None, :] * pig[..., None] * 1.6)
-    tex = (0.94 + 0.06 * fib)[..., None]
+    tex = (0.86 + 0.2 * fib)[..., None]                # fibre texture shows in the colour
     wet = np.clip(W * 6, 0, 1)[..., None]
     col = col * tex * (1 - 0.18 * wet) + 0.10 * wet * np.array([1, 0.9, 0.85], np.float32)   # wet = darker + glossy
     alpha = np.clip(pig * 3 + wet[..., 0] * 0.6, 0, 1)

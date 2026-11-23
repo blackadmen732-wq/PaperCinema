@@ -22,6 +22,8 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
 
 ## Guides
 
+- **`AGENTS.md`**: start here. **`SYSTEMS.md`**: every system and how it connects. **`docs/README.md`**: which guide, when.
+
 - `docs/playbook.html`: the visual playbook (open in a browser): pipeline, live camera paths, fight beats, sound
 - `AGENTS.md`: start here (for people and AI assistants): map, commands, rules
 - `docs/CAMERA.md`: how to control the camera with data, plus recipes

@@ -1,0 +1,519 @@
+{
+ "_about": "Machine-readable catalogue of every Paper Cinema system. Generated from SYSTEMS.md by tools/build_systems.py; connections = [from, to] data flow.",
+ "start_here": [
+  "AGENTS.md",
+  "SYSTEMS.md",
+  ".claude/skills/paper-cinema-film/SKILL.md"
+ ],
+ "golden_path": [
+  "node engine/new-film.mjs <name> --jp 漢字 --en TITLE",
+  "edit film/<name>.json",
+  "node engine/validate.mjs film/<name>.json",
+  "node engine/render.mjs --film film/<name>.json --still auto",
+  "node engine/make.mjs film/<name>.json",
+  "python3 engine/thumbnail.py film/<name>.json"
+ ],
+ "systems": [
+  {
+   "id": "STYLE",
+   "name": "Lantern Origami",
+   "does": "The look: faceted washi paper lit from inside; amber = human, crimson = demonic; paint not blood",
+   "files": [],
+   "guide": [
+    "docs/STYLE-AND-FIGHT-SYSTEM.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "STRIKE",
+   "name": "Strike Grammar",
+   "does": "Every attack in 6 beats: ready → wind-up → slash → hit-stop → follow-through → reaction",
+   "files": [],
+   "guide": [
+    "docs/STYLE-AND-FIGHT-SYSTEM.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "FILM",
+   "name": "Film file",
+   "does": "One JSON per film: shots, camera, performances, duels, events, shakes, titles, sounds, format",
+   "files": [
+    "film/*.json"
+   ],
+   "guide": [
+    "docs/FILM-FORMAT.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "CHECK",
+   "name": "Checker",
+   "does": "Validates a film and explains every mistake in plain words",
+   "files": [
+    "engine/validate.mjs"
+   ],
+   "guide": [
+    "docs/FILM-FORMAT.md"
+   ],
+   "command": "npm run validate",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "MAKE",
+   "name": "One-command pipeline",
+   "does": "check → stills → render → sound → playbook",
+   "files": [
+    "engine/make.mjs"
+   ],
+   "guide": [
+    "AGENTS.md"
+   ],
+   "command": "node engine/make.mjs film/x.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "NEWFILM",
+   "name": "New-film scaffolder",
+   "does": "Signature opening + fight body + end card, vertical by default",
+   "files": [
+    "engine/new-film.mjs",
+    "library/openings/",
+    "library/endcards/"
+   ],
+   "guide": [
+    "docs/FILM-FORMAT.md"
+   ],
+   "command": "node engine/new-film.mjs x --jp 漢字 --en TITLE",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "ENGINE",
+   "name": "Preview engine",
+   "does": "Builds the 3D paper world per frame (`window.renderAt(t)`), deterministic",
+   "files": [
+    "engine/main.js",
+    "engine/index.html"
+   ],
+   "guide": [
+    "AGENTS.md"
+   ],
+   "command": "npm run preview",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "WORLD",
+   "name": "Sets + paper",
+   "does": "Layered paper sea, island, coasts, sword studio; washi materials; 10 textile patterns",
+   "files": [
+    "engine/world.js",
+    "engine/paper.js",
+    "engine/patterns.js"
+   ],
+   "guide": [
+    "docs/STYLE-AND-FIGHT-SYSTEM.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅ (sets in code)"
+  },
+  {
+   "id": "SKELETON",
+   "name": "Skeleton + balance",
+   "does": "Shared rig with legs: leg IK (planted feet, bending knees), stance/crouch/weight, two-hand grip, hand reach",
+   "files": [
+    "engine/figure.js"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "MOTION",
+   "name": "Motion system",
+   "does": "Keys of \"second + pose\", smooth monotone curves, breathing, cloth follow-through, walk cycle",
+   "files": [
+    "engine/figure.js",
+    "library/poses.json"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "MOVES",
+   "name": "Fight moves",
+   "does": "Named moves (jump-back, parry, lunge-shomen, kesa-giri, tsuki, bind, dodge, stagger…) expanded into poses",
+   "files": [
+    "engine/moves.js",
+    "library/moves.json"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "REACT",
+   "name": "Reaction layer",
+   "does": "Fighters watch each other; delayed threat response (function react)",
+   "files": [
+    "engine/main.js"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "DRAW",
+   "name": "Sword draw",
+   "does": "One blade slides out of the scabbard into the grip, hand on the hilt",
+   "files": [
+    "engine/main.js"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "KUROKO",
+   "name": "KUROKO camera",
+   "does": "Automatic operator: rigs (frame/orbit/track/face/anchor/blade), feels (locked/dolly/crane/handheld/torpedo), motion-reactive behaviours, look-ahead, impact punch, guards",
+   "files": [
+    "engine/kuroko.js",
+    "engine/resolve-camera.mjs"
+   ],
+   "guide": [
+    "docs/CAMERA.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "KEYCAM",
+   "name": "Keyframe camera",
+   "does": "Hand-made camera paths (pos/look/fov) on smooth curves + shakes",
+   "files": [
+    "engine/main.js"
+   ],
+   "guide": [
+    "docs/CAMERA.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "LIBRARY",
+   "name": "Library",
+   "does": "Swords from parts, characters on one body, outfits, patterns",
+   "files": [
+    "library/",
+    "engine/library.js"
+   ],
+   "guide": [
+    "library/*",
+    "docs/ANIMATION.md"
+   ],
+   "command": "engine/lineup.html",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "RENDER",
+   "name": "Renderer",
+   "does": "Headless Chrome, frame by frame → MP4; `--still`, `--vertical`, `--from/--to`",
+   "files": [
+    "engine/render.mjs",
+    "engine/serve.mjs"
+   ],
+   "guide": [
+    "AGENTS.md"
+   ],
+   "command": "npm run render",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "SOUND",
+   "name": "Sound pipeline",
+   "does": "Find (Openverse) → check (ffmpeg) → place at cue times → mix; credits",
+   "files": [
+    "engine/sound.mjs",
+    "assets/sfx/"
+   ],
+   "guide": [
+    "docs/playbook.html"
+   ],
+   "command": "npm run sound",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "THUMB",
+   "name": "Thumbnails",
+   "does": "16:9 + 9:16 from the decisive-blow frame, kanji title, brush swash",
+   "files": [
+    "engine/thumbnail.py"
+   ],
+   "guide": [
+    "AGENTS.md"
+   ],
+   "command": "python3 engine/thumbnail.py film/x.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "PLAYBOOK",
+   "name": "Playbook page",
+   "does": "Interactive page: pipeline, live camera plot, motion and sound timeline, new-chat prompt",
+   "files": [
+    "docs/playbook.template.html",
+    "docs/build_playbook.py"
+   ],
+   "guide": [
+    "docs/playbook.html"
+   ],
+   "command": "npm run playbook",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "SHIMI",
+   "name": "SHIMI (染み) stain sim",
+   "does": "Paint soaking into paper: fibres, wicking, pinning, gravity, drips, dark rims; presets; data maps",
+   "files": [
+    "engine/shimi.py"
+   ],
+   "guide": [
+    "docs/SHIMI.md"
+   ],
+   "command": "python3 engine/shimi.py --preset kesa-cut",
+   "status": "built",
+   "status_note": "✅ 2D · 3D planned"
+  },
+  {
+   "id": "LOOKDEV",
+   "name": "Lookdev stages",
+   "does": "Sword materials (metal / demonic / ink)",
+   "files": [
+    "engine/lookdev.*"
+   ],
+   "guide": [
+    "docs/BLENDER-PLAN.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "BLENDER",
+   "name": "Blender (realistic)",
+   "does": "Headless Cycles renders; demon-slash test (cut paper, ink slash, paint)",
+   "files": [
+    "blender/*.py"
+   ],
+   "guide": [
+    "docs/BLENDER-PLAN.md"
+   ],
+   "command": "blender -b -P blender/demon_slash_test.py -- --state impact",
+   "status": "test",
+   "status_note": "🧪 test"
+  },
+  {
+   "id": "GPU",
+   "name": "GPU jobs",
+   "does": "Rent/run/stop RunPod pods (self-destruct timer); TRELLIS image → 3D",
+   "files": [
+    "gpu/*.py"
+   ],
+   "guide": [
+    "AGENTS.md"
+   ],
+   "command": "python3 gpu/pod.py status",
+   "status": "built",
+   "status_note": "✅ (paid: ask first)"
+  },
+  {
+   "id": "MODELS",
+   "name": "3D models",
+   "does": "5 models from reference images (TRELLIS, MIT)",
+   "files": [
+    "assets/models/"
+   ],
+   "guide": [
+    "assets/README.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅ static (no rig yet)"
+  },
+  {
+   "id": "STORY",
+   "name": "Story bible",
+   "does": "World rules, characters, cursed swords (fiction), episode ideas",
+   "files": [
+    "docs/STORY-BIBLE.md"
+   ],
+   "guide": [],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "RESEARCH",
+   "name": "Research",
+   "does": "History with confidence marks",
+   "files": [
+    "research/"
+   ],
+   "guide": [],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "EFFECTS",
+   "name": "Effects plan",
+   "does": "Face-touch scene, slash v2, anime effects (flash-step, shadow-vanish, speed lines, impact frame)",
+   "files": [
+    "docs/EFFECTS-PLAN.md"
+   ],
+   "guide": [],
+   "command": null,
+   "status": "planned",
+   "status_note": "📋 planned"
+  }
+ ],
+ "connections": [
+  [
+   "RESEARCH",
+   "FILM"
+  ],
+  [
+   "NEWFILM",
+   "FILM"
+  ],
+  [
+   "LIBRARY",
+   "FILM"
+  ],
+  [
+   "MOVES",
+   "MOTION"
+  ],
+  [
+   "FILM",
+   "CHECK"
+  ],
+  [
+   "CHECK",
+   "ENGINE"
+  ],
+  [
+   "ENGINE",
+   "SKELETON"
+  ],
+  [
+   "ENGINE",
+   "MOTION"
+  ],
+  [
+   "ENGINE",
+   "REACT"
+  ],
+  [
+   "ENGINE",
+   "DRAW"
+  ],
+  [
+   "ENGINE",
+   "KUROKO"
+  ],
+  [
+   "ENGINE",
+   "KEYCAM"
+  ],
+  [
+   "ENGINE",
+   "WORLD"
+  ],
+  [
+   "ENGINE",
+   "RENDER"
+  ],
+  [
+   "RENDER",
+   "SOUND"
+  ],
+  [
+   "FILM",
+   "THUMB"
+  ],
+  [
+   "FILM",
+   "PLAYBOOK"
+  ],
+  [
+   "KUROKO",
+   "PLAYBOOK"
+  ],
+  [
+   "FILM",
+   "SHIMI"
+  ],
+  [
+   "SHIMI",
+   "BLENDER"
+  ],
+  [
+   "GPU",
+   "MODELS"
+  ],
+  [
+   "MODELS",
+   "BLENDER"
+  ],
+  [
+   "MAKE",
+   "CHECK"
+  ],
+  [
+   "MAKE",
+   "RENDER"
+  ],
+  [
+   "MAKE",
+   "SOUND"
+  ],
+  [
+   "MAKE",
+   "PLAYBOOK"
+  ]
+ ]
+}
