@@ -11,6 +11,9 @@ function m(geo, mat) {
   return x;
 }
 
+// Leg proportions (metres). Hip joints sit ~0.90 m high, so a standing leg is slightly bent.
+export const LEG = { thigh: 0.46, shin: 0.44, hipY: 0.92, footY: 0.04 };
+
 export function makeFigure(c) {
   // A cloth value is either a colour ("#2b4a6b") or a patterned cloth
   // ({ "color": "#2b4a6b", "pattern": "seigaiha", "fg": "#e8dcc4", "scale": 1 }).
@@ -23,22 +26,42 @@ export function makeFigure(c) {
   hips.position.y = 0.92;
   root.add(hips);
 
-  // hakama: a wide faceted paper skirt + folded front pleat
+  // hakama upper part: short pleated skirt over the hips (swings with sway / swayx)
   const hakama = new THREE.Group();
   hips.add(hakama);
-  const skirt = m(new THREE.CylinderGeometry(0.17, 0.36, 0.9, 6, 1, true), P(c.hakama));
-  skirt.position.y = -0.45;
+  const skirt = m(new THREE.CylinderGeometry(0.17, 0.3, 0.34, 6, 1, true), P(c.hakama));
+  skirt.position.y = -0.17;
   hakama.add(skirt);
-  const pleat = m(new THREE.ConeGeometry(0.16, 0.86, 3, 1, true), P(c.hakamaFold ?? c.hakama));
+  const pleat = m(new THREE.ConeGeometry(0.15, 0.36, 3, 1, true), P(c.hakamaFold ?? c.hakama));
   pleat.rotation.x = Math.PI;
-  pleat.position.set(0, -0.46, 0.2);
+  pleat.position.set(0, -0.18, 0.17);
   pleat.scale.set(1, 1, 0.3);
   hakama.add(pleat);
-  for (const x of [-0.1, 0.1]) {
-    const foot = m(new THREE.BoxGeometry(0.08, 0.05, 0.2), P(c.foot ?? '#e8e1d2'));
-    foot.position.set(x, -0.89, 0.08);
-    hips.add(foot);
-  }
+
+  // legs: hip → thigh → knee → shin → foot. Hakama are split, very wide trousers,
+  // so each leg wears its own flared paper trouser leg. Solved by leg IK every frame
+  // (solveLegs) so feet stay planted and knees bend when the hips drop.
+  const leg = (sgn) => {
+    const thigh = new THREE.Group();
+    root.add(thigh);
+    const tLeg = m(new THREE.CylinderGeometry(0.11, 0.15, LEG.thigh, 5, 1, true), P(c.hakama));
+    tLeg.position.y = -LEG.thigh / 2;
+    thigh.add(tLeg);
+    const shin = new THREE.Group();
+    shin.position.y = -LEG.thigh;
+    thigh.add(shin);
+    const sLeg = m(new THREE.CylinderGeometry(0.15, 0.2, LEG.shin, 5, 1, true), P(c.hakamaFold ?? c.hakama));
+    sLeg.position.y = -LEG.shin / 2 + 0.03;
+    shin.add(sLeg);
+    const foot = new THREE.Group();
+    foot.position.y = -LEG.shin;
+    shin.add(foot);
+    const sole = m(new THREE.BoxGeometry(0.085, 0.05, 0.22), P(c.foot ?? '#e8e1d2'));
+    sole.position.set(0, -0.015, 0.06);
+    foot.add(sole);
+    return { thigh, shin, foot, side: sgn };
+  };
+  const legs = { r: leg(-1), l: leg(1) };
 
   const torso = new THREE.Group();
   hips.add(torso);
@@ -136,7 +159,7 @@ export function makeFigure(c) {
   const R = arm(-1), Lf = arm(1);
 
   return {
-    root, hips, torso, head, hakama, bandTail,
+    root, hips, torso, head, hakama, bandTail, legs,
     rS: R.shoulder, rE: R.elbow, rH: R.hand,
     lS: Lf.shoulder, lE: Lf.elbow, lH: Lf.hand,
   };
@@ -163,12 +186,19 @@ export const BASE_POSE = {
   lsx: 0.05, lsz: -0.12, lex: -0.15,
   rwx: 0, lwx: 0,
   sway: 0, swayx: 0,
+  // lower body: stance = distance between feet front-to-back (right foot forward, kenjutsu style),
+  // crouch = how far the hips drop (knees bend), weight = -1 back foot … +1 front foot,
+  // stride/phase = walking step size and cycle phase (set by the engine while walking)
+  stance: 0.12, crouch: 0, weight: 0, stride: 0, phase: 0,
 };
 
 export function applyPose(f, p) {
   f.root.position.set(p.x, p.y, p.z);
+  // balance: hips drop with crouch and shift over the loaded foot
+  f.hips.position.set(0, LEG.hipY - p.crouch, p.weight * p.stance * 0.35);
+  if (f.legs) solveLegs(f, p);
   f.root.rotation.set(p.rx, p.ry, p.rz);
-  f.torso.rotation.set(p.tx, p.ty, p.tz);
+  f.torso.rotation.set(p.tx + p.weight * 0.05, p.ty, p.tz);
   f.head.rotation.set(p.hx, p.hy, 0);
   f.rS.rotation.set(p.rsx, 0, p.rsz);
   f.rE.rotation.x = p.rex;
@@ -278,16 +308,18 @@ export function windowWeight(windows, t, fade = 0.15) {
 // animated pose every frame, so the result is the same on every render.
 // ---------------------------------------------------------------------------
 const _hand = new THREE.Vector3();
-export function reachLeftHand(f, target, weight = 1) {
+/** Bend one arm ('l' or 'r') so that hand lands on a world-space target. */
+export function reachHand(f, side, target, weight = 1) {
   if (weight <= 0) return;
-  const start = [f.lS.rotation.x, f.lS.rotation.z, f.lE.rotation.x];
+  const S = side === 'r' ? f.rS : f.lS, E = side === 'r' ? f.rE : f.lE, H = side === 'r' ? f.rH : f.lH;
+  const start = [S.rotation.x, S.rotation.z, E.rotation.x];
   const p = start.slice();
   const err = (q) => {
-    f.lS.rotation.x = q[0];
-    f.lS.rotation.z = q[1];
-    f.lE.rotation.x = Math.max(-2.6, Math.min(0, q[2]));
-    f.lS.updateMatrixWorld(true);
-    f.lH.getWorldPosition(_hand);
+    S.rotation.x = q[0];
+    S.rotation.z = q[1];
+    E.rotation.x = Math.max(-2.6, Math.min(0, q[2]));
+    S.updateMatrixWorld(true);
+    H.getWorldPosition(_hand);
     return _hand.distanceToSquared(target);
   };
   let best = err(p), step = 0.35;
@@ -300,5 +332,37 @@ export function reachLeftHand(f, target, weight = 1) {
     }
     if (!improved) step *= 0.5;
   }
-  err(start.map((s, k) => s + (p[k] - s) * weight));
+  err(start.map((v, k) => v + (p[k] - v) * weight));
+}
+export const reachLeftHand = (f, target, weight = 1) => reachHand(f, 'l', target, weight);
+
+// ---------------------------------------------------------------------------
+// LEGS (analytic two-bone IK in the figure's side plane)
+// Feet are planted from the stance; the hip height comes from crouch. Knees always bend forward.
+// ---------------------------------------------------------------------------
+export function solveLegs(f, p) {
+  const L1 = LEG.thigh, L2 = LEG.shin;
+  const hipY = LEG.hipY - p.crouch - 0.02, hipZ = p.weight * p.stance * 0.35;
+  for (const leg of [f.legs.r, f.legs.l]) {
+    const front = leg.side < 0;                       // right foot leads
+    let fz = (front ? 1 : -1) * p.stance / 2, fy = LEG.footY;
+    if (p.stride > 0) {                               // walking: feet swing in opposite phase
+      const ph = p.phase + (front ? 0 : Math.PI);
+      fz += Math.sin(ph) * p.stride / 2;
+      fy += Math.max(0, Math.cos(ph)) * 0.07;
+    }
+    let dz = fz - hipZ, dy = fy - hipY;
+    let d = Math.hypot(dz, dy);
+    const maxD = (L1 + L2) * 0.999;
+    if (d > maxD) { dz *= maxD / d; dy *= maxD / d; d = maxD; }
+    const phi = Math.atan2(dz, -dy);                  // hip→foot angle from straight down (toward +z)
+    const a = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))));
+    const thighAng = phi + a;                         // knee goes forward
+    const kz = hipZ + L1 * Math.sin(thighAng), ky = hipY - L1 * Math.cos(thighAng);
+    const shinAng = Math.atan2(hipZ + dz - kz, -(hipY + dy - ky));
+    leg.thigh.position.set(leg.side * 0.1, hipY, hipZ);
+    leg.thigh.rotation.set(-thighAng, 0, leg.side * 0.04);
+    leg.shin.rotation.x = -(shinAng - thighAng);
+    leg.foot.rotation.x = shinAng;                    // sole stays flat on the ground
+  }
 }

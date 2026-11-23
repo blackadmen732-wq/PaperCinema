@@ -10,6 +10,7 @@ Use `film/ganryujima.json` as the working example.
   "shakes":       [ … ],   // camera shake on hits
   "events":       { … },   // named story moments (seconds)
   "performances": { … },   // character motion: docs/ANIMATION.md
+  "duels":        [ … ],   // reaction layer: who watches and reacts to whom, when
   "titles":       [ … ],   // on-screen text
   "sounds":       [ … ]    // sound cues: find → check → place
 }
@@ -23,6 +24,7 @@ Use `film/ganryujima.json` as the working example.
 | `shakes[]` | `t`, `dur`, `amp` (0.005 subtle … 0.015 strong … 0.03 huge), `note` | |
 | `events` | `studio-blade-draw`, `boat-arrives`, `kojiro-draw`, `kojiro-throws-scabbard`, `scabbard-splash`, `headband-cut`, `impact` | seconds; the engine times props and effects from these |
 | `performances.<id>` | `character`, `keys[]`, `twoHand[]`, `walk[]`, `rideBoatUntil`, `boatPose` | keys strictly increasing; poses must exist in `library/poses.json` |
+| `duels[]` | `a`, `b` (performance ids), `from`, `to`, `note` | head tracking + threat response between a and b |
 | `titles[]` | `start`, `end`, `style` (`hero` / `left` / `bottom`), `jp`, `en`, `sub` | fades 0.5 s in and out |
 | `sounds[]` | `id`, `t`, `query`, `min`, `max` (ms length window), `len` (s used), `gain` (0–2), `bed` (true = loop) | unique ids; stays inside the film |
 

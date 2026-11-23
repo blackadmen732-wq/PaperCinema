@@ -100,6 +100,12 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
   if (p.boatPose && !poses[p.boatPose]) err(`${w}.boatPose`, `unknown pose "${p.boatPose}"`);
 }
 
+(film.duels ?? []).forEach((d, i) => {
+  const P = film.performances ?? {};
+  if (!P[d.a] || !P[d.b]) err(`duels[${i}]`, `a and b must name performances (got ${d.a}, ${d.b})`);
+  if (!isNum(d.from) || !isNum(d.to) || d.to <= d.from) err(`duels[${i}]`, 'from/to must be seconds with to > from');
+});
+
 for (const line of warnings) console.log(line);
 for (const line of errors) console.log(line);
 console.log(errors.length ? `\n${errors.length} error(s) in ${filmPath}. Fix them before rendering.` : `✓ ${filmPath} is valid (${shots.length} shots, ${(film.sounds ?? []).length} sounds, ${Object.keys(film.performances ?? {}).length} performers, ${warnings.length} warning(s)).`);

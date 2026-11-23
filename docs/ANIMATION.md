@@ -9,8 +9,10 @@ makes the motion smooth, adds breathing and cloth follow-through, and keeps both
 
 ```
 root (position x/y/z, facing ry, tilt rx/rz)
-└─ hips
-   ├─ hakama (skirt: swings with sway / swayx)
+├─ right leg: thigh → knee (shin) → foot   ┐ solved by leg IK every frame: feet planted from `stance`,
+├─ left leg:  thigh → knee (shin) → foot   ┘ hips height from `crouch`, knees bend forward automatically
+└─ hips (drops with crouch, shifts over the loaded foot with weight)
+   ├─ hakama (upper skirt: swings with sway / swayx; each leg also wears a split, flared trouser leg)
    └─ torso (tx lean forward, ty turn, tz side-bend)
       ├─ head (hx nod, hy turn)
       ├─ right shoulder (rsx forward/up, rsz sideways)
@@ -22,6 +24,9 @@ root (position x/y/z, facing ry, tilt rx/rz)
 ```
 
 - The figure faces **+z** when `ry = 0`. Its right side is **−x**. `ry = 3.14159` faces −z.
+- Lower body: `stance` = feet apart front-to-back in metres (right foot forward, kenjutsu style),
+  `crouch` = hip drop in metres, `weight` = -1 (back foot) … +1 (front foot). Strikes lunge onto the
+  front foot (fumikomi); wind-ups load the back foot.
 - Angles are radians. Arm lift guide: `rsx = 0` hangs down, `-1.57` points forward, `-2.8` is overhead.
 - Built in `engine/figure.js → makeFigure`. Outfits only change colours and patterns, never the skeleton,
   so **every pose and move works on every character.**
@@ -75,22 +80,42 @@ Add a new pose by copying one and changing angles, then check it with a still re
    steps and turns (`addLife` in `engine/main.js`).
 4. **The camera is smooth too**: a centripetal Catmull-Rom path with shot easing (see `docs/CAMERA.md`).
 
-## 5. Two-hand grip (how "hold" works)
+## 5. Sword holding and the draw (how "hold" works)
 
-- The sword is attached to the **right hand** bone (`holdInHand`), so it follows every arm move exactly.
+- **The draw is one continuous blade.** Before the draw the right hand rests on the handle (hand IK).
+  On `kojiro-draw`: a 3 cm thumb push, then the blade slides out along the scabbard while the scabbard
+  stays on the hip, then the blade's frame blends from "in the scabbard" to "in the grip" over ~6 frames.
+  No hidden swap, no jump.
+
+- After the draw, the sword is attached to the **right hand** bone (`holdInHand`), so it follows every arm move exactly.
 - Inside `twoHand` windows, the engine finds the end of the handle each frame and bends the left shoulder
   and elbow until the left hand lands on it (`reachLeftHand`, a small inverse-kinematics search).
   It starts from the keyed pose every frame, so renders are identical every time.
 
-## 6. Recipe: add a new attack
+## 6. Reaction layer (fighters respond to each other)
+
+Inside a `duels` window (`{"a": "kojiro", "b": "musashi", "from": 17, "to": 27}`), automatically:
+1. **Eyes on the opponent**: each head turns and tilts toward the other fighter.
+2. **Threat response**: when the opponent's sword arm moves fast, the fighter sinks a little and shifts
+   weight back ~0.12 s later (human reaction time), then relaxes.
+Explicit reactions (a parry, a step back) are still written as keys.
+
+## 7. Pose gallery (check poses side-on)
+
+```bash
+node engine/render.mjs --page engine/lineup.html --film film/lineup.json --query "show=poses&poses=chudan,jodan,shomen-strike" --still 1 --prefix poses-
+```
+Shows the chosen poses side-on with the two-hand grip, so knees, balance and blade angle are easy to judge.
+
+## 8. Recipe: add a new attack
 
 1. Pick or create the poses (for example `chudan` → `jodan-wind-up` → `kesa-giri-finish`).
 2. Add keys with Strike Grammar timing, plus a `shakes` entry and sound cues at the hit second.
 3. `npm run validate`, then check stills at the wind-up, the hit and the reaction.
 4. Adjust angles or timing, render the section with `--from/--to`, then render the film.
 
-## 7. 3D models from images (status)
+## 9. 3D models from images (status)
 
 The TRELLIS models in `assets/models/` are **static meshes: they have no skeleton yet.** Next step:
 rig them in Blender (auto-weights after a clean remesh) using the **same bone names and layout as above**,
-so every pose in `library/poses.json` drives them too.
+so every pose in `library/poses.json` drives them too. The full plan is in `docs/BLENDER-PLAN.md`.

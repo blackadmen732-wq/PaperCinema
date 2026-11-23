@@ -7,7 +7,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { loadParts, loadSword, loadCharacter, buildSword, buildCharacter } from './library.js';
-import { holdInHand, applyPose, BASE_POSE } from './figure.js';
+import { holdInHand, applyPose, BASE_POSE, reachHand } from './figure.js';
 import { paper } from './paper.js';
 
 const params = new URLSearchParams(location.search);
@@ -75,7 +75,10 @@ if (show === 'swords') {
   key.position.set(1.2, 2.2, 2.4);
   scene.add(key, new THREE.AmbientLight(0xffffff, 0.08));
 } else {
-  const names = (params.get('characters') ?? 'musashi,kojiro,ronin').split(',');
+  const posesMode = show === 'poses';
+  const POSES = posesMode ? await (await fetch('/library/poses.json')).json() : null;
+  const poseNames = posesMode ? (params.get('poses') ?? 'chudan,jodan-wind-up,shomen-strike,kesa-giri-finish,tsuki-thrust,kneel-collapse').split(',') : [];
+  const names = posesMode ? poseNames.map(() => params.get('character') ?? 'kojiro') : (params.get('characters') ?? 'musashi,kojiro,ronin').split(',');
   const outfits = (params.get('outfits') ?? '').split(',');
   scene.background = new THREE.Color('#d9c4a0');
   scene.add(new THREE.HemisphereLight(0xfff0d8, 0x3a4560, 1.0));
@@ -95,7 +98,7 @@ if (show === 'swords') {
   const back = new THREE.Mesh(new THREE.PlaneGeometry(20, 8), paper('#e8d3ac', { repeat: 0.5, glow: 0.25, glowColor: '#f3b878' }));
   back.position.set(0, 3, -3);
   scene.add(back);
-  const gap = names.length > 3 ? 1.0 : 1.25;
+  const gap = posesMode ? 1.35 : names.length > 3 ? 1.0 : 1.25;
   for (let i = 0; i < names.length; i++) {
     let preset = await loadCharacter(names[i]);
     if (outfits[i]) {
@@ -107,16 +110,23 @@ if (show === 'swords') {
     }
     const f = buildCharacter(preset);
     scene.add(f.root);
-    applyPose(f, { ...BASE_POSE, x: (i - (names.length - 1) / 2) * gap, ry: 0.25 - i * 0.25,
-      rsx: -0.75, rsz: 0.3, rex: -0.6, lsx: -0.7, lsz: -0.3, lex: -0.6 });
+    const x = (i - (names.length - 1) / 2) * gap;
+    const pose = posesMode
+      ? { ...BASE_POSE, ...POSES[poseNames[i]], x, ry: -Math.PI / 2 }   // side-on: facing -x, so legs and balance read clearly
+      : { ...BASE_POSE, x, ry: 0.25 - i * 0.25, rsx: -0.75, rsz: 0.3, rex: -0.6, lsx: -0.7, lsz: -0.3, lex: -0.6 };
+    applyPose(f, pose);
     if (preset.weapon && preset.weapon !== 'bokken') {
       const k = buildSword(await loadSword(preset.weapon), parts, 'paper');
       holdInHand(f.rH, k.sword, -0.06);
+      if (posesMode) {                                   // two-hand grip, like in the film
+        f.root.updateMatrixWorld(true);
+        reachHand(f, 'l', k.sword.localToWorld(new THREE.Vector3(-0.27, -0.018, 0)), 1);
+      }
     }
-    label(preset.name, 50 + ((i - (names.length - 1) / 2) * (names.length > 3 ? 23 : 30)));
+    label(posesMode ? poseNames[i] : preset.name, 50 + ((i - (names.length - 1) / 2) * (names.length > 3 ? (posesMode ? 100 / names.length : 23) : 30)));
   }
-  camera.position.set(0, 1.25, 5.6);
-  camera.lookAt(0, 1.0, 0);
+  if (posesMode) { camera.position.set(0, 1.0, 7.8); camera.lookAt(0, 0.95, 0); camera.fov = 34; camera.updateProjectionMatrix(); }
+  else { camera.position.set(0, 1.25, 5.6); camera.lookAt(0, 1.0, 0); }
 }
 
 let composer = null;

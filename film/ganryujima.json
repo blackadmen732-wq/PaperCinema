@@ -454,23 +454,19 @@
         {
           "t": 25.45,
           "pose": "shomen-cut-finish",
-          "z": -0.25,
-          "y": -0.14
+          "z": -0.25
         },
         {
           "t": 25.6,
-          "pose": "shomen-cut-finish",
-          "y": -0.14
+          "pose": "shomen-cut-finish"
         },
         {
           "t": 26.3,
-          "pose": "struck-reel",
-          "y": -0.14
+          "pose": "struck-reel"
         },
         {
           "t": 27.2,
-          "pose": "kneel-collapse",
-          "y": -0.38
+          "pose": "kneel-collapse"
         },
         {
           "t": 28.2,
@@ -540,13 +536,11 @@
         {
           "t": 25.6,
           "pose": "shomen-strike",
-          "z": 0.85,
-          "y": -0.08
+          "z": 0.85
         },
         {
           "t": 27.6,
-          "pose": "shomen-strike",
-          "y": -0.08
+          "pose": "shomen-strike"
         },
         {
           "t": 29.0,
@@ -571,6 +565,15 @@
       ]
     }
   },
+  "duels": [
+    {
+      "a": "kojiro",
+      "b": "musashi",
+      "from": 17.0,
+      "to": 27.0,
+      "note": "head tracking + threat response between these two"
+    }
+  ],
   "titles": [
     {
       "start": 0.8,

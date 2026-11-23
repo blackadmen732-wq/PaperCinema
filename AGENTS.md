@@ -8,8 +8,9 @@ folded/cut paper characters lit from inside, real-metal or demonic swords, data-
 1. `docs/STYLE-AND-FIGHT-SYSTEM.md`: the look, the 6-beat Strike Grammar, camera modes, lighting rules
 2. `docs/FILM-FORMAT.md`: **every field of a film file** + the golden path for a new film
 3. `docs/CAMERA.md`: **how to control the camera** (all camera moves are JSON data)
-4. `docs/ANIMATION.md`: **skeleton, poses, smooth motion, two-hand grip** (all character motion is JSON data)
-5. `research/`: historical facts, each marked *documented* / *tradition* / *our choice*
+4. `docs/ANIMATION.md`: **skeleton (with legs), poses, balance, smooth motion, the draw, two-hand grip, reactions** (all motion is JSON data)
+5. `docs/BLENDER-PLAN.md`: the plan for realistic Blender renders: KUROKO camera rigs, paper/metal shaders, move library, paint-not-blood cuts, environments, signature opening
+6. `research/`: historical facts, each marked *documented* / *tradition* / *our choice*
 
 ## Project map
 | Path | What |
@@ -58,5 +59,5 @@ npm run preview                                    # live preview in a browser
 ## Status / next steps
 - Done: preview engine; camera, motion (poses + smooth curves + two-hand grip), events, titles and sound all from data;
   libraries (swords, characters, outfits, patterns, poses); checker; one-command pipeline; 5 TRELLIS models; visual playbook.
-- Next: rig `assets/models/*.glb` with the same skeleton layout (Blender), real motion capture (Kaggle), Blender render, AI restyle (Wan VACE).
+- Next (see docs/BLENDER-PLAN.md milestones M1–M8): Blender lookdev stills, resolver + Blender builder, rig `assets/models/*.glb` with the same skeleton layout (Blender), real motion capture (Kaggle), Blender render, AI restyle (Wan VACE).
 - Sets (island, sea, studio) and prop effects (boat, thrown scabbard) are still built in code for Ganryūjima.

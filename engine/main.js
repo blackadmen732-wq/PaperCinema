@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { buildWorld, STUDIO_X } from './world.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
-import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, reachLeftHand, BASE_POSE } from './figure.js';
+import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, reachLeftHand, reachHand, BASE_POSE } from './figure.js';
 import { paper, rng } from './paper.js';
 
 const params = new URLSearchParams(location.search);
@@ -53,6 +53,15 @@ hipRig.add(hipInner);
 kojiro.hips.add(hipRig);
 const handKatana = makeKatana();
 holdInHand(kojiro.rH, handKatana.sword, -0.06);
+// The ONE visible drawn blade. hipKatana.sword (sliding in the scabbard) and handKatana.sword (in the
+// grip) are invisible reference frames; the visible blade follows the scabbard frame while it slides
+// out, then blends into the grip frame over a few frames, so there is no swap and no jump.
+hipKatana.sword.traverse((o) => { if (o.isMesh) o.visible = false; });
+handKatana.sword.traverse((o) => { if (o.isMesh) o.visible = false; });
+const blade = makeKatana().sword;
+blade.matrixAutoUpdate = false;
+scene.add(blade);
+const _pa = new THREE.Vector3(), _pb = new THREE.Vector3(), _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _sc = new THREE.Vector3();
 const flyingSaya = makeKatana().saya;
 scene.add(flyingSaya);
 
@@ -124,6 +133,35 @@ const motionOf = (id) => makeMotion(resolveKeys(PERF[id].keys, POSES));
 const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');
 const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };
+
+/** REACTION LAYER: fighters respond to each other automatically inside film.duels windows.
+ *  1. Eyes on the opponent: the head turns and tilts toward the other fighter's head (clamped).
+ *  2. Threat response: when the opponent's sword arm moves fast, this fighter sinks and shifts weight
+ *     back ~0.12 s later (human reaction time), then relaxes. */
+const REACT_DELAY = 0.12;
+function armSpeed(motion, t) {
+  const a = motion(t), b = motion(t - 1 / 24);
+  return Math.hypot(a.rsx - b.rsx, a.rex - b.rex, a.rwx - b.rwx) * 24;   // rad/s
+}
+function react(selfPose, selfMotion, otherMotion, t, duel) {
+  const w = windowWeight([[duel.from, duel.to]], t, 0.4);
+  if (w <= 0) return selfPose;
+  const o = otherMotion(t);
+  // 1. look at the opponent (in the fighter's own frame)
+  const dx = o.x - selfPose.x, dz = o.z - selfPose.z;
+  let yaw = Math.atan2(dx, dz) - selfPose.ry;
+  yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+  selfPose.hy += w * Math.max(-0.6, Math.min(0.6, yaw - selfPose.ty));
+  selfPose.hx += w * Math.max(-0.15, Math.min(0.2, (selfPose.crouch - o.crouch) * 0.8));
+  // 2. threat response from the opponent's swing speed, delayed by reaction time
+  let threat = 0;
+  for (let k = 0; k < 4; k++) threat = Math.max(threat, armSpeed(otherMotion, t - REACT_DELAY - k / 24));
+  const tense = w * Math.min(1, Math.max(0, (threat - 2) / 6));
+  selfPose.crouch += 0.05 * tense;
+  selfPose.weight -= 0.2 * tense;
+  selfPose.tx -= 0.04 * tense;
+  return selfPose;
+}
 
 /** Life on top of the keyed motion: breathing while still, cloth trailing behind movement. */
 function addLife(motion, t, pose, phase) {
@@ -205,11 +243,14 @@ window.renderAt = (t) => {
   boatman.root.rotation.y = PI;
 
   // Kojirō: keyed motion from the film file + life
-  applyPose(kojiro, addLife(kojiroMotion, t, kojiroMotion(t), 0));
+  const duel = (film.duels ?? [])[0];
+  let kp = addLife(kojiroMotion, t, kojiroMotion(t), 0);
+  if (duel) kp = react(kp, kojiroMotion, musashiMotion, t, duel);
+  applyPose(kojiro, kp);
   const tDraw = ev('kojiro-draw', 18.25), tThrow = ev('kojiro-throws-scabbard', 20.05);
-  hipKatana.sword.position.x = -0.75 * smooth(Math.min(1, Math.max(0, (t - tDraw) / 0.37)));
-  hipKatana.sword.visible = t < tDraw + 0.37;
-  handKatana.sword.visible = t >= tDraw + 0.37;
+  // thumb push (3 cm), then the blade slides out along the scabbard (saya stays on the hip)
+  const kDraw = Math.min(1, Math.max(0, (t - tDraw) / 0.37));
+  hipKatana.sword.position.x = -(0.03 * Math.min(1, kDraw * 6) + 0.72 * smooth(Math.max(0, (kDraw - 0.15) / 0.85)));
   hipKatana.saya.visible = t < tThrow;
   // thrown scabbard
   const ks = (t - tThrow) / 1.35;
@@ -228,9 +269,11 @@ window.renderAt = (t) => {
     mp = { ...boatPose, x: boat.position.x, y: boat.position.y + 0.08, z: boat.position.z - 0.55, ry: PI, rz: boat.rotation.z };
   } else {
     mp = addLife(musashiMotion, t, musashiMotion(t), 1.3);
+    if (duel) mp = react(mp, musashiMotion, kojiroMotion, t, duel);
     if (windowWeight(PERF.musashi.walk, t, 0.01) > 0) {
-      const ph = t * PI * 2 * 1.7;
-      mp.y += Math.abs(Math.sin(ph)) * 0.025;
+      const ph = t * PI * 2 * 1.0;                 // one stride cycle per second = two steps
+      mp.phase = ph; mp.stride = 0.55;              // legs swing in opposite phase (solveLegs)
+      mp.y += Math.abs(Math.sin(ph)) * 0.02;
       mp.sway += Math.sin(ph) * 0.06;
       mp.lsx += Math.sin(ph) * 0.25;
     }
@@ -240,7 +283,16 @@ window.renderAt = (t) => {
   // two-hand grip: left hand finds the end of the handle (inverse kinematics)
   kojiro.root.updateMatrixWorld(true);
   musashi.root.updateMatrixWorld(true);
-  if (handKatana.sword.visible) reachLeftHand(kojiro, handKatana.sword.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), windowWeight(PERF.kojiro.twoHand, t));
+  // the right hand rests on, then grips, the handle while the blade is still in the scabbard
+  const handOnHilt = windowWeight([[0, tDraw + 0.3]], t, 0.12);
+  if (handOnHilt > 0) reachHand(kojiro, 'r', hipKatana.sword.localToWorld(tmp.set(-0.08, -0.018, 0)).clone(), handOnHilt);
+  // blade frame: scabbard-slide frame → grip frame, blended over ~6 frames once the tip clears
+  const wGrip = smooth(Math.min(1, Math.max(0, (t - (tDraw + 0.3)) / 0.25)));
+  hipKatana.sword.matrixWorld.decompose(_pa, _qa, _sc);
+  handKatana.sword.matrixWorld.decompose(_pb, _qb, _sc);
+  blade.matrix.compose(_pa.lerp(_pb, wGrip), _qa.slerp(_qb, wGrip), _sc.set(1, 1, 1));
+  blade.updateMatrixWorld(true);
+  reachLeftHand(kojiro, blade.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), windowWeight(PERF.kojiro.twoHand, t));
   reachLeftHand(musashi, musashiBokken.localToWorld(tmp.set(-0.26, 0.002, 0)).clone(), windowWeight(PERF.musashi.twoHand, t));
 
   const tCut = ev('headband-cut', 25.45);
