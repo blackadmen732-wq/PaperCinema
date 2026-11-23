@@ -42,7 +42,9 @@ if (film.fps && (film.fps < 12 || film.fps > 60)) warn('fps', `${film.fps} is un
 
 // --- shots + camera
 const shots = film.shots ?? [];
-if (!shots.length && !Array.isArray(film.camera)) err('shots', 'a film needs at least one shot (or a "camera" beat list on the motion page)');
+const SPECIAL = !shots.length && !Array.isArray(film.camera) && (film.page || !Object.keys(film.performances ?? {}).length);   // gallery / demo pages
+if (SPECIAL) warn('shots', 'no shots: fine for a gallery or demo page (render it with --page), not for a film');
+else if (!shots.length && !Array.isArray(film.camera)) err('shots', 'a film needs at least one shot (or a "camera" beat list on the motion page)');
 let prevEnd = 0;
 shots.forEach((s, i) => {
   const w = `shots[${i}] (${s.id ?? 'no id'})`;
@@ -83,6 +85,111 @@ shots.forEach((s, i) => {
 });
 if (shots.length && Math.abs(prevEnd - D) > 1e-6) warn('shots', `last shot ends at ${prevEnd}s but duration is ${D}s`);
 
+// --- motion-page camera beats (film.camera, engine/motion.js)
+const PERFS = film.performances ?? {};
+if (film.camera !== undefined) {
+  if (!Array.isArray(film.camera) || !film.camera.length) err('camera', 'must be a list of camera beats [{ t, rig, … }]');
+  else film.camera.forEach((b, i) => {
+    const w = `camera[${i}]`;
+    if (!isNum(b.t) || b.t < 0 || b.t > D) err(w, `t must be a time within 0–${D}s`);
+    if (i > 0 && isNum(b.t) && b.t <= film.camera[i - 1].t) err(w, 'beats must be in time order');
+    if (!['face', 'slide', 'frame', 'orbit'].includes(b.rig)) err(w, `rig must be face, slide, frame or orbit (got ${JSON.stringify(b.rig)})`);
+    if (b.feel && !['locked', 'dolly', 'crane', 'handheld', 'torpedo'].includes(b.feel)) err(w, `feel must be locked, dolly, crane, handheld or torpedo (got ${JSON.stringify(b.feel)})`);
+    if (['face', 'slide'].includes(b.rig) && !PERFS[b.who]) err(w, `"who" must name a performer (known: ${Object.keys(PERFS).join(', ')})`);
+    if (b.rig === 'slide') {
+      for (const n of b.path ?? []) if (!['eyes', 'shoulder', 'elbow', 'wrist', 'tsuba', 'tip', 'hips', 'head'].includes(n)) err(w, `unknown joint "${n}" in path (eyes, shoulder, elbow, wrist, tsuba, tip, hips, head)`);
+      if (!Array.isArray(b.path) || b.path.length < 2) err(w, 'a slide needs a "path" of at least 2 joints');
+    }
+    for (const n of b.subjects ?? []) if (!PERFS[n]) err(w, `subject "${n}" is not a performer`);
+    if (b.fov !== undefined && (!isNum(b.fov) || b.fov < 10 || b.fov > 80)) err(w, 'fov must be 10–80');
+  });
+}
+
+// --- cast (look of each performer): face, eyes colour, weapon
+const COLOR = /^#[0-9a-f]{6}$/i;
+for (const [id, c] of Object.entries(film.cast ?? {})) {
+  const w = `cast.${id}`;
+  if (!PERFS[id]) warn(w, `no performance "${id}" (performers: ${Object.keys(PERFS).join(', ')})`);
+  if (c.face !== undefined && c.face !== 'eyes') err(w, `face must be "eyes" (glowing eye slits with lids) or left out (faceless) (got ${JSON.stringify(c.face)})`);
+  if (c.eyes !== undefined && !COLOR.test(c.eyes)) err(w, `eyes must be a colour like "#ffb04a" (amber = human, crimson = demonic)`);
+  if (c.weapon !== undefined && !['bokken', 'katana'].includes(c.weapon)) err(w, `weapon must be "bokken" or "katana" (got ${JSON.stringify(c.weapon)})`);
+  if (c.character !== undefined && !fs.existsSync(`library/characters/${c.character}.json`)) warn(w, `no library/characters/${c.character}.json`);
+}
+
+// --- clashes (planned blade contacts: the defender's blade is turned to meet the attacker's)
+(film.clashes ?? []).forEach((c, i) => {
+  const w = `clashes[${i}]`;
+  if (!isNum(c.t) || c.t < 0 || c.t > D) err(w, `t (the contact second) must be within 0–${D}s`);
+  if (c.until !== undefined && (!isNum(c.until) || c.until < c.t)) err(w, 'until must be a time at or after t (how long the blades stay crossed)');
+  if (!PERFS[c.attacker] || !PERFS[c.defender]) err(w, `attacker and defender must name performers (got ${c.attacker}, ${c.defender})`);
+  else if (c.attacker === c.defender) err(w, 'attacker and defender must be two different performers');
+  if (c.s !== undefined && (!isNum(c.s) || c.s < 0.1 || c.s > 1)) err(w, 's (where on the attacker\'s blade, 0.1–1) out of range');
+  if (c.ramp !== undefined && (!isNum(c.ramp) || c.ramp <= 0 || c.ramp > 0.6)) err(w, 'ramp must be 0–0.6 s');
+  if (c.maxDeg !== undefined && (!isNum(c.maxDeg) || c.maxDeg <= 0 || c.maxDeg > 90)) err(w, 'maxDeg must be 0–90');
+  else if ((c.maxDeg ?? 35) > 60) warn(w, `maxDeg ${c.maxDeg}: a wrist turn this large can look forced; better move the fighters or the keys closer`);
+});
+
+// --- effects (contacts, hit-stop, ribbon, impact frame) and automatic sounds
+const E = film.effects;
+if (E !== undefined) {
+  if (E.hitStop !== undefined && E.hitStop !== false && !(isNum(E.hitStop.min) && isNum(E.hitStop.max) && E.hitStop.max >= E.hitStop.min)) err('effects.hitStop', 'must be { min, max } frames (max ≥ min) or false');
+  if (E.ribbon !== undefined && !(isNum(E.ribbon.minSpeed) && isNum(E.ribbon.frames))) err('effects.ribbon', 'must be { minSpeed (m/s), frames }');
+  if (E.impactFrame !== undefined && typeof E.impactFrame !== 'boolean') {
+    const o = E.impactFrame;
+    if (typeof o !== 'object' || (o.minIntensity !== undefined && !isNum(o.minIntensity)) || (o.max !== undefined && !isNum(o.max)) || (o.at !== undefined && !(Array.isArray(o.at) && o.at.every(isNum)))) err('effects.impactFrame', 'must be true, false or { minIntensity 0–1, max (count), at: [body seconds] }');
+  }
+  for (const k of ['contactMinSpeed', 'contactGap', 'sparkLight']) if (E[k] !== undefined && (!isNum(E[k]) || E[k] < 0)) err(`effects.${k}`, 'must be a number ≥ 0');
+}
+const AS = film.autoSounds;
+if (AS !== undefined) {
+  const sfxOk = (v) => typeof v === 'string' && (fs.existsSync(`assets/sfx/${v}.mp3`) || fs.existsSync(`assets/sfx/${v}.wav`));
+  const chk = (where, v) => { if (v !== undefined && v !== false && !sfxOk(v)) warn(where, `no sound file assets/sfx/${v}.mp3 (sound.mjs will search for it)`); };
+  (AS.whoosh?.sfx ?? []).forEach((v, i) => chk(`autoSounds.whoosh.sfx[${i}]`, v));
+  chk('autoSounds.clash.sfx', AS.clash?.sfx); chk('autoSounds.clash.light', AS.clash?.light);
+  chk('autoSounds.clash.wood.sfx', AS.clash?.wood?.sfx); chk('autoSounds.clash.wood.light', AS.clash?.wood?.light); chk('autoSounds.scrape.sfx', AS.scrape?.sfx);
+  if (AS.whoosh?.maxPerSec !== undefined && (!isNum(AS.whoosh.maxPerSec) || AS.whoosh.maxPerSec < 1)) err('autoSounds.whoosh.maxPerSec', 'must be ≥ 1');
+}
+if (film.combat !== undefined && typeof film.combat !== 'boolean') err('combat', 'must be true or false (false = no contact detection, hit-stop or combat effects)');
+if (film.motion !== undefined && (typeof film.motion !== 'object' || (film.motion.overlap !== undefined && typeof film.motion.overlap !== 'boolean'))) err('motion', 'must be { "overlap": true | false }');
+
+// --- post FX (engine/fx.js, docs/EFFECTS-CATALOG.md)
+const MOODS = ['neutral', 'dawn', 'lantern', 'moonlit', 'demonic', 'kurosawa', 'ash'];   // keep in step with MOODS in engine/fx.js
+const FX_EVENTS = ['ca-flash', 'flash', 'ink-impact', 'speed-lines', 'letterbox', 'bloom-pulse', 'glint', 'grade', 'shafts', 'particles', 'fade'];
+const PART_KINDS = ['dust', 'ember', 'petal', 'snow', 'ash', 'shard'];
+const moodOk = (g) => (typeof g === 'string' ? MOODS.includes(g) : typeof g === 'object' && (!g.mood || MOODS.includes(g.mood)));
+if (film.fxBase !== undefined) {
+  const B = film.fxBase;
+  if (typeof B !== 'object' || Array.isArray(B)) err('fxBase', 'must be an object like { "grade": "dawn", "bloom": { "strength": 0.4 }, "vignette": { "amount": 0.5 } }');
+  else {
+    if (B.grade !== undefined && !moodOk(B.grade)) err('fxBase.grade', `must be a mood (${MOODS.join(', ')}) or a grade object`);
+    for (const [k, f] of [['bloom', 'strength'], ['vignette', 'amount'], ['grain', 'amount'], ['letterbox', 'amount']]) if (B[k] !== undefined && !isNum(B[k][f])) err(`fxBase.${k}`, `needs a number "${f}"`);
+    if ((B.bloom?.strength ?? 0) > 1.2) warn('fxBase.bloom', `strength ${B.bloom.strength} is very strong; glowing eyes and sparks will blow out (0.3–0.6 is usual)`);
+    for (const n of Object.keys(B.particles ?? {})) if (!PART_KINDS.includes(film.fxParticles?.[n]?.kind ?? n)) err(`fxBase.particles.${n}`, `unknown particle kind (${PART_KINDS.join(', ')}); or set its kind in fxParticles.${n}.kind`);
+  }
+}
+(film.fx ?? []).forEach((e, i) => {
+  const w = `fx[${i}]`;
+  if (!isNum(e.t) || e.t < 0 || e.t > D) err(w, `t must be within 0–${D}s`);
+  if (!FX_EVENTS.includes(e.effect)) err(w, `unknown effect ${JSON.stringify(e.effect)}. Known: ${FX_EVENTS.join(', ')}`);
+  if (e.effect === 'grade' && !moodOk(e.mood ?? e)) err(w, `mood must be one of ${MOODS.join(', ')}`);
+  if (['shafts', 'particles'].includes(e.effect) && !e.name) err(w, `a ${e.effect} event needs the "name" of the field`);
+  if (e.effect === 'glint' && !isVec3(e.at)) err(w, 'a glint needs "at": [x, y, z] (a world point)');
+  if (e.body !== undefined && typeof e.body !== 'boolean') err(w, 'body must be true (timed to the action: moves later with the hit-stops) or false');
+});
+if ((film.fx ?? []).length && film.fxBase === undefined) warn('fx', 'fx events without fxBase: the post stack runs with a neutral grade');
+
+// --- voice lines (docs/VOICE.md)
+const vids = new Set();
+(film.voice ?? []).forEach((v, i) => {
+  const w = `voice[${i}] (${v.id ?? 'no id'})`;
+  if (!v.id) err(w, 'needs an "id"'); else if (vids.has(v.id)) err(w, `id "${v.id}" is used twice`);
+  vids.add(v.id);
+  if (!PERFS[v.who]) err(w, `"who" must name a performer (known: ${Object.keys(PERFS).join(', ')}); the eyes of that fighter pulse with the words`);
+  if (!isNum(v.t) || v.t < 0 || v.t > D) err(w, `t must be within 0–${D}s`);
+  if (!v.text || typeof v.text !== 'string') err(w, 'needs the spoken "text"');
+  if (v.speed !== undefined && (!isNum(v.speed) || v.speed < 0.5 || v.speed > 1.5)) err(w, 'speed must be 0.5–1.5');
+});
+
 // --- shakes, events, titles
 (film.shakes ?? []).forEach((s, i) => {
   if (!isNum(s.t) || !isNum(s.dur) || !isNum(s.amp)) err(`shakes[${i}]`, 'needs t, dur and amp numbers');
@@ -108,6 +215,7 @@ const ids = new Set();
   if (!isNum(c.min) || !isNum(c.max) || c.max <= c.min) err(w, 'min/max (milliseconds) must be numbers with max > min');
   if (isNum(c.t) && isNum(c.len) && c.t + c.len > D + 0.5) warn(w, `runs past the end of the film (${(c.t + c.len).toFixed(1)}s)`);
   if (!isNum(c.gain) || c.gain < 0 || c.gain > 2) err(w, 'gain must be 0–2 (1 = normal)');
+  if (c.body !== undefined && typeof c.body !== 'boolean') err(w, 'body must be true (timed to the action: moves later with the hit-stops) or false');
 });
 
 // --- performances
@@ -143,6 +251,12 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (!Array.isArray(win) || win.length !== 2 || !win.every(isNum) || win[1] <= win[0]) err(`${w}.${f}[${j}]`, 'must be [start, end] seconds with end > start');
   });
   if (p.boatPose && !poses[p.boatPose]) err(`${w}.boatPose`, `unknown pose "${p.boatPose}"`);
+  if (p.eyes !== undefined) {
+    if (!Array.isArray(p.eyes) || !p.eyes.every((e) => Array.isArray(e) && e.length === 2 && e.every(isNum))) err(`${w}.eyes`, 'must be [[t, glow], …] (idle 0.9, focus 1.4, anticipation 2.2, decide 3.5, struck 0.4)');
+    else p.eyes.forEach((e, j) => { if (j > 0 && e[0] <= p.eyes[j - 1][0]) err(`${w}.eyes[${j}]`, 'times must increase'); if (e[1] < 0 || e[1] > 5) err(`${w}.eyes[${j}]`, 'glow must be 0–5'); });
+    if (!film.cast?.[id]?.face && !film.page) warn(`${w}.eyes`, `the eyes only show with cast.${id}.face = "eyes"`);
+  }
+  if (p.blinks !== undefined && !(Array.isArray(p.blinks) && p.blinks.every(isNum))) err(`${w}.blinks`, 'must be a list of seconds');
 }
 
 (film.duels ?? []).forEach((d, i) => {

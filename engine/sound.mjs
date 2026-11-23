@@ -71,8 +71,13 @@ async function find(cue) {
 // Automatic cues (whooshes, clashes, scrapes found from the motion) come from an events file
 // written by the renderer: --events output/<film>.events.json (default: used when it exists).
 const evPath = opt('events', `output/${base}.events.json`);
-const autoCues = fs.existsSync(evPath) ? (JSON.parse(fs.readFileSync(evPath, 'utf8')).cues ?? []) : [];
+const evData = fs.existsSync(evPath) ? JSON.parse(fs.readFileSync(evPath, 'utf8')) : null;
+const autoCues = evData?.cues ?? [];
 if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
+// A cue with "body": true is timed to the fighters' action (body time): it moves later by every hit-stop before it.
+const stops = evData?.stops ?? [];
+const filmT = (tb) => tb + stops.filter((st) => st.tb < tb).reduce((a, st) => a + st.d, 0);
+for (const c of film.sounds ?? []) if (c.body && stops.length) c.t = +filmT(c.t).toFixed(3);
 // Spoken lines (VOICE, docs/VOICE.md) come from output/<film>.voice.json, written by tools/voice.py:
 // cues with a ready "file" (no search), plus the speech windows used to duck beds/music under the voice.
 const voicePath = opt('voice', `output/${base}.voice.json`);

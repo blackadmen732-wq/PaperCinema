@@ -68,5 +68,5 @@ npm run preview                                          # live preview in a bro
   - the face-touch scene; SHIMI on the 3D body
   - the anime effects pack; a 3-second Shorts opening; Blender slash v2
   - rigging the TRELLIS models
-- **Next first:** port the motion-test systems into `main.js` and re-render the duel (see `docs/FIX-LIST.md` status table).
+- **Next first:** re-render the duel (`film/kuroko-duel.json` now uses the shared combat layer `engine/combat.js`: clashes, hit-stop, eyes, auto sounds, FX); then the items marked next in `docs/FIX-LIST.md`.
 - **Limits:** the browser preview's set is still code in `engine/world.js`; the Blender set (`blender/world/build_world.py`) does not yet import characters or a film timeline.

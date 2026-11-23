@@ -6,14 +6,22 @@ import { buildWorld, STUDIO_X } from './world.js';
 import { makeKuroko } from './kuroko.js';
 import { expandMoves } from './moves.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
-import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, reachLeftHand, reachHand, BASE_POSE } from './figure.js';
+import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, solveArm, reachHand, BASE_POSE } from './figure.js';
 import { paper, rng } from './paper.js';
+import { loadVoice } from './voice-env.js';
+import * as combat from './combat.js';
+import { createFX, fxAt } from './fx.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/ganryujima.json')).json();
 const VERTICAL = params.get('aspect') === 'vertical' || (film.format === 'vertical' && params.get('aspect') !== 'horizontal');
 const W = VERTICAL ? 720 : film.width, H = VERTICAL ? 1280 : film.height;
 if (VERTICAL) { film.letterbox = 0; document.body.classList.add('vertical'); }
+const FPS = film.fps ?? 24;
+const FILM_NAME = (params.get('film') ?? '/film/ganryujima.json').split('/').pop().replace('.json', '');
+const VOICE = film.voice ? await loadVoice(FILM_NAME) : null;   // spoken lines → eyes pulse (docs/VOICE.md)
+// optional film.cast: { kojiro: { face: 'eyes' }, musashi: { face: 'eyes', weapon: 'bokken' | 'katana' } }
+const CAST = film.cast ?? {};
 
 // ---------- renderer / scene ----------
 const canvas = document.getElementById('c');
@@ -43,7 +51,7 @@ scene.add(studioRig);
 
 const kojiro = makeFigure({
   robe: '#efe6d4', sleeve: '#efe6d4', haori: '#9c2a25', hakama: '#5c2220', hakamaFold: '#4a1b19',
-  skin: '#efe3cc', collar: '#f6eedf', obi: '#2a1d1a',
+  skin: '#efe3cc', collar: '#f6eedf', obi: '#2a1d1a', face: CAST.kojiro?.face, eyes: CAST.kojiro?.eyes,
 });
 scene.add(kojiro.root);
 const hipKatana = makeKatana();
@@ -71,11 +79,14 @@ scene.add(flyingSaya);
 
 const musashi = makeFigure({
   robe: '#3d4252', sleeve: '#3d4252', hakama: '#4b3e34', hakamaFold: '#3d322a',
-  skin: '#efe3cc', collar: '#d9d2c2', obi: '#1f1b19', band: '#f3eee2',
+  skin: '#efe3cc', collar: '#d9d2c2', obi: '#1f1b19', band: '#f3eee2', face: CAST.musashi?.face, eyes: CAST.musashi?.eyes,
 });
 scene.add(musashi.root);
-const musashiBokken = makeBokken();
-holdInHand(musashi.rH, musashiBokken, -0.05);
+// Musashi's weapon: the carved oar bokken (history) by default, or a katana
+const MUSASHI_KATANA = CAST.musashi?.weapon === 'katana';
+const musashiKatana = MUSASHI_KATANA ? makeKatana() : null;
+const musashiBokken = MUSASHI_KATANA ? musashiKatana.sword : makeBokken();
+holdInHand(musashi.rH, musashiBokken, MUSASHI_KATANA ? -0.06 : -0.05);
 const flyingTail = new THREE.Group();
 for (const sgn of [1, -1]) {
   const tp = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.16, 0.006), paper('#f3eee2', { repeat: 6 }));
@@ -139,24 +150,8 @@ const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');
 const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };
 
-// KUROKO camera operator: frames characters by name and reacts to their motion
-const _bf = { origin: [0, 0, 0], x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] };
-const _m4 = new THREE.Matrix4(), _e = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
 const pair = {};
 for (const d of film.duels ?? []) { pair[d.a] = d.b; pair[d.b] = d.a; }
-const kuroko = makeKuroko({
-  motions: { kojiro: kojiroMotion, musashi: musashiMotion },
-  impacts: [...new Set([...(film.shakes ?? []).map((s) => s.t), ...(EV.impact !== undefined ? [EV.impact] : [])])],
-  pair,
-  aspect: W / H,
-  bladeFrame: () => {                                   // live frame of the drawn blade (for the blade rig)
-    _m4.copy(blade.matrixWorld);
-    _m4.extractBasis(_e[0], _e[1], _e[2]);
-    const o = new THREE.Vector3().setFromMatrixPosition(_m4);
-    _bf.origin = o.toArray(); _bf.x = _e[0].toArray(); _bf.y = _e[1].toArray(); _bf.z = _e[2].toArray();
-    return _bf;
-  },
-});
 
 /** REACTION LAYER: fighters respond to each other automatically inside film.duels windows.
  *  1. Eyes on the opponent: the head turns and tilts toward the other fighter's head (clamped).
@@ -257,94 +252,182 @@ const titleEls = film.titles.map((tl) => {
 const fadeEl = document.getElementById('fade');
 const flashEl = document.getElementById('flash');
 
-// ---------- frame ----------
+// ---------- posing the fighters at a BODY time (hit-stops freeze this clock, not the camera, sparks or sound) ----------
 const tmp = new THREE.Vector3();
-window.renderAt = (t) => {
-  const shot = shotAt(t);
-  world.setMode(shot.mode);
-  world.update(t);
-
-  // studio sword: draw the blade 9.6s → 11.8s
-  studioKatana.sword.position.x = -0.78 * smooth(Math.min(1, Math.max(0, (t - ev('studio-blade-draw', 9.6)) / 2.2)));
-
-  // boat + boatman
-  boat.position.set(0.6, -0.2 + 0.04 * Math.sin(t * 1.6), boatZ(t));
-  boat.rotation.set(0.02 * Math.sin(t * 1.1), 0, 0.03 * Math.sin(t * 1.3));
-  const row = t < ev('boat-arrives', 12.5) + 3.9 ? Math.sin(t * 2.4) : 0;
-  oar.rotation.set(0.45, 0.25 * row, 0);
-  applyPose(boatman, track([[0, { rsx: -0.9 + 0.3 * row, rsz: 0.3, rex: -0.6, lsx: -0.9 + 0.3 * row, lsz: -0.2, lex: -0.6, tx: 0.15 + 0.1 * row }]], t));
-  boatman.root.position.set(0, 0.06, 1.0);
-  boatman.root.rotation.y = PI;
-
-  // Kojirō: keyed motion from the film file + life
+const tDraw = ev('kojiro-draw', 18.25), tThrow = ev('kojiro-throws-scabbard', 20.05);
+const tCut = ev('headband-cut', 25.45);
+const boatUntil = PERF.musashi.rideBoatUntil ?? 0;
+let FILM_TIME = 0, CONTACTS = null, wGrip = 0;
+const eyeOpts = () => ({ fps: FPS, voice: VOICE, contacts: CONTACTS });
+// the one visible drawn blade: scabbard-slide frame → grip frame, blended over ~6 frames once the tip clears
+function composeBlade() {
+  hipKatana.sword.matrixWorld.decompose(_pa, _qa, _sc);
+  handKatana.sword.matrixWorld.decompose(_pb, _qb, _sc);
+  blade.matrix.compose(_pa.lerp(_pb, wGrip), _qa.slerp(_qb, wGrip), _sc.set(1, 1, 1));
+  blade.matrixWorld.copy(blade.matrix);                // blade sits directly in the scene
+  blade.updateMatrixWorld(true);
+}
+const FIGHTERS = {
+  kojiro: { id: 'kojiro', fig: kojiro, perf: PERF.kojiro, sword: blade, aimObject: handKatana.sword, bladeLen: handKatana.length,
+    yOff: -0.012, material: 'steel', beforeAim: composeBlade, afterAim: composeBlade },
+  musashi: { id: 'musashi', fig: musashi, perf: PERF.musashi, sword: musashiBokken, bladeLen: MUSASHI_KATANA ? musashiKatana.length : 0.8,
+    yOff: MUSASHI_KATANA ? -0.012 : -0.01, material: MUSASHI_KATANA ? 'steel' : 'wood' },
+};
+function placeBoat(tb) {
+  boat.position.set(0.6, -0.2 + 0.04 * Math.sin(tb * 1.6), boatZ(tb));
+  boat.rotation.set(0.02 * Math.sin(tb * 1.1), 0, 0.03 * Math.sin(tb * 1.3));
+}
+function poseFighters(tb) {
+  placeBoat(tb);
+  // Kojirō: keyed motion from the film file + life + reactions + eyes
   const duel = (film.duels ?? [])[0];
-  let kp = addLife(kojiroMotion, t, kojiroMotion(t), 0);
-  if (duel) kp = react(kp, kojiroMotion, musashiMotion, t, duel);
+  let kp = addLife(kojiroMotion, tb, kojiroMotion(tb), 0);
+  if (duel) kp = react(kp, kojiroMotion, musashiMotion, tb, duel);
+  combat.applyEyes(FIGHTERS.kojiro, kp, tb, FILM_TIME, eyeOpts());
   applyPose(kojiro, kp);
-  const tDraw = ev('kojiro-draw', 18.25), tThrow = ev('kojiro-throws-scabbard', 20.05);
   // thumb push (3 cm), then the blade slides out along the scabbard (saya stays on the hip)
-  const kDraw = Math.min(1, Math.max(0, (t - tDraw) / 0.37));
+  const kDraw = Math.min(1, Math.max(0, (tb - tDraw) / 0.37));
   hipKatana.sword.position.x = -(0.03 * Math.min(1, kDraw * 6) + 0.72 * smooth(Math.max(0, (kDraw - 0.15) / 0.85)));
-  hipKatana.saya.visible = t < tThrow;
-  // thrown scabbard
-  const ks = (t - tThrow) / 1.35;
-  flyingSaya.visible = ks >= 0 && ks <= 1.0;
-  if (flyingSaya.visible) {
-    const a = new THREE.Vector3(0.35, 1.0, -0.6), b = new THREE.Vector3(1.9, -0.25, 6.4);
-    flyingSaya.position.copy(a.lerp(b, ks)).add(new THREE.Vector3(0, 2.4 * 4 * ks * (1 - ks), 0));
-    flyingSaya.rotation.set(0.3, 1.4 + ks * 2, ks * 11);
-  }
-  splashBurst(t, ev('scabbard-splash', 21.4), new THREE.Vector3(1.9, -0.15, 6.4));
-
   // Musashi: rides the boat until rideBoatUntil, then keyed motion + walk cycle + life
   let mp;
-  const boatUntil = PERF.musashi.rideBoatUntil ?? 0;
-  if (t < boatUntil) {
+  if (tb < boatUntil) {
     mp = { ...boatPose, x: boat.position.x, y: boat.position.y + 0.08, z: boat.position.z - 0.55, ry: PI, rz: boat.rotation.z };
   } else {
-    mp = addLife(musashiMotion, t, musashiMotion(t), 1.3);
-    if (duel) mp = react(mp, musashiMotion, kojiroMotion, t, duel);
-    if (windowWeight(PERF.musashi.walk, t, 0.01) > 0) {
-      const ph = t * PI * 2 * 1.0;                 // one stride cycle per second = two steps
+    mp = addLife(musashiMotion, tb, musashiMotion(tb), 1.3);
+    if (duel) mp = react(mp, musashiMotion, kojiroMotion, tb, duel);
+    if (windowWeight(PERF.musashi.walk, tb, 0.01) > 0) {
+      const ph = tb * PI * 2 * 1.0;                // one stride cycle per second = two steps
       mp.phase = ph; mp.stride = 0.55;              // legs swing in opposite phase (solveLegs)
       mp.y += Math.abs(Math.sin(ph)) * 0.02;
       mp.sway += Math.sin(ph) * 0.06;
       mp.lsx += Math.sin(ph) * 0.25;
     }
   }
+  combat.applyEyes(FIGHTERS.musashi, mp, tb, FILM_TIME, eyeOpts());
   applyPose(musashi, mp);
-
-  // two-hand grip: left hand finds the end of the handle (inverse kinematics)
+  handKatana.sword.quaternion.identity(); musashiBokken.quaternion.identity();   // clash aim turns these
   kojiro.root.updateMatrixWorld(true);
   musashi.root.updateMatrixWorld(true);
   // the right hand rests on, then grips, the handle while the blade is still in the scabbard
-  const handOnHilt = windowWeight([[0, tDraw + 0.3]], t, 0.12);
+  const handOnHilt = windowWeight([[0, tDraw + 0.3]], tb, 0.12);
   if (handOnHilt > 0) reachHand(kojiro, 'r', hipKatana.sword.localToWorld(tmp.set(-0.08, -0.018, 0)).clone(), handOnHilt);
-  // blade frame: scabbard-slide frame → grip frame, blended over ~6 frames once the tip clears
-  const wGrip = smooth(Math.min(1, Math.max(0, (t - (tDraw + 0.3)) / 0.25)));
-  hipKatana.sword.matrixWorld.decompose(_pa, _qa, _sc);
-  handKatana.sword.matrixWorld.decompose(_pb, _qb, _sc);
-  blade.matrix.compose(_pa.lerp(_pb, wGrip), _qa.slerp(_qb, wGrip), _sc.set(1, 1, 1));
-  blade.updateMatrixWorld(true);
-  reachLeftHand(kojiro, blade.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), windowWeight(PERF.kojiro.twoHand, t));
-  reachLeftHand(musashi, musashiBokken.localToWorld(tmp.set(-0.26, 0.002, 0)).clone(), windowWeight(PERF.musashi.twoHand, t));
+  wGrip = smooth(Math.min(1, Math.max(0, (tb - (tDraw + 0.3)) / 0.25)));
+  composeBlade();
+  // clash aim (film.clashes): the defender's wrist turns the blade across the attacker's
+  combat.clashAim(film.clashes, FIGHTERS, tb);
+  // two-hand grip: the left hand closes on the end of the handle (analytic arm IK, no pops)
+  const wk = windowWeight(PERF.kojiro.twoHand, tb), wm = windowWeight(PERF.musashi.twoHand, tb);
+  if (wk > 0) solveArm(kojiro, 'l', blade.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), null, wk);
+  if (wm > 0) solveArm(musashi, 'l', musashiBokken.localToWorld(MUSASHI_KATANA ? tmp.set(-0.27, -0.018, 0) : tmp.set(-0.26, 0.002, 0)).clone(), null, wm);
+  kojiro.root.updateMatrixWorld(true);
+  musashi.root.updateMatrixWorld(true);
+  musashi.bandTail.visible = tb < tCut;
+}
 
-  const tCut = ev('headband-cut', 25.45);
-  musashi.bandTail.visible = t < tCut;
-  const kt = (t - tCut) / 3;
+// ---------- COMBAT (engine/combat.js): blade contacts at 240 Hz → hit-stop, sparks, ribbon, impact frame, sound cues ----------
+// Off with "combat": false. No contact can happen before Kojirō's blade is in his grip or while Musashi rides the boat.
+const COMBAT_ON = film.combat !== false;
+const C = COMBAT_ON
+  ? combat.analyse({ film, fighters: [FIGHTERS.kojiro, FIGHTERS.musashi], pose: poseFighters, fps: FPS, dur: film.duration, symmetric: true,
+    armed: (tb) => tb > tDraw + 0.55 && tb >= boatUntil })
+  : { contacts: [], stops: [], cues: [], bodyT: (t) => t, filmT: (t) => t, tipSpeedAt: () => 0, events: { contacts: [], stops: [], cues: [] } };
+const { contacts, stops, bodyT, filmT } = C;
+CONTACTS = contacts;
+// automatic whoosh / clash / scrape cues go to sound.mjs only when the film asks for them ("autoSounds")
+window.EVENTS = { ...C.events, cues: film.autoSounds ? C.cues : [] };
+// authored action times (shakes, impact, headband cut) are in body time: move them past the hit-stops
+const SHAKES = (film.shakes ?? []).map((s) => ({ ...s, t: filmT(s.t) }));
+const tHit = filmT(ev('impact', 25.6)), tCutF = filmT(tCut);
+const INK_AT = (film.effects?.impactFrame?.at ?? []).map(filmT);   // ink frames on blows that are not blade contacts
+
+// KUROKO camera operator: frames characters by name and reacts to their motion.
+// Shots, rigs and anchor beats are timed to the action, so the camera runs on BODY time too: a hit-stop inserts
+// frames into the film without pushing the cuts early. The punch, shakes, sparks, titles and sound run on film time.
+const _bf = { origin: [0, 0, 0], x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] };
+const _m4 = new THREE.Matrix4(), _e = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+const kuroko = makeKuroko({
+  motions: { kojiro: kojiroMotion, musashi: musashiMotion },
+  impacts: [...new Set([...(film.shakes ?? []).map((s) => s.t), ...(EV.impact !== undefined ? [EV.impact] : []),
+    ...contacts.map((c) => c.tb).filter((t) => !(film.shakes ?? []).some((s) => Math.abs(s.t - t) < 0.1))])],
+  pair,
+  aspect: W / H,
+  bladeFrame: () => {                                   // live frame of the drawn blade (for the blade rig)
+    _m4.copy(blade.matrixWorld);
+    _m4.extractBasis(_e[0], _e[1], _e[2]);
+    const o = new THREE.Vector3().setFromMatrixPosition(_m4);
+    _bf.origin = o.toArray(); _bf.x = _e[0].toArray(); _bf.y = _e[1].toArray(); _bf.z = _e[2].toArray();
+    return _bf;
+  },
+});
+
+// effects: smear ribbon, sparks, post FX (engine/fx.js, only when the film has "fxBase" or "fx")
+const RIB = COMBAT_ON ? combat.makeRibbons(scene, [FIGHTERS.kojiro, FIGHTERS.musashi], { ribbon: film.effects?.ribbon, fps: FPS, pose: poseFighters, tipSpeedAt: C.tipSpeedAt }) : null;
+const SPARKS = combat.makeSparks(scene, camera, contacts, { light: film.effects?.sparkLight ?? 6 });
+const FX = (film.fxBase || film.fx) && !params.has('nofx') ? createFX(renderer, scene, camera, { width: W, height: H, seed: 7, fps: FPS }) : null;
+const FX_TRACK = FX ? [...(film.fx ?? []).map((e) => (e.body ? { ...e, t: filmT(e.t) } : e)), ...combat.contactFx(contacts, film.effects?.contactFx)] : [];   // "body": true = timed to the action
+if (FX) {                                               // particle fields named in fxBase / fx (dust, ember, petal, snow, ash, shard)
+  const names = new Set([...Object.keys(film.fxBase?.particles ?? {}), ...(film.fx ?? []).filter((e) => e.effect === 'particles').map((e) => e.name)]);
+  for (const n of names) {
+    const o = film.fxParticles?.[n] ?? {};
+    FX.particles({ name: n, kind: o.kind ?? n, center: o.center ?? [0, 1.5, 0], size: o.size ?? [7, 3.6, 7], ...o });
+  }
+}
+
+// ---------- frame ----------
+window.renderAt = (t) => {
+  FILM_TIME = t;
+  const tb = bodyT(t);
+  const shot = shotAt(tb);
+  world.setMode(shot.mode);
+  world.update(t);
+
+  // studio sword: draw the blade 9.6s → 11.8s
+  studioKatana.sword.position.x = -0.78 * smooth(Math.min(1, Math.max(0, (t - ev('studio-blade-draw', 9.6)) / 2.2)));
+
+  // fighters (and the boat they may ride) at body time
+  poseFighters(tb);
+  const row = tb < ev('boat-arrives', 12.5) + 3.9 ? Math.sin(tb * 2.4) : 0;
+  oar.rotation.set(0.45, 0.25 * row, 0);
+  applyPose(boatman, track([[0, { rsx: -0.9 + 0.3 * row, rsz: 0.3, rex: -0.6, lsx: -0.9 + 0.3 * row, lsz: -0.2, lex: -0.6, tx: 0.15 + 0.1 * row }]], tb));
+  boatman.root.position.set(0, 0.06, 1.0);
+  boatman.root.rotation.y = PI;
+
+  hipKatana.saya.visible = tb < tThrow;
+  // thrown scabbard
+  const ks = (t - filmT(tThrow)) / 1.35;
+  flyingSaya.visible = ks >= 0 && ks <= 1.0;
+  if (flyingSaya.visible) {
+    const a = new THREE.Vector3(0.35, 1.0, -0.6), b = new THREE.Vector3(1.9, -0.25, 6.4);
+    flyingSaya.position.copy(a.lerp(b, ks)).add(new THREE.Vector3(0, 2.4 * 4 * ks * (1 - ks), 0));
+    flyingSaya.rotation.set(0.3, 1.4 + ks * 2, ks * 11);
+  }
+  splashBurst(t, filmT(ev('scabbard-splash', 21.4)), new THREE.Vector3(1.9, -0.15, 6.4));
+
+  const kt = (t - tCutF) / 3;
   flyingTail.visible = kt >= 0 && kt < 1;
   if (flyingTail.visible) {
     flyingTail.position.set(-0.7 * kt + 0.12 * Math.sin(kt * 14), 1.78 - 1.75 * smooth(kt), 0.9 + 1.2 * kt);
     flyingTail.rotation.set(Math.sin(kt * 11) * 1.2, kt * 6, Math.cos(kt * 9) * 0.8);
   }
 
+  // smear ribbon (re-poses the recent past, then the present again)
+  const impactFrame = COMBAT_ON && combat.isImpactFrame(film, contacts, t, FPS, INK_AT);
+  if (RIB) RIB.update(tb, impactFrame);
+  // hit-stop jitter: during a stop the fighters shiver ±6 mm in opposite directions on alternate frames
+  if (stops.some((s) => t >= s.t && t < s.t + s.d)) {
+    const sgn = Math.round(t * FPS) % 2 ? 1 : -1;
+    kojiro.root.position.z += 0.006 * sgn; musashi.root.position.z -= 0.006 * sgn;
+    kojiro.root.updateMatrixWorld(true); musashi.root.updateMatrixWorld(true);
+    composeBlade();
+  }
+
   // impact: paper shards burst from the point of the blow
   kojiro.head.getWorldPosition(tmp);
-  impactBurst(t, ev('impact', 25.6), tmp.clone().add(new THREE.Vector3(0, 0.22, 0)));
+  impactBurst(t, tHit, tmp.clone().add(new THREE.Vector3(0, 0.22, 0)));
 
-  // camera path from the shot list, then any shakes listed in film.shakes
-  placeCamera(shot, t);
-  for (const sh of film.shakes ?? []) {
+  // camera path from the shot list, then any shakes listed in film.shakes, then the punch of each blade contact
+  placeCamera(shot, tb);
+  for (const sh of SHAKES) {
     const k = (t - sh.t) / sh.dur;
     if (k > 0 && k < 1) {
       const s = (1 - k) * sh.amp;   // strongest at the hit, fading out
@@ -352,6 +435,12 @@ window.renderAt = (t) => {
       camera.position.y += Math.cos(t * 77) * s;
     }
   }
+  if (contacts.length) {                               // KUROKO rigs already punch the fov in; keyframe shots get it here
+    const pu = combat.punch(contacts, t, camera, camera.fov, { fov: shot.rig ? 0 : 7 });
+    camera.fov = pu.fov; camera.updateProjectionMatrix();
+    camera.rotateZ((pu.roll * Math.PI) / 180);
+  }
+  const fl = SPARKS.update(t);                          // sparks + flash light
 
   // overlays: titles, fades, flash
   film.titles.forEach((tl, i) => {
@@ -360,13 +449,25 @@ window.renderAt = (t) => {
   });
   let fade = 0;
   const edges = film.shots.filter((s) => s.mode === 'studio').flatMap((s) => [s.start, s.end]);
-  for (const e of edges) fade = Math.max(fade, 1 - Math.abs(t - e) / 0.35);
+  for (const e of edges) fade = Math.max(fade, 1 - Math.abs(tb - e) / 0.35);
   fade = Math.max(fade, 1 - t / 0.8, (t - (film.duration - 1)) / 1);
   fadeEl.style.opacity = Math.min(1, Math.max(0, fade));
-  const tHit = ev('impact', 25.6);
-  flashEl.style.opacity = t > tHit && t < tHit + 0.35 ? 0.55 * (1 - (t - tHit) / 0.35) : 0;
+  const hitFlash = t > tHit && t < tHit + 0.35 ? 0.55 * (1 - (t - tHit) / 0.35) : 0;
+  const inkPost = FX_TRACK.some((e) => e.effect === 'ink-impact' && t >= e.t && t < e.t + (e.dur ?? 2 / FPS));   // keep the ink frame clean
+  flashEl.style.opacity = impactFrame || inkPost ? 0 : Math.max(hitFlash, Math.min(0.35, fl * 0.3));
 
-  renderer.render(scene, camera);
+  if (impactFrame) {                                   // ONE frame: ink silhouettes on a washi page
+    combat.renderInkFrame(renderer, scene, camera, [kojiro.root, musashi.root, blade], RIB.meshes);
+    return;
+  }
+  if (FX) FX.render(t, fxAt(t, FX_TRACK, film.fxBase, FPS));
+  else renderer.render(scene, camera);
+};
+window.probe = (tb) => {                               // blade positions and distance at a body time (debugging clashes)
+  poseFighters(tb);
+  const A = combat.bladeSeg(FIGHTERS.kojiro), B = combat.bladeSeg(FIGHTERS.musashi);
+  const r3 = (v) => v.toArray().map((x) => +x.toFixed(3));
+  return { kojiro: { tip: r3(A.tip), guard: r3(A.guard) }, musashi: { tip: r3(B.tip), guard: r3(B.guard) }, d: +combat.closestSegSeg(A.a, A.tip, B.a, B.tip).d.toFixed(3) };
 };
 
 await document.fonts.ready;

@@ -4,7 +4,7 @@ From a director / animator / sound-designer review of `film/kuroko-duel.json` (F
 Research background: `../research/anime-fight-craft.md`.
 
 ## Three root causes
-1. **The main engine uses none of the new motion work**: no `overlap`, no `ease`/`settle`/`drag` in `library/moves.json`, no eyes, no hit-stop, ribbon, sparks or clash aim. These exist only on the motion-test page (`engine/motion.js`).
+1. **(Fixed: `engine/combat.js`, see Status.) The main engine used none of the new motion work**: no `overlap`, no `ease`/`settle`/`drag` in `library/moves.json`, no eyes, no hit-stop, ribbon, sparks or clash aim. These exist only on the motion-test page (`engine/motion.js`).
 2. **Vertical framing is broken in KUROKO**: the `frame` rig fits `W = sep + 1.1` into a 19.5° horizontal view, so in 9:16 the camera sits ~16 m away and the fighters are ~17% of the frame. Fix: `W = sep·|cos(angle)| + 1.1`, over-the-shoulder angles 55–68°, fighter ≥ 45% of frame height.
 3. **The clash had no picture and no sound**: the blades were ~1 m apart at the "clash", and `blade-clash.mp3` is really a slice sound (no low end, no ring). The whoosh 150 ms before it was 6 dB louder. `swing`, `swing-2` and `swing-3` were the same file.
 
@@ -58,9 +58,12 @@ changes too fast (clamp) · strobing at 30 m/s (the ribbon).
 | Synthesised clash / light clash / scrape / 3 whooshes / draw shing (`tools/synth_sfx.sh`) | ✅ built |
 | `sfx` reuse and `rate` pitch in `sound.mjs`; automatic cues from `output/<film>.events.json` | ✅ built |
 | Contact detection, clash aim, hit-stop, sparks, ribbon, ink impact frame, eyes, eye-to-blade slide | ✅ on the motion page |
-| Port all of that into `main.js`; vertical framing fix in `kuroko.js` | next |
+| Port all of that into `main.js`: shared module `engine/combat.js` used by `main.js` and `motion.js` (motion page renders pixel-identical); `film.cast` (`face: "eyes"`, `weapon`), `clashes`, hit-stop on body time (shots and authored action times follow it), ribbon, sparks, ink frame (`effects.impactFrame` `{minIntensity, max, at}`), camera punch, eye states + voice pulse, `window.EVENTS` auto cues (bokken = wood `clap` at rate 0.8 + `clash-light`), `solveArm` two-hand grip; `film/kuroko-duel.json` uses all of it | ✅ built |
+| FX (`engine/fx.js`) in `main.js` and `motion.js` behind `fxBase` / `fx` (CA flash + bloom pulse on contacts, `"body": true` events follow hit-stops); checker knows `cast`, `clashes`, `voice`, `fx`, `fxBase`, `effects`, `autoSounds`, motion-page `camera` | ✅ built |
+| Vertical framing in `kuroko.js` (`W = sep·\|cos\| + 1.1`, 55° default in 9:16) | ✅ in code; far frames can still land in the pines (S7 of kuroko-duel uses `dist` 0.5–0.65) |
 | Ducking, pan, limiter/loudnorm | next |
 | Jump-back beat sheet (`arc`, foot channels, cloth spring) | next |
-| Eye glow states, blink, trail, bloom | next |
+| Eye glow states, blink, bloom | ✅ built (auto states from contacts when a performance has no `eyes` list) |
+| Eye glow trail, pupils leading the head | next |
 | Camera pack 3–10 | next |
 | New opening | next |

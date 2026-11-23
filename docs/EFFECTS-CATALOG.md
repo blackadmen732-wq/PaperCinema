@@ -76,7 +76,7 @@ Events (times in film seconds):
 | `shafts` / `particles` | Fade in, hold, fade out | `name`, `amount`, `in`, `until`, `out` |
 | `fade` | To a colour | `dur` 0.6, `color` |
 
-The checker (`engine/validate.mjs`) does not know these fields yet. Add them there when FX is wired into `main.js`.
+The checker (`engine/validate.mjs`) checks `fxBase` and `fx`. Both `engine/main.js` and `engine/motion.js` run the stack when a film has `fxBase` or `fx`, and add a `ca-flash` and a `bloom-pulse` on every blade contact (`effects.contactFx: false` turns that off). In `main.js`, `"body": true` on an event times it to the action (it moves later with the hit-stops), and particle fields named in `fxBase.particles` are created around the duel (`fxParticles.<name>` sets `kind`, `center`, `size`).
 
 ## 4. Choosing effects by beat
 

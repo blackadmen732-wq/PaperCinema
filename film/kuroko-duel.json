@@ -5,6 +5,98 @@
   "height": 720,
   "letterbox": 2.39,
   "duration": 16,
+  "motion": {
+    "overlap": true,
+    "note": "anime layer: follow-through lag, snap easing, overshoot (docs/ANIMATION.md §10)"
+  },
+  "cast": {
+    "kojiro": {
+      "face": "eyes"
+    },
+    "musashi": {
+      "face": "eyes",
+      "weapon": "bokken"
+    }
+  },
+  "fxBase": {
+    "grade": "dawn",
+    "bloom": {
+      "strength": 0.35,
+      "radius": 0.4,
+      "threshold": 0.9
+    },
+    "vignette": {
+      "amount": 0.5
+    },
+    "grain": {
+      "amount": 0.04
+    }
+  },
+  "fx": [
+    {
+      "t": 9.36,
+      "effect": "speed-lines",
+      "dur": 0.28,
+      "amount": 0.6,
+      "body": true,
+      "note": "tsuki dash"
+    },
+    {
+      "t": 13.6,
+      "effect": "grade",
+      "mood": "ash",
+      "in": 1.6,
+      "body": true,
+      "note": "aftermath"
+    }
+  ],
+  "effects": {
+    "ribbon": {
+      "minSpeed": 5,
+      "frames": 3
+    },
+    "impactFrame": {
+      "minIntensity": 0.9,
+      "max": 1,
+      "at": [
+        11.45
+      ],
+      "note": "ink silhouette frames: the first full-strength clash and the decisive blow (body time 11.45)"
+    },
+    "hitStop": {
+      "min": 3,
+      "max": 4
+    },
+    "contactMinSpeed": 6,
+    "note": "contacts slower than 6 m/s (tips touching, blades resting together) are not clashes unless inside a clashes window; a new contact needs 0.3 s since the last",
+    "contactGap": 0.3,
+    "sparkLight": 2
+  },
+  "autoSounds": {
+    "whoosh": {
+      "sfx": [
+        "whoosh-a",
+        "whoosh-b",
+        "whoosh-c"
+      ],
+      "on": 11,
+      "rearm": 6,
+      "maxPerSec": 2
+    },
+    "clash": {
+      "sfx": "clash-steel",
+      "light": "clash-light",
+      "wood": {
+        "sfx": "clap",
+        "rate": 0.8,
+        "light": "clash-light",
+        "note": "bokken: dry wood clap pitched down + a light clash, no long steel ring"
+      }
+    },
+    "scrape": {
+      "sfx": "steel-scrape"
+    }
+  },
   "shots": [
     {
       "id": "S1",
@@ -148,7 +240,8 @@
               "musashi"
             ],
             "angle": 15,
-            "fov": 34
+            "fov": 34,
+            "dist": 0.65
           },
           {
             "t": 11.15,
@@ -160,7 +253,7 @@
             "angle": 32,
             "elevation": -3,
             "fov": 28,
-            "dist": 0.85
+            "dist": 0.5
           },
           {
             "t": 11.9,
@@ -172,9 +265,11 @@
             "size": "wide",
             "elevation": 12,
             "angle": 28,
-            "fov": 38
+            "fov": 38,
+            "dist": 0.6
           }
-        ]
+        ],
+        "note": "beats pulled in (dist): at full vertical distance the camera sat inside the pine tiers"
       }
     },
     {
@@ -201,10 +296,10 @@
   ],
   "shakes": [
     {
-      "t": 4.95,
+      "t": 4.8,
       "dur": 0.35,
       "amp": 0.008,
-      "note": "blade clash"
+      "note": "blade clash (kesa met by the raised block)"
     },
     {
       "t": 11.45,
@@ -219,7 +314,7 @@
     "kojiro-draw": -3,
     "kojiro-throws-scabbard": -8,
     "scabbard-splash": -8,
-    "headband-cut": 4.95,
+    "headband-cut": 4.8,
     "impact": 11.45
   },
   "performances": {
@@ -248,8 +343,48 @@
           "move": "lunge-shomen"
         },
         {
+          "t": 4.4,
+          "pose": "chudan",
+          "z": -0.35,
+          "note": "closes the distance a little, so the kesa cut can be met"
+        },
+        {
           "t": 4.65,
-          "move": "parry-high"
+          "pose": "chudan"
+        },
+        {
+          "t": 4.81,
+          "pose": "chudan",
+          "ease": "snap",
+          "drag": 0,
+          "note": "raised block (high seigan): the blade rises in front to meet the kesa cut; clash aim does the rest",
+          "rsx": -1.55,
+          "lsx": -1.55,
+          "rex": -0.7,
+          "lex": -0.7,
+          "rwx": -0.25,
+          "tx": -0.06,
+          "weight": -0.35,
+          "crouch": 0.14
+        },
+        {
+          "t": 5.15,
+          "pose": "chudan",
+          "settle": true,
+          "rsx": -1.55,
+          "lsx": -1.55,
+          "rex": -0.7,
+          "lex": -0.7,
+          "rwx": -0.25,
+          "tx": -0.06,
+          "weight": -0.35,
+          "crouch": 0.14
+        },
+        {
+          "t": 5.5,
+          "pose": "chudan",
+          "z": -0.55,
+          "note": "steps back to the original distance"
         },
         {
           "t": 6.2,
@@ -287,15 +422,99 @@
         },
         {
           "t": 12.4,
-          "pose": "kneel-collapse"
+          "pose": "kneel-collapse",
+          "lid": 0.5
         },
         {
           "t": 13.3,
           "pose": "fallen",
           "y": -0.06,
           "x": 0.1,
-          "rz": -1.42
+          "rz": -1.42,
+          "lid": 0.85
         }
+      ],
+      "eyes": [
+        [
+          0,
+          1.0
+        ],
+        [
+          2.6,
+          1.2
+        ],
+        [
+          2.85,
+          1.8
+        ],
+        [
+          3.15,
+          2.6
+        ],
+        [
+          3.25,
+          1.3
+        ],
+        [
+          4.5,
+          1.8
+        ],
+        [
+          4.8,
+          2.6
+        ],
+        [
+          4.9,
+          1.3
+        ],
+        [
+          6.2,
+          1.6
+        ],
+        [
+          7.45,
+          1.3
+        ],
+        [
+          7.6,
+          0.6
+        ],
+        [
+          8.2,
+          1.2
+        ],
+        [
+          10.6,
+          1.3
+        ],
+        [
+          11.0,
+          1.8
+        ],
+        [
+          11.2,
+          2.6
+        ],
+        [
+          11.32,
+          1.8
+        ],
+        [
+          11.45,
+          0.4
+        ],
+        [
+          12.4,
+          0.3
+        ],
+        [
+          13.3,
+          0.12
+        ]
+      ],
+      "blinks": [
+        1.7,
+        8.5
       ]
     },
     "musashi": {
@@ -325,11 +544,68 @@
         {
           "t": 4.33,
           "move": "step-in",
-          "dist": 2
+          "dist": 2.6
         },
         {
-          "t": 4.65,
-          "move": "kesa-giri"
+          "t": 4.64,
+          "pose": "hasso",
+          "note": "kesa-giri, split so the cut is stopped by the block"
+        },
+        {
+          "t": 4.8,
+          "pose": "hasso",
+          "z": 1.4,
+          "ease": "snap",
+          "drag": 0,
+          "note": "the kesa cut is met halfway (clash)",
+          "rsx": -1.55,
+          "rsz": 0.4,
+          "rex": -0.85,
+          "lsx": -1.4,
+          "lsz": -0.25,
+          "lex": -0.85,
+          "tx": 0.17,
+          "ty": 0.07,
+          "rwx": 0.25,
+          "stance": 0.62,
+          "crouch": 0.1,
+          "weight": 0.3
+        },
+        {
+          "t": 4.98,
+          "pose": "hasso",
+          "z": 1.38,
+          "note": "pressed against the block (hit-stop and hold)",
+          "rsx": -1.55,
+          "rsz": 0.4,
+          "rex": -0.85,
+          "lsx": -1.4,
+          "lsz": -0.25,
+          "lex": -0.85,
+          "tx": 0.17,
+          "ty": 0.07,
+          "rwx": 0.25,
+          "stance": 0.62,
+          "crouch": 0.1,
+          "weight": 0.3
+        },
+        {
+          "t": 5.14,
+          "pose": "kesa-giri-finish",
+          "z": 1.16,
+          "ease": "out",
+          "note": "slides off the block and finishes low"
+        },
+        {
+          "t": 5.3,
+          "pose": "kesa-giri-finish",
+          "settle": true
+        },
+        {
+          "t": 5.7,
+          "pose": "chudan",
+          "z": 1.4,
+          "note": "recovers to the original distance"
         },
         {
           "t": 6.2,
@@ -370,6 +646,81 @@
           "t": 15.0,
           "pose": "zanshin"
         }
+      ],
+      "eyes": [
+        [
+          0,
+          1.0
+        ],
+        [
+          2.9,
+          1.2
+        ],
+        [
+          4.3,
+          1.8
+        ],
+        [
+          4.8,
+          2.6
+        ],
+        [
+          4.9,
+          1.3
+        ],
+        [
+          6.2,
+          1.6
+        ],
+        [
+          7.7,
+          1.2
+        ],
+        [
+          9.0,
+          1.8
+        ],
+        [
+          9.42,
+          2.6
+        ],
+        [
+          9.52,
+          1.3
+        ],
+        [
+          10.8,
+          1.3
+        ],
+        [
+          11.1,
+          1.8
+        ],
+        [
+          11.25,
+          2.6
+        ],
+        [
+          11.36,
+          1.8
+        ],
+        [
+          11.45,
+          2.6
+        ],
+        [
+          11.55,
+          1.6
+        ],
+        [
+          12.6,
+          1.2
+        ]
+      ],
+      "blinks": [
+        2.2,
+        8.1,
+        13.2
       ]
     }
   },
@@ -431,58 +782,14 @@
       "gain": 0.8
     },
     {
-      "id": "swing",
-      "t": 3.25,
-      "query": "sword swing whoosh",
-      "min": 300,
-      "max": 4000,
-      "len": 1.0,
-      "gain": 0.9
-    },
-    {
-      "id": "throw-whoosh",
-      "t": 3.2,
-      "query": "whoosh swing",
-      "min": 300,
-      "max": 4000,
-      "len": 1.0,
-      "gain": 0.6
-    },
-    {
       "id": "steps-in",
       "t": 3.9,
       "query": "footsteps sand",
       "min": 1000,
       "max": 60000,
       "len": 0.6,
-      "gain": 0.6
-    },
-    {
-      "id": "swing-2",
-      "t": 4.8,
-      "query": "fast sword swing",
-      "min": 300,
-      "max": 4000,
-      "len": 1.0,
-      "gain": 0.9
-    },
-    {
-      "id": "blade-clash",
-      "t": 4.95,
-      "query": "sword clash metal",
-      "min": 200,
-      "max": 5000,
-      "len": 1.5,
-      "gain": 0.9
-    },
-    {
-      "id": "swing-3",
-      "t": 9.3,
-      "query": "sword whoosh",
-      "min": 300,
-      "max": 4000,
-      "len": 1.0,
-      "gain": 0.8
+      "gain": 0.6,
+      "body": true
     },
     {
       "id": "impact",
@@ -491,7 +798,8 @@
       "min": 200,
       "max": 4000,
       "len": 1.5,
-      "gain": 1.0
+      "gain": 1.0,
+      "body": true
     },
     {
       "id": "impact-drum",
@@ -500,7 +808,8 @@
       "min": 500,
       "max": 8000,
       "len": 3,
-      "gain": 1.0
+      "gain": 1.0,
+      "body": true
     },
     {
       "id": "fall",
@@ -509,7 +818,8 @@
       "min": 300,
       "max": 5000,
       "len": 1.5,
-      "gain": 0.8
+      "gain": 0.8,
+      "body": true
     },
     {
       "id": "temple-bell",
@@ -519,6 +829,28 @@
       "max": 40000,
       "len": 2.0,
       "gain": 0.6
+    }
+  ],
+  "clashes": [
+    {
+      "t": 4.8,
+      "until": 4.98,
+      "attacker": "musashi",
+      "defender": "kojiro",
+      "s": 0.6,
+      "ramp": 0.1,
+      "maxDeg": 45,
+      "note": "the high parry meets Musashi's kesa cut"
+    },
+    {
+      "t": 6.42,
+      "until": 7.4,
+      "attacker": "kojiro",
+      "defender": "musashi",
+      "s": 0.45,
+      "ramp": 0.15,
+      "maxDeg": 60,
+      "note": "the bind: blades meet and stay crossed"
     }
   ]
 }

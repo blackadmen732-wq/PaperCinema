@@ -291,6 +291,24 @@
    "status_note": "✅ (motion-test page; port to main engine next)"
   },
   {
+   "id": "COMBAT",
+   "name": "Combat layer (shared)",
+   "does": "The fight layer of both preview engines, in one module: blade contact detection (240 Hz segment distance, speed and gap thresholds), clash aim (`clashes`), hit-stop body time (`bodyT`/`filmT`; in `main.js` the shots, rigs and authored action times run on body time), smear ribbon, paper sparks + flash light, ink silhouette impact frame, camera punch, eye glow states + blinks + voice pulse (`cast.<id>.face: \"eyes\"`), auto sound cues (whoosh, steel clash or wood clap for a bokken, scrape) → `window.EVENTS` → `output/<film>.events.json` → SOUND; FX post stack (`fxBase`/`fx`) with a CA flash and bloom pulse on each contact",
+   "files": [
+    "engine/combat.js",
+    "engine/main.js",
+    "engine/motion.js",
+    "film/kuroko-duel.json"
+   ],
+   "guide": [
+    "docs/FIX-LIST.md",
+    "docs/FILM-FORMAT.md"
+   ],
+   "command": "node engine/render.mjs --film film/kuroko-duel.json --vertical --still auto --prefix kd2-",
+   "status": "built",
+   "status_note": "✅ (main engine + motion page)"
+  },
+  {
    "id": "SYNTHSFX",
    "name": "Synthesised sword sounds",
    "does": "Our own layered clash (tink + ring + body + paper crinkle), light clash, scrape, 3 whooshes, draw shing; no licence needed",
@@ -685,6 +703,18 @@
   [
    "MAKE",
    "PLAYBOOK"
+  ],
+  [
+   "ENGINE",
+   "COMBAT"
+  ],
+  [
+   "COMBAT",
+   "SOUND"
+  ],
+  [
+   "COMBAT",
+   "FX"
   ],
   [
    "PAPERMAT",

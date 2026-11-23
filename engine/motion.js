@@ -17,8 +17,10 @@ import { expandMoves } from './moves.js';
 import { makeKatana } from './props.js';
 import { loadCharacter } from './library.js';
 import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, smooth } from './figure.js';
-import { paper, rng } from './paper.js';
-import { loadVoice, voiceLevel } from './voice-env.js';
+import { loadVoice } from './voice-env.js';
+import * as combat from './combat.js';
+import { clamp, bladeSeg, closestSegSeg, RATE } from './combat.js';
+import { createFX, fxAt } from './fx.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/motion-test.json')).json();
@@ -71,9 +73,7 @@ function poseOf(c, tb) {
   p.cx += 0.012 * Math.sin(tb * 2 * Math.PI * 0.3 + c.phase);
   p.rwz += 0.006 * Math.sin(tb * 2 * Math.PI * 0.7 + c.phase);
   p.rwx += 0.006 * Math.cos(tb * 2 * Math.PI * 0.7 + c.phase);
-  const e = eyesAt(c, tb);
-  p.lid = Math.max(p.lid, e.lid);
-  if (c.fig.eyeMat) c.fig.eyeMat.emissiveIntensity = e.g * (1 + 0.8 * voiceLevel(VOICE, c.id, FILM_TIME)) * (1 - 0.8 * p.lid);
+  combat.applyEyes(c, p, tb, FILM_TIME, { fps: FPS, voice: VOICE, contacts: CONTACTS });
   // eyes on the opponent: neck takes 40% of the turn, head 60%
   const o = other(c.id).motion(tb);
   let yaw = Math.atan2(o.x - p.x, o.z - p.z) - p.ry - p.ty - p.cy;
@@ -82,51 +82,11 @@ function poseOf(c, tb) {
   p.hy += 0.6 * yaw;
   return p;
 }
-// CLASH AIM: inside a film "clashes" window the defender's wrist turns the blade (pivoting at the guard,
-// at most 35°) so it lies across the attacker's blade at fraction s of its length. The blades meet on
-// the planned frame and stay crossed through a bind, instead of hoping two keyed arcs intersect.
-const _qa = new THREE.Quaternion(), _qw = new THREE.Quaternion(), _qi = new THREE.Quaternion();
-function clashAim(tb) {
-  for (const cl of film.clashes ?? []) {
-    const ramp = cl.ramp ?? 0.1;
-    const w = smooth(clamp((tb - (cl.t - ramp)) / ramp, 0, 1)) * (1 - smooth(clamp((tb - (cl.until ?? cl.t + 0.2)) / 0.15, 0, 1)));
-    if (w <= 0) continue;
-    const att = cast[cl.attacker], def = cast[cl.defender];
-    att.fig.root.updateMatrixWorld(true); def.fig.root.updateMatrixWorld(true);
-    const P = att.sword.localToWorld(new THREE.Vector3(att.bladeLen * (cl.s ?? 0.6), -0.012, 0));
-    const g = def.sword.localToWorld(new THREE.Vector3(0, -0.012, 0)), tip = def.sword.localToWorld(new THREE.Vector3(def.bladeLen, -0.012, 0));
-    const cur = tip.sub(g).normalize(), want = P.sub(g).normalize();
-    _qa.setFromUnitVectors(cur, want);
-    const ang = 2 * Math.acos(clamp(_qa.w, -1, 1)), maxA = ((cl.maxDeg ?? 35) * Math.PI) / 180;
-    _qw.identity().slerp(_qa, w * Math.min(1, maxA / Math.max(ang, 1e-6)));
-    def.sword.parent.getWorldQuaternion(_qi);
-    const local = _qi.clone().invert().multiply(_qw).multiply(_qi);
-    def.sword.quaternion.premultiply(local);
-    def.fig.root.updateMatrixWorld(true);
-  }
-}
-// EYES: glow follows a per-performance "eyes" list [[t, glow], ...] (idle 0.9, focus 1.4, anticipation 2.2,
-// decide 3.5, struck 0.4), plus a blink (2 frames shut, 1 hold, 3 open) at each time in "blinks".
-function eyesAt(c, tb) {
-  const ks = c.perf.eyes ?? [[0, 1.2]];
-  let g = ks[0][1];
-  for (let i = 0; i < ks.length; i++) {
-    if (tb >= ks[i][0]) g = ks[i][1];
-    if (i < ks.length - 1 && tb >= ks[i][0] && tb < ks[i + 1][0]) {
-      const k = (tb - ks[i][0]) / (ks[i + 1][0] - ks[i][0]);
-      g = ks[i][1] + (ks[i + 1][1] - ks[i][1]) * k;
-    }
-  }
-  let lid = 0;
-  for (const b of c.perf.blinks ?? []) {
-    const f = (tb - b) * FPS;
-    if (f >= 0 && f < 6) lid = Math.max(lid, f < 2 ? f / 2 : f < 3 ? 1 : 1 - (f - 3) / 3);
-  }
-  return { g, lid };
-}
+// CLASH AIM, EYES, blade segments, contacts, hit-stop, cues, ribbon, sparks, impact frame: engine/combat.js
+let CONTACTS = null;                                              // set after the contact analysis (auto eye states)
 function poseAll(tb) {
   for (const c of Object.values(cast)) { applyPose(c.fig, poseOf(c, tb)); c.sword.quaternion.identity(); }
-  clashAim(tb);
+  combat.clashAim(film.clashes, cast, tb);
   for (const c of Object.values(cast)) {
     c.fig.root.updateMatrixWorld(true);
     // two-hand grip: the left hand closes on the handle, 27 cm behind the guard
@@ -135,111 +95,13 @@ function poseAll(tb) {
     c.fig.root.updateMatrixWorld(true);
   }
 }
-// blade segment in world space: from 20% up the blade to the tip (the part that can touch)
-function bladeSeg(c, out = {}) {
-  out.a = c.sword.localToWorld(new THREE.Vector3(c.bladeLen * 0.2, -0.012, 0));
-  out.tip = c.sword.localToWorld(new THREE.Vector3(c.bladeLen, -0.012, 0));
-  out.mid = c.sword.localToWorld(new THREE.Vector3(c.bladeLen * 0.55, -0.012, 0));
-  out.guard = c.sword.localToWorld(new THREE.Vector3(0, -0.012, 0));
-  return out;
-}
-const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-function closestSegSeg(p1, q1, p2, q2) {
-  const d1 = q1.clone().sub(p1), d2 = q2.clone().sub(p2), r = p1.clone().sub(p2);
-  const a = d1.dot(d1), e = d2.dot(d2), f = d2.dot(r), c = d1.dot(r), b = d1.dot(d2);
-  const den = a * e - b * b;
-  let s = den > 1e-9 ? clamp((b * f - c * e) / den, 0, 1) : 0, t = (b * s + f) / e;
-  if (t < 0) { t = 0; s = clamp(-c / a, 0, 1); } else if (t > 1) { t = 1; s = clamp((b - c) / a, 0, 1); }
-  const c1 = p1.clone().addScaledVector(d1, s), c2 = p2.clone().addScaledVector(d2, t);
-  return { s, t, c1, c2, d: c1.distanceTo(c2) };
-}
 
-// ---------- 3. EVENTS: contacts, whooshes, scrapes (in body time, 240 Hz) ----------
-const RATE = 240, hero = cast[ids[0]], foe = cast[ids[1]];
-const samples = [];
-for (let i = 0; i <= DUR * RATE; i++) {
-  const tb = i / RATE;
-  poseAll(tb);
-  const A = bladeSeg(hero), B = bladeSeg(foe);
-  const cs = closestSegSeg(A.a, A.tip, B.a, B.tip);
-  samples.push({ tb, tipH: A.tip, tipF: B.tip, d: cs.d, point: cs.c1.clone().lerp(cs.c2, 0.5), sH: cs.s, sF: cs.t });
-}
-const speed = (i, key) => i > 0 ? samples[i][key].distanceTo(samples[i - 1][key]) * RATE : 0;
-samples.forEach((s, i) => { s.vH = speed(i, 'tipH'); s.vF = speed(i, 'tipF'); });
-const contacts = [];
-let minD = { d: 9, tb: 0 }, apart = true;
-for (let i = 1; i < samples.length; i++) {
-  const s = samples[i], p = samples[i - 1];
-  if (s.d < minD.d) minD = { d: s.d, tb: s.tb };
-  const closing = s.d < p.d;
-  if (s.d > 0.08) apart = true;                       // a new contact needs the blades to have parted first
-  if (s.d < 0.03 && closing && apart) {
-    apart = false;
-    // relative speed at the contact point (approximate: the two tips' relative velocity, scaled by position along the blade)
-    const vRel = Math.abs(s.vH * (0.2 + 0.8 * s.sH) - s.vF * (0.2 + 0.8 * s.sF) * 0.3);
-    const I = clamp((vRel - 3) / 17, 0, 1);
-    contacts.push({ tb: s.tb, point: s.point.toArray(), intensity: +I.toFixed(3), vRel: +vRel.toFixed(2) });
-  }
-}
-// hit-stops: 2 + 2I frames at each contact; later times shift by the earlier stops
-const HS = film.effects?.hitStop ?? { min: 3, max: 4 };
-const stops = [];
-let shift = 0;
-for (const c of contacts) {
-  const d = clamp(Math.round(2 + 2 * c.intensity), HS.min, HS.max) / FPS;
-  c.t = c.tb + shift;
-  stops.push({ t: c.t, tb: c.tb, d });
-  shift += d;
-}
-const bodyT = (t) => t - stops.reduce((s, st) => s + clamp(t - st.t, 0, st.d), 0);
-const filmT = (tb) => tb + stops.filter((st) => st.tb < tb).reduce((a, st) => a + st.d, 0);   // body time → film time
-// sound cues
-const AS = film.autoSounds ?? {};
-const cues = [];
-const dB = (x) => +Math.pow(10, x / 20).toFixed(3);
-{ // whooshes: tip speed crosses "on" m/s, re-arms below "rearm", at least 6 frames apart; placed on the speed peak
-  const on = AS.whoosh?.on ?? 9, rearm = AS.whoosh?.rearm ?? 6, sfx = AS.whoosh?.sfx ?? ['swing'];
-  for (const [who, key] of [['hero', 'vH'], ['foe', 'vF']]) {
-    let armed = true, peak = null, n = 0, lastT = -9;
-    let cool = false;                                   // after a contact: wait for the blade to slow down
-    for (const s of samples) {
-      const hit = contacts.find((c) => Math.abs(s.tb - c.tb) < 0.5 / RATE);
-      if (cool) { if (s[key] < rearm) cool = false; continue; }
-      if (armed && s[key] > on) { armed = false; peak = s; }
-      else if (!armed) {
-        if (s[key] > peak[key] && !hit) peak = s;
-        if (s[key] < rearm || hit) {                    // a whoosh ends when the blade slows or hits something
-          if (hit) cool = true;
-          armed = true;
-          const t = filmT(peak.tb);
-          if (t - lastT > 6 / FPS) {
-            const k = clamp((peak[key] - 9) / 21, 0, 1);
-            cues.push({ id: `auto-whoosh-${who}-${n}`, sfx: sfx[n % sfx.length], t: +Math.max(0, t - 0.06).toFixed(3), len: 0.6,
-              gain: dB(Math.min(-12, -18 + 8 * k)), rate: +(0.85 + 0.5 * k).toFixed(3), why: `${who} tip ${peak[key].toFixed(1)} m/s` });
-            n++; lastT = t;
-          }
-        }
-      }
-    }
-  }
-}
-contacts.forEach((c, i) => cues.push({ id: `auto-clash-${i}`, sfx: c.intensity >= 0.4 ? (AS.clash?.sfx ?? 'clash-steel') : (AS.clash?.light ?? 'clash-light'), t: +c.t.toFixed(3), len: 1.6,
-  gain: dB(-6 + 6 * c.intensity), rate: +(1 + 0.06 * (rng(i + 3)() - 0.5) * 2).toFixed(3), why: `blade contact, intensity ${c.intensity}` }));
-{ // scrape: blades within 4 cm for more than 4 frames while the contact point slides
-  let run = [];
-  const flush = () => {
-    if (run.length > 4 * RATE / FPS) {
-      const t0 = filmT(run[0].tb), t1 = filmT(run[run.length - 1].tb);
-      cues.push({ id: `auto-scrape-${cues.length}`, sfx: AS.scrape?.sfx ?? 'steel-scrape', query: AS.scrape?.query, t: +t0.toFixed(3),
-        len: +Math.max(0.4, t1 - t0).toFixed(3), gain: dB(-16), why: `blades sliding ${(t1 - t0).toFixed(2)} s` });
-    }
-    run = [];
-  };
-  for (const s of samples) { if (s.d < 0.04) run.push(s); else flush(); }
-  flush();
-}
-cues.sort((a, b) => a.t - b.t);
-window.EVENTS = { contacts, stops, cues, minDistance: { d: +minD.d.toFixed(4), t: +minD.tb.toFixed(3) } };
+// ---------- 3. EVENTS: contacts, whooshes, scrapes (in body time, 240 Hz) → window.EVENTS ----------
+const hero = cast[ids[0]], foe = cast[ids[1]];
+const C = combat.analyse({ film, fighters: [hero, foe], pose: poseAll, fps: FPS, dur: DUR });
+const { contacts, stops, bodyT } = C;
+CONTACTS = contacts;
+window.EVENTS = C.events;
 
 // ---------- 4. CAMERA: rigs aim at real joints, then a spring smooths it ----------
 const FEELS = { locked: [6, 1], dolly: [1.8, 1], crane: [0.7, 1.1], handheld: [2.5, 0.7], torpedo: [4, 0.62] };
@@ -337,16 +199,7 @@ function placeCamera(t) {
   const x = clamp(t * RATE, 0, camPath.length - 1), i = Math.floor(x), k = x - i, a = camPath[i], b = camPath[Math.min(i + 1, camPath.length - 1)];
   camera.position.copy(a.pos).lerp(b.pos, k);
   const look = a.look.clone().lerp(b.look, k);
-  let fov = a.fov + (b.fov - a.fov) * k, roll = 0;
-  for (const c of contacts) {                             // impact punch: fov kick, shake, roll
-    const tau = t - c.t;
-    if (tau < 0 || tau > 0.6) continue;
-    const I = 0.5 + 0.5 * c.intensity, env = Math.exp(-tau / 0.12);
-    fov -= 7 * I * env;
-    const sh = 0.02 * I * Math.max(0, 1 - tau / 0.25);
-    camera.position.x += Math.sin(t * 91) * sh; camera.position.y += Math.cos(t * 77) * sh;
-    roll += 3 * I * env * Math.sin(tau * 40 + 1);
-  }
+  const { fov, roll } = combat.punch(contacts, t, camera, a.fov + (b.fov - a.fov) * k);   // impact punch: fov kick, shake, roll
   camera.fov = fov;
   camera.updateProjectionMatrix();
   camera.up.set(0, 1, 0);
@@ -354,73 +207,12 @@ function placeCamera(t) {
   camera.rotateZ((roll * Math.PI) / 180);
 }
 
-// ---------- 5. EFFECTS ----------
-// smear ribbon: a white paper strip swept by the blade (tip → 55% point), tapering to nothing at its tail
-const RIB = film.effects?.ribbon ?? { minSpeed: 5, frames: 3 };
-const RN = 28;
-const ribGeo = new THREE.BufferGeometry();
-ribGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(RN * 2 * 3), 3));
-ribGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(RN * 2 * 4), 4));
-const idx = [];
-for (let j = 0; j < RN - 1; j++) { const a = j * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-ribGeo.setIndex(idx);
-const ribMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false });
-const ribbons = {};
-for (const id of ids) { const m = new THREE.Mesh(ribGeo.clone(), ribMat); m.frustumCulled = false; scene.add(m); ribbons[id] = m; }
-function tipSpeedAt(id, tb) { const i = clamp(Math.round(tb * RATE), 1, samples.length - 1); return id === ids[0] ? samples[i].vH : samples[i].vF; }
-function updateRibbons(t, tb, red = false) {
-  const span = RIB.frames / FPS;
-  const hist = [];
-  for (let j = 0; j < RN; j++) {
-    const tj = tb - (j / (RN - 1)) * span;
-    poseAll(Math.max(0, tj));
-    hist.push(Object.fromEntries(ids.map((id) => [id, { ...bladeSeg(cast[id]), v: tipSpeedAt(id, Math.max(0, tj)) }])));
-  }
-  poseAll(tb);
-  for (const id of ids) {
-    const g = ribbons[id].geometry, P = g.attributes.position.array, C = g.attributes.color.array;
-    let any = 0;
-    for (let j = 0; j < RN; j++) {
-      const h = hist[j][id], u = j / (RN - 1);
-      const inner = h.mid.clone().lerp(h.tip, u * 0.85);
-      P.set(h.tip.toArray(), j * 6); P.set(inner.toArray(), j * 6 + 3);
-      const sf = clamp((h.v - RIB.minSpeed) / 6, 0, 1);
-      const al = 0.9 * Math.pow(1 - u, 1.5) * sf;
-      any = Math.max(any, al);
-      const col = red ? [0.75, 0.08, 0.06] : [1, 0.97, 0.9];
-      C.set([...col, al], j * 8); C.set([...col, al * 0.35], j * 8 + 4);
-    }
-    g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true;
-    g.computeBoundingSphere();
-    ribbons[id].visible = any > 0.01;
-  }
-}
-// sparks: small white-gold paper shards, aimed out of the contact
-function makeSparks(seed, n) {
-  const r = rng(seed), g = new THREE.Group(); scene.add(g);
-  const tri = new THREE.Shape(); tri.moveTo(0, 0.012); tri.lineTo(0.008, -0.006); tri.lineTo(-0.007, -0.005); tri.closePath();
-  const geo = new THREE.ShapeGeometry(tri), parts = [];
-  for (let i = 0; i < n; i++) {
-    const m = new THREE.Mesh(geo, paper(['#fff6dc', '#ffd27a', '#ffe9b0'][i % 3], { repeat: 30, glow: 1.6, fog: false }));
-    const a = r() * Math.PI * 2, e = r() * 1.4 - 0.4, sp = 1.5 + r() * 3.5;
-    parts.push({ m, v: new THREE.Vector3(Math.cos(a) * Math.cos(e) * sp, Math.sin(e) * sp + 0.8, Math.sin(a) * Math.cos(e) * sp), w: r() * 20, s: 0.6 + r() });
-    g.add(m);
-  }
-  return (t, t0, origin) => {
-    const dt = t - t0; g.visible = dt >= 0 && dt < 0.55; if (!g.visible) return;
-    const drag = (1 - Math.exp(-3 * dt)) / 3;
-    for (const p of parts) {
-      p.m.position.set(origin.x + p.v.x * drag, origin.y + p.v.y * drag - 2 * dt * dt, origin.z + p.v.z * drag);
-      p.m.rotation.set(p.w * dt, p.w * 0.7 * dt, p.w * 1.3 * dt);
-      p.m.scale.setScalar(p.s * (1 - dt / 0.55));
-      p.m.lookAt(camera.position);
-    }
-  };
-}
-const sparks = contacts.map((c, i) => ({ fn: makeSparks(40 + i, Math.round(24 + 40 * c.intensity)), c }));
-const flashLight = new THREE.PointLight(0xffe2a8, 0, 3, 2); scene.add(flashLight);
-const inkMat = new THREE.MeshBasicMaterial({ color: '#0d0b0a', fog: false, side: THREE.DoubleSide });
-const washi = new THREE.Color('#f1e7d3');
+// ---------- 5. EFFECTS: smear ribbon, sparks (engine/combat.js); post FX (engine/fx.js) when the film has fxBase / fx ----------
+const RIB = combat.makeRibbons(scene, Object.values(cast), { ribbon: film.effects?.ribbon, fps: FPS, pose: poseAll, tipSpeedAt: C.tipSpeedAt });
+const ribbons = RIB.meshes;
+const SPARKS = combat.makeSparks(scene, camera, contacts);
+const FX = film.fxBase || film.fx ? createFX(renderer, scene, camera, { width: W, height: H, seed: 7, fps: FPS }) : null;
+const FX_TRACK = FX ? [...(film.fx ?? []), ...combat.contactFx(contacts, film.effects?.contactFx)] : [];
 
 // ---------- frame ----------
 const flashEl = document.getElementById('flash'), fadeEl = document.getElementById('fade');
@@ -437,40 +229,18 @@ window.renderAt = (t) => {
     for (const c of Object.values(cast)) c.fig.root.updateMatrixWorld(true);
   }
   placeCamera(t);
-  const impactFrame = film.effects?.impactFrame !== false && contacts.some((c) => t >= c.t && t < c.t + 1 / FPS);
-  updateRibbons(t, tb, impactFrame);
+  const impactFrame = combat.isImpactFrame(film, contacts, t, FPS);
+  RIB.update(tb, impactFrame);
   if (inStop) { hero.fig.root.updateMatrixWorld(true); }
-  // sparks + flash light
-  let fl = 0;
-  for (const { fn, c } of sparks) {
-    const o = new THREE.Vector3(...c.point);
-    fn(t, c.t, o);
-    const tau = t - c.t;
-    if (tau >= 0 && tau < 0.3) { fl = Math.max(fl, (1 - tau / 0.3) * (0.6 + c.intensity)); flashLight.position.copy(o); }
-  }
-  flashLight.intensity = 6 * fl;
+  const fl = SPARKS.update(t);                              // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
   fadeEl.style.opacity = clamp(Math.max(1 - t / 0.6, (t - (DUR - 0.6)) / 0.6), 0, 1);
   if (impactFrame) {
-    // ONE frame: washi-white page, fighters as flat ink silhouettes, a red streak along the cut
-    const bg = scene.background, fog = scene.fog;
-    scene.background = washi; scene.fog = null;
-    const hidden = scene.children.filter((o) => o.visible && !Object.values(cast).some((c) => c.fig.root === o) && !Object.values(ribbons).includes(o));
-    for (const o of hidden) o.visible = false;              // only the fighters: ink on a blank page
-    scene.overrideMaterial = inkMat;
-    for (const r of Object.values(ribbons)) r.visible = false;
-    renderer.render(scene, camera);
-    scene.overrideMaterial = null;
-    renderer.autoClear = false;
-    const only = new THREE.Scene(); for (const r of Object.values(ribbons)) { only.add(r); r.visible = true; }
-    renderer.render(only, camera);
-    for (const r of Object.values(ribbons)) scene.add(r);
-    for (const o of hidden) o.visible = true;
-    renderer.autoClear = true;
-    scene.background = bg; scene.fog = fog;
+    combat.renderInkFrame(renderer, scene, camera, Object.values(cast).map((c) => c.fig.root), ribbons);
     return;
   }
-  renderer.render(scene, camera);
+  if (FX) FX.render(t, fxAt(t, FX_TRACK, film.fxBase, FPS));
+  else renderer.render(scene, camera);
 };
 
 window.cam = (t) => { const x = clamp(Math.round(t * RATE), 0, camPath.length - 1); const c = camPath[x]; return { pos: c.pos.toArray(), look: c.look.toArray(), fov: c.fov }; };

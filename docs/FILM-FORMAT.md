@@ -27,7 +27,18 @@ Use `film/ganryujima.json` as the working example.
 | `performances.<id>` | `character`, `keys[]` (`{t, pose}` or `{t, move, speed, dist}`), `twoHand[]`, `walk[]`, `rideBoatUntil`, `boatPose` | keys strictly increasing; poses must exist in `library/poses.json` |
 | `duels[]` | `a`, `b` (performance ids), `from`, `to`, `note` | head tracking + threat response between a and b |
 | `titles[]` | `start`, `end`, `style` (`hero` / `left` / `bottom` / `endcard`), `jp`, `en`, `sub` | fades 0.5 s in and out |
-| `sounds[]` | `id`, `t`, `query`, `min`, `max` (ms length window), `len` (s used), `gain` (0–2), `bed` (true = loop) | unique ids; stays inside the film |
+| `sounds[]` | `id`, `t`, `query`, `min`, `max` (ms length window), `len` (s used), `gain` (0–2), `bed` (true = loop), `body` (true = timed to the action: moves later with the hit-stops) | unique ids; stays inside the film |
+| `motion` | `{ "overlap": true }` = anime layer (lag, snap, settle) | docs/ANIMATION.md §10 |
+| `cast.<id>` | `face` (`"eyes"` = glowing eye slits with lids), `eyes` (colour), `weapon` (`bokken` / `katana`, Musashi in `main.js`) | ids are performers |
+| `performances.<id>` | `eyes` [[t, glow], …] (idle 0.9 · focus 1.4 · anticipation 2.2 · decide 3.5 · struck 0.4), `blinks` [s, …] | body time; without `eyes`, states come from the contacts |
+| `clashes[]` | `t`, `until`, `attacker`, `defender`, `s` (where on the attacker's blade), `ramp`, `maxDeg` | the defender's blade is turned to meet the cut; contacts are then detected (engine/combat.js) |
+| `effects` | `hitStop` {min, max} frames or false, `ribbon` {minSpeed, frames}, `impactFrame` (true / false / {minIntensity, max, at: [body s]}), `contactMinSpeed` (m/s), `contactGap` (s), `sparkLight` | `combat: false` turns the whole combat layer off |
+| `autoSounds` | `whoosh` {sfx[], on, rearm, maxPerSec}, `clash` {sfx, light, wood {sfx, rate, light}}, `scrape` {sfx} | without it `main.js` writes no automatic cues |
+| `fxBase`, `fx[]` | post FX base look and timed events (`docs/EFFECTS-CATALOG.md`); `fx[].body: true` = timed to the action | no `fxBase`/`fx` = no post stack (as before) |
+
+**Time in `main.js`:** a blade contact inserts a hit-stop (3–4 frames). Shots, rigs, performances, `shakes`,
+`events` and `clashes` are in *body time* (the action), so they all move later together; titles and fades stay on
+the film clock. Check `output/<film>.events.json` (`stops`) for the shifts.
 
 ## Golden path for a new film
 
