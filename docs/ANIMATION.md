@@ -92,6 +92,31 @@ Add a new pose by copying one and changing angles, then check it with a still re
   and elbow until the left hand lands on it (`reachLeftHand`, a small inverse-kinematics search).
   It starts from the keyed pose every frame, so renders are identical every time.
 
+## 5b. Fight moves (`library/moves.json`)
+
+Instead of writing every pose, call a named move. It expands into timed poses with footwork:
+
+```json
+{ "t": 3.0, "move": "lunge-shomen" },
+{ "t": 3.1, "move": "jump-back", "speed": 1.2, "dist": 1.0 }
+```
+
+| Move | Length | What happens |
+|---|---|---|
+| `step-in`, `step-back` | 0.28 s | Sliding step (okuri-ashi), 0.4 m |
+| `jump-back` | 0.85 s | Load, leap back 1.1 m (0.34 m high), land low |
+| `dodge-left` | 0.6 s | Lean and slip 0.45 m to the side |
+| `parry-high` | 0.85 s | Rising block (uke), then back to guard |
+| `lunge-shomen` | 1.0 s | Wind-up, stamping step 0.65 m, vertical head cut, hold |
+| `kesa-giri` | 0.9 s | Hasso to a diagonal cut, stepping 0.5 m |
+| `tsuki` | 0.85 s | Load, thrust with a 0.7 m step |
+| `bind` | 1.2 s | Blade-lock push (tsubazeriai) |
+| `stagger-back` | 0.9 s | Knocked back 0.6 m, reeling |
+
+- `speed` (2 = twice as fast) and `dist` (× distance) adapt any move.
+- Positions are relative to where the fighter stands and faces when the move starts.
+- The next key must start after the move ends (the checker says so if it doesn't).
+
 ## 6. Reaction layer (fighters respond to each other)
 
 Inside a `duels` window (`{"a": "kojiro", "b": "musashi", "from": 17, "to": 27}`), automatically:

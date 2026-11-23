@@ -170,7 +170,7 @@ footer { padding-top: 30px; border-top: 1px solid var(--rule); color: var(--ink-
       </div>
       <div style="display:grid; gap:8px; min-width:0">
         <svg id="plot" viewBox="0 0 420 360" role="img" aria-label="Top-down plan of the camera path for the current shot"></svg>
-        <p class="muted" style="font-size:.8rem">Top-down plan, 1 m grid. Line = camera path through its keyframes. Dot = camera now. Thin line = where it looks. Squares = Kojirō and Musashi.</p>
+        <p class="muted" style="font-size:.8rem">Top-down plan. Line = camera path (keyframes, or the KUROKO rig resolved frame by frame). Dot = camera now. Dashed line = where it looks. Squares = the fighters at mid-shot.</p>
       </div>
     </div>
     <div class="tbl"><table>
@@ -288,6 +288,7 @@ const FILM = /*FILM_JSON*/null;
 const THUMBS = /*THUMBS*/{};
 const CREDITS = /*CREDITS*/{};
 const SRC = /*SRC*/"film/ganryujima.json";
+const CAMPATH = /*CAMPATH*/{ shots: {}, subjects: {} };
 
 /* ---------- pipeline cards ---------- */
 const STEPS = [
@@ -349,6 +350,12 @@ function crPoint(pts, u) {
 const EASE = { linear: (k) => k, inOut: (k) => 0.5 - 0.5 * Math.cos(Math.PI * k) };
 const shotAt = (t) => FILM.shots.find((s) => t >= s.start && t < s.end) || FILM.shots[FILM.shots.length - 1];
 function camAt(shot, t) {
+  const rows = shot.rig && CAMPATH.shots && CAMPATH.shots[shot.id];
+  if (rows) {                                         // KUROKO rig: use the resolved per-frame camera
+    const i = Math.max(0, Math.min(rows.length - 1, Math.round((t - shot.start) * (CAMPATH.fps || 24))));
+    const r = rows[i];
+    return { pos: [r[1], r[2], r[3]], look: [r[4], r[5], r[6]], fov: r[7], roll: r[8] };
+  }
   const keys = shot.camera;
   const k = (EASE[shot.ease] || EASE.inOut)(Math.min(1, Math.max(0, (t - shot.start) / (shot.end - shot.start))));
   const tt = shot.start + k * (shot.end - shot.start);
@@ -427,7 +434,16 @@ function drawPlot(shot) {
   const path = Array.from({ length: N + 1 }, (_, i) => camAt(shot, shot.start + (i / N) * (shot.end - shot.start)));
   const pts = path.flatMap((c) => [c.pos, c.look]);
   const studio = shot.mode === 'studio';
-  if (!studio) pts.push([0, 0, -0.8], [0, 0, 0.85]);
+  const subjAt = (id, t) => {
+    const rows = (CAMPATH.subjects || {})[id];
+    if (!rows) return null;
+    let best = rows[0];
+    for (const r of rows) if (Math.abs(r[0] - t) < Math.abs(best[0] - t)) best = r;
+    return [best[1], 0, best[2]];
+  };
+  const midT = (shot.start + shot.end) / 2;
+  const SUBJ = Object.keys(CAMPATH.subjects || {}).map((id) => [subjAt(id, midT), id[0].toUpperCase() + id.slice(1)]).filter((x) => x[0]);
+  if (!studio) (SUBJ.length ? SUBJ : [[[0, 0, -0.8], 'Kojiro'], [[0, 0, 0.85], 'Musashi']]).forEach(([p]) => pts.push(p));
   let minX = Math.min(...pts.map((p) => p[0])), maxX = Math.max(...pts.map((p) => p[0]));
   let minZ = Math.min(...pts.map((p) => p[2])), maxZ = Math.max(...pts.map((p) => p[2]));
   const span = Math.max(maxX - minX, maxZ - minZ, 2) * 1.1;
@@ -446,7 +462,7 @@ function drawPlot(shot) {
   }
   const lbl = el('text', { x: 8, y: PH - 8 }, plot); lbl.textContent = `grid ${step} m · x → · z ↓ (toward the sea)`;
   if (!studio) {
-    [[[0, 0, -0.8], 'Kojirō'], [[0, 0, 0.85], 'Musashi']].forEach(([p, n]) => {
+    (SUBJ.length ? SUBJ : [[[0, 0, -0.8], 'Kojiro'], [[0, 0, 0.85], 'Musashi']]).forEach(([p, n]) => {
       const [x, y] = map(p);
       el('rect', { x: x - 5, y: y - 5, width: 10, height: 10, fill: 'var(--crimson)', opacity: 0.8 }, plot);
       const t = el('text', { x: x + 8, y: y + 4 }, plot); t.textContent = n;
@@ -457,14 +473,16 @@ function drawPlot(shot) {
     el('line', { x1: map([199.6, 0, 0])[0], x2: map([200.95, 0, 0])[0], y1: y, y2: y, stroke: 'var(--ink)', 'stroke-width': 3 }, plot);
   }
   el('polyline', { points: path.map((c) => map(c.pos).join(',')).join(' '), fill: 'none', stroke: 'var(--indigo)', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, plot);
-  shot.camera.forEach((k, i) => {
+  (shot.camera || []).forEach((k, i) => {
     const [x, y] = map(k.pos);
     el('circle', { cx: x, cy: y, r: 4, fill: 'var(--paper)', stroke: 'var(--indigo)', 'stroke-width': 2 }, plot);
     const t = el('text', { x: x + 7, y: y - 6 }, plot); t.textContent = `k${i + 1} · ${k.t}s`;
   });
   aim = el('line', { stroke: 'var(--amber)', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, plot);
   camDot = el('circle', { r: 7, fill: 'var(--amber)', stroke: 'var(--paper)', 'stroke-width': 2 }, plot);
-  document.getElementById('keys').innerHTML = shot.camera.map((k, i) =>
+  document.getElementById('keys').innerHTML = shot.rig
+    ? `<tr><td class="t">KUROKO rig</td><td colspan="3" class="t" style="white-space:normal">${JSON.stringify(shot.rig).replace(/</g, '&lt;')}</td></tr>`
+    : shot.camera.map((k, i) =>
     `<tr><td class="t">k${i + 1} · ${k.t}s</td><td class="t">[${k.pos.join(', ')}]</td><td class="t">[${k.look.join(', ')}]</td><td class="t">${k.fov}</td></tr>`).join('');
 }
 
@@ -492,7 +510,9 @@ function setT(t) {
     document.getElementById('shot-img').alt = 'Frame from shot ' + shot.id + ': ' + shot.name;
     document.getElementById('shot-id').textContent = `${shot.id} · ${shot.start}–${shot.end}s · ${shot.mode}`;
     document.getElementById('shot-name').textContent = shot.name;
-    document.getElementById('shot-meta').textContent = `${shot.camera.length} keyframes · ease: ${shot.ease} · ${shot.ease === 'linear' ? 'constant speed, keys land on exact moments' : 'starts slow, ends slow'}`;
+    document.getElementById('shot-meta').textContent = shot.rig
+      ? `KUROKO ${shot.rig.type} rig · feel: ${shot.rig.feel || 'dolly'} · behaviours: ${(shot.rig.behaviours || ['reveal', 'push', 'jump', 'dutch', 'lead']).join(', ') || 'none'}`
+      : `${shot.camera.length} keyframes · ease: ${shot.ease} · ${shot.ease === 'linear' ? 'constant speed, keys land on exact moments' : 'starts slow, ends slow'}`;
   }
   const c = camAt(shot, T);
   const [px, py] = map(c.pos), [lx, ly] = map(c.look);

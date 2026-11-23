@@ -1,0 +1,79 @@
+{
+  "_about": "Signature opening: fade from black, taiko hit, the camera skims the layered paper waves toward the island while the kanji title glows. Placeholders {jp} {en} {sub} are filled by engine/new-film.mjs.",
+  "duration": 6,
+  "shots": [
+    {
+      "id": "OPEN",
+      "name": "Signature opening: lantern-wave fly-over",
+      "mode": "dawn",
+      "start": 0,
+      "end": 6,
+      "ease": "inOut",
+      "camera": [
+        {
+          "t": 0,
+          "pos": [
+            0,
+            5.2,
+            62
+          ],
+          "look": [
+            2,
+            2.2,
+            -40
+          ],
+          "fov": 42
+        },
+        {
+          "t": 3,
+          "pos": [
+            0.6,
+            3.4,
+            36
+          ],
+          "look": [
+            1,
+            1.6,
+            -20
+          ],
+          "fov": 40
+        },
+        {
+          "t": 6,
+          "pos": [
+            1.2,
+            2.4,
+            13
+          ],
+          "look": [
+            0,
+            1.0,
+            -3
+          ],
+          "fov": 36
+        }
+      ]
+    }
+  ],
+  "titles": [
+    {
+      "start": 0.8,
+      "end": 5.4,
+      "style": "hero",
+      "jp": "{jp}",
+      "en": "{en}",
+      "sub": "{sub}"
+    }
+  ],
+  "sounds": [
+    {
+      "id": "title-taiko",
+      "t": 0.8,
+      "query": "taiko drum hit",
+      "min": 500,
+      "max": 8000,
+      "len": 4,
+      "gain": 0.9
+    }
+  ]
+}

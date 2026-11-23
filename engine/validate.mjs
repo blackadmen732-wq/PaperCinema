@@ -2,6 +2,8 @@
 //   node engine/validate.mjs [film/<name>.json]
 // Exit code 0 = OK, 1 = errors found (warnings never fail).
 import fs from 'node:fs';
+import { RIG_TYPES, FEELS, BEHAVIOURS } from './kuroko.js';
+import { expandMoves } from './moves.js';
 
 const filmPath = process.argv[2] ?? 'film/ganryujima.json';
 const errors = [], warnings = [];
@@ -14,7 +16,8 @@ let film;
 try { film = JSON.parse(fs.readFileSync(filmPath, 'utf8')); }
 catch (e) { console.log(`✗ ${filmPath}: cannot read or parse JSON (${e.message})`); process.exit(1); }
 const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
-const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx'];
+const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
+const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight'];
 const D = film.duration;
 
 // --- basics
@@ -33,8 +36,22 @@ shots.forEach((s, i) => {
   prevEnd = s.end;
   if (!['dawn', 'studio'].includes(s.mode)) err(w, `mode must be "dawn" or "studio" (got ${JSON.stringify(s.mode)})`);
   if (s.ease && !['linear', 'inOut'].includes(s.ease)) err(w, `ease must be "linear" or "inOut" (got ${JSON.stringify(s.ease)})`);
+  if (s.rig) {
+    const r = s.rig, P = film.performances ?? {};
+    if (!RIG_TYPES.includes(r.type)) err(`${w}.rig`, `type must be one of ${RIG_TYPES.join(', ')} (got ${JSON.stringify(r.type)})`);
+    if (r.feel && !FEELS[r.feel]) err(`${w}.rig`, `feel must be one of ${Object.keys(FEELS).join(', ')} (got ${JSON.stringify(r.feel)})`);
+    for (const b of r.behaviours ?? []) if (!BEHAVIOURS[b]) err(`${w}.rig`, `unknown behaviour "${b}". Known: ${Object.keys(BEHAVIOURS).join(', ')}`);
+    const names = [...(r.subjects ?? []), ...(r.subject ? [r.subject] : []), ...(r.target ? [r.target] : []), ...(r.beats ?? []).flatMap((b) => [...(b.subjects ?? []), ...(b.subject ? [b.subject] : [])])];
+    for (const n of names) if (!P[n.split('.')[0]]) err(`${w}.rig`, `subject "${n}" is not a performer (known: ${Object.keys(P).join(', ')}); parts: .head .chest .hips .hand .root`);
+    if (['frame', 'track', 'face'].includes(r.type) && !names.length) err(`${w}.rig`, `a "${r.type}" rig needs "subjects" or "subject"`);
+    if (r.type === 'anchor') (r.beats ?? []).forEach((b, j) => {
+      if (!isNum(b.t) || b.t < s.start || b.t > s.end) err(`${w}.rig.beats[${j}]`, `t must be inside the shot (${s.start}–${s.end}s)`);
+      if (!RIG_TYPES.includes(b.type) || b.type === 'anchor') err(`${w}.rig.beats[${j}]`, 'each beat needs a type: frame, orbit, track, face or blade');
+    });
+    if (r.fov !== undefined && (!isNum(r.fov) || r.fov < 10 || r.fov > 80)) err(`${w}.rig`, 'fov must be 10–80');
+  }
   const keys = s.camera ?? [];
-  if (keys.length < 2) err(w, 'camera needs at least 2 keyframes (start and end)');
+  if (!s.rig && keys.length < 2) err(w, 'needs a KUROKO "rig" or at least 2 camera keyframes');
   keys.forEach((k, j) => {
     const kw = `${w}.camera[${j}]`;
     if (!isNum(k.t)) err(kw, 't must be a number');
@@ -55,10 +72,10 @@ if (shots.length && Math.abs(prevEnd - D) > 1e-6) warn('shots', `last shot ends 
   if (!isNum(s.t) || !isNum(s.dur) || !isNum(s.amp)) err(`shakes[${i}]`, 'needs t, dur and amp numbers');
   else if (s.amp > 0.05) warn(`shakes[${i}]`, `amp ${s.amp} is very strong (0.015 = strong hit)`);
 });
-for (const [k, v] of Object.entries(film.events ?? {})) if (!isNum(v) || v < 0 || v > D) err(`events.${k}`, `must be a time within 0–${D}s (got ${v})`);
+for (const [k, v] of Object.entries(film.events ?? {})) if (!isNum(v) || v < -60 || v > D) err(`events.${k}`, `must be a time up to ${D}s; use a negative time for "already happened before the film starts" (got ${v})`);
 (film.titles ?? []).forEach((t, i) => {
   if (!isNum(t.start) || !isNum(t.end) || t.end <= t.start) err(`titles[${i}]`, 'start/end must be numbers with end > start');
-  if (!['hero', 'left', 'bottom'].includes(t.style)) err(`titles[${i}]`, `style must be "hero", "left" or "bottom" (got ${JSON.stringify(t.style)})`);
+  if (!['hero', 'left', 'bottom', 'endcard'].includes(t.style)) err(`titles[${i}]`, `style must be "hero", "left", "bottom" or "endcard" (got ${JSON.stringify(t.style)})`);
   if (!t.jp && !t.en) err(`titles[${i}]`, 'needs "jp" and/or "en" text');
 });
 
@@ -85,15 +102,24 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
   keys.forEach((k, j) => {
     const kw = `${w}.keys[${j}]`;
     if (!isNum(k.t)) err(kw, 't must be a number');
-    if (j > 0 && isNum(k.t) && k.t <= keys[j - 1].t) err(kw, `keys must be in time order with no repeats (t=${k.t} after t=${keys[j - 1].t}); to hold a pose, repeat it at a later time`);
+    if (j > 0 && isNum(k.t) && k.t <= keys[j - 1].t && !keys[j - 1].move) err(kw, `keys must be in time order with no repeats (t=${k.t} after t=${keys[j - 1].t}); to hold a pose, repeat it at a later time`);
+    if (k.move && !moves[k.move]) err(kw, `unknown move "${k.move}". Known moves: ${Object.keys(moves).filter((n) => !n.startsWith('_')).join(', ')}`);
+    if (k.move && k.pose) err(kw, 'use either "move" or "pose" on a key, not both');
     if (k.pose && !poses[k.pose]) err(kw, `unknown pose "${k.pose}". Known poses: ${Object.keys(poses).filter((n) => !n.startsWith('_')).join(', ')}`);
-    for (const key of Object.keys(k)) if (!['t', 'pose', 'note'].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, note, ${JOINTS.join(', ')}`);
+    for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist'].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, note, ${JOINTS.join(', ')}`);
     if (j > 0 && isNum(k.t)) {
       const dt = k.t - keys[j - 1].t;
       const moved = ['x', 'z'].map((a) => (k[a] ?? null)).some((v) => v !== null);
       if (moved && dt < 0.15) warn(kw, `position changes in ${dt.toFixed(2)}s; that is a teleport, not a step`);
     }
   });
+  try {
+    const ex = expandMoves(keys, moves);
+    for (let j = 1; j < ex.length; j++) if (ex[j].t <= ex[j - 1].t) {
+      err(w, `after moves are expanded, a key at ${ex[j].t}s comes before or at ${ex[j - 1].t}s; the previous move is still running. Start the next key later (jump-back lasts 0.85 s, lunge-shomen 1.0 s; see library/moves.json)`);
+      break;
+    }
+  } catch (e) { err(w, e.message); }
   for (const f of ['walk', 'twoHand']) (p[f] ?? []).forEach((win, j) => {
     if (!Array.isArray(win) || win.length !== 2 || !win.every(isNum) || win[1] <= win[0]) err(`${w}.${f}[${j}]`, 'must be [start, end] seconds with end > start');
   });

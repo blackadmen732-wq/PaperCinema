@@ -89,4 +89,73 @@ lines with corners. The `fov` blends between keyframes. The shot's `ease` contro
 | Camera paths, lenses, cuts, easing, shakes, events, titles, sounds | **Data** (`film/*.json`) |
 | Swords, characters, outfits, patterns | **Data** (`library/`) |
 | Character choreography (poses over time) | **Data** (`film/*.json → performances`, poses in `library/poses.json`). See `docs/ANIMATION.md`. |
-| Planned camera modes from `docs/STYLE-AND-FIGHT-SYSTEM.md` (blade-follow, face-snap, continuous one-take anchor) | **Not built yet.** Today they're made by hand with keyframes as above. |
+| Blade-follow, face close-up, torpedo track, orbit, one-take anchor, motion-reactive framing | **Built: KUROKO rigs** (section 7). Still to come: focus pulls / depth of field and motion blur (Blender), 180° auto-check, body-collision push-out. |
+
+---
+
+## 7. KUROKO (黒衣): the automatic camera operator
+
+Named after kabuki's black-clad stagehands, who move everything and are never seen. Instead of typed coordinates,
+a shot gets a **rig** that frames **characters by name**, **reacts to their motion**, and moves with a **feel**.
+It is deterministic (a spring integrated at 240 Hz from the start of the shot, with a 1 s pre-roll so shots open settled).
+Code: `engine/kuroko.js`. Numbers come from a fight-camera research review (game-camera talks such as John Nesky's
+"50 Game Camera Mistakes", plus film grammar: the 180° rule, the 30° rule and cutting on action).
+
+```json
+{ "id": "S2", "start": 3.0, "end": 4.6, "mode": "dawn",
+  "rig": { "type": "frame", "subjects": ["kojiro", "musashi"], "angle": 22, "elevation": 3, "fov": 34, "feel": "dolly" } }
+```
+
+### Subjects
+`kojiro`, or a body part: `kojiro.head`, `.chest` (default), `.hips`, `.hand`, `.root`. Any performer id in the film works.
+
+### Rig types
+| Type | Fields | Use for |
+|---|---|---|
+| `frame` | `subjects` (1–2), `size` (wide/full/medium/close/extreme), `angle` (−70…70°, 0 = profile), `elevation` (°), `height`, `dist` (×), `fov` | Two-shots and singles. Distance is worked out from the fighters' separation and the lens (frame-fill rule). |
+| `orbit` | `subjects` or `target`, `radius`, `height`, `deg0` → `deg1`, `fov` | Standoffs. Keep the arc on one side of the fighters' line. |
+| `track` | `subject`, `offset` [right, up, back(−)/front(+)], `lookAhead`, `fov` | **Torpedo / chase**: rides with a fast-moving fighter |
+| `face` | `subject`, `angle`, `dist`, `fov` (24) | Face close-ups |
+| `anchor` | `beats`: [{ `t`, `type`, …rig fields }] | **One continuous take**: the spring carries the camera from beat to beat without cuts |
+| `blade` | `offset` (blade space), `lookAlong`, `fov` | Rides the drawn blade (always locked feel) |
+
+### Feels (camera weight)
+| Feel | Character | Spring |
+|---|---|---|
+| `locked` | Stiff and mechanical: snaps, no overshoot | 6 Hz, damping 1.0 |
+| `dolly` | Smooth track, slight lag | 1.8 Hz, 1.0 |
+| `crane` | Heavy, slow, graceful | 0.7 Hz, 1.1, tiny drift |
+| `handheld` | Loose and nervous, ~5% overshoot, seeded wobble | 2.5 Hz, 0.7 |
+| `torpedo` | Fast attack, ~8% overshoot, speed buzz | 4 Hz, 0.62 |
+
+The look point is 1.5× stiffer than the camera body, so the subject never slides out of frame. Fov and roll never overshoot.
+
+### Behaviours (react to motion; default: `reveal`, `push`, `jump`, `dutch`, `lead`)
+| Behaviour | Trigger | Camera does |
+|---|---|---|
+| `reveal` | A fighter retreats or jumps back (speed away from the opponent > 0.6 m/s) | Pulls back up to +38% and widens 4° to show the space |
+| `push` | A fighter lunges (> 0.8 m/s toward the opponent) | Pushes in up to −20%, tightens 3° |
+| `jump` | Hips rise fast | Camera rises 0.45 m with the body |
+| `dutch` | Stagger (weight thrown back, torso reeling) | Rolls up to 7° |
+| `whip` | Very fast sword arm | Look leans toward the swing |
+| `lead` | Anyone moving | Frames ahead of the movement (lead room) |
+
+All triggers **look ahead 3 frames**: the operator knows the choreography and starts moving just before the action.
+
+**Always on:**
+- **Impact punch.** On every `shakes` time and `events.impact`: 7° punch-in over 2 frames, a recoil, then a settle over about 10 frames. It's added after the spring so it lands frame-exact.
+- **Guards.** At least 0.8 m from bodies (0.3 m for face/blade rigs), camera above 0.15 m. Clamps: distance 0.6–1.6×, fov ±8°, roll ±10°.
+
+### Which feel for which move
+| Move | Feel | Notes |
+|---|---|---|
+| Standoff | crane | `orbit` |
+| Lunge, cut | dolly | `frame` |
+| Thrust, dash | torpedo | `track` |
+| Parry, bind | handheld | `frame` close |
+| Jump-back | dolly or crane | `frame` with `reveal` |
+| Stagger | handheld | `frame` with `dutch` |
+| Decisive exchange | dolly | `anchor` |
+
+Working example of every rig: `film/kuroko-duel.json`. Check rigs with stills (`--still auto`); see their resolved
+paths in the playbook (`python3 docs/build_playbook.py film/kuroko-duel.json` → `docs/playbook-kuroko-duel.html`).

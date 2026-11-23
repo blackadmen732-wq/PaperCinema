@@ -3,13 +3,17 @@
 // is deterministic (the renderer captures frame by frame → MP4).
 import * as THREE from 'three';
 import { buildWorld, STUDIO_X } from './world.js';
+import { makeKuroko } from './kuroko.js';
+import { expandMoves } from './moves.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
 import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, reachLeftHand, reachHand, BASE_POSE } from './figure.js';
 import { paper, rng } from './paper.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/ganryujima.json')).json();
-const W = film.width, H = film.height;
+const VERTICAL = params.get('aspect') === 'vertical';
+const W = VERTICAL ? 720 : film.width, H = VERTICAL ? 1280 : film.height;
+if (VERTICAL) { film.letterbox = 0; document.body.classList.add('vertical'); }
 
 // ---------- renderer / scene ----------
 const canvas = document.getElementById('c');
@@ -23,7 +27,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.getElementById('stage').style.width = W + 'px';
 document.getElementById('stage').style.height = H + 'px';
-const barH = Math.max(0, (H - W / (film.letterbox || W / H)) / 2);
+const barH = film.letterbox ? Math.max(0, (H - W / film.letterbox) / 2) : 0;
 document.querySelectorAll('.bar').forEach((b) => (b.style.height = barH + 'px'));
 
 const scene = new THREE.Scene();
@@ -129,10 +133,30 @@ const POSES = await (await fetch('/library/poses.json')).json();
 const EV = film.events ?? {};
 const ev = (name, fallback) => EV[name] ?? fallback;
 const PERF = film.performances ?? {};
-const motionOf = (id) => makeMotion(resolveKeys(PERF[id].keys, POSES));
+const MOVES = await (await fetch('/library/moves.json')).json();
+const motionOf = (id) => makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES), POSES));
 const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');
 const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };
+
+// KUROKO camera operator: frames characters by name and reacts to their motion
+const _bf = { origin: [0, 0, 0], x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] };
+const _m4 = new THREE.Matrix4(), _e = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+const pair = {};
+for (const d of film.duels ?? []) { pair[d.a] = d.b; pair[d.b] = d.a; }
+const kuroko = makeKuroko({
+  motions: { kojiro: kojiroMotion, musashi: musashiMotion },
+  impacts: [...new Set([...(film.shakes ?? []).map((s) => s.t), ...(EV.impact !== undefined ? [EV.impact] : [])])],
+  pair,
+  aspect: W / H,
+  bladeFrame: () => {                                   // live frame of the drawn blade (for the blade rig)
+    _m4.copy(blade.matrixWorld);
+    _m4.extractBasis(_e[0], _e[1], _e[2]);
+    const o = new THREE.Vector3().setFromMatrixPosition(_m4);
+    _bf.origin = o.toArray(); _bf.x = _e[0].toArray(); _bf.y = _e[1].toArray(); _bf.z = _e[2].toArray();
+    return _bf;
+  },
+});
 
 /** REACTION LAYER: fighters respond to each other automatically inside film.duels windows.
  *  1. Eyes on the opponent: the head turns and tilts toward the other fighter's head (clamped).
@@ -191,6 +215,16 @@ function shotAt(t) {
 }
 const curves = new Map();
 function placeCamera(shot, t) {
+  if (shot.rig) {                                        // KUROKO rig
+    const c = kuroko.at(shot, t);
+    camera.position.set(...c.pos);
+    camera.fov = c.fov;
+    camera.updateProjectionMatrix();
+    camera.up.set(0, 1, 0);
+    camera.lookAt(...c.look);
+    camera.rotateZ(c.roll * Math.PI / 180);
+    return;
+  }
   if (!curves.has(shot.id)) {
     curves.set(shot.id, {
       pos: new THREE.CatmullRomCurve3(shot.camera.map((k) => new THREE.Vector3(...k.pos))),

@@ -1,0 +1,523 @@
+{
+  "title": "Ichiki-uchi — KUROKO camera test",
+  "fps": 24,
+  "width": 1280,
+  "height": 720,
+  "letterbox": 2.39,
+  "duration": 16,
+  "shots": [
+    {
+      "id": "S1",
+      "name": "Standoff: slow orbit",
+      "mode": "dawn",
+      "start": 0,
+      "end": 3.0,
+      "rig": {
+        "type": "orbit",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "radius": 4.4,
+        "height": 0.45,
+        "deg0": -55,
+        "deg1": -105,
+        "fov": 34,
+        "feel": "crane",
+        "behaviours": []
+      }
+    },
+    {
+      "id": "S2",
+      "name": "Lunge / jump back: reveal pull-back",
+      "mode": "dawn",
+      "start": 3.0,
+      "end": 4.6,
+      "rig": {
+        "type": "frame",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "angle": 22,
+        "elevation": 3,
+        "fov": 34,
+        "feel": "dolly"
+      }
+    },
+    {
+      "id": "S3",
+      "name": "Kesa-giri vs. high parry: handheld clash",
+      "mode": "dawn",
+      "start": 4.6,
+      "end": 6.2,
+      "rig": {
+        "type": "frame",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "angle": -30,
+        "elevation": 2,
+        "fov": 32,
+        "feel": "handheld"
+      }
+    },
+    {
+      "id": "S4",
+      "name": "Blade-lock: face close-up",
+      "mode": "dawn",
+      "start": 6.2,
+      "end": 7.6,
+      "rig": {
+        "type": "frame",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "size": "close",
+        "angle": -40,
+        "elevation": 2,
+        "fov": 28,
+        "feel": "handheld",
+        "behaviours": [
+          "lead"
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "name": "Stagger: Dutch tilt",
+      "mode": "dawn",
+      "start": 7.6,
+      "end": 8.9,
+      "rig": {
+        "type": "frame",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "angle": 8,
+        "elevation": 1,
+        "fov": 34,
+        "feel": "handheld",
+        "behaviours": [
+          "reveal",
+          "dutch",
+          "lead"
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "name": "Tsuki dash: torpedo track",
+      "mode": "dawn",
+      "start": 8.9,
+      "end": 10.4,
+      "rig": {
+        "type": "track",
+        "subject": "musashi",
+        "offset": [
+          -0.95,
+          0.2,
+          -2.3
+        ],
+        "lookAhead": 1.4,
+        "fov": 42,
+        "feel": "torpedo",
+        "behaviours": [
+          "lead"
+        ]
+      }
+    },
+    {
+      "id": "S7",
+      "name": "Decisive exchange: one-take",
+      "mode": "dawn",
+      "start": 10.4,
+      "end": 13.6,
+      "rig": {
+        "type": "anchor",
+        "feel": "dolly",
+        "beats": [
+          {
+            "t": 10.4,
+            "type": "frame",
+            "subjects": [
+              "kojiro",
+              "musashi"
+            ],
+            "angle": 15,
+            "fov": 34
+          },
+          {
+            "t": 11.15,
+            "type": "frame",
+            "subjects": [
+              "kojiro",
+              "musashi"
+            ],
+            "angle": 32,
+            "elevation": -3,
+            "fov": 28,
+            "dist": 0.85
+          },
+          {
+            "t": 11.9,
+            "type": "frame",
+            "subjects": [
+              "kojiro",
+              "musashi"
+            ],
+            "size": "wide",
+            "elevation": 12,
+            "angle": 28,
+            "fov": 38
+          }
+        ]
+      }
+    },
+    {
+      "id": "S8",
+      "name": "Aftermath: crane out to the end card",
+      "mode": "dawn",
+      "start": 13.6,
+      "end": 16,
+      "rig": {
+        "type": "frame",
+        "subjects": [
+          "kojiro",
+          "musashi"
+        ],
+        "size": "wide",
+        "elevation": 20,
+        "dist": 1.35,
+        "angle": -20,
+        "fov": 40,
+        "feel": "crane",
+        "behaviours": []
+      }
+    }
+  ],
+  "shakes": [
+    {
+      "t": 4.95,
+      "dur": 0.35,
+      "amp": 0.008,
+      "note": "blade clash"
+    },
+    {
+      "t": 11.45,
+      "dur": 0.5,
+      "amp": 0.015,
+      "note": "decisive blow"
+    }
+  ],
+  "events": {
+    "studio-blade-draw": -10,
+    "boat-arrives": -20,
+    "kojiro-draw": -3,
+    "kojiro-throws-scabbard": -8,
+    "scabbard-splash": -8,
+    "headband-cut": 4.95,
+    "impact": 11.45
+  },
+  "performances": {
+    "kojiro": {
+      "character": "kojiro",
+      "twoHand": [
+        [
+          0,
+          11.5
+        ]
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "chudan",
+          "x": 0,
+          "z": -1.2,
+          "ry": 0
+        },
+        {
+          "t": 2.9,
+          "pose": "chudan"
+        },
+        {
+          "t": 3.0,
+          "move": "lunge-shomen"
+        },
+        {
+          "t": 4.65,
+          "move": "parry-high"
+        },
+        {
+          "t": 6.2,
+          "move": "bind"
+        },
+        {
+          "t": 7.6,
+          "move": "stagger-back"
+        },
+        {
+          "t": 9.25,
+          "move": "dodge-left"
+        },
+        {
+          "t": 10.3,
+          "pose": "chudan",
+          "x": 0
+        },
+        {
+          "t": 10.9,
+          "pose": "jodan"
+        },
+        {
+          "t": 11.1,
+          "pose": "jodan-wind-up"
+        },
+        {
+          "t": 11.4,
+          "pose": "shomen-cut-finish",
+          "z": -0.6
+        },
+        {
+          "t": 11.55,
+          "pose": "struck-reel"
+        },
+        {
+          "t": 12.4,
+          "pose": "kneel-collapse"
+        },
+        {
+          "t": 13.3,
+          "pose": "fallen",
+          "y": -0.06,
+          "x": 0.1,
+          "rz": -1.42
+        }
+      ]
+    },
+    "musashi": {
+      "character": "musashi",
+      "twoHand": [
+        [
+          0,
+          12.6
+        ]
+      ],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "chudan",
+          "x": 0,
+          "z": 1.2,
+          "ry": 3.14159
+        },
+        {
+          "t": 2.9,
+          "pose": "chudan"
+        },
+        {
+          "t": 3.1,
+          "move": "jump-back"
+        },
+        {
+          "t": 4.3,
+          "move": "step-in"
+        },
+        {
+          "t": 4.65,
+          "move": "kesa-giri"
+        },
+        {
+          "t": 6.2,
+          "move": "bind"
+        },
+        {
+          "t": 7.7,
+          "pose": "chudan"
+        },
+        {
+          "t": 9.2,
+          "move": "tsuki",
+          "dist": 1.6
+        },
+        {
+          "t": 10.1,
+          "move": "step-back",
+          "dist": 1.5
+        },
+        {
+          "t": 10.6,
+          "pose": "jodan-high"
+        },
+        {
+          "t": 11.0,
+          "pose": "jodan-high-wind-up"
+        },
+        {
+          "t": 11.42,
+          "pose": "shomen-strike",
+          "z": 0.55
+        },
+        {
+          "t": 12.6,
+          "pose": "zanshin"
+        },
+        {
+          "t": 15.0,
+          "pose": "zanshin"
+        }
+      ]
+    }
+  },
+  "duels": [
+    {
+      "a": "kojiro",
+      "b": "musashi",
+      "from": 0,
+      "to": 11.5,
+      "note": "eyes on each other + threat response"
+    }
+  ],
+  "titles": [
+    {
+      "start": 0.3,
+      "end": 2.6,
+      "style": "hero",
+      "jp": "一騎打ち",
+      "en": "ICHIKI-UCHI",
+      "sub": "One-on-one · KUROKO camera test"
+    },
+    {
+      "start": 13.9,
+      "end": 15.8,
+      "style": "endcard",
+      "jp": "紙の剣",
+      "en": "PAPER CINEMA",
+      "sub": "Lantern Origami · test reel"
+    }
+  ],
+  "sounds": [
+    {
+      "id": "sea-bed",
+      "t": 0,
+      "query": "ocean waves shore calm",
+      "min": 20000,
+      "max": 600000,
+      "len": 16,
+      "gain": 0.3,
+      "bed": true
+    },
+    {
+      "id": "wind-bed",
+      "t": 0,
+      "query": "wind ambience",
+      "min": 20000,
+      "max": 600000,
+      "len": 16,
+      "gain": 0.2,
+      "bed": true
+    },
+    {
+      "id": "title-taiko",
+      "t": 0.3,
+      "query": "taiko drum hit",
+      "min": 500,
+      "max": 8000,
+      "len": 3,
+      "gain": 0.8
+    },
+    {
+      "id": "swing",
+      "t": 3.25,
+      "query": "sword swing whoosh",
+      "min": 300,
+      "max": 4000,
+      "len": 1.0,
+      "gain": 0.9
+    },
+    {
+      "id": "throw-whoosh",
+      "t": 3.2,
+      "query": "whoosh swing",
+      "min": 300,
+      "max": 4000,
+      "len": 1.0,
+      "gain": 0.6
+    },
+    {
+      "id": "steps-in",
+      "t": 3.9,
+      "query": "footsteps sand",
+      "min": 1000,
+      "max": 60000,
+      "len": 0.6,
+      "gain": 0.6
+    },
+    {
+      "id": "swing-2",
+      "t": 4.8,
+      "query": "fast sword swing",
+      "min": 300,
+      "max": 4000,
+      "len": 1.0,
+      "gain": 0.9
+    },
+    {
+      "id": "blade-clash",
+      "t": 4.95,
+      "query": "sword clash metal",
+      "min": 200,
+      "max": 5000,
+      "len": 1.5,
+      "gain": 0.9
+    },
+    {
+      "id": "swing-3",
+      "t": 9.3,
+      "query": "sword whoosh",
+      "min": 300,
+      "max": 4000,
+      "len": 1.0,
+      "gain": 0.8
+    },
+    {
+      "id": "impact",
+      "t": 11.45,
+      "query": "wood impact hit",
+      "min": 200,
+      "max": 4000,
+      "len": 1.5,
+      "gain": 1.0
+    },
+    {
+      "id": "impact-drum",
+      "t": 11.45,
+      "query": "big drum hit boom",
+      "min": 500,
+      "max": 8000,
+      "len": 3,
+      "gain": 1.0
+    },
+    {
+      "id": "fall",
+      "t": 13.3,
+      "query": "body fall thud",
+      "min": 300,
+      "max": 5000,
+      "len": 1.5,
+      "gain": 0.8
+    },
+    {
+      "id": "temple-bell",
+      "t": 14.0,
+      "query": "temple bell",
+      "min": 3000,
+      "max": 40000,
+      "len": 2.0,
+      "gain": 0.6
+    }
+  ]
+}

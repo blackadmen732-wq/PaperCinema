@@ -20,6 +20,14 @@ folded/cut paper characters lit from inside, real-metal or demonic swords, data-
 |---|---|
 | `film/*.json` | A film: shots (camera), shakes, events, performances (motion), titles, sound cues |
 | `library/poses.json` | Named poses for the shared skeleton (stances, cuts, reactions) |
+| `library/moves.json` | Named fight moves (jump-back, parry, lunge-shomen, tsuki, bind…) that expand into timed poses |
+| `library/openings/`, `library/endcards/` | Signature opening (lantern-wave) and end card templates |
+| `engine/kuroko.js` | **KUROKO** camera operator: rigs (frame/orbit/track/face/anchor/blade), feels, motion-reactive behaviours |
+| `engine/new-film.mjs` | Scaffold a new film: signature opening + fight body + end card |
+| `engine/resolve-camera.mjs` | Resolves KUROKO cameras per frame (used by the playbook) |
+| `engine/thumbnail.py` | 16:9 and 9:16 thumbnails from the decisive-blow frame |
+| `blender/` | Blender scripts (headless). `demon_slash_test.py` = paint-not-blood slash lookdev |
+| `docs/STORY-BIBLE.md` | Series world rules, characters, cursed swords (fiction), episode ideas |
 | `engine/validate.mjs` | Checks a film file and explains every mistake (run before rendering) |
 | `engine/make.mjs` | Whole pipeline in one command: check → stills → render → sound → playbook |
 | `engine/main.js` | Film engine: world, cast, choreography, camera, overlays; exposes `window.renderAt(t)` |
@@ -45,6 +53,10 @@ node engine/render.mjs --still 25.7                # one frame
 node engine/render.mjs --from 24 --to 30 --out output/clip.mp4   # a section
 npm run film                                       # whole pipeline → output/ganryujima-sound.mp4
 node engine/make.mjs film/<name>.json              # whole pipeline for another film
+node engine/new-film.mjs <name> --jp 漢字 --en TITLE   # start a new film with the signature opening + end card
+node engine/render.mjs --film film/<name>.json --vertical   # 9:16 version (KUROKO reframes automatically)
+python3 engine/thumbnail.py film/<name>.json        # 16:9 + 9:16 thumbnails
+/opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/demon_slash_test.py -- --state impact   # Blender test
 npm run preview                                    # live preview in a browser
 ```
 

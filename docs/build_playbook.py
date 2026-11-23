@@ -32,10 +32,15 @@ cred_path = os.path.join(ROOT, 'assets/sfx/credits.json')
 credits = json.load(open(cred_path)) if os.path.exists(cred_path) else {}
 credits = {k: {f: v.get(f) for f in ('title', 'creator', 'license', 'url')} for k, v in credits.items()}
 
+subprocess.run(['node', 'engine/resolve-camera.mjs', src], cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+campath = json.load(open(os.path.join(ROOT, 'output', os.path.basename(src).replace('.json', '.camera.json'))))
+
 html = open(os.path.join(ROOT, 'docs/playbook.template.html')).read()
 html = (html.replace('/*FILM_JSON*/null', json.dumps(film, ensure_ascii=False))
             .replace('/*THUMBS*/{}', json.dumps(thumbs))
             .replace('/*CREDITS*/{}', json.dumps(credits, ensure_ascii=False))
-            .replace('/*SRC*/"film/ganryujima.json"', json.dumps(src)))
-open(os.path.join(ROOT, 'docs/playbook.html'), 'w').write(html)
-print('wrote docs/playbook.html', f'({len(html) // 1024} KB, {len(thumbs)} thumbnails)')
+            .replace('/*SRC*/"film/ganryujima.json"', json.dumps(src))
+            .replace('/*CAMPATH*/{ shots: {}, subjects: {} }', json.dumps(campath)))
+dest = 'docs/playbook.html' if src.endswith('ganryujima.json') else f"docs/playbook-{os.path.basename(src).replace('.json', '')}.html"
+open(os.path.join(ROOT, dest), 'w').write(html)
+print('wrote', dest, f'({len(html) // 1024} KB, {len(thumbs)} thumbnails)')

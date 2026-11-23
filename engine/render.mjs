@@ -22,11 +22,11 @@ const stills = opt('still');
 const server = await serve(0);
 const port = server.address().port;
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const page = await browser.newPage({ viewport: { width: film.width, height: film.height } });
+const page = await browser.newPage({ viewport: args.includes('--vertical') ? { width: 720, height: 1280 } : { width: film.width, height: film.height } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 page.on('console', (m) => { if (m.type() === 'error') console.error('console:', m.text()); });
 const pagePath = opt('page', 'engine/index.html');
-const extra = opt('query', '');
+const extra = [opt('query', ''), args.includes('--vertical') ? 'aspect=vertical' : ''].filter(Boolean).join('&');
 await page.goto(`http://localhost:${port}/${pagePath}?render=1&film=/${filmPath}${extra ? '&' + extra : ''}`);
 await page.waitForFunction('window.READY === true', null, { timeout: 120000 });
 

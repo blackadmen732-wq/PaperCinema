@@ -1,0 +1,187 @@
+{
+ "_about": "Named fight moves. A film key {\"t\": 3.2, \"move\": \"jump-back\"} expands into these beats. dt = seconds after t (scaled by \"speed\": 2 = twice as fast). fwd / side = metres along the fighter's facing / to its left, relative to where the move starts (scaled by \"dist\"). y = height off the ground (jumps). Any other field overrides that pose joint.",
+ "step-in": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.28,
+   "pose": "chudan",
+   "fwd": 0.4
+  }
+ ],
+ "step-back": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.28,
+   "pose": "chudan",
+   "fwd": -0.4
+  }
+ ],
+ "jump-back": [
+  {
+   "dt": 0,
+   "pose": "crouch-load"
+  },
+  {
+   "dt": 0.2,
+   "pose": "airborne-guard",
+   "fwd": -0.55,
+   "y": 0.34
+  },
+  {
+   "dt": 0.42,
+   "pose": "land-guard",
+   "fwd": -1.1
+  },
+  {
+   "dt": 0.85,
+   "pose": "chudan",
+   "fwd": -1.1
+  }
+ ],
+ "dodge-left": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.2,
+   "pose": "dodge-lean",
+   "side": 0.45,
+   "fwd": -0.1
+  },
+  {
+   "dt": 0.6,
+   "pose": "chudan",
+   "side": 0.45,
+   "fwd": -0.1
+  }
+ ],
+ "parry-high": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.16,
+   "pose": "uke-high"
+  },
+  {
+   "dt": 0.5,
+   "pose": "uke-high"
+  },
+  {
+   "dt": 0.85,
+   "pose": "chudan"
+  }
+ ],
+ "lunge-shomen": [
+  {
+   "dt": 0,
+   "pose": "jodan"
+  },
+  {
+   "dt": 0.2,
+   "pose": "jodan-wind-up"
+  },
+  {
+   "dt": 0.42,
+   "pose": "shomen-cut-finish",
+   "fwd": 0.65
+  },
+  {
+   "dt": 0.58,
+   "pose": "shomen-cut-finish",
+   "fwd": 0.65
+  },
+  {
+   "dt": 1.0,
+   "pose": "chudan",
+   "fwd": 0.65
+  }
+ ],
+ "kesa-giri": [
+  {
+   "dt": 0,
+   "pose": "hasso"
+  },
+  {
+   "dt": 0.3,
+   "pose": "kesa-giri-finish",
+   "fwd": 0.5
+  },
+  {
+   "dt": 0.45,
+   "pose": "kesa-giri-finish",
+   "fwd": 0.5
+  },
+  {
+   "dt": 0.9,
+   "pose": "chudan",
+   "fwd": 0.5
+  }
+ ],
+ "tsuki": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.12,
+   "pose": "crouch-load"
+  },
+  {
+   "dt": 0.3,
+   "pose": "tsuki-thrust",
+   "fwd": 0.7
+  },
+  {
+   "dt": 0.45,
+   "pose": "tsuki-thrust",
+   "fwd": 0.7
+  },
+  {
+   "dt": 0.85,
+   "pose": "chudan",
+   "fwd": 0.55
+  }
+ ],
+ "bind": [
+  {
+   "dt": 0,
+   "pose": "chudan"
+  },
+  {
+   "dt": 0.25,
+   "pose": "bind",
+   "fwd": 0.25
+  },
+  {
+   "dt": 1.2,
+   "pose": "bind",
+   "fwd": 0.3
+  }
+ ],
+ "stagger-back": [
+  {
+   "dt": 0,
+   "pose": "stagger",
+   "fwd": -0.15
+  },
+  {
+   "dt": 0.35,
+   "pose": "stagger",
+   "fwd": -0.55
+  },
+  {
+   "dt": 0.9,
+   "pose": "chudan",
+   "fwd": -0.6
+  }
+ ]
+}

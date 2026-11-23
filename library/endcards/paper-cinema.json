@@ -1,0 +1,25 @@
+{
+  "_about": "Signature end card: series name + next-episode line over the last shot, with a temple bell. {next} is filled by engine/new-film.mjs.",
+  "duration": 2.6,
+  "titles": [
+    {
+      "start": 0,
+      "end": 2.3,
+      "style": "endcard",
+      "jp": "紙の剣",
+      "en": "PAPER CINEMA",
+      "sub": "{next}"
+    }
+  ],
+  "sounds": [
+    {
+      "id": "temple-bell",
+      "t": 0,
+      "query": "temple bell",
+      "min": 3000,
+      "max": 40000,
+      "len": 2.4,
+      "gain": 0.6
+    }
+  ]
+}

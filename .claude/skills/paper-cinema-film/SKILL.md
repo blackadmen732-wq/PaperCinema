@@ -11,9 +11,9 @@ Read `AGENTS.md` once per session; this skill is the working procedure.
 ## Procedure (do every step, in order)
 
 1. **Research** the story. Write `research/<name>.md`. Mark every fact *documented*, *tradition* or *our choice*.
-2. **Start from the working example:** `cp film/ganryujima.json film/<name>.json`. Field reference: `docs/FILM-FORMAT.md`.
+2. **Scaffold:** `node engine/new-film.mjs <name> --jp 漢字 --en TITLE --sub "…" --next "Next: …"` (signature opening + fight body + end card). Field reference: `docs/FILM-FORMAT.md`.
 3. **Cast:** pick characters, outfits and swords from `library/` (`characters/`, `outfits/`, `swords/`, `poses.json`).
-4. **Choreography:** write `performances.<id>.keys` as `{ "t": seconds, "pose": "name" }`. Follow the 6-beat
+4. **Choreography:** write `performances.<id>.keys` as `{ "t": seconds, "pose": "name" }` or `{ "t": seconds, "move": "jump-back" }` (moves: `library/moves.json`). When one fighter attacks, the other must react (parry, dodge, jump back). Follow the 6-beat
    Strike Grammar in `docs/STYLE-AND-FIGHT-SYSTEM.md`:
    - Ready: hold the stance 0.5–2 s
    - Wind-up: 0.2–0.4 s
@@ -23,8 +23,14 @@ Read `AGENTS.md` once per session; this skill is the working procedure.
    - Reaction
 
    Add `twoHand` windows while both hands hold the sword, and a `duels` entry so the fighters watch and react to each other.
-5. **Camera:** write each shot's `camera` keyframes with the recipes in `docs/CAMERA.md` (fly-over, push-in, orbit,
-   over-the-shoulder, low hero, impact close-up, crane, cut on action). Put a key exactly on each hit and add a `shakes` entry.
+5. **Camera:** prefer KUROKO rigs (`docs/CAMERA.md` section 7): match the feel to the move:
+   - orbit + crane for standoffs
+   - frame + dolly for cuts
+   - track + torpedo for dashes
+   - handheld for clashes and staggers
+   - anchor for one-takes
+
+   Keyframes are for hand-made moves. Add a `shakes` entry on every hit.
 6. **Sound:** add `sounds` cues at the same seconds as the actions (swing, impact, steps, bed loops).
 7. **Validate:** `node engine/validate.mjs film/<name>.json`. Fix every ✗ before rendering.
 8. **Review stills (mandatory before any full render):** `node engine/render.mjs --film film/<name>.json --still auto`,
@@ -35,8 +41,9 @@ Read `AGENTS.md` once per session; this skill is the working procedure.
    - **The blade lands on target at the hit second:** adjust the pose angles, or check them in the pose gallery:
      `node engine/render.mjs --page engine/lineup.html --film film/lineup.json --query "show=poses&poses=a,b,c" --still 1 --prefix poses-`
 9. **Render a section first** if the fight changed: `node engine/render.mjs --film film/<name>.json --from 24 --to 30 --out output/clip.mp4`.
-10. **Full pipeline:** `node engine/make.mjs film/<name>.json` (check → stills → render → sound → playbook). It takes about 55 min per 36 s on this CPU.
-11. **Commit and push.** Report what changed, where the video is, and which sounds need CC-BY credit (`assets/sfx/CREDITS.md`).
+10. **Vertical + thumbnails:** `node engine/render.mjs --film film/<name>.json --vertical --out output/<name>-vertical.mp4`, then `python3 engine/thumbnail.py film/<name>.json`.
+11. **Full pipeline:** `node engine/make.mjs film/<name>.json` (check → stills → render → sound → playbook). It takes about 55 min per 36 s on this CPU.
+12. **Commit and push.** Report what changed, where the video is, and which sounds need CC-BY credit (`assets/sfx/CREDITS.md`).
 
 ## Quality rules
 - Amber glow = human, crimson = demonic power. Paper shards or red paint, never blood.
