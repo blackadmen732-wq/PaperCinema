@@ -22,7 +22,9 @@ export function analyseGround({ fighters, dur, filmT = (x) => x, opts = {} }) {
   for (const f of fighters) {
     const S = [];
     for (let i = 0; i <= dur * HZ; i++) { const tb = i / HZ, p = f.motion(tb); S.push({ tb, x: p.x, y: p.y, z: p.z }); }
-    S.forEach((s, i) => { const q = S[Math.max(0, i - 1)]; s.vx = (s.x - q.x) * HZ; s.vz = (s.z - q.z) * HZ; s.v = Math.hypot(s.vx, s.vz); });
+    // speed over a 1/12 s window (keyed easing makes the instant speed lumpy; the feet do not care)
+    const N = HZ / 24;
+    S.forEach((s, i) => { const q = S[Math.max(0, i - N)], n = S[Math.min(S.length - 1, i + N)], dt = (n.tb - q.tb) || 1; s.vx = (n.x - q.x) / dt; s.vz = (n.z - q.z) / dt; s.v = Math.hypot(s.vx, s.vz); });
     tracks[f.id] = S;
     let dashing = false, peak = 0, air = false, top = 0, skidding = false, last = -1;
     const ev = (kind, s, extra = {}) => events.push({ kind, id: f.id, tb: +s.tb.toFixed(4), t: +filmT(s.tb).toFixed(4), pos: [s.x, s.z],
@@ -33,11 +35,11 @@ export function analyseGround({ fighters, dur, filmT = (x) => x, opts = {} }) {
       if (air) top = Math.max(top, s.y);
       if (air && grounded) { air = false; if (top > 0.12) ev('land', s, { height: +top.toFixed(2) }); }
       if (!grounded) { dashing = skidding = false; continue; }
-      if (!dashing && s.v > dashOn) { dashing = true; skidding = false; peak = s.v; ev('dash', s); }
+      if (!dashing && !skidding && s.v > dashOn) { dashing = true; peak = s.v; ev('dash', s); }
       if (dashing) {
         peak = Math.max(peak, s.v);
         if (s.tb - last >= 1 / 60) { ev('wake', s); last = s.tb; }
-        if (s.v < 0.55 * peak) { dashing = false; skidding = true; ev('skid', s, { peak: +peak.toFixed(1) }); }
+        if (s.v < 0.6 * peak && S[Math.min(S.length - 1, i + HZ / 8)].v < 0.75 * s.v) {   // really stopping (not a lump in the keyed speed) dashing = false; skidding = true; ev('skid', s, { peak: +peak.toFixed(1) }); }
       } else if (skidding) {
         if (s.v < 0.8) skidding = false;
         else if (s.tb - last >= 1 / 60) { ev('skidding', s); last = s.tb; }

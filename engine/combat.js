@@ -375,7 +375,7 @@ export function bladeGlints(list, byId, tb, filmTime) {
     const d = g.dur ?? 0.3, tau = tb - g.t, f = byId[g.who];
     if (!f || tau < 0 || tau >= d) continue;
     const k = (g.from ?? 0.08) + ((g.to ?? 1) - (g.from ?? 0.08)) * smooth(tau / d);
-    out.push({ at: f.sword.localToWorld(new THREE.Vector3(f.bladeLen * k, f.yOff ?? -0.012, 0)).toArray(), t0: filmTime - tau, dur: d, size: g.size ?? 90, color: g.color ?? '#fff3d8' });
+    out.push({ at: f.sword.localToWorld(new THREE.Vector3(f.bladeLen * k, f.yOff ?? -0.012, 0)).toArray(), t0: filmTime - tau, dur: d, size: g.size ?? 90, color: g.color ?? [1, 0.95, 0.84] });
   }
   return out;
 }

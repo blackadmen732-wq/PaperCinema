@@ -76,8 +76,13 @@ const autoCues = evData?.cues ?? [];
 if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
 // A cue with "body": true is timed to the fighters' action (body time): it moves later by every hit-stop before it.
 const stops = evData?.stops ?? [];
-const filmT = (tb) => tb + stops.filter((st) => st.tb < tb).reduce((a, st) => a + st.d, 0);
-for (const c of film.sounds ?? []) if (c.body && stops.length) c.t = +filmT(c.t).toFixed(3);
+// With speed ramps (film.ramps, motion page) the events file carries a table: body time → film time ("warp").
+const warp = evData?.warp ?? null;
+const filmT = (tb) => {
+  if (warp) { const x = Math.max(0, Math.min(warp.film.length - 1, tb / warp.dt)), i = Math.floor(x); return warp.film[i] + (warp.film[Math.min(i + 1, warp.film.length - 1)] - warp.film[i]) * (x - i); }
+  return tb + stops.filter((st) => st.tb < tb).reduce((a, st) => a + st.d, 0);
+};
+for (const c of film.sounds ?? []) if (c.body && (stops.length || warp)) c.t = +filmT(c.t).toFixed(3);
 // Spoken lines (VOICE, docs/VOICE.md) come from output/<film>.voice.json, written by tools/voice.py:
 // cues with a ready "file" (no search), plus the speech windows used to duck beds/music under the voice.
 const voicePath = opt('voice', `output/${base}.voice.json`);

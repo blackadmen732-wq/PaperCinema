@@ -320,5 +320,47 @@
     "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
     "license": "own",
     "source": "synth"
+  },
+  "dash-burst": {
+    "title": "dash-burst",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "skid-dust": {
+    "title": "skid-dust",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "jump-push": {
+    "title": "jump-push",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "land-thud": {
+    "title": "land-thud",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "wood-chop": {
+    "title": "wood-chop",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "wood-creak": {
+    "title": "wood-creak",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
+  },
+  "petal-rustle": {
+    "title": "petal-rustle",
+    "creator": "Paper Cinema (synthesised with ffmpeg, tools/synth_sfx.sh)",
+    "license": "own",
+    "source": "synth"
   }
 }

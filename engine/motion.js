@@ -171,7 +171,8 @@ function makeTree(tr) {
       const fallen = tr.cut && t >= tr.cut.t + (tr.cut.delay ?? 0.45);
       const out = [{ x: tr.x, z: tr.z, r: 0.24, y0: 0, y1: fallen ? cy + 0.1 : H - 1.2 * sc }];
       if (tr.split && t >= tr.split.t) return out;
-      const c = top.localToWorld(new THREE.Vector3(0, H - cy - 1.0, 0)); root.updateMatrixWorld(true);
+      root.updateMatrixWorld(true);
+      const c = top.localToWorld(new THREE.Vector3(0, H - cy - 1.0, 0));
       out.push({ x: c.x, z: c.z, r: 1.15 * sc + 0.1, y0: c.y - 1.0, y1: c.y + 1.1 });
       return out;
     },
@@ -216,8 +217,16 @@ function makeTree(tr) {
 }
 
 // ---------- 4. CAMERA: rigs aim at real joints, then a spring smooths it ----------
-const FEELS = { locked: [6, 1], dolly: [1.8, 1], crane: [0.7, 1.1], handheld: [2.5, 0.7], torpedo: [4, 0.62] };
-const BEATS = film.camera;
+// Guide: docs/CAMERA.md §8 (motion-page beats), docs/STUDIO-STANDARD.md §3 (which camera for which beat).
+// A beat: { t | act, rig, feel, cut, until | untilAct, ... }. "act" / "untilAct" = action time (converted to film time
+// through the speed ramps, so a beat can start "when the blade lands" whatever the slow motion does).
+// film.cameraOpts.solver: 2 = the cinematographer's spring: it works on the offset from the subject (the subject can
+// never out-run it), "cut": true is a hard cut, guards keep the subject in frame, the lens above the ground and out
+// of props. Without it the camera is the old world-space spring (older films render as before).
+const FEELS = { locked: [6, 1], dolly: [1.8, 1], crane: [0.7, 1.1], handheld: [2.5, 0.7], torpedo: [4, 0.62], whip: [7, 0.85] };
+const SOLVER2 = (film.cameraOpts?.solver ?? 1) >= 2;
+const BEATS = film.camera.map((b) => ({ ...b, t: b.act !== undefined ? R.filmOf(b.act) : b.t, until: b.untilAct !== undefined ? R.filmOf(b.untilAct) : b.until }));
+BEATS.forEach((b, i) => { b.i = i; b.end = b.until ?? BEATS[i + 1]?.t ?? DUR; });
 const beatAt = (t) => { let b = BEATS[0]; for (const x of BEATS) if (t >= x.t) b = x; return b; };
 const worldOf = (o, x = 0, y = 0, z = 0) => o.localToWorld(new THREE.Vector3(x, y, z));
 function joint(c, name) {
@@ -230,19 +239,31 @@ function joint(c, name) {
     case 'tsuba': return worldOf(c.sword, 0.0, -0.012, 0);
     case 'tip': return worldOf(c.sword, c.bladeLen, -0.012, 0);
     case 'hips': return worldOf(f.hips);
+    case 'chest': return worldOf(f.upper ?? f.torso, 0, 0.25, 0);
     case 'head': return worldOf(f.head, 0, 0.1, 0);
   }
   throw new Error('unknown joint ' + name);
 }
 const UP = new THREE.Vector3(0, 1, 0);
-function rigTarget(b, t, tb) {
+const lerp = (a, b, k) => a + (b - a) * k;
+// guards: is the straight line from the lens to the subject clear of the props? (cylinders from TREES[].solids)
+function losClear(pos, P, solids) {
+  for (const c of solids) {
+    const dx = P.x - pos.x, dz = P.z - pos.z, L2 = dx * dx + dz * dz || 1e-9;
+    const k = clamp(((c.x - pos.x) * dx + (c.z - pos.z) * dz) / L2, 0, 0.93);       // stop short of the subject itself
+    const px = pos.x + dx * k, pz = pos.z + dz * k, py = pos.y + (P.y - pos.y) * k;
+    if (Math.hypot(px - c.x, pz - c.z) < c.r + 0.06 && py > c.y0 - 0.1 && py < c.y1 + 0.1) return false;
+  }
+  return true;
+}
+function rigTarget(b, t, tb, s) {
   const vfov = b.fov ?? 36;
   if (b.rig === 'face') {
     const c = cast[b.who], eye = joint(c, 'eyes');
     const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(c.fig.head.getWorldQuaternion(new THREE.Quaternion())).setY(0).normalize();
     fwd.applyAxisAngle(UP, (b.angle ?? 0) * Math.PI / 180);
     const pos = eye.clone().addScaledVector(fwd, b.dist ?? 0.45).add(new THREE.Vector3(0, b.lift ?? 0, 0));
-    return { pos, look: eye.clone().add(new THREE.Vector3(0, -0.01, 0)), fov: vfov };
+    return { pos, look: eye.clone().add(new THREE.Vector3(0, -0.01, 0)), fov: vfov, anchor: eye };
   }
   if (b.rig === 'slide') {
     const c = cast[b.who];
@@ -256,12 +277,68 @@ function rigTarget(b, t, tb) {
     const right = new THREE.Vector3(-1, 0, 0).applyQuaternion(rq), fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(rq);
     const [wr, wu, wf] = b.from ?? [0.75, 0.12, 0.62];   // where the camera sits: weights for right / up / front of the fighter
     const off = right.multiplyScalar(wr).addScaledVector(fwd, wf).add(new THREE.Vector3(0, wu, 0)).normalize().multiplyScalar(b.offset ?? 0.4);
-    return { pos: p.clone().add(off), look: ahead, fov: vfov };
+    return { pos: p.clone().add(off), look: ahead, fov: vfov, anchor: p };
   }
   const subIds = b.subjects ?? ids;
   const hipsOf = (id) => { const tr = TREES.find((x) => x.tr.id === id); return tr ? tr.root.position.clone().setY(0.95) : joint(cast[id], 'hips'); };
-  const subs = subIds.map((id) => cast[id] ?? { id });
-  const center = subIds.reduce((s, id) => s.add(hipsOf(id)), new THREE.Vector3()).multiplyScalar(1 / subIds.length);
+  if (b.rig === 'compose') {
+    // THE FRAMING SOLVER: say where the subject sits in the frame and how big it is; the solver finds the camera.
+    //   subjects[0] = who; size (fraction of the frame height that "span" metres fill; default span 1.8 = the whole
+    //   figure); screen [sx, sy] (0..1, where the subject's middle sits; default centre) or lead (0.16 = lead room: the
+    //   subject sits off-centre, with the space in front of its motion or gaze); az (degrees around the subject,
+    //   0 = +z side) and elev (degrees up; negative = low angle); basis "world" | "facing" (az 0 = in front of the
+    //   subject, frozen at the start of the beat) | "target" (az 0 = seen from the target's side, 180 = over the
+    //   shoulder towards "target"); aim = a joint instead of the whole body (close-ups).
+    //   Every number takes a 0/1 pair (az0 → az1 orbit, elev0 → elev1 crane, size0 → size1 push-in / pull-back,
+    //   fov0 → fov1 with a fixed size = dolly-zoom, roll0 → roll1 dutch), eased over the beat ("ease": "inOut" | "out" | "in" | "linear").
+    const raw = clamp((t - b.t) / Math.max(1e-6, b.end - b.t), 0, 1);
+    const u = b.ease === 'linear' ? raw : b.ease === 'out' ? 1 - (1 - raw) ** 3 : b.ease === 'in' ? raw ** 3 : smooth(raw);
+    const L = (k, d) => lerp(b[k + '0'] ?? b[k] ?? d, b[k + '1'] ?? b[k] ?? b[k + '0'] ?? d, u);
+    const who = subIds[0], c = cast[who];
+    let P, facing = 0, vel = new THREE.Vector3();
+    if (c) {
+      const root = c.fig.root.position, top = worldOf(c.fig.head, 0, 0.3, 0), hips = joint(c, 'hips');
+      P = b.aim ? joint(c, b.aim) : new THREE.Vector3(hips.x, (root.y + top.y) / 2, hips.z);
+      facing = c.fig.root.rotation.y;
+      const m0 = c.motion(Math.max(0, tb - 0.02)), m1 = c.motion(tb + 0.02), rate = R.rateAt(t);
+      vel.set(m1.x - m0.x, m1.y - m0.y, m1.z - m0.z).multiplyScalar(rate / 0.04);        // what the viewer sees (slow motion included)
+    } else P = hipsOf(who);
+    let basis = 0;
+    if (b.basis === 'facing' && c) { b._basis ??= c.motion(bodyT(worldT(b.t))).ry; basis = b._basis; }
+    else if (b.basis === 'target') { const q = hipsOf(b.target ?? subIds[1]); basis = Math.atan2(q.x - P.x, q.z - P.z); }
+    const fov = L('fov', 36), size = L('size', 0.6), span = b.span ?? (b.aim ? 0.6 : 1.8);
+    const tv = Math.tan((fov * Math.PI) / 360), th = tv * (W / H);
+    const dist = span / size / (2 * tv);
+    const solids = TREES.filter((x) => !subIds.includes(x.tr.id) || b.guard === 'all').flatMap((x) => x.solids(s));
+    const build = (azDeg) => {
+      const a = (azDeg * Math.PI) / 180 + basis, e = (L('elev', 0) * Math.PI) / 180;
+      const dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e));
+      const right = new THREE.Vector3().crossVectors(UP, dir).normalize(), up = new THREE.Vector3().crossVectors(dir, right);
+      let [sx, sy] = b.screen ?? [0.5, 0.5];
+      if (b.lead) {                                    // lead room: space in front of the motion, else in front of the gaze
+        const vr = vel.dot(right), g = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing)).dot(right);
+        sx = 0.5 - b.lead * (Math.abs(vr) > 0.8 ? Math.sign(vr) * Math.min(1, Math.abs(vr) / 4) : 0.6 * g);
+        if (!b.screen) sy = 0.5 + clamp(vel.y / 8, -0.08, 0.1);                           // rising: room above
+      }
+      const off = right.clone().multiplyScalar((0.5 - sx) * 2 * dist * th).addScaledVector(up, (sy - 0.5) * 2 * dist * tv);
+      const pos = P.clone().addScaledVector(dir, dist).add(off);
+      if (pos.y < (b.minY ?? 0.14)) pos.y = b.minY ?? 0.14;                               // never under the sand
+      return { pos, look: P.clone().add(off) };
+    };
+    const az = L('az', 90);
+    let best = build(az);
+    if (b.guard !== false) {
+      // props out of the lens: swing round the subject (a few degrees at a time) until the line of sight is clear,
+      // then step back out of any prop the lens ended up inside
+      for (const d of [0, 7, -7, 14, -14, 22, -22, 32, -32, 45, -45, 60, -60]) { const c2 = build(az + d); if (losClear(c2.pos, P, solids)) { best = c2; break; } }
+      for (const q of solids) {
+        const dx = best.pos.x - q.x, dz = best.pos.z - q.z, d = Math.hypot(dx, dz) || 1e-6, keep = q.r + 0.3;
+        if (d < keep && best.pos.y > q.y0 - 0.2 && best.pos.y < q.y1 + 0.2) { best.pos.x = q.x + (dx / d) * keep; best.pos.z = q.z + (dz / d) * keep; }
+      }
+    }
+    return { pos: best.pos, look: best.look, fov, roll: L('roll', 0), anchor: P, keep: b.keep ?? [0.72, 0.8] };
+  }
+  const center = subIds.reduce((s2, id) => s2.add(hipsOf(id)), new THREE.Vector3()).multiplyScalar(1 / subIds.length);
   if (b.rig === 'orbit') {
     const a = ((b.deg0 + ((b.deg1 ?? b.deg0) - b.deg0) * smooth(clamp((t - b.t) / ((b.until ?? DUR) - b.t), 0, 1))) * Math.PI) / 180;
     // follow: the look point rides with the subject (jumps), camY = camera height relative to it (negative = looking up)
@@ -269,7 +346,7 @@ function rigTarget(b, t, tb) {
     const camY = b.follow ? (b.camY ?? 0) : 0.15;
     const pos = look.clone().add(new THREE.Vector3(Math.sin(a) * b.radius, camY, Math.cos(a) * b.radius));
     pos.y = Math.max(0.12, pos.y);                                                    // never under the ground
-    return { pos, look, fov: vfov };
+    return { pos, look, fov: vfov, anchor: center };
   }
   // frame: both fighters, seen from "angle" degrees off the side view (0 = side-on, 90 = behind the hero)
   const axis = hipsOf(subIds[subIds.length - 1]).sub(hipsOf(subIds[0])).setY(0);
@@ -285,85 +362,156 @@ function rigTarget(b, t, tb) {
   const e = (b.elev ?? 0) * Math.PI / 180;
   const pos = look.clone().addScaledVector(dir, dist * Math.cos(e)).add(new THREE.Vector3(0, dist * Math.sin(e), 0));
   pos.y = Math.max(0.25, pos.y);                                                     // never under the sand
-  return { pos, look, fov: vfov };
+  return { pos, look, fov: vfov, anchor: center };
 }
 // integrate the spring at 240 Hz with a 1 s pre-roll; the look point is 1.5x stiffer than the body
 console.log('[motion] analysis done, camera', performance.now() | 0);
 const camPath = [];
 {
-  let pos = null, look = null, fov = 0;
+  let pos = null, look = null, fov = 0, roll = 0, last = null;
   const vp = new THREE.Vector3(), vl = new THREE.Vector3(); let vf = 0;
+  const A = new THREE.Vector3();                           // solver 2: the (slightly lagging) subject the spring hangs from
   const step = (x, v, target, f, z, dt) => {             // critically/under-damped spring, semi-implicit Euler
     const w = 2 * Math.PI * f;
     v.addScaledVector(target.clone().sub(x), w * w * dt).multiplyScalar(1 / (1 + 2 * z * w * dt));
     x.addScaledVector(v, dt);
   };
   for (let i = -RATE; i <= DUR * RATE; i++) {
-    const t = Math.max(0, i / RATE), tb = bodyT(t);
+    const t = Math.max(0, i / RATE), s = worldT(t), tb = bodyT(s);
     poseAll(tb);
-    const b = beatAt(t), tg = rigTarget(b, t, tb);
+    if (SOLVER2) for (const tr of TREES) tr.update(s);
+    const b = beatAt(t), tg = rigTarget(b, t, tb, s);
     const [f, z] = FEELS[b.feel ?? 'dolly'];
-    if (!pos) { pos = tg.pos.clone(); look = tg.look.clone(); fov = tg.fov; }
     const dt = 1 / RATE;
-    step(pos, vp, tg.pos, f, z, dt);
-    step(look, vl, tg.look, f * 1.5, Math.max(z, 0.8), dt);
-    const w = 2 * Math.PI * f; vf = (vf + (tg.fov - fov) * w * w * dt) / (1 + 2 * z * w * dt); fov += vf * dt;
-    if (b.feel === 'handheld') {                          // a breathing operator: smooth low-frequency drift
-      const n = (s) => Math.sin(t * 1.7 + s) * 0.6 + Math.sin(t * 3.1 + s * 2) * 0.4;
-      pos.x += n(1) * 0.0006; pos.y += n(2) * 0.0005;
+    if (!SOLVER2) {
+      if (!pos) { pos = tg.pos.clone(); look = tg.look.clone(); fov = tg.fov; }
+      step(pos, vp, tg.pos, f, z, dt);
+      step(look, vl, tg.look, f * 1.5, Math.max(z, 0.8), dt);
+      const w = 2 * Math.PI * f; vf = (vf + (tg.fov - fov) * w * w * dt) / (1 + 2 * z * w * dt); fov += vf * dt;
+      if (b.feel === 'handheld') {                          // a breathing operator: smooth low-frequency drift
+        const n = (q) => Math.sin(t * 1.7 + q) * 0.6 + Math.sin(t * 3.1 + q * 2) * 0.4;
+        pos.x += n(1) * 0.0006; pos.y += n(2) * 0.0005;
+      }
+      if (i >= 0) camPath.push({ pos: pos.clone(), look: look.clone(), fov, roll: 0, beat: b.i });
+      continue;
     }
-    if (i >= 0) camPath.push({ pos: pos.clone(), look: look.clone(), fov });
+    // solver 2: pos / look are OFFSETS from the subject; the subject is followed with a tiny lag ("lag" seconds)
+    const rp = tg.pos.clone().sub(tg.anchor), rl = tg.look.clone().sub(tg.anchor);
+    if (!pos || (b !== last && b.cut)) { pos = rp.clone(); look = rl.clone(); fov = tg.fov; roll = tg.roll ?? 0; vp.set(0, 0, 0); vl.set(0, 0, 0); vf = 0; A.copy(tg.anchor); }
+    else if (b !== last) { const d = A.clone().sub(tg.anchor); pos.add(d); look.add(d); A.copy(tg.anchor); }   // new subject: the spring carries the move
+    last = b;
+    A.lerp(tg.anchor, 1 - Math.exp(-dt / Math.max(1e-4, b.lag ?? 0.02)));
+    step(pos, vp, rp, f, z, dt);
+    step(look, vl, rl, f * 1.5, Math.max(z, 0.8), dt);
+    const w = 2 * Math.PI * f; vf = (vf + (tg.fov - fov) * w * w * dt) / (1 + 2 * z * w * dt); fov += vf * dt;
+    roll += ((tg.roll ?? 0) - roll) * (1 - Math.exp(-dt * 6));
+    if (i < 0) continue;
+    const P = A.clone().add(pos), Lk = A.clone().add(look);
+    if (b.feel === 'handheld') { const n = (q) => Math.sin(t * 1.7 + q) * 0.6 + Math.sin(t * 3.1 + q * 2) * 0.4; P.x += n(1) * 0.012; P.y += n(2) * 0.01; }
+    if (tg.keep) {                                         // guard: the subject never leaves the frame
+      const fw = Lk.clone().sub(P).normalize(), r = new THREE.Vector3().crossVectors(fw, UP).normalize(), u = new THREE.Vector3().crossVectors(r, fw);
+      const d = tg.anchor.clone().sub(P), zc = d.dot(fw);
+      if (zc > 0.2) {
+        const tv = Math.tan((fov * Math.PI) / 360), th = tv * (W / H);
+        const nx = d.dot(r) / (zc * th), ny = d.dot(u) / (zc * tv);
+        if (Math.abs(nx) > tg.keep[0]) { const m = (nx - Math.sign(nx) * tg.keep[0]) * zc * th; P.addScaledVector(r, m); Lk.addScaledVector(r, m); }
+        if (Math.abs(ny) > tg.keep[1]) { const m = (ny - Math.sign(ny) * tg.keep[1]) * zc * tv; P.addScaledVector(u, m); Lk.addScaledVector(u, m); }
+      }
+    }
+    P.y = Math.max(0.12, P.y);                             // guard: never under the sand
+    camPath.push({ pos: P, look: Lk, fov, roll, beat: b.i });
   }
 }
+const HITS_F = [...contactsF, ...IMPACTS_F];
 function placeCamera(t) {
   const x = clamp(t * RATE, 0, camPath.length - 1), i = Math.floor(x), k = x - i, a = camPath[i], b = camPath[Math.min(i + 1, camPath.length - 1)];
-  camera.position.copy(a.pos).lerp(b.pos, k);
-  const look = a.look.clone().lerp(b.look, k);
-  const { fov, roll } = combat.punch([...contacts, ...IMPACTS], t, camera, a.fov + (b.fov - a.fov) * k);   // impact punch: fov kick, shake, roll
+  const cutHere = a.beat !== b.beat && BEATS[b.beat].cut && SOLVER2;   // never blend across a hard cut
+  camera.position.copy(a.pos); if (!cutHere) camera.position.lerp(b.pos, k);
+  const look = a.look.clone(); if (!cutHere) look.lerp(b.look, k);
+  const { fov, roll } = combat.punch(HITS_F, t, camera, cutHere ? a.fov : a.fov + (b.fov - a.fov) * k);   // impact punch: fov kick, shake, roll
   camera.fov = fov;
   camera.updateProjectionMatrix();
   camera.up.set(0, 1, 0);
   camera.lookAt(look);
-  camera.rotateZ((roll * Math.PI) / 180);
+  camera.rotateZ(((roll + a.roll) * Math.PI) / 180);
 }
 
-// ---------- 5. EFFECTS: smear ribbon, sparks (engine/combat.js); post FX (engine/fx.js) when the film has fxBase / fx ----------
-const SPARKS2 = combat.makeSparks(scene, camera, IMPACTS.filter((i) => i.sparks !== false));
+// ---------- 5. EFFECTS: light smear, sparks, shock rings (engine/combat.js); dust, contact shadows, afterimages
+// (engine/groundfx.js); post FX (engine/fx.js) when the film has fxBase / fx ----------
+const SPARKS2 = combat.makeSparks(scene, camera, IMPACTS.filter((i) => i.sparks !== false), { light: film.effects?.sparkLight ?? 6 });
 const RIB = combat.makeRibbons(scene, Object.values(cast), { ribbon: film.effects?.ribbon, fps: FPS, pose: poseAll, tipSpeedAt: C.tipSpeedAt });
 const ribbons = RIB.meshes;
-const SPARKS = combat.makeSparks(scene, camera, contacts);
+const SPARKS = combat.makeSparks(scene, camera, contacts, { light: film.effects?.sparkLight ?? 6 });
+const DUST = GROUND_ON ? makeDust(scene, G.events, film.effects?.ground ?? {}) : null;
+const SHADOWS = film.effects?.contactShadow !== false ? makeContactShadows(scene, VISIBLE, film.effects?.contactShadow ?? {}) : null;
+const GHOSTS = film.effects?.afterimage !== false ? makeAfterimages(scene, VISIBLE, film.effects?.afterimage ?? {}) : null;
 const FX = film.fxBase || film.fx ? createFX(renderer, scene, camera, { width: W, height: H, seed: 7, fps: FPS }) : null;
-const FX_TRACK = FX ? [...(film.fx ?? []), ...combat.contactFx(contacts, film.effects?.contactFx)] : [];
+// post-FX track on the film clock: authored events ("body": true = action time), contact flashes, impact flashes,
+// speed lines on every dash (film.effects.speedLines: false = off)
+const FX_TRACK = FX ? [
+  ...(film.fx ?? []).map((e) => (e.body ? { ...e, t: toFilm(e.t) } : e)),
+  ...combat.contactFx(HITS_F.filter((h) => h.fx !== false), film.effects?.contactFx),
+  ...(film.effects?.speedLines === false || !GROUND_ON ? [] : G.events.filter((e) => e.kind === 'dash').map((e) => ({ t: R.filmOf(e.t), effect: 'speed-lines', dur: 0.3, amount: 0.7, ...(film.effects?.speedLines ?? {}) }))),
+] : [];
+// glints that travel along the steel: film.effects.glints [{ t (action time), who, dur, from, to }] + one at the start of each speed ramp
+const GLINTS = film.effects?.glints === false ? [] : [...(film.effects?.glints ?? []), ...R.list.map((r) => ({ t: r.t - 0.02, who: VISIBLE[0]?.id, dur: 0.22 }))];
 
 // ---------- frame ----------
 const flashEl = document.getElementById('flash'), fadeEl = document.getElementById('fade');
-window.renderAt = (t) => {
+const FADE = { in: 0.6, out: 0.6, ...(film.fade ?? {}) };
+/** Everything except the draw: poses, props, camera, effects for film time t. */
+function stage(t) {
   FILM_TIME = t;
   world.update(t);
-  const tb = bodyT(t);
+  const s = worldT(t), tb = bodyT(s);
   poseAll(tb);
   // hit-stop jitter: during a stop the fighters shiver ±6 mm in opposite directions on alternate frames
-  const inStop = stops.find((s) => t >= s.t && t < s.t + s.d);
+  const inStop = stops.find((st) => s >= st.t && s < st.t + st.d);
   if (inStop) {
     const sgn = Math.round(t * FPS) % 2 ? 1 : -1;
     hero.fig.root.position.z += 0.006 * sgn; foe.fig.root.position.z -= 0.006 * sgn;
     for (const c of Object.values(cast)) c.fig.root.updateMatrixWorld(true);
   }
   placeCamera(t);
-  const impactFrame = combat.isImpactFrame(film, contacts, t, FPS) || IMPACTS.some((i) => i.ink && t >= i.t && t < i.t + 1 / FPS);
+  const impactFrame = combat.isImpactFrame(film, contactsF, t, FPS) || IMPACTS_F.some((i) => i.ink && t >= i.t && t < i.t + 1 / FPS);
   RIB.update(tb, impactFrame);
   if (inStop) { hero.fig.root.updateMatrixWorld(true); }
-  for (const tr of TREES) tr.update(t);
-  const fl = Math.max(SPARKS.update(t), SPARKS2.update(t));  // sparks + flash light
+  for (const tr of TREES) tr.update(s);
+  SHADOWS?.update();
+  GHOSTS?.update(tb, G.speedAt);
+  DUST?.update(s);
+  const fl = Math.max(SPARKS.update(s), SPARKS2.update(s));  // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
-  fadeEl.style.opacity = clamp(Math.max(1 - t / 0.6, (t - (DUR - 0.6)) / 0.6), 0, 1);
+  fadeEl.style.opacity = clamp(Math.max(FADE.in > 0 ? 1 - t / FADE.in : 0, FADE.out > 0 ? (t - (DUR - FADE.out)) / FADE.out : 0), 0, 1);
+  return { s, tb, impactFrame };
+}
+window.renderAt = (t) => {
+  const { tb, impactFrame } = stage(t);
   if (impactFrame) {
     combat.renderInkFrame(renderer, scene, camera, [...Object.values(cast).filter((c) => !c.hidden).map((c) => c.fig.root), ...TREES.map((x) => x.root)], ribbons);
     return;
   }
-  if (FX) FX.render(t, fxAt(t, FX_TRACK, film.fxBase, FPS));
-  else renderer.render(scene, camera);
+  if (FX) {
+    const p = fxAt(t, FX_TRACK, film.fxBase, FPS);
+    const gl = combat.bladeGlints(GLINTS, cast, tb, t);
+    if (gl.length) p.glint = [...(Array.isArray(p.glint) ? p.glint : p.glint ? [p.glint] : []), ...gl];
+    FX.render(t, p);
+  } else renderer.render(scene, camera);
 };
+
+// studio QA hooks (tools/audit.mjs, docs/AUDIT.md): measurements for any film time, without drawing
+installAudit({
+  scene, camera, W, H, fps: FPS, dur: DUR, page: 'motion',
+  fighters: () => Object.values(cast),
+  cuts: SOLVER2 ? BEATS.filter((b) => b.cut && b.t > 0).map((b) => +b.t.toFixed(4)) : [],
+  meta: { solver: SOLVER2 ? 2 : 1, beats: BEATS.map((b) => ({ t: +b.t.toFixed(3), rig: b.rig, cut: !!b.cut, note: b.note })), ramps: window.EVENTS.ramps,
+    effects: { ground: GROUND_ON, contactShadow: !!SHADOWS, afterimage: !!GHOSTS, smear: (film.effects?.ribbon?.style ?? 'light'), fx: !!FX } },
+  stage(t) {
+    const st = stage(t), b = beatAt(t);
+    return { tb: st.tb, shot: b.i, cut: false, rate: R.rateAt(t), impactFrame: st.impactFrame, smear: RIB.level,
+      subjects: (b.who ? [b.who] : b.subjects ?? ids).filter((id) => cast[id] && !cast[id].hidden) };
+  },
+});
 
 window.cam = (t) => { const x = clamp(Math.round(t * RATE), 0, camPath.length - 1); const c = camPath[x]; return { pos: c.pos.toArray(), look: c.look.toArray(), fov: c.fov }; };
 window.tryPose = (id, pose) => { applyPose(cast[id].fig, { ...cast[id].motion(0), ...pose }); cast[id].fig.root.updateMatrixWorld(true); const s = bladeSeg(cast[id]); return { tip: s.tip.toArray().map((v) => +v.toFixed(2)), guard: s.guard.toArray().map((v) => +v.toFixed(2)) }; };

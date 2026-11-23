@@ -91,10 +91,18 @@ if (film.camera !== undefined) {
   if (!Array.isArray(film.camera) || !film.camera.length) err('camera', 'must be a list of camera beats [{ t, rig, … }]');
   else film.camera.forEach((b, i) => {
     const w = `camera[${i}]`;
-    if (!isNum(b.t) || b.t < 0 || b.t > D) err(w, `t must be a time within 0–${D}s`);
-    if (i > 0 && isNum(b.t) && b.t <= film.camera[i - 1].t) err(w, 'beats must be in time order');
-    if (!['face', 'slide', 'frame', 'orbit'].includes(b.rig)) err(w, `rig must be face, slide, frame or orbit (got ${JSON.stringify(b.rig)})`);
-    if (b.feel && !['locked', 'dolly', 'crane', 'handheld', 'torpedo'].includes(b.feel)) err(w, `feel must be locked, dolly, crane, handheld or torpedo (got ${JSON.stringify(b.feel)})`);
+    const bt = b.act ?? b.t, prev = i > 0 ? film.camera[i - 1].act ?? film.camera[i - 1].t : -1;   // "act" = action time (follows the speed ramps)
+    if (!isNum(bt) || bt < 0 || bt > D) err(w, `t (film time) or act (action time) must be a time within 0–${D}s`);
+    if (i > 0 && (b.act === undefined) !== (film.camera[i - 1].act === undefined)) warn(w, 'mixing "t" and "act" beats: order is checked only within one clock');
+    else if (i > 0 && isNum(bt) && bt <= prev) err(w, 'beats must be in time order');
+    if (!['face', 'slide', 'frame', 'orbit', 'compose'].includes(b.rig)) err(w, `rig must be face, slide, frame, orbit or compose (got ${JSON.stringify(b.rig)})`);
+    if (b.feel && !['locked', 'dolly', 'crane', 'handheld', 'torpedo', 'whip'].includes(b.feel)) err(w, `feel must be locked, dolly, crane, handheld, torpedo or whip (got ${JSON.stringify(b.feel)})`);
+    if (b.rig === 'compose') {
+      for (const k of ['size', 'size0', 'size1']) if (b[k] !== undefined && (!isNum(b[k]) || b[k] < 0.08 || b[k] > 4)) err(w, `${k} = the fraction of the frame height the subject fills (0.08–4; 0.6 = full figure with air)`);
+      if (b.screen && (!Array.isArray(b.screen) || b.screen.some((v) => !isNum(v) || v < 0.1 || v > 0.9))) err(w, 'screen must be [sx, sy] between 0.1 and 0.9 (0.5, 0.5 = centre)');
+      if (b.basis && !['world', 'facing', 'target'].includes(b.basis)) err(w, 'basis must be world, facing or target');
+      if (b.cut && film.cameraOpts?.solver !== 2) warn(w, '"cut" needs cameraOpts.solver: 2');
+    }
     if (['face', 'slide'].includes(b.rig) && !PERFS[b.who]) err(w, `"who" must name a performer (known: ${Object.keys(PERFS).join(', ')})`);
     if (b.rig === 'slide') {
       for (const n of b.path ?? []) if (!['eyes', 'shoulder', 'elbow', 'wrist', 'tsuba', 'tip', 'hips', 'head'].includes(n)) err(w, `unknown joint "${n}" in path (eyes, shoulder, elbow, wrist, tsuba, tip, hips, head)`);
@@ -103,6 +111,18 @@ if (film.camera !== undefined) {
     const PROPS = (film.props?.trees ?? []).map((tr) => tr.id);
     for (const n of b.subjects ?? []) if (!PERFS[n] && !PROPS.includes(n)) err(w, `subject "${n}" is not a performer or a prop (film.props.trees ids)`);
     if (b.fov !== undefined && (!isNum(b.fov) || b.fov < 10 || b.fov > 80)) err(w, 'fov must be 10–80');
+  });
+}
+// --- speed ramps (film.ramps, motion page): [{ t (action time), rate, in, hold, out }] — docs/STUDIO-STANDARD.md §4
+if (film.ramps !== undefined) {
+  if (!Array.isArray(film.ramps)) err('ramps', 'must be a list [{ t, rate, in, hold, out }]');
+  else film.ramps.forEach((r, i) => {
+    const w = `ramps[${i}]`;
+    if (!isNum(r.t) || r.t < 0 || r.t > D) err(w, `t (action time where the slow-down starts) must be within 0–${D}s`);
+    if (!isNum(r.rate) || r.rate < 0.1 || r.rate > 1) err(w, 'rate must be 0.1–1 (0.2–0.35 = anime slow motion, 0.45–0.6 = a breath)');
+    for (const k of ['in', 'hold', 'out']) if (r[k] !== undefined && (!isNum(r[k]) || r[k] < 0 || r[k] > 3)) err(w, `${k} is screen seconds (0–3)`);
+    if ((r.hold ?? 0.4) > 1.2) warn(w, 'a slow-motion hold longer than 1.2 s kills the rhythm of a Short');
+    if (i > 0 && isNum(r.t) && r.t <= film.ramps[i - 1].t) err(w, 'ramps must be in time order');
   });
 }
 
@@ -134,7 +154,10 @@ for (const [id, c] of Object.entries(film.cast ?? {})) {
 const E = film.effects;
 if (E !== undefined) {
   if (E.hitStop !== undefined && E.hitStop !== false && !(isNum(E.hitStop.min) && isNum(E.hitStop.max) && E.hitStop.max >= E.hitStop.min)) err('effects.hitStop', 'must be { min, max } frames (max ≥ min) or false');
-  if (E.ribbon !== undefined && !(isNum(E.ribbon.minSpeed) && isNum(E.ribbon.frames))) err('effects.ribbon', 'must be { minSpeed (m/s), frames }');
+  if (E.ribbon !== undefined && !(isNum(E.ribbon.minSpeed) && (isNum(E.ribbon.frames) || (E.ribbon.style ?? 'light') !== 'paper'))) err('effects.ribbon', 'must be { minSpeed (m/s), style: "light" (default; afterglow frames, color, gain) | "paper" (frames) }');
+  if (E.ribbon?.style !== undefined && !['light', 'paper'].includes(E.ribbon.style)) err('effects.ribbon.style', 'must be "light" (a crescent of light, the default) or "paper" (the old paper strip)');
+  for (const k of ['ground', 'contactShadow', 'afterimage', 'speedLines']) if (E[k] !== undefined && E[k] !== false && typeof E[k] !== 'object') err(`effects.${k}`, 'must be false (off) or an options object (docs/STUDIO-STANDARD.md §7)');
+  if (E.glints !== undefined && E.glints !== false && !(Array.isArray(E.glints) && E.glints.every((g) => isNum(g.t) && PERFS[g.who]))) err('effects.glints', 'must be false or a list [{ t (action time), who (performer), dur, from, to }]');
   if (E.impactFrame !== undefined && typeof E.impactFrame !== 'boolean') {
     const o = E.impactFrame;
     if (typeof o !== 'object' || (o.minIntensity !== undefined && !isNum(o.minIntensity)) || (o.max !== undefined && !isNum(o.max)) || (o.at !== undefined && !(Array.isArray(o.at) && o.at.every(isNum)))) err('effects.impactFrame', 'must be true, false or { minIntensity 0–1, max (count), at: [body seconds] }');
