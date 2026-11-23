@@ -306,16 +306,31 @@
   {
    "id": "SHIMI",
    "name": "SHIMI (染み) stain sim",
-   "does": "Paint soaking into paper: fibres, wicking, pinning, gravity, drips, dark rims; presets; data maps",
+   "does": "Paint soaking into paper: two water layers, fibres, saturation-limited wicking, gravity field, drips, tide lines; presets; data maps",
+   "files": [
+    "engine/shimi.py"
+   ],
+   "guide": [
+    "docs/SHIMI.md",
+    "docs/SHIMI-3D.md"
+   ],
+   "command": "python3 engine/shimi.py --preset kesa-cut",
+   "status": "built",
+   "status_note": "✅ 2D · 3D planned"
+  },
+  {
+   "id": "KIZU",
+   "name": "KIZU (傷) wound layer",
+   "does": "Decides how paint leaves a cut: onset delay, beads → line, depth/region welling, brush swipe, heavy-bead drips (non-graphic); option --wound",
    "files": [
     "engine/shimi.py"
    ],
    "guide": [
     "docs/SHIMI.md"
    ],
-   "command": "python3 engine/shimi.py --preset kesa-cut",
+   "command": "python3 engine/shimi.py --preset face-cut --out output/shimi/face-cut",
    "status": "built",
-   "status_note": "✅ 2D · 3D planned"
+   "status_note": "✅ 2D"
   },
   {
    "id": "LOOKDEV",
@@ -485,6 +500,10 @@
   ],
   [
    "FILM",
+   "KIZU"
+  ],
+  [
+   "KIZU",
    "SHIMI"
   ],
   [

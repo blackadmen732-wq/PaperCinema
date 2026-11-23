@@ -58,6 +58,45 @@ Options: `--cut "x0,y0,x1,y1;…"`, `--stab "x,y,r;…"`, `--gravity`, `--bleed`
 
 Still to do before macro close-ups: two water layers, √t wicking, edge-driven evaporation (proper tide lines), granulation, 1024² with every constant scaled to the resolution, and a side-by-side check against photos of real paint on washi.
 
+## 1c. KIZU (傷, "wound"): the wound-flow layer on top of SHIMI (built)
+KIZU decides **how paint leaves a cut**; SHIMI decides how the paper drinks it. It's informed by how minor cuts really bleed
+(a research review: Plateau–Rayleigh bead break-up, Lucas–Washburn wicking, drop retention, standard first-aid descriptions).
+It's stylised as paint and stays non-graphic. Turn it on with `--wound graze|shallow-cut|deep-cut|stab --region face|hand|torso|limb --depth 0..1`.
+
+| Behaviour | Model |
+|---|---|
+| **Onset delay** | `t_on(s) = s·T_blade + τ0·(1 − 0.7·d)·(0.7 + 0.6·sharpness)/R`. The deepest point shows first; a shallow cut shows nothing for a moment |
+| **Depth along the cut** | `d(s) = depth·1.9·s^0.6·(1−s)^1.2`. The blade bites in fast and trails out |
+| **Welling** | `q = Q·R·d^1.5·[(1−e^(−τ/t_r))·e^(−τ/t_d)/peak + o·e^(−τ/t_o)]`. Deeper is faster and longer; monotone, no rhythm |
+| **Beads → line** | Beads seeded every λ mm along the cut, merging into a line over the merge time. A graze is a 2-D scatter of dots that never merge |
+| **Surface vs soaked** | A share of each wound's paint goes to the glossy surface film (graze 15% … deep cut 75%) |
+| **Brush swipe** | f0–f3: the blade drags a matte, streaky dry-brush stamp along its path, overshooting the exit (forensic "swipe") |
+| **Drips** | A bead lets go only after it grows heavy (time from onset ∝ 1/flow). Max drips per wound and per region (face: 1) |
+| **Regions** | Face ×1.6 rate, ×1.3 duration · hand ×1.3 · torso ×1.0 · limb ×0.8 |
+
+**Wound types:**
+
+| Type | τ0 | Rise | Decay | Q | Bead spacing | Merge | Smear | Max drips |
+|---|---|---|---|---|---|---|---|---|
+| graze | 0.9 s | 0.5 s | 0.4 s | 0.25 | 7 mm (dots) | never | 1.0 | 0 |
+| shallow-cut | 0.5 s | 0.25 s | 0.9 s | 0.6 | 5 mm | 1.1 s | 0.6 | 1 |
+| deep-cut | 0.12 s | 0.12 s | 2.0 s | 1.1 | 8 mm | 0.3 s | 0.8 | 3 |
+| stab | 0.3 s | 0.2 s | 1.5 s | 1.0 | one bead | n/a | 0.2 | 1 |
+
+**Presets:** `face-cut`, `deep-kesa`, `arm-graze`, `stab-wound`. A timing sheet is written to `output/kizu-timing.png`.
+Verified sequence for `face-cut`: a pale swipe at 0.08 s → separate beads at 0.5 s → merged line at 1 s → one run by 3 s.
+
+**Guardrails:** opaque bright vermilion, no flesh tones, no rhythm, no spurt for face or stab wounds,
+at most 3 drips (face 1), welling done within about 5 s, no neck or wrist wounds, no wound close-up longer than about 1.5 s.
+Check the current platform rules before release.
+
+## 1d. SHIMI v2 core (built)
+- **Two water layers:** a surface film S (glossy; beads, runs, drips) and capillary water W inside the paper (darkens it, lets light through). S soaks into W up to the paper's capacity.
+- **Saturation-limited wicking:** fast at first, then slowing (measured front 8 → 12 → 14.5 → 16.6 → 18.4 px at equal steps).
+- **Edge-driven evaporation:** pigment is carried outward, giving real tide lines.
+- **A gravity direction field** (`--gravity-dir`, `--gravity-map`) for UV space on 3D parts.
+- **New `film_*` map** (glossy surface paint) for the 3D shader. 3D integration design: `docs/SHIMI-3D.md`.
+
 ## 2. SHIMI upgrades (ranked by payoff per effort)
 1. ✅ **Data maps:** `wet_*`, `pigment_*`, `everwet_*` (16-bit) are exported next to the colour frames.
 2. ✅ **No wrap-around:** stains no longer re-enter from the opposite border.

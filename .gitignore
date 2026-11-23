@@ -1,3 +1,4 @@
 node_modules/
 output/
 gpu/.pod.json
+assets/sfx/_cand.*
