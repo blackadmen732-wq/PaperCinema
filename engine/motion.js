@@ -17,11 +17,13 @@ import { buildWorld } from './world.js';
 import { expandMoves } from './moves.js';
 import { makeKatana } from './props.js';
 import { loadCharacter } from './library.js';
-import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, smooth } from './figure.js';
+import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, gripHand, smooth } from './figure.js';
 import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
 import { clamp, bladeSeg, closestSegSeg, RATE } from './combat.js';
 import { createFX, fxAt } from './fx.js';
+import { analyseGround, groundCues, makeDust, makeContactShadows, makeAfterimages } from './groundfx.js';
+import { installAudit } from './audit-hooks.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/motion-test.json')).json();
@@ -54,15 +56,16 @@ const MOVES = await (await fetch('/library/moves.json')).json();
 const cast = {};
 for (const [id, c] of Object.entries(film.cast)) {
   const preset = await loadCharacter(c.character);
-  const fig = makeFigure({ ...preset.colors, ...preset.accessories, band: preset.accessories.band ?? undefined,
-    haori: preset.accessories.haori ?? undefined, face: c.face });
+  const spec = { ...preset.colors, ...preset.accessories, band: preset.accessories.band ?? undefined, haori: preset.accessories.haori ?? undefined };
+  const fig = makeFigure({ ...spec, face: c.face });
   scene.add(fig.root);
   const k = makeKatana();
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
   const motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
   if (c.hidden) fig.root.visible = false;               // an invisible target (e.g. the tree) the hero looks at
-  cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, hidden: !!c.hidden, phase: Object.keys(cast).length * 1.7 };
+  cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, hidden: !!c.hidden, phase: Object.keys(cast).length * 1.7,
+    demonic: !!c.demonic, glow: c.glow, makeGhost: () => makeFigure(spec) };
 }
 const ids = Object.keys(cast);
 const other = (id) => cast[ids.find((x) => x !== id)];
@@ -94,6 +97,7 @@ function poseAll(tb) {
     // two-hand grip: the left hand closes on the handle, 27 cm behind the guard
     const w = windowWeight(c.perf.twoHand, tb);
     if (w > 0) solveArm(c.fig, 'l', c.sword.localToWorld(_v.set(-0.27, -0.018, 0)).clone(), null, w);
+    if (w > 0) gripHand(c.fig, 'l', c.sword, w);         // the left hand wraps the end of the handle
     c.fig.root.updateMatrixWorld(true);
   }
 }
@@ -104,7 +108,22 @@ console.log('[motion] cast ready, analysing', performance.now() | 0);
 const C = combat.analyse({ film, fighters: [hero, foe], pose: poseAll, fps: FPS, dur: DUR, armed: hero.hidden || foe.hidden ? () => false : null });
 const { contacts, stops, bodyT } = C;
 CONTACTS = contacts;
-window.EVENTS = C.events;
+// THREE CLOCKS. film time t (what the viewer sees: camera, sound, post FX) → speed ramps (film.ramps) → world time s
+// (sparks, dust, props, authored impacts; hit-stops are placed on it) → hit-stops → body time tb (the keys).
+const R = combat.makeRamps(film.ramps, DUR);
+const worldT = R.worldT;
+const toFilm = (tb) => R.filmOf(C.filmT(tb));                      // body time → film time
+const contactsF = contacts.map((c) => ({ ...c, t: R.filmOf(c.t) }));   // the contacts on the film clock (ink frame, punch, FX)
+// GROUND: dash / skid / take-off / landing found from the motion → dust, wake, sound cues (film.effects.ground: false = off)
+const VISIBLE = Object.values(cast).filter((c) => !c.hidden);
+const G = analyseGround({ fighters: VISIBLE, dur: DUR, filmT: C.filmT, opts: film.effects?.ground ?? {} });
+const GROUND_ON = film.effects?.ground !== false;
+const gCues = GROUND_ON && film.autoSounds?.ground !== false ? groundCues(G.events, film.autoSounds?.ground ?? {}) : [];
+window.EVENTS = { ...C.events, contacts: contacts.map((c) => ({ ...c, tWorld: c.t, t: +R.filmOf(c.t).toFixed(3) })),
+  cues: [...C.cues, ...gCues].map((c) => ({ ...c, t: +R.filmOf(c.t).toFixed(3) })).sort((a, b) => a.t - b.t),
+  ground: G.events.filter((e) => !['wake', 'skidding'].includes(e.kind)).map((e) => ({ ...e, t: +R.filmOf(e.t).toFixed(3) })),
+  ramps: R.list.map((r) => ({ t: r.t, rate: r.rate, film0: r.film0, film1: r.film1 })),
+  warp: R.list.length || stops.length ? { dt: 0.02, film: Array.from({ length: Math.ceil(DUR / 0.02) + 1 }, (_, i) => +toFilm(i * 0.02).toFixed(4)) } : null };
 
 // ---------- PROPS: cuttable paper trees (film.props.trees) ----------
 // { id, x, z, height, color, cut: { t, y, tilt, delay, dir }, split: { t } }
@@ -115,8 +134,10 @@ const TREES = (film.props?.trees ?? []).map((tr) => makeTree(tr));
 const IMPACTS = (film.impacts ?? []).map((i) => {
   const tr = TREES.find((x) => x.tr.id === i.at);
   const p = Array.isArray(i.at) ? i.at : tr ? tr.point().toArray() : [0, 1, 0];
-  return { intensity: 0.6, ...i, point: p };
+  return { intensity: 0.6, ...i, point: p, tf: R.filmOf(i.t) };
 });
+const IMPACTS_F = IMPACTS.map((i) => ({ ...i, t: i.tf }));         // on the film clock (camera punch, ink frame)
+window.EVENTS.impacts = IMPACTS_F.map((i) => ({ t: +i.t.toFixed(3), intensity: i.intensity, point: i.point, ink: !!i.ink }));
 function makeTree(tr) {
   const P = (hex, o = {}) => paper(hex, { repeat: 4, ...o });
   const root = new THREE.Group(); root.position.set(tr.x, 0, tr.z); scene.add(root);
@@ -145,6 +166,15 @@ function makeTree(tr) {
   return {
     tr, root, top, halves,
     point: () => new THREE.Vector3(tr.x, cy, tr.z),
+    // keep-out volumes for the camera guards at the last update(t): [{ x, z, r, y0, y1 }] (stump, standing crown or falling top)
+    solids(t) {
+      const fallen = tr.cut && t >= tr.cut.t + (tr.cut.delay ?? 0.45);
+      const out = [{ x: tr.x, z: tr.z, r: 0.24, y0: 0, y1: fallen ? cy + 0.1 : H - 1.2 * sc }];
+      if (tr.split && t >= tr.split.t) return out;
+      const c = top.localToWorld(new THREE.Vector3(0, H - cy - 1.0, 0)); root.updateMatrixWorld(true);
+      out.push({ x: c.x, z: c.z, r: 1.15 * sc + 0.1, y0: c.y - 1.0, y1: c.y + 1.1 });
+      return out;
+    },
     update(t) {
       top.position.set(0, cy, 0); top.quaternion.identity(); halves.forEach((h) => { h.position.set(0, 0, 0); h.rotation.set(0, 0, 0); });
       seam.visible = false;
@@ -161,7 +191,21 @@ function makeTree(tr) {
       top.position.y = Math.max(0.15, top.position.y - ground);
       if (tr.split && t >= tr.split.t) {                                              // cut again in the air: halves fly apart
         const v = t - tr.split.t;
-        halves.forEach((h, k) => {
+        if (tr.split.world) {
+          // world-space ballistic halves: thrown sideways (away from the cutter's path), a short hop up, then they fall,
+          // hit the ground and stay there (never through the sand, never through the fighter)
+          const qi = top.quaternion.clone().invert();
+          const side = new THREE.Vector3(...(tr.split.side ?? [1, 0, 0])).normalize(), sp = tr.split.speed ?? 2.2;
+          const y0 = top.position.y + 0.9;                                            // rough height of the crown when it is cut
+          const vy = tr.split.up ?? 1.4, tg = (vy + Math.sqrt(vy * vy + 2 * 6 * Math.max(0.01, y0 - 0.45))) / 6;   // heavy paper: g = 6
+          const u2 = Math.min(v, tg), rest = v >= tg;
+          halves.forEach((h, k) => {
+            const sg = k ? -1 : 1, sl = rest ? 0.12 * (1 - Math.exp(-(v - tg) * 5)) : 0;   // a short slide when it lands
+            const w = side.clone().multiplyScalar(sg * (sp * u2 + sl)).addScaledVector(dir, 0.5 * u2).add(new THREE.Vector3(0, vy * u2 - 3 * u2 * u2, 0));
+            h.position.copy(w.applyQuaternion(qi));
+            h.rotation.set(sg * 0.5 * u2, 0, sg * 1.1 * u2);
+          });
+        } else halves.forEach((h, k) => {
           const sg = k ? 1 : -1;
           h.position.set(sg * (1.6 * v), -2.5 * v * v, 0.4 * v);
           h.rotation.set(sg * 1.2 * v, 0, sg * 2.2 * v);

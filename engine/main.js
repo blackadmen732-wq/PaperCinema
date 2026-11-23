@@ -6,7 +6,7 @@ import { buildWorld, STUDIO_X } from './world.js';
 import { makeKuroko } from './kuroko.js';
 import { expandMoves } from './moves.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
-import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, solveArm, reachHand, BASE_POSE } from './figure.js';
+import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, solveArm, gripHand, reachHand, BASE_POSE } from './figure.js';
 import { paper, rng } from './paper.js';
 import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
@@ -318,7 +318,9 @@ function poseFighters(tb) {
   // two-hand grip: the left hand closes on the end of the handle (analytic arm IK, no pops)
   const wk = windowWeight(PERF.kojiro.twoHand, tb), wm = windowWeight(PERF.musashi.twoHand, tb);
   if (wk > 0) solveArm(kojiro, 'l', blade.localToWorld(tmp.set(-0.27, -0.018, 0)).clone(), null, wk);
+  if (wk > 0) gripHand(kojiro, 'l', blade, wk);
   if (wm > 0) solveArm(musashi, 'l', musashiBokken.localToWorld(MUSASHI_KATANA ? tmp.set(-0.27, -0.018, 0) : tmp.set(-0.26, 0.002, 0)).clone(), null, wm);
+  if (wm > 0) gripHand(musashi, 'l', musashiBokken, wm);
   kojiro.root.updateMatrixWorld(true);
   musashi.root.updateMatrixWorld(true);
   musashi.bandTail.visible = tb < tCut;

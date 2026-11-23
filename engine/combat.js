@@ -255,83 +255,179 @@ export function punch(contacts, t, camera, fov, opts = {}) {
   return { fov, roll };
 }
 
-// ---------- SMEAR RIBBON: a white paper strip swept by the blade (tip → 55% point), tapering to nothing at its tail ----------
-/** makeRibbons(scene, fighters, { ribbon: {minSpeed, frames}, fps, pose, tipSpeedAt }) → { meshes, update(tb, red) } */
+// ---------- TIME RAMPS (speed ramps / slow motion): film.ramps = [{ t, rate, in, hold, out }] ----------
+// t = action time (the clock the keys, contacts and hit-stops use) where the slow-down starts; rate = how fast
+// the action runs at the bottom (0.2–0.35 is the anime range); in / hold / out = SCREEN seconds of easing in,
+// staying slow, easing out. The camera, the sound and the post FX stay in real (film) time.
+// Returns { worldT(filmTime) → action time, filmOf(actionTime) → film time, rateAt(filmTime), list }.
+export function makeRamps(ramps, dur) {
+  const list = (ramps ?? []).map((r) => {
+    const rate = clamp(r.rate ?? 0.3, 0.05, 1), i = (r.in ?? 0.08) * (1 + rate) / 2, h = (r.hold ?? 0.4) * rate, o = (r.out ?? 0.2) * (1 + rate) / 2;
+    return { ...r, rate, s0: r.t, s1: r.t + i, s2: r.t + i + h, s3: r.t + i + h + o };
+  });
+  const rateS = (s) => {
+    let k = 1;
+    for (const r of list) {
+      if (s <= r.s0 || s >= r.s3) continue;
+      k = Math.min(k, s < r.s1 ? 1 + (r.rate - 1) * smooth((s - r.s0) / (r.s1 - r.s0 || 1e-6)) : s < r.s2 ? r.rate : r.rate + (1 - r.rate) * smooth((s - r.s2) / (r.s3 - r.s2 || 1e-6)));
+    }
+    return k;
+  };
+  if (!list.length) return { worldT: (t) => t, filmOf: (s) => s, rateAt: () => 1, list };
+  const DS = 1 / 960, F = [0];                              // F[i] = film time when the action clock reads i * DS
+  while (F[F.length - 1] < dur + 1 && F.length < 960 * 600) F.push(F[F.length - 1] + DS / rateS((F.length - 0.5) * DS));
+  const filmOf = (s) => { const x = clamp(s / DS, 0, F.length - 1), i = Math.floor(x); return F[i] + (F[Math.min(i + 1, F.length - 1)] - F[i]) * (x - i); };
+  const worldT = (t) => {
+    let lo = 0, hi = F.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (F[m] <= t) lo = m; else hi = m; }
+    return (lo + (t - F[lo]) / (F[hi] - F[lo] || 1)) * DS;
+  };
+  for (const r of list) { r.film0 = +filmOf(r.s0).toFixed(3); r.film1 = +filmOf(r.s3).toFixed(3); }
+  return { worldT, filmOf, rateAt: (t) => rateS(worldT(t)), list };
+}
+
+// ---------- SMEAR: the trail of the blade ----------
+// style "light" (default): a crescent of LIGHT, wide at the leading edge and tapering to a point: white-hot core,
+// amber outer glow (crimson for a demonic blade), three thin filaments that outlive the body of the arc, additive,
+// with a short afterglow (ribbon.afterglow frames, default 5). The fighters are lanterns: what leaves the blade is
+// their light (docs/STUDIO-STANDARD.md §7). style "paper" = the old flat white paper strip.
+/** makeRibbons(scene, fighters, { ribbon: {minSpeed, frames, style, afterglow, color}, fps, pose, tipSpeedAt }) → { meshes, update(tb, red), level } */
 export function makeRibbons(scene, fighters, { ribbon, fps, pose, tipSpeedAt }) {
   const RIB = ribbon ?? { minSpeed: 5, frames: 3 };
-  const RN = 28;
+  const LIGHT = (RIB.style ?? 'light') !== 'paper';
+  const RN = LIGHT ? 40 : 28, ROW = LIGHT ? 10 : 2;
   const ribGeo = new THREE.BufferGeometry();
-  ribGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(RN * 2 * 3), 3));
-  ribGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(RN * 2 * 4), 4));
+  ribGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(RN * ROW * 3), 3));
+  ribGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(RN * ROW * 4), 4));
   const idx = [];
-  for (let j = 0; j < RN - 1; j++) { const a = j * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const strip = (o) => { for (let j = 0; j < RN - 1; j++) { const a = j * ROW + o, b = a + ROW; idx.push(a, a + 1, b, a + 1, b + 1, b); } };
+  if (LIGHT) { strip(0); strip(1); strip(2); strip(4); strip(6); strip(8); } else strip(0);
   ribGeo.setIndex(idx);
-  const ribMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false });
-  const meshes = {};
-  for (const f of fighters) { const m = new THREE.Mesh(ribGeo.clone(), ribMat); m.frustumCulled = false; scene.add(m); meshes[f.id] = m; }
+  const mk = () => new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide, fog: false, toneMapped: false,
+    blending: LIGHT ? THREE.AdditiveBlending : THREE.NormalBlending });
+  const meshes = {}, level = {};
+  for (const f of fighters) { const m = new THREE.Mesh(ribGeo.clone(), mk()); m.frustumCulled = false; m.userData.noAudit = true; scene.add(m); meshes[f.id] = m; level[f.id] = 0; }
+  const hex = (h) => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
   function update(tb, red = false) {
-    const span = RIB.frames / fps;
+    const span = (LIGHT ? (RIB.afterglow ?? 5) * 1.7 : RIB.frames) / fps;
     const hist = [];
     for (let j = 0; j < RN; j++) {
       const tj = tb - (j / (RN - 1)) * span;
       pose(Math.max(0, tj));
-      hist.push(Object.fromEntries(fighters.map((f) => [f.id, { ...bladeSeg(f), v: tipSpeedAt(f.id, Math.max(0, tj)) }])));
+      hist.push(Object.fromEntries(fighters.map((f) => [f.id, { ...bladeSeg(f), v: tj < 0 ? 0 : tipSpeedAt(f.id, Math.max(0, tj)) }])));
     }
     pose(tb);
     for (const f of fighters) {
       const g = meshes[f.id].geometry, P = g.attributes.position.array, C = g.attributes.color.array;
       let any = 0;
-      for (let j = 0; j < RN; j++) {
-        const h = hist[j][f.id], u = j / (RN - 1);
-        const inner = h.mid.clone().lerp(h.tip, u * 0.85);
-        P.set(h.tip.toArray(), j * 6); P.set(inner.toArray(), j * 6 + 3);
-        const sf = clamp((h.v - RIB.minSpeed) / 6, 0, 1);
-        const al = 0.9 * Math.pow(1 - u, 1.5) * sf;
-        any = Math.max(any, al);
-        const col = red ? [0.75, 0.08, 0.06] : [1, 0.97, 0.9];
-        C.set([...col, al], j * 8); C.set([...col, al * 0.35], j * 8 + 4);
+      if (!LIGHT) {
+        for (let j = 0; j < RN; j++) {
+          const h = hist[j][f.id], u = j / (RN - 1);
+          const inner = h.mid.clone().lerp(h.tip, u * 0.85);
+          P.set(h.tip.toArray(), j * 6); P.set(inner.toArray(), j * 6 + 3);
+          const sf = clamp((h.v - RIB.minSpeed) / 6, 0, 1);
+          const al = 0.9 * Math.pow(1 - u, 1.5) * sf;
+          any = Math.max(any, al);
+          const col = red ? [0.75, 0.08, 0.06] : [1, 0.97, 0.9];
+          C.set([...col, al], j * 8); C.set([...col, al * 0.35], j * 8 + 4);
+        }
+      } else {
+        const glow = red ? [0.8, 0.06, 0.04] : hex(RIB.color ?? f.glow ?? (f.demonic ? '#ff2418' : '#ffa23a'));
+        const core = red ? [0.55, 0.03, 0.03] : (f.demonic ? [1.5, 0.75, 0.7] : [1.6, 1.45, 1.2]);
+        const gain = RIB.gain ?? 1;
+        meshes[f.id].material.blending = red ? THREE.NormalBlending : THREE.AdditiveBlending;
+        for (let j = 0; j < RN; j++) {
+          const h = hist[j][f.id], uf = j / (RN - 1), u = Math.min(1, uf * 1.7);   // the body of the arc lives 1/1.7 of the filaments
+          const sf = clamp((h.v - RIB.minSpeed) / 6, 0, 1);
+          const along = h.tip.clone().sub(h.mid), len = along.length() || 1; along.multiplyScalar(1 / len);
+          const wide = Math.pow(1 - u, 1.25);                                      // crescent: wide at the blade, a point at the tail
+          const outer = h.tip.clone().addScaledVector(along, 0.07 * wide);
+          const inner = h.tip.clone().addScaledVector(along, -len * (0.06 + 0.94 * wide));
+          const rows = [outer, h.tip.clone().addScaledVector(along, -len * 0.05 * wide), h.tip.clone().addScaledVector(along, -len * 0.34 * wide), inner];
+          const a = gain * sf * Math.pow(1 - u, 1.5);
+          const al = [0, 1.0 * a, 0.5 * a, 0];
+          const cols = [glow, core, glow, glow];
+          rows.forEach((p, k) => { P.set(p.toArray(), (j * ROW + k) * 3); C.set([...cols[k], al[k]], (j * ROW + k) * 4); });
+          // filaments: three hair-thin lines of light that trail further than the arc
+          const fa = gain * sf * 0.75 * Math.pow(1 - uf, 1.2) * (uf < 0.04 ? uf / 0.04 : 1);
+          [0.985, 0.8, 0.6].forEach((q, k) => {
+            const c0 = h.mid.clone().lerp(h.tip, q), w = 0.007 + 0.006 * (1 - uf);
+            P.set(c0.clone().addScaledVector(along, w).toArray(), (j * ROW + 4 + k * 2) * 3); P.set(c0.clone().addScaledVector(along, -w).toArray(), (j * ROW + 5 + k * 2) * 3);
+            const fc = k === 0 ? core : glow, fk = fa * (k === 0 ? 1 : 0.6);
+            C.set([...fc, fk], (j * ROW + 4 + k * 2) * 4); C.set([...fc, fk], (j * ROW + 5 + k * 2) * 4);
+          });
+          any = Math.max(any, a, fa);
+        }
       }
       g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true;
       g.computeBoundingSphere();
       meshes[f.id].visible = any > 0.01;
+      level[f.id] = any;
     }
   }
-  return { meshes, update };
+  return { meshes, update, level };
+}
+
+/** Glints that travel along the steel: list [{ t (action time), who, dur, from, to, size, color }] → fx glint params at body time tb. */
+export function bladeGlints(list, byId, tb, filmTime) {
+  const out = [];
+  for (const g of list ?? []) {
+    const d = g.dur ?? 0.3, tau = tb - g.t, f = byId[g.who];
+    if (!f || tau < 0 || tau >= d) continue;
+    const k = (g.from ?? 0.08) + ((g.to ?? 1) - (g.from ?? 0.08)) * smooth(tau / d);
+    out.push({ at: f.sword.localToWorld(new THREE.Vector3(f.bladeLen * k, f.yOff ?? -0.012, 0)).toArray(), t0: filmTime - tau, dur: d, size: g.size ?? 90, color: g.color ?? '#fff3d8' });
+  }
+  return out;
 }
 
 // ---------- SPARKS: small white-gold paper shards aimed out of each contact, plus a flash light ----------
-function makeSparkBurst(scene, camera, seed, n) {
-  const r = rng(seed), g = new THREE.Group(); scene.add(g);
+function makeSparkBurst(scene, camera, seed, n, colors = ['#fff6dc', '#ffd27a', '#ffe9b0'], life = 0.55) {
+  const r = rng(seed), g = new THREE.Group(); g.userData.noAudit = true; scene.add(g);
   const tri = new THREE.Shape(); tri.moveTo(0, 0.012); tri.lineTo(0.008, -0.006); tri.lineTo(-0.007, -0.005); tri.closePath();
   const geo = new THREE.ShapeGeometry(tri), parts = [];
   for (let i = 0; i < n; i++) {
-    const m = new THREE.Mesh(geo, paper(['#fff6dc', '#ffd27a', '#ffe9b0'][i % 3], { repeat: 30, glow: 1.6, fog: false }));
+    const m = new THREE.Mesh(geo, paper(colors[i % colors.length], { repeat: 30, glow: 1.6, fog: false }));
     const a = r() * Math.PI * 2, e = r() * 1.4 - 0.4, sp = 1.5 + r() * 3.5;
     parts.push({ m, v: new THREE.Vector3(Math.cos(a) * Math.cos(e) * sp, Math.sin(e) * sp + 0.8, Math.sin(a) * Math.cos(e) * sp), w: r() * 20, s: 0.6 + r() });
     g.add(m);
   }
   return (t, t0, origin) => {
-    const dt = t - t0; g.visible = dt >= 0 && dt < 0.55; if (!g.visible) return;
+    const dt = t - t0; g.visible = dt >= 0 && dt < life; if (!g.visible) return;
     const drag = (1 - Math.exp(-3 * dt)) / 3;
     for (const p of parts) {
-      p.m.position.set(origin.x + p.v.x * drag, origin.y + p.v.y * drag - 2 * dt * dt, origin.z + p.v.z * drag);
+      p.m.position.set(origin.x + p.v.x * drag, Math.max(0.02, origin.y + p.v.y * drag - (life > 0.6 ? 0.9 : 2) * dt * dt), origin.z + p.v.z * drag);
       p.m.rotation.set(p.w * dt, p.w * 0.7 * dt, p.w * 1.3 * dt);
-      p.m.scale.setScalar(p.s * (1 - dt / 0.55));
+      p.m.scale.setScalar(p.s * (life > 0.6 ? 2.2 : 1) * (1 - dt / life));
       p.m.lookAt(camera.position);
     }
   };
 }
 /** makeSparks(scene, camera, contacts) → update(t) → flash level 0..~1.6 (drive an overlay or an fx flash with it) */
 export function makeSparks(scene, camera, contacts, opts = {}) {
-  const sparks = contacts.map((c, i) => ({ fn: makeSparkBurst(scene, camera, 40 + i, Math.round(24 + 40 * c.intensity)), c }));
+  // contact fields: colors (shard palette), life (s), shards (count), ring (false = no shockwave ring), light (flash-light factor)
+  const sparks = contacts.map((c, i) => ({ fn: makeSparkBurst(scene, camera, 40 + i + (opts.seed ?? 0), c.shards ?? Math.round(24 + 40 * c.intensity), c.colors, c.life), c }));
   const flashLight = new THREE.PointLight(0xffe2a8, 0, 3, 2); scene.add(flashLight);
+  // shockwave: a thin ring of light racing out of each impact, facing the camera (opts.ring: false = off)
+  const rings = opts.ring === false ? [] : contacts.filter((c) => c.ring !== false).map((c) => {
+    const m = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 40), new THREE.MeshBasicMaterial({ color: c.ringColor ?? '#ffd9a0', transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+      side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false, toneMapped: false }));
+    m.visible = false; m.userData.noAudit = true; m.renderOrder = 20; scene.add(m);
+    return { m, c };
+  });
   const update = (t) => {
     let fl = 0;
     for (const { fn, c } of sparks) {
       const o = new THREE.Vector3(...c.point);
       fn(t, c.t, o);
       const tau = t - c.t;
-      if (tau >= 0 && tau < 0.3) { fl = Math.max(fl, (1 - tau / 0.3) * (0.6 + c.intensity)); flashLight.position.copy(o); }
+      if (tau >= 0 && tau < 0.3) { fl = Math.max(fl, (1 - tau / 0.3) * (0.6 + c.intensity) * (c.light ?? 1)); flashLight.position.copy(o); }
+    }
+    for (const { m, c } of rings) {
+      const tau = t - c.t, d = 0.3; m.visible = tau >= 0 && tau < d; if (!m.visible) continue;
+      const u = tau / d, e = 1 - (1 - u) * (1 - u);
+      m.position.set(...c.point); m.quaternion.copy(camera.quaternion);
+      m.scale.setScalar(0.08 + (0.7 + 0.9 * c.intensity) * e);
+      m.material.opacity = (0.5 + 0.5 * c.intensity) * (1 - u) * (1 - u);
     }
     flashLight.intensity = (opts.light ?? 6) * fl;
     return fl;

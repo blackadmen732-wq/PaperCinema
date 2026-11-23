@@ -261,8 +261,37 @@ export function makeFigure(c) {
     const hand = new THREE.Group();
     hand.position.y = -0.29;
     twist.add(hand);
-    const fist = m(new THREE.BoxGeometry(0.06, 0.08, 0.07), P(c.skin));
-    hand.add(fist);
+    if (c.hands === 'fist') {
+      const fist = m(new THREE.BoxGeometry(0.06, 0.08, 0.07), P(c.skin));
+      hand.add(fist);
+    } else {
+      // GRIP HAND (default): folded fingers wrapped round the sword handle, thumb over the top, back of the
+      // hand toward the outside, the way a swordsman holds the tsuka (te-no-uchi). The handle runs along the
+      // hand's local (0, -0.707, 0.707) axis (see holdInHand), so the grip is built around that axis.
+      const grip = new THREE.Group();
+      grip.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), GRIP_AXIS);
+      grip.position.set(0, -0.01, 0);
+      hand.add(grip);
+      const skin = P(c.skin);
+      for (let i = 0; i < 4; i++) {                       // four fingers, each a folded C round the handle
+        const f = m(new THREE.CylinderGeometry(0.027, 0.027, 0.017, 5, 1, true, 0.35 * Math.PI, 1.35 * Math.PI), skin);
+        f.rotation.z = Math.PI / 2;                       // cylinder axis → grip x (the handle)
+        f.position.x = -0.03 + i * 0.019;
+        f.scale.set(1, 1, 1 - i * 0.05);                  // little finger slightly smaller
+        grip.add(f);
+      }
+      const back = m(new THREE.BoxGeometry(0.08, 0.018, 0.05), skin);   // back of the hand, knuckles toward the blade
+      back.position.set(0, 0.03, -0.012);
+      back.rotation.x = -0.35;
+      grip.add(back);
+      const thumb = m(new THREE.BoxGeometry(0.05, 0.014, 0.016), skin); // thumb over the top of the handle
+      thumb.position.set(0.012, 0.004, 0.026);
+      thumb.rotation.y = -0.25;
+      grip.add(thumb);
+      const wrist = m(new THREE.BoxGeometry(0.05, 0.05, 0.045), skin);  // the wrist block joins the forearm
+      wrist.position.set(0, 0.035, 0);
+      hand.add(wrist);
+    }
     return { clav, shoulder, elbow, twist, hand, tamoto };
   };
   const R = arm(-1), Lf = arm(1);
@@ -273,6 +302,26 @@ export function makeFigure(c) {
     rC: R.clav, rS: R.shoulder, rE: R.elbow, rT: R.twist, rH: R.hand,
     lC: Lf.clav, lS: Lf.shoulder, lE: Lf.elbow, lT: Lf.twist, lH: Lf.hand,
   };
+}
+
+const GRIP_AXIS = new THREE.Vector3(0, -Math.SQRT1_2, Math.SQRT1_2);   // the handle's direction in a hand's frame
+
+/** Turn a hand ('l' or 'r') so its grip axis lies along the sword's handle (after IK put it there):
+ *  the left hand then truly wraps the tsuka instead of floating beside it. weight blends from the keyed wrist. */
+const _gq = new THREE.Quaternion(), _gp = new THREE.Quaternion(), _ga = new THREE.Vector3(), _gs = new THREE.Vector3();
+export function gripHand(f, side, sword, weight = 1) {
+  if (weight <= 0) return;
+  const H = side === 'r' ? f.rH : f.lH;
+  H.updateMatrixWorld(true);
+  H.getWorldQuaternion(_gq);
+  _ga.copy(GRIP_AXIS).applyQuaternion(_gq);                       // where the hand's grip points now
+  _gs.set(1, 0, 0).applyQuaternion(sword.getWorldQuaternion(_gp)); // the handle's direction (sword +x)
+  const fix = new THREE.Quaternion().setFromUnitVectors(_ga, _gs);
+  const want = fix.multiply(_gq);                                  // world orientation we want
+  H.parent.getWorldQuaternion(_gp);
+  const local = _gp.invert().multiply(want);
+  H.quaternion.slerp(local, weight);
+  H.updateMatrixWorld(true);
 }
 
 /** Attach a sword-like prop (built along +x) to a hand, grip point at gripX. */

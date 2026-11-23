@@ -322,3 +322,440 @@ def facet_random_modifier(obj, seed=0):
 def shade_flat(obj):
     for p in obj.data.polygons:
         p.use_smooth = False
+
+
+# =========================================================================== SET MATERIALS (blender/sets/kit.py)
+# Realistic surfaces that stay in the paper-craft family: every recipe keeps a faint washi-fibre bump (`paper`)
+# and reads the per-piece random `piece_rand` (one value per stone, plank, tile, culm: written by the kit's
+# MeshBuilder) so neighbouring pieces never share a tone. All textures are procedural (no image files).
+PIECE_ATTR = 'piece_rand'
+
+
+def _attr(T, name):
+    a = T.node('ShaderNodeAttribute')
+    a.attribute_type = 'GEOMETRY'
+    a.attribute_name = name
+    return a.outputs['Fac']
+
+
+def _map(T, kind='Object', scale=(1, 1, 1), loc=(0, 0, 0), rot=(0, 0, 0), vector=None):
+    if vector is None:
+        tc = T.node('ShaderNodeTexCoord')
+        vector = tc.outputs[kind]
+    mp = T.node('ShaderNodeMapping', Vector=vector)
+    mp.inputs['Scale'].default_value = scale
+    mp.inputs['Location'].default_value = loc
+    mp.inputs['Rotation'].default_value = rot
+    return mp.outputs['Vector']
+
+
+def _noise(T, vec, scale=1.0, detail=4.0, rough=0.55, distortion=0.0):
+    n = T.node('ShaderNodeTexNoise', Vector=vec, Scale=scale, Detail=detail, Roughness=rough, Distortion=distortion)
+    return n
+
+
+def _voronoi(T, vec, scale=1.0, feature='F1', rnd=1.0):
+    v = T.node('ShaderNodeTexVoronoi', Vector=vec, Scale=scale, Randomness=rnd)
+    v.feature = feature
+    return v
+
+
+def _ramp(T, fac, stops):
+    """stops = [(pos, (r, g, b)), ...] -> colour socket."""
+    r = T.node('ShaderNodeValToRGB', Fac=fac)
+    el = r.color_ramp.elements
+    while len(el) > 2:
+        el.remove(el[-1])
+    for i, (pos, col) in enumerate(stops):
+        e = el[i] if i < 2 else el.new(pos)
+        e.position = pos
+        e.color = _rgba(col)
+    return r.outputs['Color']
+
+
+def _smooth(T, x, a, b):
+    mr = T.node('ShaderNodeMapRange', Value=x)
+    mr.interpolation_type = 'SMOOTHSTEP'
+    mr.inputs['From Min'].default_value = a
+    mr.inputs['From Max'].default_value = b
+    return mr.outputs['Result']
+
+
+def _scale_col(T, col, k):
+    """colour * scalar socket/value."""
+    kv = T.node('ShaderNodeCombineXYZ', X=k, Y=k, Z=k) if isinstance(k, bpy.types.NodeSocket) else None
+    if kv is None:
+        return T.mix_rgb(1.0, col, (k, k, k), blend='MULTIPLY')
+    return T.mix_rgb(1.0, col, kv.outputs[0], blend='MULTIPLY')
+
+
+def _ao(T, distance=0.3, samples=6, inside=False):
+    ao = T.node('ShaderNodeAmbientOcclusion', Distance=distance)
+    ao.samples = samples
+    ao.inside = inside
+    ao.only_local = True
+    return ao.outputs['AO']
+
+
+def _principled(T, out, base, rough, height=None, bump=0.2, bump_dist=0.01, flat=True, normal=None, spec=0.4,
+                coat=0.0, coat_rough=0.1, sheen=0.0, sss=None, translucency=0.0, trans_color=None, emission=None,
+                haze=None, metallic=0.0):
+    geo = T.node('ShaderNodeNewGeometry')
+    nrm = normal
+    if height is not None:
+        b = T.node('ShaderNodeBump', Strength=bump, Distance=bump_dist, Height=height)
+        if flat and normal is None:
+            T.link(geo.outputs['True Normal'], b.inputs['Normal'])
+        elif normal is not None:
+            T.link(normal, b.inputs['Normal'])
+        nrm = b.outputs['Normal']
+    elif flat:
+        nrm = geo.outputs['True Normal']
+    kw = {'Base Color': base, 'Roughness': rough}
+    if nrm is not None:
+        kw['Normal'] = nrm
+    p = T.node('ShaderNodeBsdfPrincipled', **kw)
+    p.inputs['Specular IOR Level'].default_value = spec
+    p.inputs['Metallic'].default_value = metallic
+    if coat:
+        p.inputs['Coat Weight'].default_value = coat
+        p.inputs['Coat Roughness'].default_value = coat_rough
+    if sheen:
+        p.inputs['Sheen Weight'].default_value = sheen
+        p.inputs['Sheen Roughness'].default_value = 0.5
+    shader = p.outputs['BSDF']
+    if translucency:
+        tr = T.node('ShaderNodeBsdfTranslucent', Color=_rgba(trans_color) if trans_color else base)
+        if nrm is not None:
+            T.link(nrm, tr.inputs['Normal'])
+        mx = T.node('ShaderNodeMixShader', Fac=translucency)
+        T.link(shader, mx.inputs[1]); T.link(tr.outputs['BSDF'], mx.inputs[2])
+        shader = mx.outputs['Shader']
+    if emission is not None:
+        ecol, estr = emission
+        em = T.node('ShaderNodeEmission', Color=ecol if isinstance(ecol, bpy.types.NodeSocket) else _rgba(ecol), Strength=estr)
+        ad = T.node('ShaderNodeAddShader')
+        T.link(shader, ad.inputs[0]); T.link(em.outputs['Emission'], ad.inputs[1])
+        shader = ad.outputs['Shader']
+    if haze is not None:
+        shader = _haze(T, shader, *haze)
+    T.link(shader, out.inputs['Surface'])
+    return p
+
+
+def _start(name):
+    m = new_material(name)
+    T = _NT(m.node_tree)
+    out = m.node_tree.nodes.new('ShaderNodeOutputMaterial')
+    return m, T, out
+
+
+def stone_material(name, color=(0.30, 0.29, 0.27), color2=(0.45, 0.43, 0.39), *, moss=0.35, moss_color=(0.07, 0.10, 0.03),
+                   grime=0.55, scale=1.0, wet=0.0, rough=0.86, paper=0.5, ao=True, flecks=0.25, haze=None):
+    """Granite / andesite: per-stone tone (piece_rand), mottled grain, mineral flecks, chipped cracks, moss on
+    up-facing surfaces, vertical rain grime and crevice dirt (AO). Faceted (true normal) like folded card stone."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    geo = T.node('ShaderNodeNewGeometry')
+    v = _map(T, 'Object', (scale, scale, scale))
+    vw = _map(T, 'Generated') if False else v
+    big = _noise(T, v, 1.3, 6, 0.6)
+    mid = _noise(T, v, 6.0, 8, 0.6, 0.3)
+    tone = T.math('ADD', T.math('MULTIPLY', pr, 0.8), T.math('MULTIPLY', big.outputs['Fac'], 0.6))
+    col = T.mix_rgb(_smooth(T, tone, 0.35, 1.05), color, color2)
+    col = T.mix_rgb(T.math('MULTIPLY', T.math('SUBTRACT', mid.outputs['Fac'], 0.3), 0.5, clamp=True), col, tuple(c * 0.7 for c in color), blend='MIX')
+    fl = _voronoi(T, v, 55.0)
+    fls = T.math('GREATER_THAN', T.node('ShaderNodeSeparateColor', Color=fl.outputs['Color']).outputs[0], 1.0 - 0.12 * flecks * 4)
+    col = T.mix_rgb(T.math('MULTIPLY', fls, 0.35), col, (0.75, 0.73, 0.70))
+    # cracks: thin voronoi edges, masked by noise
+    cr = _voronoi(T, v, 3.2, 'DISTANCE_TO_EDGE')
+    crack = T.math('MULTIPLY', T.math('LESS_THAN', cr.outputs['Distance'], 0.025),
+                   T.math('GREATER_THAN', _noise(T, v, 2.0, 2).outputs['Fac'], 0.55))
+    # grime: vertical streaks (world z) + crevice dirt
+    vz = _map(T, 'Object', (scale * 7, scale * 7, scale * 0.5))
+    streak = _smooth(T, _noise(T, vz, 1.0, 3).outputs['Fac'], 0.45, 0.75)
+    dirt = T.math('MULTIPLY', streak, grime * 0.55)
+    if ao:
+        dirt = T.math('ADD', dirt, T.math('MULTIPLY', T.math('SUBTRACT', 1.0, _ao(T, 0.25)), grime * 1.2), clamp=True)
+    col = T.mix_rgb(T.math('ADD', dirt, T.math('MULTIPLY', crack, 0.8), clamp=True), col, (0.035, 0.033, 0.03))
+    # moss: up-facing + noise patches, also creeping into crevices
+    nz = T.node('ShaderNodeSeparateXYZ', Vector=geo.outputs['True Normal']).outputs['Z']
+    mn = _noise(T, v, 1.8, 6, 0.65)
+    mmask = T.math('MULTIPLY', _smooth(T, nz, 0.25, 0.85), _smooth(T, mn.outputs['Fac'], 0.62 - 0.25 * moss, 0.72 - 0.2 * moss))
+    mmask = T.math('MULTIPLY', mmask, min(1.0, moss * 2.5))
+    mcol = T.mix_rgb(_noise(T, v, 14, 4).outputs['Fac'], moss_color, tuple(c * 1.9 for c in moss_color))
+    col = T.mix_rgb(mmask, col, mcol)
+    if wet:
+        col = _scale_col(T, col, 1.0 - 0.45 * wet)
+    h = T.math('ADD', T.math('MULTIPLY', mid.outputs['Fac'], 0.6), T.math('MULTIPLY', crack, -0.5))
+    h = T.math('ADD', h, T.math('MULTIPLY', mmask, 0.4))
+    if paper:
+        h = T.math('MULTIPLY_ADD', fibre_height(T, 28.0 * scale), 0.25 * paper, h)
+    rgh = T.math('ADD', T.math('MULTIPLY', mid.outputs['Fac'], 0.12), rough - 0.06 - 0.5 * wet)
+    rgh = T.math('ADD', rgh, T.math('MULTIPLY', mmask, 0.15), clamp=True)
+    _principled(T, out, col, rgh, h, bump=0.35, bump_dist=0.02, spec=0.35, haze=haze)
+    return m
+
+
+def plaster_material(name, color=(0.80, 0.78, 0.72), *, grime=0.5, cracks=0.35, scale=1.0, paper=0.7, splash=0.6,
+                     ground_z=0.0, haze=None):
+    """White lime plaster (shikkui) as thick washi: soft value drift, hairline cracks, rain streaks running down,
+    darker splash-back near the ground, faint fibre bump."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    v = _map(T, 'Object', (scale, scale, scale))
+    geo = T.node('ShaderNodeNewGeometry')
+    wz = T.node('ShaderNodeSeparateXYZ', Vector=geo.outputs['Position']).outputs['Z']
+    drift = _noise(T, v, 0.9, 5, 0.6)
+    k = T.math('MULTIPLY_ADD', T.math('SUBTRACT', drift.outputs['Fac'], 0.5), 0.16, T.math('MULTIPLY_ADD', pr, 0.05, 0.97))
+    col = _scale_col(T, color, k)
+    vz = _map(T, 'Object', (scale * 9, scale * 9, scale * 0.35))
+    streak = _smooth(T, _noise(T, vz, 1.0, 4, 0.6).outputs['Fac'], 0.5, 0.78)
+    sp = T.math('SUBTRACT', 1.0, _smooth(T, T.math('SUBTRACT', wz, ground_z), 0.0, 0.9))
+    sp = T.math('MULTIPLY', sp, _smooth(T, _noise(T, v, 5, 4).outputs['Fac'], 0.3, 0.7))
+    dirt = T.math('ADD', T.math('MULTIPLY', streak, 0.35 * grime), T.math('MULTIPLY', sp, splash), clamp=True)
+    col = T.mix_rgb(dirt, col, (0.30, 0.27, 0.22))
+    cr = _voronoi(T, _map(T, 'Object', (scale * 1.5, scale * 1.5, scale * 1.5)), 2.0, 'DISTANCE_TO_EDGE')
+    crack = T.math('MULTIPLY', T.math('LESS_THAN', cr.outputs['Distance'], 0.012),
+                   T.math('GREATER_THAN', _noise(T, v, 1.3, 2).outputs['Fac'], 1.0 - 0.45 * cracks))
+    col = T.mix_rgb(T.math('MULTIPLY', crack, 0.6), col, (0.25, 0.23, 0.2))
+    h = T.math('ADD', T.math('MULTIPLY', _noise(T, v, 12, 6).outputs['Fac'], 0.3), T.math('MULTIPLY', crack, -0.6))
+    h = T.math('MULTIPLY_ADD', fibre_height(T, 22.0 * scale), 0.5 * paper, h)
+    rgh = T.math('MULTIPLY_ADD', drift.outputs['Fac'], 0.1, 0.84)
+    _principled(T, out, col, rgh, h, bump=0.12, bump_dist=0.01, spec=0.3, sheen=0.15, haze=haze)
+    return m
+
+
+def wood_material(name, color=(0.20, 0.12, 0.07), color2=None, *, axis='X', grain=1.0, rough=0.62, polish=0.0,
+                  wear=0.3, paper=0.25, scale=1.0, flat=True, haze=None):
+    """Planed hinoki / sugi / dark-stained timber: long grain streaks along `axis` with growth rings and knots,
+    per-plank tone and grain offset (piece_rand), roughness following the grain, optional polish (coat)."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    c2 = color2 or tuple(c * 0.55 for c in color)
+    sx, sy, sz = {'X': (0.22, 5.0, 5.0), 'Y': (5.0, 0.22, 5.0), 'Z': (5.0, 5.0, 0.22)}[axis]
+    off = T.node('ShaderNodeCombineXYZ', X=T.math('MULTIPLY', pr, 41.0), Y=T.math('MULTIPLY', pr, 17.0), Z=T.math('MULTIPLY', pr, 7.0))
+    tc = T.node('ShaderNodeTexCoord')
+    vv = T.node('ShaderNodeVectorMath', Vector=tc.outputs['Object']); vv.operation = 'ADD'
+    T.link(off.outputs[0], vv.inputs[1])
+    vg = _map(T, vector=vv.outputs['Vector'], scale=(sx * grain * scale, sy * grain * scale, sz * grain * scale))
+    rings = T.node('ShaderNodeTexWave', Vector=vg, Scale=1.6, Distortion=6.0, Detail=3.0)
+    rings.wave_type = 'RINGS'
+    rings.rings_direction = axis
+    fine = _noise(T, _map(T, vector=vg, scale=(1, 6, 6) if axis == 'X' else (6, 1, 6) if axis == 'Y' else (6, 6, 1)), 3.0, 4, 0.5)
+    g = T.math('ADD', T.math('MULTIPLY', rings.outputs['Fac'], 0.65), T.math('MULTIPLY', fine.outputs['Fac'], 0.5))
+    tone = T.math('MULTIPLY_ADD', pr, 0.35, T.math('MULTIPLY', g, 0.75))
+    col = T.mix_rgb(_smooth(T, tone, 0.25, 0.95), color, c2)
+    big = _noise(T, _map(T, scale=(scale * 0.7,) * 3), 1.0, 3)
+    col = _scale_col(T, col, T.math('MULTIPLY_ADD', big.outputs['Fac'], 0.3, 0.85))
+    if wear:
+        wmask = T.math('MULTIPLY', T.math('SUBTRACT', 1.0, _ao(T, 0.04, 4, inside=True)), wear * 2.0, clamp=True)
+        col = T.mix_rgb(wmask, col, tuple(min(1, c * 1.8 + 0.05) for c in color))
+    h = T.math('MULTIPLY', g, 0.5)
+    if paper:
+        h = T.math('MULTIPLY_ADD', fibre_height(T, 30.0 * scale), 0.25 * paper, h)
+    rgh = T.math('ADD', T.math('MULTIPLY', g, 0.18), rough - 0.09 - 0.35 * polish, clamp=True)
+    _principled(T, out, col, rgh, h, bump=0.18, bump_dist=0.004, spec=0.45, coat=polish, coat_rough=0.12, flat=flat, haze=haze)
+    return m
+
+
+def tile_material(name, color=(0.085, 0.09, 0.10), *, lichen=0.25, rough=0.42, scale=1.0, haze=None):
+    """Fired kawara roof tile: dark blue-grey glaze-less clay, per-tile tone, soft sheen, pale lichen and
+    run-off grime toward the eaves."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    v = _map(T, 'Object', (scale,) * 3)
+    k = T.math('MULTIPLY_ADD', pr, 0.5, 0.8)
+    n = _noise(T, v, 3.0, 6)
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', n.outputs['Fac'], 0.4, T.math('SUBTRACT', k, 0.2)))
+    lm = T.math('MULTIPLY', _smooth(T, _noise(T, v, 1.6, 5, 0.7).outputs['Fac'], 0.66 - 0.2 * lichen, 0.75 - 0.2 * lichen),
+                _smooth(T, _voronoi(T, v, 9).outputs['Distance'], 0.5, 0.15))
+    col = T.mix_rgb(T.math('MULTIPLY', lm, 0.8), col, (0.33, 0.33, 0.24))
+    rgh = T.math('ADD', T.math('MULTIPLY', n.outputs['Fac'], 0.2), T.math('ADD', rough - 0.1, T.math('MULTIPLY', lm, 0.4)), clamp=True)
+    h = T.math('ADD', _noise(T, v, 18, 4).outputs['Fac'], T.math('MULTIPLY', lm, 0.6))
+    _principled(T, out, col, rgh, h, bump=0.15, bump_dist=0.005, spec=0.5, sheen=0.1, haze=haze)
+    return m
+
+
+def lacquer_material(name, color=(0.50, 0.06, 0.03), *, under=(0.05, 0.03, 0.02), wear=0.3, rough=0.28, scale=1.0, haze=None):
+    """Urushi / vermilion lacquer: deep colour under a glossy coat, worn through on edges and in patches to the
+    dark wood beneath, faint brush texture."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (scale,) * 3)
+    n = _noise(T, v, 2.0, 6, 0.6)
+    worn = T.math('MULTIPLY', _smooth(T, n.outputs['Fac'], 0.72 - 0.2 * wear, 0.78 - 0.2 * wear), wear * 2.0, clamp=True)
+    worn = T.math('ADD', worn, T.math('MULTIPLY', T.math('SUBTRACT', 1.0, _ao(T, 0.03, 4, inside=True)), wear * 2.5), clamp=True)
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', _noise(T, v, 0.6, 3).outputs['Fac'], 0.35, 0.82))
+    col = T.mix_rgb(worn, col, under)
+    brush = _noise(T, _map(T, vector=v, scale=(1, 1, 30)), 6, 2)
+    rgh = T.math('ADD', T.math('MULTIPLY', worn, 0.35), rough, clamp=True)
+    _principled(T, out, col, rgh, brush.outputs['Fac'], bump=0.03, bump_dist=0.003, spec=0.5, coat=0.8, coat_rough=0.08, haze=haze)
+    return m
+
+
+def shoji_material(name, color=(0.90, 0.87, 0.78), *, translucency=0.62, glow=None, scale=1.0, stains=0.3):
+    """Shoji washi: thin, fibrous, light shines through (Translucent BSDF; thicker fibres hold back light), a few
+    age stains. `glow=(rgb, strength)` adds a faint self-light for night interiors without a lamp behind."""
+    m, T, out = _start(name)
+    h = fibre_height(T, 55.0 * scale)
+    v = _map(T, 'Object', (scale,) * 3)
+    st = T.math('MULTIPLY', _smooth(T, _noise(T, v, 1.4, 5).outputs['Fac'], 0.62, 0.8), stains)
+    col = T.mix_rgb(st, color, (0.62, 0.52, 0.36))
+    col = _scale_col(T, col, T.math('MULTIPLY_ADD', h, -0.12, 1.02))
+    tr = T.math('MULTIPLY_ADD', h, -0.18, translucency)
+    _principled(T, out, col, 0.85, h, bump=0.08, bump_dist=0.002, spec=0.2, sheen=0.3, translucency=tr,
+                trans_color=(1.0, 0.86, 0.62), emission=glow)
+    return m
+
+
+def tatami_material(name, color=(0.46, 0.42, 0.22), *, axis='X', scale=1.0):
+    """Woven igusa rush: fine weave bands across `axis`, warp threads, per-mat tone, a little sheen."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    v = _map(T, 'Object', (scale,) * 3)
+    w = T.node('ShaderNodeTexWave', Vector=v, Scale=95.0, Distortion=0.6, Detail=1.0)
+    w.wave_type = 'BANDS'
+    w.bands_direction = axis
+    w.wave_profile = 'TRI'
+    n = _noise(T, _map(T, vector=v, scale=(0.3, 25, 1) if axis == 'X' else (25, 0.3, 1)), 4, 3)
+    g = T.math('MULTIPLY_ADD', n.outputs['Fac'], 0.4, T.math('MULTIPLY', w.outputs['Fac'], 0.6))
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', g, 0.35, T.math('MULTIPLY_ADD', pr, 0.25, 0.68)))
+    _principled(T, out, col, T.math('MULTIPLY_ADD', g, 0.2, 0.55), g, bump=0.25, bump_dist=0.002, spec=0.35, sheen=0.4)
+    return m
+
+
+def gravel_material(name, color=(0.34, 0.33, 0.30), *, scale=9.0, wet=0.0, moss=0.0, haze=None):
+    """Raked courtyard gravel / pebble ground: voronoi pebbles with their own tones, dark gaps, larger value
+    drift and optional wetness (puddle gloss) and moss."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (1, 1, 1))
+    vo = _voronoi(T, v, scale)
+    sm = _voronoi(T, v, scale * 2.7)
+    cell = T.node('ShaderNodeSeparateColor', Color=vo.outputs['Color']).outputs[0]
+    peb = T.math('SUBTRACT', 1.0, T.math('MULTIPLY', vo.outputs['Distance'], 1.6), clamp=True)
+    peb2 = T.math('SUBTRACT', 1.0, T.math('MULTIPLY', sm.outputs['Distance'], 1.6), clamp=True)
+    h = T.math('MAXIMUM', peb, T.math('MULTIPLY', peb2, 0.7))
+    drift = _noise(T, v, 0.25, 4)
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', cell, 0.6, T.math('MULTIPLY_ADD', drift.outputs['Fac'], 0.4, 0.45)))
+    col = T.mix_rgb(_smooth(T, h, 0.35, 0.05), col, (0.03, 0.028, 0.025))
+    puddle = T.math('MULTIPLY', _smooth(T, _noise(T, v, 0.35, 3).outputs['Fac'], 0.6, 0.66), wet)
+    rgh = T.math('SUBTRACT', T.math('MULTIPLY_ADD', cell, 0.2, 0.75), T.math('ADD', T.math('MULTIPLY', puddle, 0.7), wet * 0.25), clamp=True)
+    if moss:
+        mm = T.math('MULTIPLY', _smooth(T, _noise(T, v, 0.6, 5).outputs['Fac'], 0.62 - 0.2 * moss, 0.7 - 0.2 * moss), _smooth(T, h, 0.3, 0.0))
+        col = T.mix_rgb(mm, col, (0.06, 0.09, 0.03))
+    col = _scale_col(T, col, T.math('SUBTRACT', 1.0, T.math('MULTIPLY', puddle, 0.35)))
+    hb = T.math('MULTIPLY', h, T.math('SUBTRACT', 1.0, puddle))
+    _principled(T, out, col, rgh, hb, bump=0.6, bump_dist=0.02, flat=False, spec=0.4, haze=haze)
+    return m
+
+
+def earth_material(name, color=(0.16, 0.12, 0.08), *, moss=0.3, leaves=0.0, leaf_color=(0.25, 0.12, 0.05), scale=1.0, wet=0.0, haze=None):
+    """Forest floor / packed earth: soil drift, moss patches, fallen-leaf litter speckle, small stones."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (scale,) * 3)
+    a = _noise(T, v, 0.4, 6, 0.6)
+    b = _noise(T, v, 3.5, 8, 0.6)
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', a.outputs['Fac'], 0.6, T.math('MULTIPLY_ADD', b.outputs['Fac'], 0.4, 0.5)))
+    mm = T.math('MULTIPLY', _smooth(T, _noise(T, v, 0.5, 5).outputs['Fac'], 0.6 - 0.25 * moss, 0.68 - 0.25 * moss), 1.0 if moss else 0.0)
+    col = T.mix_rgb(mm, col, T.mix_rgb(b.outputs['Fac'], (0.05, 0.08, 0.025), (0.12, 0.15, 0.04)))
+    lf = _voronoi(T, v, 14.0)
+    lmask = T.math('MULTIPLY', T.math('GREATER_THAN', T.node('ShaderNodeSeparateColor', Color=lf.outputs['Color']).outputs[1], 1.0 - 0.5 * leaves),
+                   T.math('LESS_THAN', lf.outputs['Distance'], 0.35))
+    col = T.mix_rgb(lmask, col, T.mix_rgb(T.node('ShaderNodeSeparateColor', Color=lf.outputs['Color']).outputs[2], leaf_color, tuple(c * 0.6 for c in leaf_color)))
+    h = T.math('ADD', T.math('MULTIPLY', b.outputs['Fac'], 0.6), T.math('MULTIPLY', lmask, 0.15))
+    rgh = T.math('SUBTRACT', 0.92, T.math('ADD', T.math('MULTIPLY', mm, -0.05), wet * 0.4))
+    _principled(T, out, col, rgh, h, bump=0.5, bump_dist=0.02, flat=False, spec=0.3, haze=haze)
+    return m
+
+
+def bamboo_material(name, color=(0.30, 0.36, 0.10), *, age=0.4, scale=1.0, haze=None):
+    """Bamboo culm skin: waxy green to yellowed, fine vertical streaks, darker lichen blotches on older culms,
+    per-culm hue (piece_rand). Glossy but soft."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    v = _map(T, 'Object', (scale,) * 3)
+    streak = _noise(T, _map(T, vector=v, scale=(40, 40, 0.6)), 2.0, 3)
+    col = T.mix_rgb(T.math('MULTIPLY', pr, age * 1.6, clamp=True), color, (0.48, 0.42, 0.18))
+    col = _scale_col(T, col, T.math('MULTIPLY_ADD', streak.outputs['Fac'], 0.35, 0.8))
+    bl = T.math('MULTIPLY', _smooth(T, _noise(T, v, 3.0, 4).outputs['Fac'], 0.66, 0.74), age)
+    col = T.mix_rgb(bl, col, (0.10, 0.10, 0.07))
+    _principled(T, out, col, T.math('MULTIPLY_ADD', bl, 0.4, 0.36), streak.outputs['Fac'], bump=0.08, bump_dist=0.003,
+                spec=0.55, sheen=0.1, haze=haze, flat=False)
+    return m
+
+
+def bark_material(name, color=(0.10, 0.075, 0.055), *, scale=1.0, moss=0.2, haze=None):
+    """Pine / cherry bark: plated cracks stretched along the trunk (object Z), moss on one side."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (scale * 4, scale * 4, scale * 1.2))
+    vo = _voronoi(T, v, 3.0, 'DISTANCE_TO_EDGE')
+    plates = _smooth(T, vo.outputs['Distance'], 0.0, 0.12)
+    n = _noise(T, v, 4, 6)
+    col = _scale_col(T, color, T.math('MULTIPLY_ADD', plates, 0.7, T.math('MULTIPLY_ADD', n.outputs['Fac'], 0.4, 0.2)))
+    geo = T.node('ShaderNodeNewGeometry')
+    nx = T.node('ShaderNodeSeparateXYZ', Vector=geo.outputs['Normal']).outputs['Y']
+    mm = T.math('MULTIPLY', _smooth(T, nx, 0.0, 0.9), _smooth(T, _noise(T, v, 1.0, 4).outputs['Fac'], 0.55 - 0.3 * moss, 0.65 - 0.3 * moss))
+    col = T.mix_rgb(T.math('MULTIPLY', mm, 1.0 if moss else 0.0), col, (0.06, 0.09, 0.03))
+    _principled(T, out, col, 0.9, T.math('ADD', plates, T.math('MULTIPLY', n.outputs['Fac'], 0.3)), bump=0.6, bump_dist=0.02,
+                flat=False, spec=0.3, haze=haze)
+    return m
+
+
+def foliage_material(name, color=(0.06, 0.10, 0.04), *, trans=(0.25, 0.35, 0.06), translucency=0.35, var=0.35, haze=None, sss=None):
+    """Leaves / needles / blossoms as folded paper: per-facet and per-cluster tone, light passing through."""
+    m, T, out = _start(name)
+    pr = _attr(T, PIECE_ATTR)
+    fr = _attr(T, FACET_ATTR)
+    k = T.math('MULTIPLY_ADD', T.math('ADD', pr, fr), var, 1.0 - var)
+    col = _scale_col(T, color, k)
+    h = fibre_height(T, 30.0)
+    _principled(T, out, col, 0.6, h, bump=0.1, bump_dist=0.004, spec=0.35, sheen=0.3, translucency=translucency,
+                trans_color=trans, haze=haze)
+    return m
+
+
+def glow_window_material(name, color=(1.0, 0.55, 0.22), strength=6.0, *, var=0.5):
+    """Lit interior seen through a window or lantern paper: warm emission with a soft uneven falloff."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (1, 1, 1))
+    n = _noise(T, v, 1.5, 3)
+    pr = _attr(T, PIECE_ATTR)
+    k = T.math('MULTIPLY', strength, T.math('MULTIPLY_ADD', T.math('ADD', n.outputs['Fac'], pr), var * 0.5, 1.0 - var * 0.5))
+    em = T.node('ShaderNodeEmission', Color=_rgba(color), Strength=k)
+    T.link(em.outputs['Emission'], out.inputs['Surface'])
+    return m
+
+
+def iron_material(name, color=(0.05, 0.048, 0.045), rust=0.3):
+    """Black iron fittings (door studs, hinges): rough dark metal with rust bloom."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (1, 1, 1))
+    n = _noise(T, v, 8, 6)
+    r = T.math('MULTIPLY', _smooth(T, n.outputs['Fac'], 0.6 - 0.2 * rust, 0.7 - 0.2 * rust), 1.0)
+    col = T.mix_rgb(r, color, (0.16, 0.06, 0.025))
+    _principled(T, out, col, T.math('MULTIPLY_ADD', r, 0.4, 0.45), n.outputs['Fac'], bump=0.3, bump_dist=0.003,
+                metallic=T.math('SUBTRACT', 0.9, r) if False else 0.8, spec=0.5)
+    return m
+
+
+def gold_material(name, color=(0.85, 0.62, 0.25)):
+    """Gilded metal (shachihoko, crests)."""
+    m, T, out = _start(name)
+    v = _map(T, 'Object', (1, 1, 1))
+    n = _noise(T, v, 20, 4)
+    _principled(T, out, _rgba(color), T.math('MULTIPLY_ADD', n.outputs['Fac'], 0.15, 0.22), n.outputs['Fac'], bump=0.1,
+                bump_dist=0.002, metallic=1.0, spec=0.5)
+    return m
+
+
+def rain_material(name='LO_Rain'):
+    """Rain streaks: mostly transparent, a little gloss and transmission so they catch backlight."""
+    m, T, out = _start(name)
+    lw = T.node('ShaderNodeLightPath')
+    tr = T.node('ShaderNodeBsdfTransparent')
+    gl = T.node('ShaderNodeBsdfGlass', Roughness=0.05, IOR=1.33)
+    mx = T.node('ShaderNodeMixShader', Fac=0.18)
+    T.link(tr.outputs['BSDF'], mx.inputs[1]); T.link(gl.outputs['BSDF'], mx.inputs[2])
+    T.link(mx.outputs['Shader'], out.inputs['Surface'])
+    m.blend_method = 'BLEND' if hasattr(m, 'blend_method') else None
+    return m
