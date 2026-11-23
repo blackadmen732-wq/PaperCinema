@@ -74,6 +74,15 @@
       "max": 8000,
       "len": 4,
       "gain": 0.9
+    },
+    {
+      "id": "sig-shakuhachi",
+      "t": 1.4,
+      "query": "shakuhachi",
+      "min": 3000,
+      "max": 120000,
+      "len": 4.4,
+      "gain": 0.55
     }
   ]
 }
