@@ -315,20 +315,42 @@ def solve(t, P, root, opts):
     G = (P + root[:, None, :]) * s                           # landmarks in our world, scaled to our figure
     # ground contact per foot: height above the ground (a low percentile of the lowest foot) and speed
     foot = {'r': [RAN, RHE, RTO], 'l': [LAN, LHE, LTO]}
-    fh = {k: G[:, v, 1].min(axis=1) for k, v in foot.items()}
-    ground = float(np.percentile(np.minimum(fh['r'], fh['l']), 5))
-    contact = {}
+    # The ground is a PLANE fitted to the lowest foot over the clip (robust lower envelope): monocular depth error
+    # and a tilted phone both make a level floor look like a slope, which would otherwise read as jumps.
+    low = np.stack([G[:, foot['r'] + foot['l'], 1].min(axis=1), G[:, RAN, 0] * 0 + G[:, [RAN, LAN], 0].mean(axis=1),
+                    G[:, [RAN, LAN], 2].mean(axis=1)], axis=1)               # (y, x, z) of the lowest foot per frame
+    A = np.c_[np.ones(N), low[:, 1], low[:, 2]]
+    keep = np.ones(N, bool)
+    for _ in range(4):
+        coef = np.linalg.lstsq(A[keep], low[keep, 0], rcond=None)[0]
+        res = low[:, 0] - A @ coef
+        keep = res <= np.percentile(res, 40) + 0.02
+    spread = np.ptp(low[:, 1:], axis=0)
+    if spread[0] < 0.6: coef[1] = 0.0                                        # too little travel to fit a slope that way
+    if spread[1] < 0.6: coef[2] = 0.0
+    coef[0] = float(np.percentile(low[:, 0] - A[:, 1:] @ coef[1:], 5))
+    gy = lambda x, z: coef[0] + coef[1] * x + coef[2] * z                     # ground height under (x, z)
+    fh, contact = {}, {}
     for k, v in foot.items():
         pos = G[:, v].mean(axis=1)
+        fh[k] = G[:, v, 1].min(axis=1) - gy(pos[:, 0], pos[:, 2])
         sp = np.r_[0, np.linalg.norm(np.diff(pos[:, [0, 2]], axis=0), axis=1) / np.maximum(1e-4, np.diff(t))]
-        contact[k] = (fh[k] - ground < 0.07) & (sp < 1.2)
-    air = ~(contact['r'] | contact['l'])
-    # an airborne stretch must last 2+ frames and clear 5 cm, or it is noise
-    lift = np.minimum(fh['r'], fh['l']) - ground
-    air &= lift > 0.05
-    for i in range(1, N - 1):
-        if air[i] and not air[i - 1] and not air[i + 1]:
-            air[i] = False
+        contact[k] = (fh[k] < 0.08) & (sp < 1.2)
+    lift = np.minimum(fh['r'], fh['l'])
+    # airborne: both feet clear 12 cm for at least 0.1 s, or it is depth noise (a real jump clears that easily)
+    air = ~(contact['r'] | contact['l']) & (lift > opts.get('jump_min', 0.12))
+    i = 0
+    while i < N:
+        if air[i]:
+            j = i
+            while j < N and air[j]:
+                j += 1
+            if t[min(j, N - 1)] - t[i] < 0.1:
+                air[i:j] = False
+            i = j
+        else:
+            i += 1
+    ground = float(coef[0] + coef[1] * low[0, 1] + coef[2] * low[0, 2])
 
     ch = {c: np.zeros(N) for c in CHANNELS}
     prev = {'r': 0.0, 'l': 0.0}
