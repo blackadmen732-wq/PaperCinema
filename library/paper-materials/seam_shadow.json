@@ -1,0 +1,28 @@
+{
+  "label": "Seam shadow (the gap between two sheets)",
+  "paper_type": "shadow-gap",
+  "color": [
+    0.025,
+    0.022,
+    0.02
+  ],
+  "translucent_color": [
+    0.05,
+    0.04,
+    0.03
+  ],
+  "fibre_density": 0.9,
+  "fibre_direction": "lengthwise",
+  "fibre_strength": 0.06,
+  "roughness": 0.95,
+  "sheen": 0.0,
+  "thickness_mm": 0.2,
+  "fold_darkening": 0.0,
+  "edge_wear": 0.0,
+  "translucency": 0.0,
+  "inner_light": 0.0,
+  "facet_variation": 0.02,
+  "shimi": null,
+  "note": "Not a sheet: the dark slot that sits behind every overlap so a join reads as two pieces of paper.",
+  "id": "seam_shadow"
+}

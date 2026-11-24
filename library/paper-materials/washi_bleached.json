@@ -1,0 +1,28 @@
+{
+  "label": "Bleached washi, cool white",
+  "paper_type": "washi-mitsumata",
+  "color": [
+    0.88,
+    0.86,
+    0.81
+  ],
+  "translucent_color": [
+    1.0,
+    0.88,
+    0.68
+  ],
+  "fibre_density": 1.15,
+  "fibre_direction": "lengthwise",
+  "fibre_strength": 0.13,
+  "roughness": 0.78,
+  "sheen": 0.32,
+  "thickness_mm": 0.35,
+  "fold_darkening": 0.22,
+  "edge_wear": 0.2,
+  "translucency": 0.4,
+  "inner_light": 1.25,
+  "facet_variation": 0.05,
+  "shimi": "amber-soak",
+  "note": "Thin, bright, very translucent: sleeves, collar, the sheets meant to glow.",
+  "id": "washi_bleached"
+}

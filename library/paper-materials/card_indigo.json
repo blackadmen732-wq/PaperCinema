@@ -1,0 +1,28 @@
+{
+  "label": "Indigo-dyed card",
+  "paper_type": "card-stock",
+  "color": [
+    0.075,
+    0.085,
+    0.125
+  ],
+  "translucent_color": [
+    0.18,
+    0.2,
+    0.34
+  ],
+  "fibre_density": 0.85,
+  "fibre_direction": "vertical",
+  "fibre_strength": 0.1,
+  "roughness": 0.72,
+  "sheen": 0.3,
+  "thickness_mm": 0.9,
+  "fold_darkening": 0.4,
+  "edge_wear": 0.35,
+  "translucency": 0.06,
+  "inner_light": 0.3,
+  "facet_variation": 0.05,
+  "shimi": "ink-bleed",
+  "note": "Heavy dark card: hakama, armour plates, the second character. Worn white at every folded edge.",
+  "id": "card_indigo"
+}

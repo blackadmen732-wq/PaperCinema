@@ -1,0 +1,28 @@
+{
+  "label": "Kasa straw-paper, radial grain",
+  "paper_type": "washi-straw",
+  "color": [
+    0.8,
+    0.75,
+    0.63
+  ],
+  "translucent_color": [
+    0.92,
+    0.76,
+    0.5
+  ],
+  "fibre_density": 1.2,
+  "fibre_direction": "radial",
+  "fibre_strength": 0.22,
+  "roughness": 0.86,
+  "sheen": 0.18,
+  "thickness_mm": 0.6,
+  "fold_darkening": 0.32,
+  "edge_wear": 0.26,
+  "translucency": 0.22,
+  "inner_light": 0.7,
+  "facet_variation": 0.09,
+  "shimi": "rain-edge",
+  "note": "Grain runs apex to rim so the ribs read as split-bamboo spokes (reference: the kasa).",
+  "id": "washi_hat"
+}

@@ -14,7 +14,9 @@ Every paper surface is the same recipe:
     and aerial haze (`haze`): the surface fades to a haze colour with camera distance. Haze is a cheap stand-in
     for a fog volume and gives the layered mountains their depth.
 """
+import json
 import math
+import os
 import random
 
 import bpy
@@ -201,6 +203,82 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
         shader = _haze(T, shader, *haze)
     T.link(shader, out.inputs['Surface'])
     out.location = (T.x + 200, 0)
+    return m
+
+
+# =========================================================================== PC_Washi_Master (character factory)
+# One material family for every paper part of every character (blender/character/part_registry.py). A sheet is
+# described by data in library/paper-materials/<id>.json; this turns that into a Cycles material.
+#
+# The one rule that matters: FIBRE SIZE IS WORLD SCALE. The fibre field is read in OBJECT space, so an object
+# scaled by s must ask for fibre_scale = WASHI_FIBRE * s or its fibres come out the wrong size (the classic
+# failure: fibres like rope on the hat, invisible on the sleeves). Always pass the object's uniform scale.
+WASHI_FIBRE = 150.0          # fibre repeats per WORLD metre, identical on every part
+WASHI_FIBRE_RANGE = (0.70, 1.45)   # allowed per-sheet density multiplier (part_validator.py enforces it)
+WASHI_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..',
+                         'library', 'paper-materials')
+_WASHI_SPECS = {}
+_WASHI_MATS = {}
+
+FIBRE_DIRECTIONS = {            # grain direction, in the part's own object space
+    'lengthwise': dict(fibre_rot=(0.0, 0.0, 0.0)),            # long fibres along X: sleeves, belts, straps
+    'vertical': dict(fibre_rot=(0.0, 0.0, math.pi / 2)),      # along Z-ish: hakama legs, lapels, folds
+    'crosswise': dict(fibre_rot=(math.pi / 2, 0.0, 0.0)),     # across the sheet: obi band, collar
+    'radial': dict(fibre_radial=True),                        # apex → rim: kasa, fans, rosettes
+}
+
+
+def washi_spec(key):
+    """Load library/paper-materials/<key>.json (cached). Unknown keys fall back to `washi_natural`."""
+    if key in _WASHI_SPECS:
+        return _WASHI_SPECS[key]
+    path = os.path.join(WASHI_DIR, key + '.json')
+    if not os.path.exists(path):
+        path = os.path.join(WASHI_DIR, 'washi_natural.json')
+    with open(path) as fh:
+        spec = json.load(fh)
+    _WASHI_SPECS[key] = spec
+    return spec
+
+
+def PC_Washi_Master(key, name=None, *, scale=1.0, glow=None, color=None, suffix='', shimi=None, **over):
+    """The character factory's one paper material.
+
+    key      a sheet in library/paper-materials/ (washi_natural, washi_bleached, card_indigo…)
+    scale    the UNIFORM OBJECT SCALE of the part it goes on, so the fibres stay world-size (see above)
+    glow     (rgb, strength) inner-light response: the lantern burning through the sheet
+    color    override the sheet's base colour (one recipe, many characters)
+    shimi    (rgb, strength) SHIMI stain hookup: a second colour soaked into the fibre field
+    """
+    spec = dict(washi_spec(key))
+    spec.update({k: v for k, v in over.items() if v is not None})
+    col = tuple(color if color is not None else spec['color'])
+    dens = float(spec.get('fibre_density', 1.0))
+    nm = name or ('PC_Washi_' + key + suffix)
+    tag = (nm, round(scale, 4), col, glow, shimi)
+    if tag in _WASHI_MATS and bpy.data.materials.get(nm):
+        return _WASHI_MATS[tag]
+    kw = dict(FIBRE_DIRECTIONS.get(spec.get('fibre_direction', 'lengthwise'), {}))
+    if shimi:
+        s_col, s_amt = shimi
+        col = tuple(c * (1 - s_amt) + sc * s_amt for c, sc in zip(col, s_col))
+    m = paper_material(
+        nm, col,
+        translucency=float(spec.get('translucency', 0.3)),
+        rough=float(spec.get('roughness', 0.82)),
+        sheen=float(spec.get('sheen', 0.25)),
+        fibre_scale=WASHI_FIBRE * dens * max(scale, 1e-4),
+        fibre_strength=float(spec.get('fibre_strength', 0.16)),
+        facet_var=float(spec.get('facet_variation', 0.07)),
+        fold_dark=float(spec.get('fold_darkening', 0.25)),
+        edge_wear=float(spec.get('edge_wear', 0.15)),
+        glow=(tuple(glow[0]), float(glow[1]) * float(spec.get('inner_light', 1.0))) if glow else None,
+        translucent_color=tuple(spec['translucent_color']) if spec.get('translucent_color') else None,
+        seed=abs(hash(nm)) % 997 / 997.0, **kw)
+    m['pc_washi'] = key
+    m['pc_fibre_world'] = WASHI_FIBRE * dens
+    m['pc_thickness'] = float(spec.get('thickness_mm', 0.4))
+    _WASHI_MATS[tag] = m
     return m
 
 
