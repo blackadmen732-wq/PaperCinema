@@ -129,6 +129,12 @@ window.EVENTS = { ...C.events, contacts: contacts.map((c) => ({ ...c, tWorld: c.
   ramps: R.list.map((r) => ({ t: r.t, rate: r.rate, film0: r.film0, film1: r.film1 })),
   warp: R.list.length || stops.length ? { dt: 0.02, film: Array.from({ length: Math.ceil(DUR / 0.02) + 1 }, (_, i) => +toFilm(i * 0.02).toFixed(4)) } : null };
 
+// FIGHT DIRECTOR (engine/combat.js direct): fighters in reach, the defender's reaction on time, the clash aim
+// (IK) measured, blade trajectories verified at 240 Hz → ONE verified event per strike, on the film clock.
+const DIR = combat.direct({ film, fighters: [hero, foe], pose: poseAll, C, fps: FPS });
+window.EVENTS.strikes = DIR.strikes.map((s) => ({ ...s, t: +R.filmOf(s.t).toFixed(3) }));
+window.EVENTS.fightDirector = DIR.findings;
+
 // ---------- PROPS: cuttable paper trees (film.props.trees) ----------
 // { id, x, z, height, color, cut: { t, y, tilt, delay, dir }, split: { t } }
 //   cut: the blade passes at t; a thin glowing seam shows, then after "delay" the top slides along the cut and

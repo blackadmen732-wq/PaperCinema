@@ -31,7 +31,7 @@ import { LEG } from './figure.js';
 
 export const FOOTLOCK = {
   rate: 120,         // planning grid (Hz)
-  reach: 0.5,        // how far the body may travel either side of a plant before the foot must step (m):
+  reach: 0.38,       // how far the body may travel either side of a plant before the foot must step (m):
                      //   half a stride. The body passes over the planted foot; the hips drop to reach it.
   swing: 0.15,       // how long a step takes (s)
   lift: 0.12,        // peak foot lift in a step (m), scaled by step length
@@ -120,43 +120,36 @@ export function lockFeet(motion, dur, opts = {}) {
 
   /** Fill a per-sample path: planted inside a contact, a lifted arc between two, nominal in the air. */
   function path(cs, nom) {
-    const out = nom.map((p) => [p[0], p[1], p[2], 0]);
+    const out = nom.map((q) => [q[0], q[1], q[2], 0]);
+    const rampN = Math.max(1, Math.round(O.ramp * RATE));
+    const done = new Array(N).fill(false);
     for (let k = 0; k < cs.length; k++) {
       const c = cs[k];
-      for (let i = c.a; i <= c.b; i++) out[i] = [c.pos[0], c.pos[1], c.pos[2], 1];
+      for (let i = c.a; i <= c.b; i++) { out[i] = [c.pos[0], c.pos[1], c.pos[2], 1]; done[i] = true; }
       const nx = cs[k + 1];
       if (!nx || nx.a <= c.b + 1) continue;
-      const len = Math.hypot(nx.pos[0] - c.pos[0], nx.pos[2] - c.pos[2]);
-      const h = clamp(len * 0.28, 0.02, O.lift);
+      // the gap between two plants is ONE eased arc: lift, travel, reach down, land. Eased at both
+      // ends, so the foot is high before it travels and a "planted" foot never races along the ground.
+      let leap = false;
+      for (let i = c.b + 1; i < nx.a; i++) if (air[i]) leap = true;
+      const span = Math.hypot(nx.pos[0] - c.pos[0], nx.pos[2] - c.pos[2]);
+      // a step lifts with its length; a leap or a lunge lifts with its time (never a balloon)
+      const h = leap ? clamp(0.9 * (nx.a - c.b) * DT, O.flight, 0.5) : clamp(span * 0.28, 0.02, O.lift);
       for (let i = c.b + 1; i < nx.a; i++) {
-        if (air[i]) continue;                          // a jump in the middle of a step wins
-        const u = ss((i - c.b) / (nx.a - c.b));
-        out[i] = [c.pos[0] + (nx.pos[0] - c.pos[0]) * u, LEG.footY + h * Math.sin(Math.PI * u),
-          c.pos[2] + (nx.pos[2] - c.pos[2]) * u, 0];
+        const u = (i - c.b) / (nx.a - c.b), w = ss(u);
+        out[i] = [c.pos[0] + (nx.pos[0] - c.pos[0]) * w, (leap ? nom[i][1] : LEG.footY) + h * Math.sin(Math.PI * u),
+          c.pos[2] + (nx.pos[2] - c.pos[2]) * w, 0];
+        done[i] = true;
       }
     }
-    // FLIGHT: a leap or a lunge. The feet leave the ground (so nothing "planted" can slide), follow the
-    // body, and blend out of the last plant and into the next one: push off, trail, reach down, land.
-    const rampN = Math.max(1, Math.round(O.ramp * RATE));
+    // air with no plant on one side (the film opens or ends off the ground): follow the body, lifted
     for (let i = 0; i < N;) {
-      if (!air[i]) { i++; continue; }
-      let j = i; while (j + 1 < N && air[j + 1]) j++;
-      const prev = cs.filter((c) => c.b < i).pop(), next = cs.find((c) => c.a > j);
-      const len = j - i + 1, r = Math.min(rampN, Math.max(1, len >> 1));
-      if (prev && next) {
-        // one arc from the foot that pushed off to the foot that lands: eased at both ends, so the
-        // foot is already high before it travels (and a "planted" foot never races across the ground)
-        const h = clamp(0.9 * len * DT, O.flight, 0.5);   // a longer flight = a higher arc, never a balloon
-        for (let k = i; k <= j; k++) {
-          const u = (k - i + 1) / (len + 1), w = ss(u);
-          out[k] = [prev.pos[0] + (next.pos[0] - prev.pos[0]) * w, nom[k][1] + h * Math.sin(Math.PI * u),
-            prev.pos[2] + (next.pos[2] - prev.pos[2]) * w, 0];
-        }
-      } else {
-        for (let k = i; k <= j; k++) {                 // no plant on one side: follow the body, lifted
-          const up = O.flight * ss(Math.min(1, (k - i + 1) / r, (j - k + 1) / r));
-          out[k] = [nom[k][0], nom[k][1] + up, nom[k][2], 0];
-        }
+      if (!air[i] || done[i]) { i++; continue; }
+      let j = i; while (j + 1 < N && air[j + 1] && !done[j + 1]) j++;
+      const r = Math.min(rampN, Math.max(1, (j - i + 1) >> 1));
+      for (let k = i; k <= j; k++) {
+        const up = O.flight * ss(Math.min(1, (k - i + 1) / r, (j - k + 1) / r));
+        out[k] = [nom[k][0], nom[k][1] + up, nom[k][2], 0];
       }
       i = j + 1;
     }

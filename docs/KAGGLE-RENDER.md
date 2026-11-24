@@ -42,6 +42,7 @@ bisections so the render kernel was left alone):
 | our film render with `--no-dust --no-slash --no-blur --no-glare`, 360×640 / 8 samples | 2× T4 | **killed 16 s in**, 3 frames written |
 | our film render forced onto the CPU (`BLENDER_GPU=0`, GPU 0 %, 0 MiB) | 2× T4 | killed ~90 s in |
 | our film render, frames to `/kaggle/working` vs `/kaggle/tmp`, log at source filtered, 8–96 frames | 2× T4 | killed every time |
+| the reverse bisection in one kernel: **R1** bare scene + Blender's monkey, 8 frames · **R2** bare scene + **our TRELLIS character GLB** imported and rendered, 8 frames · **R3** the same film render through `film_blender.py` | 2× T4 | **R1 finished (28 s, rc=0)**, **R2 finished (28 s, rc=0)**, **killed ~15 s into R3** |
 
 So it is **not** the quota, **not** the GPU being attached, **not** the GPU sitting idle, **not** the render
 device, **not** memory (3.5 of 30 GiB, no cgroup OOM), **not** disk, **not** the CPU quota, **not** the attached
@@ -50,11 +51,16 @@ dataset, **not** the folder the frames or the log are written to, **not** the re
 runs for minutes. Our film render, in any shape, is killed about fifteen seconds in, while Blender is in the
 middle of an ordinary frame (`Fra:4 … Remaining:00:00.23` was the last line of the stripped-down run).
 
+That last row is the sharpest one: on the same GPUs, in the same kernel, a bare Cycles scene renders 8 frames
+and so does a bare scene with **our own origami character GLB** in it — the model, the importer, Cycles and CUDA
+are all innocent. Only the render that goes through `blender/film_blender.py` is killed, and the session (not the
+Blender process) dies: Blender never reports an exit code, it simply stops existing mid-frame.
+
 What is left, and where to look next:
-* Something our `blender/film_blender.py` scene does that Kaggle's session monitor reacts to and reports as a
-  cancel with no message. The next bisection is the other direction: start from the monkey scene and add our
-  pieces one at a time (GLB import of `assets/models/*.glb` → `rig_trellis` → the backdrop → the light rig),
-  all in one kernel, so the stage that dies names the piece.
+* Something `blender/film_blender.py` itself does. Everything it can be told to switch off is already cleared
+  (`--no-dust --no-slash --no-blur --no-glare` dies too), so the next bisection is inside the file: the motion
+  load, `rig_trellis` rigging and skinning, the materials, the backdrop, the per-frame light rig, the tree props.
+  `gpu/kaggle_blender/diag_job.py` is the kernel that found all of this — add stages to it, one piece at a time.
 * Kaggle support / the forums: a `CANCEL_ACKNOWLEDGED` with `failureMessage: null` is not documented anywhere,
   and the kernel's own log is the only evidence a killed run leaves (Kaggle snapshots it, so print a heartbeat —
   `render_job.py` prints frames done, GPU use, RAM and Blender's last line every 5 s; that is what pinned the

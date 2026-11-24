@@ -230,3 +230,63 @@ Loading takes about 2 minutes (the page samples the whole film at 240 Hz first).
 **Known weak spots:** `noto` (no scabbard on the motion page; the edge lies flat, not up); `calm-low-stance` (legs only bend in the
 forward plane, so the stance is long, not wide); `spin-cut` (absolute `ry`); directions 3 and 7 and the kata extras
 (`tsuka-ate`, `katate-tsuki`, `soete-tsuki`) are poses checked by numbers only, with no move yet.
+
+## 12. Planted feet and weight (`engine/footlock.js`, `"motion": { "lockFeet": true }`)
+
+Every pose is a joint angle, so by default the legs hang off the hips: the feet go wherever the hips take
+them and a travelling body **skates**. `lockFeet` turns that around — the feet are put on the ground and
+the body is solved from them.
+
+Turn it on per film (old films are unchanged until they opt in):
+
+```json
+"motion": { "overlap": true, "lockFeet": true }
+```
+
+or with overrides: `"lockFeet": { "reach": 0.38, "swing": 0.15, "runSpeed": 5.5 }`.
+
+**What it does**, in one precomputed pass over the finished motion (so every frame is still a pure
+function of `t` and a still matches the video):
+
+1. **Samples** the motion at 120 Hz and works out where each foot *would* be today (`solveLegs`'s stance,
+   stride and crouch), in the world.
+2. **Contacts.** A foot is off the ground when the root is up (a jump) or the body is travelling faster
+   than a foot can push (`runSpeed`, 5.5 m/s) — that is a lunge, not a step. The rest is ground time, cut
+   into contacts: the longest run of frames whose foot positions all stay within `reach` (0.38 m, half a
+   stride) of one point. That point is the **plant** — the middle of the run, so the body passes *over*
+   the foot, and the foot lands *ahead* of a sprint and catches it.
+3. **Steps.** Between two plants the foot swings for `swing` (0.15 s) on an eased arc: lift, travel, land.
+   The two feet are staggered. A leap or a dash is one long arc instead, high enough that nothing
+   "planted" is ever racing along the ground.
+4. **Weight.** With the feet pinned the hips are no longer free:
+   · **reach** — a pinned foot further from its hip than the leg is long forces the hips to **drop**
+     (`crouch`), so a long stride sinks the body by itself;
+   · **support polygon** — the span between the planted feet. When the centre of mass leaves it the body
+     is falling: it leans the way it falls (`rx`/`rz`, a rotation about the ground, i.e. about the feet),
+     the hips drop further, and the next plant is thrown `lead` seconds of travel ahead to catch it.
+
+The leg IK (`solveLegs`) takes a world foot target through `pose._feet` and solves from it: the leg plane
+now rolls sideways as well (hip abduction, thigh Euler order `ZXY`), so a foot can be planted off to the
+side, not only in front or behind.
+
+### Measuring foot slide
+
+```bash
+node tools/footslide.mjs film/dash-test.json            # every performer, a second, no rendering
+node tools/footslide.mjs film/dash-test.json --json
+```
+
+It poses the real rig in Node (leg IK included) and measures, with the same definition as the studio
+audit's rule A1: a foot is **planted** when the root is on the ground (y ≤ 0.03 m) and the foot joint is
+low (y ≤ 0.12 m); **slide** is how far a planted foot travels horizontally between two frames while
+moving faster than 1 m/s. The audit flags a run of such frames that adds up to more than 0.4 m.
+
+Measured (24 fps, worst foot per film):
+
+| Film | slide before | slide after | audit foot-slide findings |
+|---|---|---|---|
+| `film/dash-test.json` | 8.85 m total, peak 28 m/s, worst run **7.59 m** | 0.00 m, peak 0.0 m/s, worst run **0.00 m** | 2 → **0** |
+| `film/kuroko-duel.json` | 4.91 m total, peak 10 m/s, worst run **1.32 m** | 0.28 m, peak 2.3 m/s, worst run **0.23 m** | 5 → **0** |
+
+A film with `lockFeet` off is not measured against zero: the number tells you how much skating the dust
+and the smear have to cover.

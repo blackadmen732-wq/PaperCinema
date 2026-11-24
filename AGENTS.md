@@ -8,8 +8,10 @@ swords, paint instead of blood. **Everything in a film is data**; the engine ren
 1. **This file**: the rules and commands.
 2. **`SYSTEMS.md`**: every system (KUROKO, SHIMI, the skeleton, moves, sound…) with its files, guide, command and
    how it connects to the others. Machine-readable copy: `systems.json`.
-3. **`.claude/skills/paper-cinema-film/SKILL.md`**: the step-by-step procedure for making a film (Claude Code loads it automatically).
-4. **`docs/README.md`**: which guide to read for which task.
+3. **`docs/ARCHITECTURE.md`**: the shape of the project — one canonical timeline (`docs/TIMELINE-FORMAT.md`) and the six
+   modules around it (Timeline Exporter, Fight Director, Camera Director, Paper Damage Bridge, Render Supervisor, Visual Critic).
+4. **`.claude/skills/paper-cinema-film/SKILL.md`**: the step-by-step procedure for making a film (Claude Code loads it automatically).
+5. **`docs/README.md`**: which guide to read for which task.
 
 ## 2. Folder map
 | Folder | Contains |
@@ -37,6 +39,14 @@ python3 engine/thumbnail.py film/<name>.json             # 16:9 + 9:16 thumbnail
 python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut     # SHIMI stain (presets in the file)
 python3 docs/build_playbook.py film/<name>.json          # refresh the playbook page
 node tools/audit.mjs film/<name>.json                    # studio QA: visibility, camera, pops, smear, sound… (docs/AUDIT.md)
+bash tools/film.sh film/<name>.json [--set <name>]       # ONE COMMAND → output/<name>-final.mp4 (Blender + sound,
+                                                         # validate → motion → events → audit → render → mix → report)
+bash tools/film.sh film/<name>.json --from 96 --to 191   # one stretch; frames already rendered are kept (--fresh redoes them)
+bash tools/film.sh film/<name>.json --full               # 720x1280 / 48 samples instead of the 360x640 preview
+node tools/timeline.mjs film/<name>.json                  # THE canonical timeline for every renderer (docs/TIMELINE-FORMAT.md)
+node tools/camera_check.mjs film/<name>.json             # score every shot; exit 1 on a rejected camera (docs/ARCHITECTURE.md)
+node tools/paper_damage.mjs film/<name>.json             # every cut → a SHIMI/KIZU wound contract
+node tools/render_supervisor.mjs film/<name>.json --plan  # shot-by-shot render plan (quality presets, resume)
 python3 tools/build_systems.py                           # refresh systems.json after editing SYSTEMS.md
 /opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/demon_slash_test.py -- --state impact   # Blender test
 npm run preview                                          # live preview in a browser
@@ -45,6 +55,7 @@ npm run preview                                          # live preview in a bro
 
 ## 4. Rules (must follow)
 00. **Use what already exists and works first.** Before building a system, search for a proven tool, skill, library, plugin or technique (GitHub, Blender add-ons/skills, open-source AI tools) and use or adapt it; build our own only for what nothing covers (or what must stay ours, e.g. SHIMI, KUROKO). Check the licence (rule 6). Learn from the owner's reference videos and images (`research/reference-*.md`) instead of guessing taste.
+02c. **OmniRoute is the safety net.** `bash tools/omni.sh start` runs a local gateway over 400+ models; `tools/ai.py` falls through to it when the direct free endpoints are rate-limited. Adding more provider accounts (`omniroute keys add <provider> <key>`) widens the free capacity.
 02b. **Free workers do the heavy lifting.** `python3 tools/worker.py "<task>"` gives the free NVIDIA models
     real tools (read, write, patch, search, run, look at images) in a loop, so they do multi-step work with
     NO usage cost. Use it for: installing and testing, wiring scripts, docs, repetitive fixes, investigations,
@@ -62,7 +73,10 @@ npm run preview                                          # live preview in a bro
 1. **Paid GPUs: ask the owner first, with the expected cost.** Default to the cheapest *community* GPU. Every pod gets
    the self-destruct timer (`sleep 3600; runpodctl remove pod $RUNPOD_POD_ID`) and is stopped (`python3 gpu/pod.py stop`)
    before any long wait. An idle pod once cost $3 by mistake.
-2. **Free compute first:** this machine, then Kaggle (free GPU, phone-verified account).
+2. **Free compute first:** this machine, then Kaggle (free GPU, phone-verified account). The Kaggle **GPU**
+   render is broken (every kernel is cancelled 11–18 s into a Blender render; `docs/KAGGLE-RENDER.md` has the
+   eight measured runs that rule out quota, memory, disk and the rest), so `tools/film.sh --gpu` refuses and
+   says so. Render here, or on Kaggle's CPU session (`bash gpu/kaggle_blender/run.sh push --cpu`).
 3. **Validate, then look at stills, before any full render.** A 36 s render takes about 55 min on CPU.
 3b. **Every video passes the studio standard:** read `docs/STUDIO-STANDARD.md` before directing, and run
    `node tools/audit.mjs film/<name>.json` before any full render (no critical finding; fix or waive every major) and
@@ -84,6 +98,8 @@ npm run preview                                          # live preview in a bro
   - motion-test page (`engine/motion.js`): blade-contact detection, clash aim, hit-stop, smear ribbon, ink impact frame, auto sound cues, eye-to-blade camera
   - our own synthesised sword sounds (`tools/synth_sfx.sh`); Blender world set + slash FX (`blender/world/`, v1)
   - studio standard + automated audit (`docs/STUDIO-STANDARD.md`, `tools/audit.mjs`); cinematographer camera (`compose` solver, speed ramps); light smear, shock ring, glints; dust, contact shadows, afterimages (`engine/groundfx.js`)
+  - one-command film: `bash tools/film.sh film/<name>.json` → `output/<name>-final.mp4` (checker → motion → cue
+    events → audit gate → Blender on four niced cores, resumable → mix at -14 LUFS with a pre-hit dip → report)
   - Blender SETS: data-driven locations from a kit (`library/sets/*.json`, `blender/sets/`, guide `docs/SETS.md`): castle courtyard, dojo, bamboo forest, Ganryūjima beach, a 2.5D paper-cut skyline; origami samurai on the marks
 - **Next** (see `docs/EFFECTS-PLAN.md`, `docs/SHIMI.md`, `docs/BLENDER-PLAN.md`):
   - the face-touch scene; SHIMI on the 3D body

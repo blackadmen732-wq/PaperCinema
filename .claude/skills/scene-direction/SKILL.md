@@ -39,9 +39,18 @@ Sources are listed in `docs/DIRECTION.md` §9.
 7. **Time it** (§4): strike frames, hit-stops, silences, holds, the accelerating standoff.
 8. **Write the data** (§2): paste the rig from `library/shots.json`, rename subjects, convert anchor beat times, add
    `shakes` / `events.impact` on every hit.
-9. **Check and look:** `node engine/validate.mjs film/<name>.json`, then
+9. **Score the camera (required, before any still).** `node tools/camera_check.mjs film/<name>.json` — the camera
+   evaluator (`docs/ARCHITECTURE.md` §Camera Director) measures every shot: subject / weapon / target visibility and
+   occlusion, action clarity on the strike frame, framing size against the size the shot asks for, the 180° line and
+   the 30° rule, cut timing against the verified strikes, camera motion (a whip without a cut, jerk, clearance from
+   the set) and emotional fit per beat. **It exits 1 on a rejected shot**, prints the reason ("the orbit camera
+   passes 0.42 m from the props during the strike at f268") and names the nearest passing alternative from
+   `library/shots.json` — take it, or fix the rig and run it again. It also runs inside `node tools/audit.mjs` as the
+   camera section, so the two can never disagree.
+10. **Check and look:** `node engine/validate.mjs film/<name>.json`, then
    `node engine/render.mjs --film film/<name>.json --still auto` and **look at every still** with the review
-   checklist (§7). Fix, repeat. Only then render a section or the film (skill `paper-cinema-film`).
+   checklist (§7). Fix, repeat. Only then render a section or the film (skill `paper-cinema-film`;
+   `node tools/render_supervisor.mjs film/<name>.json --plan` shows the shot-by-shot render plan).
 
 ---
 
@@ -153,7 +162,7 @@ Pick one mood per scene from `library/shots.json → lighting` and say it in the
 ---
 
 ## 7. Taste rules and review checklist
-**The studio standard comes first:** `docs/STUDIO-STANDARD.md` (§3 has the beat → camera table: dash = side track with lead room or front-low pull-back, turn = behind then over the shoulder, jump = low looking up then circling above, slash = over the shoulder into the impact, landing = low wide; §3b the moves and their limits; §4 speed ramps). On the motion page use the `compose` framing solver (`docs/CAMERA.md` §8). Then measure your camera: `node tools/audit.mjs film/<name>.json` (`docs/AUDIT.md`).
+**The studio standard comes first:** `docs/STUDIO-STANDARD.md` (§3 has the beat → camera table: dash = side track with lead room or front-low pull-back, turn = behind then over the shoulder, jump = low looking up then circling above, slash = over the shoulder into the impact, landing = low wide; §3b the moves and their limits; §4 speed ramps). On the motion page use the `compose` framing solver (`docs/CAMERA.md` §8). Then measure your camera: `node tools/camera_check.mjs film/<name>.json` (every shot scored and rejected with a reason) and `node tools/audit.mjs film/<name>.json` (`docs/AUDIT.md`, which runs the same camera section).
 
 
 ### Cinematic vs amateur

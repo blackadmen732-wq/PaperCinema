@@ -36,16 +36,20 @@ MODELS = {
     'vl-nemotron':    dict(url='https://integrate.api.nvidia.com/v1', model='nvidia/nemotron-3.5-super-vl-120b-a12b', tags={'review'},             note='sees images'),
     'glm-vl':         dict(url='https://integrate.api.nvidia.com/v1', model='z-ai/glm-5.3-flash',                tags={'review', 'write'},         note='sees images'),
     'kimi':           dict(url='https://integrate.api.nvidia.com/v1', model='moonshotai/kimi-k3.1-pro',          tags={'think', 'write', 'code'},  note='Kimi K3.1 Pro'),
+    # OmniRoute (MIT, github.com/cheaper-inference/OmniRoute): a local gateway over 400 models with
+    # automatic fallback, so a rate-limited provider does not stop the work. Started by tools/omni.sh.
+    'omni':           dict(url='http://localhost:20128/v1',        model='auto',                                tags={'write', 'code', 'think', 'quick'}, note='gateway, auto-fallback'),
+    'omni-code':      dict(url='http://localhost:20128/v1',        model='auto/best-coding',                    tags={'code', 'think'},                   note='gateway, coding route'),
     # paid, only used when OpenRouter has credit
     'kimi-or':        dict(url='https://openrouter.ai/api/v1',      model='moonshotai/kimi-k3.1-pro',            tags={'think', 'write'}, paid=True),
     'glm-or':         dict(url='https://openrouter.ai/api/v1',      model='z-ai/glm-5.3',                        tags={'think', 'write'}, paid=True),
 }
 # who to try, in order, per job
 ORDER = {
-    'write':  ['qwen-cerebras', 'qwen-groq', 'gptoss-cerebras', 'nemotron', 'kimi'],
-    'code':   ['gptoss-cerebras', 'qwen-cerebras', 'gptoss-groq', 'nemotron'],
-    'think':  ['nemotron', 'kimi', 'gptoss-cerebras', 'gptoss-groq'],
-    'quick':  ['qwen-cerebras', 'qwen-groq'],
+    'write':  ['qwen-cerebras', 'qwen-groq', 'gptoss-cerebras', 'nemotron', 'kimi', 'omni'],
+    'code':   ['gptoss-cerebras', 'qwen-cerebras', 'gptoss-groq', 'nemotron', 'omni-code'],
+    'think':  ['nemotron', 'kimi', 'gptoss-cerebras', 'gptoss-groq', 'omni-code'],
+    'quick':  ['qwen-cerebras', 'qwen-groq', 'omni'],
     'review': ['vl-nemotron', 'glm-vl'],
 }
 SYSTEM = ('Think silently. Output ONLY the deliverable, after a line containing exactly: FINAL:\n'
@@ -56,11 +60,23 @@ SYSTEM = ('Think silently. Output ONLY the deliverable, after a line containing 
           'file names. No filler, no apologies, no restating the question.')
 
 
+OMNI_KEY_FILE = os.path.expanduser('~/.paper-cinema/omniroute-key')
+
+
+def key_for(name):
+    if name.startswith('omni'):
+        try:
+            return open(OMNI_KEY_FILE).read().strip()
+        except Exception:
+            return 'no-omniroute-key'
+    return 'proxy-injected'
+
+
 def call(name, messages, max_tokens=900, timeout=300, temperature=0.6):
     m = MODELS[name]
     body = {'model': m['model'], 'max_tokens': max_tokens, 'temperature': temperature, 'messages': messages}
     req = urllib.request.Request(m['url'] + '/chat/completions', json.dumps(body).encode(),
-                                 {'Authorization': 'Bearer proxy-injected', 'Content-Type': 'application/json'})
+                                 {'Authorization': 'Bearer ' + key_for(name), 'Content-Type': 'application/json'})
     t0 = time.time()
     d = json.load(urllib.request.urlopen(req, timeout=timeout))
     msg = d.get('choices', [{}])[0].get('message', {}) or {}

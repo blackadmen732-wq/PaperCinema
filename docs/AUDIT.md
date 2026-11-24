@@ -55,6 +55,26 @@ If `output/<name>-sound.mp4` exists (or `--sound file`), the mix is measured too
 What it cannot judge (idea, silhouettes, line of action, taste) is printed as a checklist at the end of each report:
 look at the stills for those.
 
+## The camera section (`tools/camera_check.mjs`)
+The audit's **camera** category also carries the camera evaluator (`docs/ARCHITECTURE.md` §Camera Director), run on
+the frames the audit has already measured — no second browser pass, and the audit can never disagree with
+`node tools/camera_check.mjs film/<name>.json`. It scores every shot and writes
+`output/<name>.camera-check.md` / `.json` beside the audit report:
+
+| Check | Rule | In the audit |
+|---|---|---|
+| `shot-subject-off-screen`, `shot-subject-occluded`, `shot-weapon-off-screen`, `shot-target-off-screen` | the fighter, the blade and the target are in frame and unoccluded | major / minor |
+| `strike-off-screen`, `strike-occluded`, `strike-too-small`, `strike-camera-smear`, `strike-not-covered` | on every verified strike frame the contact is visible, big enough (≥ 18% of the frame) and the lens is steady (< 20°/frame) | major / minor |
+| `shot-size-vs-intent` | the measured subject height matches the size the shot asks for (wide / full / medium / close / extreme) | minor |
+| `cut-crosses-the-line`, `cut-under-30-degrees`, `cut-throws-away-the-blow` | the 180° line, the 30° rule, and 4–8 frames of hold after a blow | minor / info |
+| `shot-whip-without-cut`, `shot-fast-pan`, `shot-camera-jerk` | a turn over 120° (or 90° that is not following the subject) inside 8 frames needs a cut | major / info |
+| `shot-camera-in-geometry`, `shot-camera-brushes-geometry`, `shot-buried-in-props`, `shot-camera-under-ground` | the lens stays 0.25 m out of every prop and 0.6 m clear of the set | major / minor |
+| `shot-emotion-mismatch` | the shot family fits the beat (`library/shots.json` → `beat_map`) | minor |
+
+A rejected shot is a **major** here (so a film that passed before still passes) and a **hard reject** in the
+standalone tool, which exits 1 and proposes the nearest passing alternative from `library/shots.json`.
+`--camera-strict` makes rejects critical; `--no-camera` skips the section.
+
 ## Deliberate exceptions
 A film can waive a check for a time span, with a reason (it then shows as info):
 ```json

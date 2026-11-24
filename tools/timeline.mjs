@@ -105,6 +105,7 @@ function PAGE_SAMPLE({ frames, sub, bones, wantSub }) {
     for (const T of P.trees ?? []) F.props.push({ id: T.tr?.id ?? null, top: xf(T.top), halves: (T.halves ?? []).map(xf) });
     return F;
   };
+  out.propSpecs = (P.trees ?? []).map((T) => ({ ...T.tr, base: T.root?.position?.toArray?.() ?? [0, 0, 0] }));
   for (const f of frames) out.frames.push({ f, ...sample(f / FPS) });
   if (wantSub) {
     for (const f of frames) for (let k = 1; k < sub; k++) {
@@ -253,9 +254,11 @@ export async function exportTimeline(filmPath, o = {}) {
   // ---------- events with stable ids ----------
   const ev = [];
   const push = (type, data) => ev.push({ type, ...data });
-  for (const c of EVENTS?.contacts ?? []) push('blade-contact', { t: c.t ?? c.tb, tb: c.tb, point: c.point, intensity: c.intensity, speed: c.vRel, verified: true });
+  if (EVENTS?.strikes?.length) for (const c of EVENTS.strikes) push('blade-contact', { t: c.t, tb: c.tb, point: c.point, intensity: c.intensity,
+    speed: c.speed, attacker: c.attacker, defender: c.defender, reactionFrames: c.reactionFrames, verified: c.verified, drives: c.drives });
+  else for (const c of EVENTS?.contacts ?? []) push('blade-contact', { t: c.t ?? c.tb, tb: c.tb, point: c.point, intensity: c.intensity, speed: c.vRel, verified: null });
   for (const s of EVENTS?.stops ?? []) push('hit-stop', { t: s.t, tb: s.tb, duration: s.d });
-  for (const g of EVENTS?.ground ?? []) push(g.kind === 'land' || g.kind === 'jump' ? 'footstep' : 'ground', { t: g.t, kind: g.kind, actor: g.id ?? g.who ?? null, point: g.point ?? null });
+  for (const g of EVENTS?.ground ?? []) push(g.kind === 'land' || g.kind === 'jump' ? 'footstep' : 'ground', { ...g, actor: g.id ?? g.who ?? null });
   for (const i of EVENTS?.impacts ?? []) push('impact', { t: i.t, intensity: i.intensity, point: i.point, ink: !!i.ink });
   for (const c of EVENTS?.cues ?? []) push('cue', { t: c.t, sfx: c.sfx, gain: c.gain, len: c.len, rate: c.rate, why: c.why, source: c.id });
   for (const s of film.sounds ?? []) push('cue', { t: s.t, sfx: s.sfx ?? s.query ?? s.id, gain: s.gain, len: s.len, why: 'authored', source: s.id ?? null });
@@ -364,6 +367,8 @@ export async function exportTimeline(filmPath, o = {}) {
       note: 'bone 0 ("root") carries the root motion: every other bone is already in world space, so root motion is '
         + 'never applied twice. A renderer that wants local transforms multiplies by the inverse of the parent.' },
     shots, cuts, lights, effects, assets,
+    props: { trees: raw.propSpecs ?? [] },
+    fightDirector: EVENTS?.fightDirector ?? null,
     events: ev,
     frames,
     subframes: raw.sub,

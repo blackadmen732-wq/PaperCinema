@@ -15,6 +15,7 @@ globalThis.document = { createElement: () => ({ width: 1, height: 1, getContext:
 const THREE = await import('three');
 const { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, gripHand } = await import('../engine/figure.js');
 const { expandMoves } = await import('../engine/moves.js');
+const { lockFeet } = await import('../engine/footlock.js');
 const { makeKatana } = await import('../engine/props.js');
 
 const args = process.argv.slice(2);
@@ -33,7 +34,9 @@ Object.keys(film.cast).forEach((id, i) => {
   const k = makeKatana();
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
-  cast[id] = { id, fig, sword: k.sword, perf, phase: i * 1.7, motion: makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {}) };
+  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
+  if (film.motion?.lockFeet) motion = lockFeet(motion, film.duration, film.motion.lockFeet);   // keep in step with engine/motion.js
+  cast[id] = { id, fig, sword: k.sword, perf, phase: i * 1.7, motion };
 });
 const ids = Object.keys(cast);
 const other = (id) => cast[ids.find((x) => x !== id)] ?? cast[id];

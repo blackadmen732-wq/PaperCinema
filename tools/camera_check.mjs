@@ -29,7 +29,8 @@ export const CRULE = {
   onScreen: 0.5,              // share of a subject's 8 key joints in frame
   strikeSize: 0.18,           // subject height at a strike frame (share of the frame height)
   strikePan: 20,              // degrees per frame at a strike frame (above this the money frame smears)
-  nearGeometry: 0.25,         // metres from the lens to any prop during a shot
+  nearGeometry: 0.25,         // metres from the lens to any prop during a shot (inside it)
+  brushGeometry: 0.6,         // ...and this close is a brush through the canopy: the lens will clip a branch
   whipTurn: 90, whipWindow: 8,   // 90° of turn inside 8 frames that is NOT following the subject = a whip
   smearTurn: 120,             // ...and any turn this big inside the window smears the background, tracking or not
   jerk: 14,                   // change of pan rate between frames (deg/frame²)
@@ -209,8 +210,11 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
             'a turn that big is a CUT, not a move: mark the beat "cut": true, or spread the turn over 0.5 s or more (a whip pan is 3-6 frames and ends on a cut)');
           break;
         }
-        add('shot-fast-pan', 'note', s.id, s.frames[a].t, s.frames[b].t, `${why}: fast, but it follows the subject`,
-          'fine as a tracking arc; check the still for background smear');
+        if (!s._fastPan) {                                  // one note per shot: the windows overlap
+          s._fastPan = true;
+          add('shot-fast-pan', 'note', s.id, s.frames[a].t, s.frames[b].t, `${why}: fast, but it follows the subject`,
+            'fine as a tracking arc; check the still for background smear');
+        }
       }
     }
     const jerks = s.frames.slice(2).filter((d, k) => Math.abs(d.pan - s.frames[k + 1].pan) > CRULE.jerk);
@@ -219,7 +223,27 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
       add('shot-camera-jerk', 'note', s.id, jerks[0].t, jerks[jerks.length - 1].t,
         `${s.id}: the pan rate jumps by more than ${CRULE.jerk}°/frame² on ${jerks.length} frames`, 'ease the move (a spring feel) or cut');
     }
+    // clearance: how close the lens came to anything that is not the fighters, and how much of the frame props filled
+    const clear = s.frames.map((d) => d.nearest).filter((v) => v !== undefined);
+    const worstClear = s.frames.reduce((a, b) => (b.nearest < a.nearest ? b : a), s.frames[0]);
+    s.clearance = { min: +Math.min(...clear).toFixed(3), worstFrame: worstClear.f };
+    s.blockers = { max: +Math.max(...s.frames.map((d) => d.blockers ?? 0)).toFixed(3) };
     const inGeo = s.frames.filter((d) => d.nearest < CRULE.nearGeometry);
+    const brush = s.frames.filter((d) => d.nearest >= CRULE.nearGeometry && d.nearest < CRULE.brushGeometry);
+    if (!inGeo.length && brush.length) {
+      const w = brush.reduce((a, b) => (b.nearest < a.nearest ? b : a));
+      const strike = strikes.find((x) => Math.abs(x.t - w.t) < 0.15);
+      add('shot-camera-brushes-geometry', 'warn', s.id, brush[0].t, brush[brush.length - 1].t,
+        `${s.id}: the ${s.rig?.type ? `${s.rig.type} ` : ''}camera passes ${w.nearest.toFixed(2)} m from the props`
+        + (strike ? ` during the strike at f${w.f}` : ` at f${w.f}`) + ` (${brush.length * STEP} frame(s)): it clips the set`,
+        'keep 0.6 m clear: raise the rig "dist" / "radius", or move the shot off the tree line (docs/FIX-LIST.md: '
+        + 'far vertical frames land in the pines)', { worstFrame: w.f, nearest: w.nearest, duringStrike: !!strike });
+    }
+    const buried = s.frames.filter((d) => (d.blockers ?? 0) > 0.6);
+    if (buried.length * STEP >= 6)
+      add('shot-buried-in-props', 'reject', s.id, buried[0].t, buried[buried.length - 1].t,
+        `${s.id}: props cover ${(Math.max(...buried.map((d) => d.blockers)) * 100).toFixed(0)}% of the frame for ${buried.length * STEP} frames (the lens is inside the set)`,
+        'a foreground prop may frame a shot (up to 35%, at an edge), never fill it: move the camera out of the tree line');
     s.checks.clear = inGeo.length ? 0 : 1;
     if (inGeo.length) {
       const worst = inGeo.reduce((a, b) => (b.nearest < a.nearest ? b : a));
@@ -303,6 +327,7 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
   for (const f of findings) penalty += SEV_W[f.sev] ?? 0;
   const score = Math.max(0, +(10 - penalty / Math.max(1, shots.length / 2)).toFixed(1));
   for (const s of shots) {
+    delete s._fastPan;
     s.findings = findings.filter((f) => f.shot === s.id);
     s.rejects = s.findings.filter((f) => f.sev === 'reject').length;
     s.warns = s.findings.filter((f) => f.sev === 'warn').length;

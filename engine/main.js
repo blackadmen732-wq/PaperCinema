@@ -343,6 +343,12 @@ const { contacts, stops, bodyT, filmT } = C;
 CONTACTS = contacts;
 // automatic whoosh / clash / scrape cues go to sound.mjs only when the film asks for them ("autoSounds")
 window.EVENTS = { ...C.events, cues: film.autoSounds ? C.cues : [] };
+// FIGHT DIRECTOR (engine/combat.js direct): reach, the defender's reaction time, the clash aim residual and the
+// blade trajectories at 240 Hz → ONE verified event per strike (contact + sound + camera + damage read this one).
+const DIR = COMBAT_ON ? combat.direct({ film, fighters: [FIGHTERS.kojiro, FIGHTERS.musashi], pose: poseFighters, C, fps: FPS }) : { strikes: [], findings: [] };
+window.EVENTS.strikes = DIR.strikes;
+window.EVENTS.fightDirector = DIR.findings;
+
 // authored action times (shakes, impact, headband cut) are in body time: move them past the hit-stops
 const SHAKES = (film.shakes ?? []).map((s) => ({ ...s, t: filmT(s.t) }));
 const tHit = filmT(ev('impact', 25.6)), tCutF = filmT(tCut);

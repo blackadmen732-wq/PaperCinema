@@ -363,6 +363,27 @@ if (soundPath && fs.existsSync(soundPath)) {
   }
 } else add('no-mix', 'sound', 'info', 0, DUR, 'no mixed video found: only the cue lists were checked', `render, then node engine/sound.mjs --film ${filmPath}`);
 
+// ---------- 3b. camera direction (tools/camera_check.mjs · docs/ARCHITECTURE.md §Camera Director) ----------
+// The camera section IS the camera evaluator, run on the frames measured above (no second browser pass), so the
+// audit and `node tools/camera_check.mjs` can never disagree. It scores every shot: subject / weapon / target
+// visibility, action clarity on the strike frame, framing size vs intent, the 180° line and the 30° rule, cut
+// timing against the verified events, camera motion (whip, jerk, clearance) and emotional fit per beat.
+// A rejected shot is a MAJOR here (it is a hard reject in the standalone tool, which exits 1); --camera-strict
+// raises rejects to critical. --no-camera skips the section.
+let CAM = null;
+if (!flag('no-camera')) {
+  try {
+    const CC = await import('./camera_check.mjs');
+    CAM = CC.evaluateCamera({ F, META, EVENTS, film, STEP });
+    const sevOf = { reject: flag('camera-strict') ? 'critical' : 'major', warn: 'minor', note: 'info' };
+    for (const f of CAM.findings) add(f.check, 'camera', sevOf[f.sev] ?? 'info', f.t0, f.t1, f.msg, f.fix);
+    fs.writeFileSync(`output/${NAME}.camera-check.md`, CC.cameraReport(CAM, NAME));
+    fs.writeFileSync(`output/${NAME}.camera-check.json`, JSON.stringify(CAM, null, 1));
+  } catch (e) {
+    add('camera-check-failed', 'camera', 'info', 0, DUR, `the camera evaluator did not run: ${e.message}`, 'run it alone: node tools/camera_check.mjs ' + filmPath);
+  }
+}
+
 // ---------- 4. score + report ----------
 // the same fault found several times counts with a falling weight (1, 0.5, 0.33…), so one broken beat does not zero a category
 const scores = Object.fromEntries(CATS.map((c) => [c, 10]));
@@ -380,6 +401,7 @@ const metrics = {
   subjectSize: { min: +Math.min(...sz, 9).toFixed(2), median: +([...sz].sort((a, b) => a - b)[sz.length >> 1] ?? 0).toFixed(2), max: +Math.max(...sz, 0).toFixed(2) },
   slowMotionShare: +(F.filter((d) => d.rate < 0.7).length / F.length).toFixed(2),
   maxBlockers: +Math.max(...F.map((d) => d.blockers)).toFixed(2), pixelsChecked: PIX.length, sound: SOUND, hits: HITS,
+  camera: CAM ? { verdict: CAM.verdict, score: CAM.score, shots: CAM.shots.map((s) => ({ id: s.id, f0: s.f0, f1: s.f1, size: s.measuredSize, clearance: s.clearance?.min ?? null, verdict: s.verdict })) } : null,
 };
 const verdict = crit ? 'FAIL' : maj ? (flag('strict') ? 'FAIL (strict)' : 'PASS with majors') : 'PASS';
 const icon = { critical: '✗ CRITICAL', major: '! major', minor: '· minor', info: '  info' };
@@ -396,6 +418,7 @@ lines.push(`# Studio audit: ${NAME}`, '',
   `- Shots: ${cutList.length + 1} (${cutList.length} cuts at ${cutList.map((i) => (i * DT).toFixed(2)).join(', ') || 'none'} s), average ${metrics.avgShot} s`,
   `- Subject height in frame: min ${(metrics.subjectSize.min * 100).toFixed(0)}%, median ${(metrics.subjectSize.median * 100).toFixed(0)}%, max ${(metrics.subjectSize.max * 100).toFixed(0)}%`,
   `- Slow motion: ${(metrics.slowMotionShare * 100).toFixed(0)}% of the film${META.ramps?.length ? ` (${META.ramps.length} ramps)` : ''} · largest foreground blocker ${(metrics.maxBlockers * 100).toFixed(0)}% of the frame`,
+  ...(CAM ? [`- Camera (tools/camera_check.mjs): **${CAM.verdict}** ${CAM.score}/10 · ${CAM.shots.length} shot(s), ${CAM.shots.filter((s) => s.rejects).length} rejected · full report: \`output/${NAME}.camera-check.md\``] : []),
   `- Pixels checked on ${PIX.length} frame(s)${framesDir ? ` from ${framesDir}` : ''}${PIX.length ? `: luma ${Math.min(...PIX.map((p) => p.mean))}–${Math.max(...PIX.map((p) => p.mean))}, most clipped ${(Math.max(...PIX.map((p) => p.clip)) * 100).toFixed(0)}%` : ''}`,
   SOUND ? `- Sound: ${SOUND.file}, ${SOUND.lufs ?? '?'} LUFS, peak ${SOUND.peak} dBFS${SOUND.stale ? ' (OUT OF DATE)' : ''}; hits: ${HITS.map((h) => `${h.t.toFixed(2)} s ${h.kind}${h.overPre !== undefined ? ` +${h.overPre} dB` : ''}`).join(' · ') || 'none'}` : '- Sound: not mixed yet (cue lists only)', '',
   '## Not measurable: look at the stills (docs/STUDIO-STANDARD.md §11 checklist)', '',
@@ -412,6 +435,7 @@ fs.writeFileSync(`output/${NAME}.audit.json`, JSON.stringify({ film: filmPath, v
 if (!flag('quiet')) {
   console.log(`\nSTUDIO AUDIT ${NAME}: ${verdict} · ${total}/10 · ${crit} critical, ${maj} major, ${min} minor`);
   console.log(CATS.map((c) => `${c} ${scores[c]}`).join(' · '));
+  if (CAM) console.log(`camera section: ${CAM.verdict} ${CAM.score}/10 (${CAM.shots.filter((s) => s.rejects).length} of ${CAM.shots.length} shot(s) rejected) → output/${NAME}.camera-check.md`);
   for (const f of findings) console.log(`${icon[f.sev].padEnd(11)} ${span(f).padEnd(28)} ${f.cat.padEnd(12)} ${f.msg}`);
   console.log(`\nreport: output/${NAME}.audit.md  (data: output/${NAME}.audit.json)`);
 }

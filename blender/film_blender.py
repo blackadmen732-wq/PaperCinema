@@ -1,7 +1,8 @@
 """BLENDERFILM: render a film's performance and camera in Blender with the TRELLIS hero. Guide: docs/CHARACTER-BLENDER.md.
 
   B=/opt/blender-dl/blender-4.5.16-linux-x64/blender
-  node tools/export_motion.mjs film/dash-test.json                      # once per film change → output/dash-test.motion.json
+  node tools/timeline.mjs film/dash-test.json                           # once per film change → output/dash-test.timeline.json
+  #                                                                     (--motion file reads the older export_motion.mjs format)
   # stills at film seconds (check these before any sequence)
   nice -n 10 $B -b -t 2 -P blender/film_blender.py -- --film film/dash-test.json --out output/blender/dash-test/ --times 0.3,1.1,3.1
   # a short sequence (frames are film frames at 24 fps)
@@ -21,7 +22,8 @@
   --save file.blend    keep the scene
 
 What it builds
-  * the character (blender/character/rig_trellis.py) baked from output/<film>.motion.json: the engine's real joints
+  * the character (blender/character/rig_trellis.py) baked from output/<film>.timeline.json (docs/TIMELINE-FORMAT.md):
+    the engine's real joints, the camera with its focal length, the events and the props, all in one format
   * the katana in a two-hand grip, the inner lantern, the film's tree props
   * dark cinematic light (research/reference-videos.md): about 70% darkness, a warm key from the camera's side, a strong
     cool rim from behind that follows the camera, a low fill; the glow is the brightest thing on screen
@@ -417,18 +419,82 @@ class Camera:
         return pos, q
 
 
+# ------------------------------------------------------------------------------- the canonical timeline (docs/TIMELINE-FORMAT.md)
+def load_timeline(path):
+    """output/<film>.timeline.json (tools/timeline.mjs) → the same frames rig_trellis.load_motion() returns.
+
+    ONE format for every renderer: this reads it and converts to Blender axes with the conversion the timeline
+    itself carries (coords.toBlender, implemented in rig_trellis.v3 / q3). Nothing is re-derived here.
+    """
+    d = json.load(open(path))
+    if d.get('format') != 'paper-cinema-timeline':
+        raise SystemExit(f'{path} is not a Paper Cinema timeline (run: node tools/timeline.mjs <film>)')
+    names = d['bones']['order']
+    sub = d.get('clock', {}).get('sub', 1) or 1
+    fps = d['film']['fps']
+    actors = {a['id']: a for a in d['actors']}
+    first = d['actors'][0] if d['actors'] else {}
+    # meta: what film_blender and rig_trellis ask of the old export, read off the timeline
+    meta = {
+        'film': d['film'], 'joints': names, 'coords': d['coords'],
+        'sword': first.get('weapon', {'bladeLen': 0.91}),
+        'cast': {k: {'character': v.get('character'), 'demonic': v.get('demonic', False), 'hidden': v.get('hidden', False)} for k, v in actors.items()},
+        'trees': d.get('props', {}).get('trees', []),
+        'events': {'ground': [e for e in d['events'] if e['type'] in ('ground', 'footstep') and 'pos' in e],
+                   'contacts': [e for e in d['events'] if e['type'] == 'blade-contact'],
+                   'impacts': [e for e in d['events'] if e['type'] == 'impact']},
+        'camera': {'cuts': [f / fps for f in d.get('cuts', [])]},
+        'timeline': True,
+    }
+    out = {'meta': meta, 'sub': sub, 'fps': fps, 'frames': [], 'samples': []}
+    # whole frames: world transforms per bone, in Blender axes
+    for F in d['frames']:
+        fr = {'t': F['t'], 'tb': F['tb'], 'trees': [], 'cast': {},
+              'cam': [*F['camera']['pos'], *F['camera']['rot'], F['camera']['fov']]}
+        for pr in F.get('props', []):
+            fr['trees'].append({'top': pr['top'], 'halves': pr.get('halves', [])})
+        for cid, a in F['actors'].items():
+            J = {n: (rt.v3(b[:3]), rt.q3(b[3:])) for n, b in zip(names, a['bones']) if b}
+            fr['cast'][cid] = {'J': J, 'sword': (rt.v3(a['weapon'][:3]), rt.q3(a['weapon'][3:])),
+                               'twoHand': (a.get('pose') or {}).get('twoHand', 1.0), 'pose': a.get('pose') or {}, 'eyes': a.get('eyes')}
+        out['frames'].append(fr)
+    # sub-frame samples: index i = frame * sub + k, the weapon on every sample (slash trail, motion blur)
+    # sample index i = frame * sub + k, so t * fps * sub = f * sub + k: one key, no searching
+    by_i = {round(row['t'] * fps * sub): row for row in d.get('subframes', [])}
+    for F in d['frames']:
+        base = {'t': F['t'], 'tb': F['tb'], 'cast': {cid: {'sword': a['weapon']} for cid, a in F['actors'].items()}}
+        out['samples'].append(base)
+        for k in range(1, sub):
+            row = by_i.get(F['f'] * sub + k)
+            out['samples'].append({'t': row['t'], 'tb': row['tb'],
+                                   'cast': {cid: {'sword': v['weapon']} for cid, v in row['actors'].items()}} if row else base)
+    return out
+
+
 # ----------------------------------------------------------------------------------------------- main
 def main():
     film_path = arg('film', 'film/dash-test.json')
     name = os.path.splitext(os.path.basename(film_path))[0]
     film = json.load(open(os.path.join(REPO, film_path) if not os.path.isabs(film_path) else film_path))
-    motion_path = arg('motion', os.path.join(REPO, 'output', name + '.motion.json'))
+    # THE CANONICAL TIMELINE (docs/TIMELINE-FORMAT.md) is the default input; --motion <file> reads the older
+    # single-purpose export (tools/export_motion.mjs) instead; --bvh reads motion capture.
+    legacy = arg('motion')
+    tl_path = arg('timeline', os.path.join(REPO, 'output', name + '.timeline.json'))
+    film_abs = os.path.join(REPO, film_path) if not os.path.isabs(film_path) else film_path
     if arg('bvh'):
-        pass                                                 # motion capture: the BVH is read after the scene is reset (below)
-    elif not os.path.exists(motion_path) or os.path.getmtime(motion_path) < os.path.getmtime(os.path.join(REPO, film_path)):
-        print('[film_blender] exporting the motion from the preview engine…')
-        subprocess.run(['node', 'tools/export_motion.mjs', film_path, '--out', motion_path], cwd=REPO, check=True)
-    mo = None if arg('bvh') else rt.load_motion(motion_path)
+        mo = None                                            # motion capture: the BVH is read after the scene is reset (below)
+    elif legacy:
+        if not os.path.exists(legacy) or os.path.getmtime(legacy) < os.path.getmtime(film_abs):
+            print('[film_blender] exporting the motion from the preview engine (legacy export)…')
+            subprocess.run(['node', 'tools/export_motion.mjs', film_path, '--out', legacy], cwd=REPO, check=True)
+        mo = rt.load_motion(legacy)
+    else:
+        if not os.path.exists(tl_path) or os.path.getmtime(tl_path) < os.path.getmtime(film_abs):
+            print('[film_blender] exporting the canonical timeline from the preview engine…')
+            subprocess.run(['node', 'tools/timeline.mjs', film_path, '--out', tl_path], cwd=REPO, check=True)
+        mo = load_timeline(tl_path)
+        print(f'[film_blender] timeline: {len(mo["frames"])} frames, {len(mo["meta"]["cast"])} actor(s), '
+              f'{len(mo["meta"]["trees"])} prop(s) ({os.path.relpath(tl_path, REPO)})')
     if arg('set'):
         bpy.ops.wm.open_mainfile(filepath=os.path.abspath(arg('set')))
     else:

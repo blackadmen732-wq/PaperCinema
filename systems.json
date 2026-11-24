@@ -202,6 +202,22 @@
    "status_note": "✅"
   },
   {
+   "id": "FOOTLOCK",
+   "name": "Planted feet + weight",
+   "does": "Opt-in per film (`\"motion\": { \"lockFeet\": true }`): one precomputed pass over the finished motion finds ground contacts (foot height + travel speed), pins each foot to one world point for the whole contact, steps between contacts on an eased arc (a leap or a dash becomes one long arc), then solves the legs from the pinned feet — hips drop when a leg cannot reach, and the body leans and catches itself with a step when the centre of mass leaves the support polygon. Still a pure function of `t`.",
+   "files": [
+    "engine/footlock.js",
+    "engine/figure.js",
+    "tools/footslide.mjs"
+   ],
+   "guide": [
+    "docs/ANIMATION.md"
+   ],
+   "command": "node tools/footslide.mjs film/<name>.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "MOCAP",
    "name": "Motion capture from video",
    "does": "Film a move with a phone → MediaPipe Pose Landmarker (Apache-2.0, CPU) per frame → left/right flip fix, zero-phase one-euro + Savitzky-Golay smoothing, ground contact → our channels (ry, waist/chest, shoulders + elbows by bounded IK fit, head, stance/crouch/weight, root travel, jumps) inside the joint limits → a performance key list (every frame, `--tol`, or `--keys N`) or a move (`--as-move`, relative fwd/side/turn); a film that replays it from where the phone stood; source/ours contact sheets; synthetic accuracy test on our own figure",
@@ -476,6 +492,21 @@
     "docs/COST.md"
    ],
    "command": "python3 tools/worker.py \"<task>\"",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "OMNI",
+   "name": "OmniRoute gateway",
+   "does": "Local MIT gateway (github.com/cheaper-inference/OmniRoute) over 400+ models with automatic fallback, so a rate-limited free provider never stops the work; used as the last resort in every `tools/ai.py` chain",
+   "files": [
+    "tools/omni.sh",
+    "tools/ai.py"
+   ],
+   "guide": [
+    "docs/COST.md"
+   ],
+   "command": "bash tools/omni.sh start",
    "status": "built",
    "status_note": "✅"
   },
@@ -836,6 +867,98 @@
    "command": "node engine/render.mjs --page engine/fx-demo.html --film film/fx-demo.json --still 3.7,13.7 --prefix fx-",
    "status": "test",
    "status_note": "🧪 demo page (wired into main.js and motion.js)"
+  },
+  {
+   "id": "ARCH",
+   "name": "Architecture (the six modules)",
+   "does": "The shape of the project: one canonical timeline + Timeline Exporter, Fight Director, Camera Director, Paper Damage Bridge, Render Supervisor, Visual Critic; which code implements each, what is still missing, where a change goes",
+   "files": [
+    "docs/ARCHITECTURE.md"
+   ],
+   "guide": [
+    "docs/ARCHITECTURE.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "TIMELINE",
+   "name": "Canonical animation timeline",
+   "does": "ONE interchange format every renderer reads: per-frame bone world transforms (root motion in bone 0), the weapon at sub-frame resolution, the camera (position, rotation, fov, focal length, focus distance), shots + cut frames, events with stable ids (attack-start, blade-contact, paper-cut, footstep, cue…), lights, effect parameters, asset references, the ONE three.js→Blender coordinate conversion, and a backward-scrub determinism check. Covers motion-page films AND the shots-based main engine",
+   "files": [
+    "tools/timeline.mjs",
+    "output/<film>.timeline.json"
+   ],
+   "guide": [
+    "docs/TIMELINE-FORMAT.md"
+   ],
+   "command": "node tools/timeline.mjs film/x.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "FIGHTDIR",
+   "name": "Fight Director",
+   "does": "The fight pipeline as one verification pass over the contact analysis: fighters within weapon reach at each planned clash, the defender's reaction within 0–3 frames of contact, the clash-aim (IK) residual, blade trajectories at 240 Hz (no tunnelling, no teleporting tip) → ONE verified event per strike (`window.EVENTS.strikes`) that drives contact + sound + camera + damage",
+   "files": [
+    "engine/combat.js"
+   ],
+   "guide": [
+    "docs/ARCHITECTURE.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "CAMCHECK",
+   "name": "Camera evaluator (Camera Director)",
+   "does": "Scores every shot against measurable requirements: subject / weapon / target visibility and occlusion, action clarity on the strike frame, framing size vs the size the shot asks for, continuity (180° line, 30° rule), cut timing against the verified events, camera motion (whip without a cut, jerk, clearance from geometry) and emotional fit per beat. Rejects a failure with its reason and proposes the nearest passing alternative from `library/shots.json`; it is also the camera section of the studio audit",
+   "files": [
+    "tools/camera_check.mjs",
+    "library/shots.json",
+    "engine/audit-hooks.js"
+   ],
+   "guide": [
+    "docs/ARCHITECTURE.md",
+    "docs/DIRECTION.md"
+   ],
+   "command": "node tools/camera_check.mjs film/x.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "DAMAGE",
+   "name": "Paper Damage Bridge",
+   "does": "The contract between a cut in the film and the paint in the paper: every verified cut → one damage event (part, time, seed, UV window and mm-per-texel for that shot size, gravity, planned wound polyline, KIZU onset / depth / drips) that Blender, the three.js preview and `engine/shimi.py` all read; merged back into the timeline as `damage` events",
+   "files": [
+    "tools/paper_damage.mjs",
+    "engine/shimi.py"
+   ],
+   "guide": [
+    "docs/SHIMI-3D.md",
+    "docs/ARCHITECTURE.md"
+   ],
+   "command": "node tools/paper_damage.mjs film/x.json",
+   "status": "test",
+   "status_note": "🧪 contract + stub (the UV sweep is planned, not measured)"
+  },
+  {
+   "id": "RENDERSUP",
+   "name": "Render Supervisor",
+   "does": "Renders a film shot by shot from the timeline: one quality-preset table for every renderer (draft / preview / final / hero), retries, per-shot failure isolation and resume from `output/<film>.render-state.json` (a frame hash per shot, so a timeline change re-renders only what changed)",
+   "files": [
+    "tools/render_supervisor.mjs",
+    "engine/render.mjs",
+    "blender/film_blender.py"
+   ],
+   "guide": [
+    "docs/ARCHITECTURE.md"
+   ],
+   "command": "node tools/render_supervisor.mjs film/x.json --plan",
+   "status": "test",
+   "status_note": "🧪 v1"
   }
  ],
  "connections": [
@@ -1017,6 +1140,54 @@
   ],
   [
    "BLENDERFILM",
+   "BLENDER"
+  ],
+  [
+   "ENGINE",
+   "TIMELINE"
+  ],
+  [
+   "COMBAT",
+   "FIGHTDIR"
+  ],
+  [
+   "FIGHTDIR",
+   "TIMELINE"
+  ],
+  [
+   "TIMELINE",
+   "CAMCHECK"
+  ],
+  [
+   "TIMELINE",
+   "DAMAGE"
+  ],
+  [
+   "TIMELINE",
+   "RENDERSUP"
+  ],
+  [
+   "TIMELINE",
+   "BLENDERFILM"
+  ],
+  [
+   "KUROKO",
+   "CAMCHECK"
+  ],
+  [
+   "CAMCHECK",
+   "AUDIT"
+  ],
+  [
+   "DAMAGE",
+   "KIZU"
+  ],
+  [
+   "RENDERSUP",
+   "RENDER"
+  ],
+  [
+   "RENDERSUP",
    "BLENDER"
   ]
  ]

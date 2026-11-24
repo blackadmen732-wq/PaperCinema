@@ -5,7 +5,8 @@ film data as the browser preview. The box figures in `engine/*.js` are the previ
 
 | File | Job |
 |---|---|
-| `tools/export_motion.mjs` | Film → `output/<film>.motion.json`: what the preview engine really did on every frame |
+| `tools/timeline.mjs` | Film → `output/<film>.timeline.json`: the CANONICAL timeline every renderer reads (`docs/TIMELINE-FORMAT.md`). `film_blender.py` reads this by default |
+| `tools/export_motion.mjs` | The older single-purpose export → `output/<film>.motion.json`; still works, read with `--motion <file>` |
 | `blender/character/rig_trellis.py` | TRELLIS `.glb` → rigged character, katana, inner lantern; pose, film and BVH drivers |
 | `blender/film_blender.py` | Renders a film (or a BVH take) with the character: light, slash, dust, camera |
 | `library/blender-cameras.json` | Named camera moves and one camera plan per film |
@@ -14,7 +15,8 @@ film data as the browser preview. The box figures in `engine/*.js` are the previ
 
 ```bash
 B=/opt/blender-dl/blender-4.5.16-linux-x64/blender
-node tools/export_motion.mjs film/dash-test.json          # 13 s; run again after the film or the engine changes
+node tools/timeline.mjs film/dash-test.json               # the canonical timeline; run again after the film or the engine changes
+node tools/export_motion.mjs film/dash-test.json          # (legacy format, only with film_blender.py --motion)
 
 # stills at film seconds: always look at these first
 nice -n 10 $B -b -t 2 -P blender/film_blender.py -- --film film/dash-test.json --out output/blender/dash-test/ --times 0.3,1.15,4.2
@@ -104,7 +106,7 @@ ray-skin handle with a crossed silk wrap, kashira. It is built in the engine's s
 | Driver | Call | Source of truth |
 |---|---|---|
 | Library pose | `rt.apply_frame(ch, rt.pose_frame('jodan'))` | `library/poses.json` through a Python port of `applyPose` + `solveLegs` (checked against the engine: 0.000 m, 0.000 rad on root, spine, right arm, legs and sword) |
-| Film | `rt.bake(ch, rt.load_motion('output/x.motion.json'), 'hero', f0, f1)` | The preview engine itself, via `tools/export_motion.mjs`: motion curves, follow-through, leg IK, two-hand grip, clash aim, hit-stop, speed ramps, camera |
+| Film | `rt.bake(ch, film_blender.load_timeline('output/x.timeline.json'), 'hero', f0, f1)` (or `rt.load_motion` for the legacy export) | The preview engine itself, via `tools/export_motion.mjs`: motion curves, follow-through, leg IK, two-hand grip, clash aim, hit-stop, speed ramps, camera |
 | Motion capture | `rt.bake(ch, rt.bvh_motion('take.bvh'), 'hero', f0, f1)` | Any BVH file, through Blender's own BVH importer |
 
 The export adds one line to the copy of `engine/motion.js` the browser receives (the file on disk is untouched) to
