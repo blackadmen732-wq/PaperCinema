@@ -42,9 +42,11 @@ const deg = (a, b) => (Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b
 const dist3 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const med = (xs) => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[s.length >> 1] : 0; };
 
-/** project a world point with a frame's camera (pos + quaternion + vertical fov) → [x, y, depth] in 0..1 screen space */
+/** project a world point with a frame's camera (pos + quaternion + vertical fov) → [x, y, depth] in 0..1 screen space.
+ *  cam.rot is the camera's world quaternion (engine/audit-hooks.js); without it the basis is rebuilt from cam.dir
+ *  with +y up (roll is then ignored). */
 function project(cam, p) {
-  const [qx, qy, qz, qw] = cam.rot ?? [0, 0, 0, 1];
+  const [qx, qy, qz, qw] = cam.rot ?? quatFromDir(cam.dir);
   const d = [p[0] - cam.pos[0], p[1] - cam.pos[1], p[2] - cam.pos[2]];
   // rotate d by the inverse camera quaternion
   const ix = -qx, iy = -qy, iz = -qz;
@@ -55,6 +57,25 @@ function project(cam, p) {
   const ty2 = Math.tan((cam.fov * Math.PI) / 360);
   const y = v[1] / (depth * ty2), x = v[0] / (depth * ty2 * cam.aspect);
   return [(x + 1) / 2, (1 - y) / 2, depth];
+}
+/** look-at quaternion for a camera pointing along dir with +y up → [x, y, z, w] */
+function quatFromDir(dir = [0, 0, -1]) {
+  const z = [-dir[0], -dir[1], -dir[2]];                       // three.js cameras look down -z
+  const n = Math.hypot(...z) || 1;
+  z[0] /= n; z[1] /= n; z[2] /= n;
+  let up = [0, 1, 0];
+  if (Math.abs(z[1]) > 0.999) up = [0, 0, 1];
+  const x = [up[1] * z[2] - up[2] * z[1], up[2] * z[0] - up[0] * z[2], up[0] * z[1] - up[1] * z[0]];
+  const nx = Math.hypot(...x) || 1;
+  x[0] /= nx; x[1] /= nx; x[2] /= nx;
+  const y = [z[1] * x[2] - z[2] * x[1], z[2] * x[0] - z[0] * x[2], z[0] * x[1] - z[1] * x[0]];
+  const m = [x, y, z];                                         // columns of the rotation matrix
+  const tr = m[0][0] + m[1][1] + m[2][2];
+  if (tr > 0) { const s2 = Math.sqrt(tr + 1) * 2; return [(m[1][2] - m[2][1]) / s2, (m[2][0] - m[0][2]) / s2, (m[0][1] - m[1][0]) / s2, 0.25 * s2]; }
+  if (m[0][0] > m[1][1] && m[0][0] > m[2][2]) { const s2 = Math.sqrt(1 + m[0][0] - m[1][1] - m[2][2]) * 2; return [0.25 * s2, (m[1][0] + m[0][1]) / s2, (m[2][0] + m[0][2]) / s2, (m[1][2] - m[2][1]) / s2]; }
+  if (m[1][1] > m[2][2]) { const s2 = Math.sqrt(1 + m[1][1] - m[0][0] - m[2][2]) * 2; return [(m[1][0] + m[0][1]) / s2, 0.25 * s2, (m[2][1] + m[1][2]) / s2, (m[2][0] - m[0][2]) / s2]; }
+  const s2 = Math.sqrt(1 + m[2][2] - m[0][0] - m[1][1]) * 2;
+  return [(m[2][0] + m[0][2]) / s2, (m[2][1] + m[1][2]) / s2, 0.25 * s2, (m[0][1] - m[1][0]) / s2];
 }
 const onScreen = (q) => q && q[2] > 0.02 && q[0] >= 0 && q[0] <= 1 && q[1] >= 0 && q[1] <= 1;
 
@@ -87,6 +108,17 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
     d.camStep = p ? dist3(d.cam.pos, p.cam.pos) / STEP : 0;
     d.subjects = (d.subjects?.length ? d.subjects : ids).filter((id) => d.fighters[id]?.visible);
     d.size = Math.max(0, ...d.subjects.map((id) => { const b = d.fighters[id].box; return b[3] - b[1]; }));
+    // how much of the turn is simply following the subject (a tracking arc), and how much is a whip of the background
+    const bearing = (row) => {
+      const id = row.subjects[0];
+      if (!id) return null;
+      const c = row.fighters[id].joints.chest, k = row.cam.pos;
+      const v = [c[0] - k[0], c[1] - k[1], c[2] - k[2]], n = Math.hypot(...v) || 1;
+      return [v[0] / n, v[1] / n, v[2] / n];
+    };
+    const b0 = p ? bearing(p) : null, b1 = bearing(d);
+    d.track = b0 && b1 ? deg(b0, b1) / STEP : 0;
+    d.whip = Math.max(0, d.pan - d.track);
   });
 
   // the shot list: from the film (main engine), the camera beats (motion page) or the measured cuts
@@ -162,12 +194,14 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
     // a whip: the total turn inside a short window with no cut inside it
     for (let a = 1; a < s.frames.length; a++) {
       const b = Math.min(s.frames.length - 1, a + Math.round(CRULE.whipWindow / STEP));
-      let turn = 0;
-      for (let k = a; k <= b; k++) turn += s.frames[k].pan * STEP;
-      if (turn > CRULE.whipTurn && !s.frames.slice(a, b + 1).some((d) => d.cut || shots.some((o) => o.isCut && o.f0 === d.f))) {
+      let turn = 0, whip = 0;
+      for (let k = a; k <= b; k++) { turn += s.frames[k].pan * STEP; whip += s.frames[k].whip * STEP; }
+      const held = s.frames.slice(a, b + 1).every((d) => d.subjects.some((id) => d.fighters[id].onScreen >= CRULE.onScreen));
+      if (whip > CRULE.whipTurn && !s.frames.slice(a, b + 1).some((d) => d.cut || shots.some((o) => o.isCut && o.f0 === d.f))) {
         s.checks.smooth = 0;
         add('shot-whip-without-cut', 'reject', s.id, s.frames[a].t, s.frames[b].t,
-          `${s.id}: the camera turns ${turn.toFixed(0)}° in ${(b - a + 1) * STEP} frames with no cut (f${s.frames[a].f}-f${s.frames[b].f}): the picture smears`,
+          `${s.id}: the camera turns ${turn.toFixed(0)}° in ${(b - a + 1) * STEP} frames with no cut (f${s.frames[a].f}-f${s.frames[b].f})`
+          + `, ${whip.toFixed(0)}° of it NOT following the subject${held ? '' : ' (and the subject leaves the frame)'}: the picture smears`,
           'a turn that big is a CUT, not a move: mark the beat "cut": true, or spread the turn over 0.5 s or more');
         break;
       }

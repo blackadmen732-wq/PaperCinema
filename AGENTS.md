@@ -45,6 +45,12 @@ npm run preview                                          # live preview in a bro
 
 ## 4. Rules (must follow)
 00. **Use what already exists and works first.** Before building a system, search for a proven tool, skill, library, plugin or technique (GitHub, Blender add-ons/skills, open-source AI tools) and use or adapt it; build our own only for what nothing covers (or what must stay ours, e.g. SHIMI, KUROKO). Check the licence (rule 6). Learn from the owner's reference videos and images (`research/reference-*.md`) instead of guessing taste.
+02a. **Use the cheapest worker that can do the job.** Agents cost the owner's usage, and the tiers differ a lot.
+    - **Director** (Opus, the main session): decide what is good, verify, assemble, talk to the owner.
+    - **Advisor** (Fable): hard design judgement only — how a fold should wrap, how a fight should read, an audit. Not implementation.
+    - **Workers** (`model: haiku`, or `sonnet` when it needs more care): installing, testing, wiring, docs, repetitive fixes, anything with a clear spec. Default to haiku; promote only if it fails.
+    - **Free labour** (`tools/ai.py`): writing, code drafts, and LOOKING at frames. Costs nothing.
+    Never spawn an Opus or Fable agent for work a haiku agent can do from a clear brief.
 02. **Send heavy text work to the free models** (`tools/ai.py`, rule 00): writing scenes, monologues, routine code, and LOOKING at stills/frames (free vision models) go to Cerebras / NVIDIA / Groq, not to Claude. `python3 tools/ai.py list` shows what is up; `review <png|frames dir>` has a model critique the picture; `write` / `code` / `think` for text. Claude directs, decides and verifies; the free models do the volume. Check `tools/ai.py budget` to see what was saved.
 01. **Fable reviews and plans the detail work.** For movement, camera, ideas, look, fixes and audits, send the work to a Fable agent (model `fable`, currently Fable 5.2) as studio auditor / director, then build what it finds. Every film gets a Fable review of its stills and audit report before the final render.
 0. **Work autonomously.** When a fix or an improvement is clear, build it, verify it (stills, checker, audit) and report what changed. Do not wait for permission. Ask only for: spending money (rule 1), publishing anything publicly, deleting the owner's work, or a choice that changes the owner's design rules (rule 4).

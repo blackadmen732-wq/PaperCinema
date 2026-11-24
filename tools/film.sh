@@ -24,6 +24,8 @@
 # --from A --to B   render only that stretch of frames (same thing as --frames A-B; either end may be left out)
 # --workers N       N Blender processes side by side, each on its own core (default: one per core, max 4), all
 #                   niced; four one-thread processes beat one four-thread process by about 2.5x on this machine
+# --reuse-motion    do not run the exporter: take output/<name>.motion.json as it stands (for a machine with no
+#                   browser, or while someone else is mid-change in engine/) — it says so loudly when it does
 # --fresh           re-render frames that are already in output/blender/<name>/ (by default they are KEPT and the
 #                   render resumes, so a stopped or part-finished render costs nothing to pick up again)
 # --res / --samples the picture. Local default is a preview on this four-core machine: 360x640 at 16 samples
@@ -40,7 +42,7 @@ step() { echo; echo "=== $* ==="; }
 [ -f "$FILM" ] || die "no such film file: $FILM"
 NAME=$(basename "$FILM" .json)
 
-SET= GPU=0 FRAMES= RES= SAMPLES= AUDIT=1 FROM= TO= WORKERS= FRESH=0 FULL=0
+SET= GPU=0 FRAMES= RES= SAMPLES= AUDIT=1 FROM= TO= WORKERS= FRESH=0 FULL=0 REUSE=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --set) SET=${2:?--set needs a set name}; shift 2 ;;
@@ -52,6 +54,7 @@ while [ $# -gt 0 ]; do
     --samples) SAMPLES=${2:?}; shift 2 ;;
     --workers) WORKERS=${2:?--workers needs a number}; shift 2 ;;
     --fresh) FRESH=1; shift ;;
+    --reuse-motion) REUSE=1; shift ;;
     --full) FULL=1; shift ;;
     --skip-audit) AUDIT=0; shift ;;
     *) die "unknown option: $1" ;;
@@ -84,9 +87,17 @@ FRAMES="$FA-$FB"
 step "1/9 validate"
 node engine/validate.mjs "$FILM" || die "step 1 validate: the film file has errors above. Fix every ✗ and run again."
 
-step "2/9 export motion"
-node tools/export_motion.mjs "$FILM" || die "step 2 export motion: the engine could not play this film (see the error above)."
-[ -s "output/$NAME.motion.json" ] || die "step 2 export motion: output/$NAME.motion.json was not written."
+if [ "$REUSE" = 1 ]; then
+  step "2/9 export motion — SKIPPED (--reuse-motion)"
+  [ -s "output/$NAME.motion.json" ] || die "step 2: --reuse-motion was asked for but output/$NAME.motion.json is not there. Run without it."
+  echo "WARNING: using output/$NAME.motion.json as it stands ($(date -r "output/$NAME.motion.json" -u +%H:%M:%S)) —"
+  echo "         if the film file or the engine changed since, the render will not match them."
+  touch "output/$NAME.motion.json"            # so Blender does not re-export it behind our back
+else
+  step "2/9 export motion"
+  node tools/export_motion.mjs "$FILM" || die "step 2 export motion: the engine could not play this film (see the error above). If the engine is mid-change and you only want to re-render what is already exported, add --reuse-motion."
+  [ -s "output/$NAME.motion.json" ] || die "step 2 export motion: output/$NAME.motion.json was not written."
+fi
 
 step "3/9 events (auto sound cues)"
 node engine/render.mjs --film "$FILM" --still 0 || die "step 3 events: the film's page would not load in headless Chromium (needed for the auto clash/whoosh cues)."
