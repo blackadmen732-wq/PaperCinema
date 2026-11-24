@@ -16,6 +16,7 @@
 | `STYLE-AND-FIGHT-SYSTEM.md` | deciding how it should look and feel | The Lantern Origami style, the Strike Grammar, lighting, story structure |
 | `SHIMI.md` | working on cuts, paint and stains | The slash sequence, SHIMI v2, the **KIZU** wound layer, presets, review, upgrade path |
 | `SHIMI-3D.md` | putting stains on 3D characters | UV-space simulation, cut mapping, gravity maps, Blender/three.js shading, milestones |
+| `COST.md` | keeping usage low | The four tiers and the free-worker commands |
 | `AI-ROUTER.md` | sending work to free models | Which model does which job, speeds, rules |
 | `FIX-LIST.md` | fixing stiff motion, silent clashes, framing | The review of what was wrong and the fixes, with status |
 | `VOICE.md` | giving characters spoken lines | The `"voice"` schema, voices and licences (Kokoro-82M), directing delivery, the voice chain, ducking, eyes pulsing with the voice |

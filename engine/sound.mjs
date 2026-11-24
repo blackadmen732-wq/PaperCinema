@@ -196,7 +196,9 @@ if (voiceIdx.length && duckIdx.length) {
 // measure the whole programme, apply ONE makeup gain with a true-peak limiter after it, measure again and
 // correct for what the limiter shaved. The dynamics (and the dipped hole before each hit) survive.
 const TARGET = +opt('lufs', -14), CEIL = +opt('peak', -1);
-const CEIL_LIN = (10 ** (CEIL / 20)).toFixed(4);
+// the limiter works on samples; an oversampled TRUE peak (and the AAC encode) comes out a few tenths above
+// that, so aim it 0.5 dB under the ceiling and the finished file measures at or below it.
+const CEIL_LIN = (10 ** ((CEIL - 0.5) / 20)).toFixed(4);
 const chain = (gain, meter) => `${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,` +
   `afade=t=out:st=${film.duration - 1.5}:d=1.5,volume=${gain.toFixed(2)}dB,` +
   `alimiter=level=false:limit=${CEIL_LIN}${meter ? ',ebur128=peak=true' : ''}[mix]`;

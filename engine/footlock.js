@@ -31,10 +31,11 @@ import { LEG } from './figure.js';
 
 export const FOOTLOCK = {
   rate: 120,         // planning grid (Hz)
-  tol: 0.13,         // how far the nominal foot may wander from the plant before the foot must step (m)
+  reach: 0.5,        // how far the body may travel either side of a plant before the foot must step (m):
+                     //   half a stride. The body passes over the planted foot; the hips drop to reach it.
   swing: 0.15,       // how long a step takes (s)
   lift: 0.12,        // peak foot lift in a step (m), scaled by step length
-  runSpeed: 4.0,     // above this ground speed the feet are off the ground (a lunge / leap), m/s
+  runSpeed: 5.5,     // above this ground speed the feet are off the ground (a lunge / leap), m/s
   air: 0.03,         // root height that counts as airborne (m)
   flight: 0.2,       // how high the feet come off the ground in a lunge / leap (m)
   ramp: 0.07,        // push-off / reach-down time at the two ends of a flight (s)
@@ -101,8 +102,8 @@ export function lockFeet(motion, dur, opts = {}) {
       for (let k = i; k <= Math.min(cap, N - 1); k++) {
         if (air[k]) break;
         const mx = (sx + nom[k][0]) / (n + 1), mz = (sz + nom[k][2]) / (n + 1);
-        let bad = false;                               // every frame of the contact must stay near the plant
-        for (let q = i; q <= k; q++) if (Math.hypot(nom[q][0] - mx, nom[q][2] - mz) > O.tol) { bad = true; break; }
+        let bad = false;            // the body may pass over the plant, but never further than half a stride
+        for (let q = i; q <= k; q++) if (Math.hypot(nom[q][0] - mx, nom[q][2] - mz) > O.reach) { bad = true; break; }
         if (bad) break;
         sx += nom[k][0]; sz += nom[k][2]; n++; j = k;
       }
@@ -145,8 +146,7 @@ export function lockFeet(motion, dur, opts = {}) {
       if (prev && next) {
         // one arc from the foot that pushed off to the foot that lands: eased at both ends, so the
         // foot is already high before it travels (and a "planted" foot never races across the ground)
-        const span = Math.hypot(next.pos[0] - prev.pos[0], next.pos[2] - prev.pos[2]);
-        const h = clamp(span * 0.12, O.flight, 1.0);
+        const h = clamp(0.9 * len * DT, O.flight, 0.5);   // a longer flight = a higher arc, never a balloon
         for (let k = i; k <= j; k++) {
           const u = (k - i + 1) / (len + 1), w = ss(u);
           out[k] = [prev.pos[0] + (next.pos[0] - prev.pos[0]) * w, nom[k][1] + h * Math.sin(Math.PI * u),

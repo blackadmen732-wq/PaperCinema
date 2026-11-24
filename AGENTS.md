@@ -45,6 +45,11 @@ npm run preview                                          # live preview in a bro
 
 ## 4. Rules (must follow)
 00. **Use what already exists and works first.** Before building a system, search for a proven tool, skill, library, plugin or technique (GitHub, Blender add-ons/skills, open-source AI tools) and use or adapt it; build our own only for what nothing covers (or what must stay ours, e.g. SHIMI, KUROKO). Check the licence (rule 6). Learn from the owner's reference videos and images (`research/reference-*.md`) instead of guessing taste.
+02b. **Free workers do the heavy lifting.** `python3 tools/worker.py "<task>"` gives the free NVIDIA models
+    real tools (read, write, patch, search, run, look at images) in a loop, so they do multi-step work with
+    NO usage cost. Use it for: installing and testing, wiring scripts, docs, repetitive fixes, investigations,
+    running checkers and reading their output. Add `--model kimi` for harder reasoning, `--dry` to preview.
+    Claude writes the brief and verifies the result; the free worker does the steps.
 02a. **Use the cheapest worker that can do the job.** Agents cost the owner's usage, and the tiers differ a lot.
     - **Director** (Opus, the main session): decide what is good, verify, assemble, talk to the owner.
     - **Advisor** (Fable): hard design judgement only — how a fold should wrap, how a fight should read, an audit. Not implementation.

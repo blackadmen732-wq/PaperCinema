@@ -30,7 +30,8 @@ export const CRULE = {
   strikeSize: 0.18,           // subject height at a strike frame (share of the frame height)
   strikePan: 20,              // degrees per frame at a strike frame (above this the money frame smears)
   nearGeometry: 0.25,         // metres from the lens to any prop during a shot
-  whipTurn: 90, whipWindow: 8,   // a turn of 90° inside 8 frames with no cut is a whip that needs a cut
+  whipTurn: 90, whipWindow: 8,   // 90° of turn inside 8 frames that is NOT following the subject = a whip
+  smearTurn: 120,             // ...and any turn this big inside the window smears the background, tracking or not
   jerk: 14,                   // change of pan rate between frames (deg/frame²)
   turn30: 30,                 // the 30-degree rule
   cutAfterStrike: 3,          // frames: a cut this soon after a contact throws the blow away
@@ -197,13 +198,19 @@ export function evaluateCamera({ F, META, EVENTS, film, STEP = 1, library = null
       let turn = 0, whip = 0;
       for (let k = a; k <= b; k++) { turn += s.frames[k].pan * STEP; whip += s.frames[k].whip * STEP; }
       const held = s.frames.slice(a, b + 1).every((d) => d.subjects.some((id) => d.fighters[id].onScreen >= CRULE.onScreen));
-      if (whip > CRULE.whipTurn && !s.frames.slice(a, b + 1).some((d) => d.cut || shots.some((o) => o.isCut && o.f0 === d.f))) {
-        s.checks.smooth = 0;
-        add('shot-whip-without-cut', 'reject', s.id, s.frames[a].t, s.frames[b].t,
-          `${s.id}: the camera turns ${turn.toFixed(0)}° in ${(b - a + 1) * STEP} frames with no cut (f${s.frames[a].f}-f${s.frames[b].f})`
-          + `, ${whip.toFixed(0)}° of it NOT following the subject${held ? '' : ' (and the subject leaves the frame)'}: the picture smears`,
-          'a turn that big is a CUT, not a move: mark the beat "cut": true, or spread the turn over 0.5 s or more');
-        break;
+      const cutInside = s.frames.slice(a, b + 1).some((d) => d.cut || shots.some((o) => o.isCut && o.f0 === d.f));
+      const hard = turn > CRULE.smearTurn || whip > CRULE.whipTurn;
+      if ((hard || turn > CRULE.whipTurn) && !cutInside) {
+        const why = `${s.id}: the camera turns ${turn.toFixed(0)}° in ${(b - a + 1) * STEP} frames with no cut (f${s.frames[a].f}-f${s.frames[b].f})`
+          + ` — ${whip.toFixed(0)}° of it is not following the subject${held ? '' : ', and the subject leaves the frame'}`;
+        if (hard) {
+          s.checks.smooth = 0;
+          add('shot-whip-without-cut', 'reject', s.id, s.frames[a].t, s.frames[b].t, `${why}: the picture smears`,
+            'a turn that big is a CUT, not a move: mark the beat "cut": true, or spread the turn over 0.5 s or more (a whip pan is 3-6 frames and ends on a cut)');
+          break;
+        }
+        add('shot-fast-pan', 'note', s.id, s.frames[a].t, s.frames[b].t, `${why}: fast, but it follows the subject`,
+          'fine as a tracking arc; check the still for background smear');
       }
     }
     const jerks = s.frames.slice(2).filter((d, k) => Math.abs(d.pan - s.frames[k + 1].pan) > CRULE.jerk);

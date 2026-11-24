@@ -81,6 +81,36 @@
    "status_note": "✅"
   },
   {
+   "id": "FILMONE",
+   "name": "One-command film (Blender + sound)",
+   "does": "`tools/film.sh film/<name>.json` → `output/<name>-final.mp4`: validate → export motion → events (auto clash/whoosh cues) → studio audit (must pass) → Blender render (four niced one-thread processes over the four cores, resumable: frames already in `output/blender/<name>/` are kept, `--from/--to` for one stretch, `--fresh` to redo them, 360x640/16 preview by default and `--full` for 720x1280/48) → encode → voice → sound and mix → a report of duration, size, LUFS and true peak. `--set <name>` stages the film in a Blender set; `--gpu` refuses with the reason (see `KAGGLEFARM`); `--reuse-motion` takes the exported motion as it stands",
+   "files": [
+    "tools/film.sh",
+    "tools/render_plan.py"
+   ],
+   "guide": [
+    "docs/KAGGLE-RENDER.md",
+    "docs/AUDIT.md"
+   ],
+   "command": "bash tools/film.sh film/dash-test.json",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "KAGGLEFARM",
+   "name": "Free Kaggle Blender farm",
+   "does": "The render job as DATA (`job.json` in a private dataset: `blender/`, `assets/models`, `library/`, the film and its motion), `run.sh pack/push/wait/get`, a 5 s heartbeat (frames, GPU, RAM, Blender's last line) so a killed kernel still says where it stopped. Broken: the kernel is cancelled 11–18 s into every render with no message; quota, GPU attachment, idle GPU, device, memory, disk, CPU quota, dataset mount, output folder, picture settings and every effect switch are measured and ruled out",
+   "files": [
+    "gpu/kaggle_blender/"
+   ],
+   "guide": [
+    "docs/KAGGLE-RENDER.md"
+   ],
+   "command": "bash gpu/kaggle_blender/run.sh push --cpu",
+   "status": "❌ GPU (CPU session works)",
+   "status_note": "❌ GPU (CPU session works)"
+  },
+  {
    "id": "NEWFILM",
    "name": "New-film scaffolder",
    "does": "Signature opening + fight body + end card, vertical by default",
@@ -283,13 +313,14 @@
   {
    "id": "SOUND",
    "name": "Sound pipeline",
-   "does": "Find (Openverse) → check (ffmpeg) → place at cue times → mix; credits",
+   "does": "Find (Openverse) → check (ffmpeg) → place at cue times → mix; Earshot bank cues aimed by their apex, voice lines with ducking, an 11 dB pre-hit dip in the beds and whooshes from 0.42 s to 0.06 s before every hit (so a clash stands ≥ 9 dB above what came before it), and two measured loudness passes to -14 LUFS under a -1 dBFS true peak; credits",
    "files": [
     "engine/sound.mjs",
     "assets/sfx/"
    ],
    "guide": [
-    "docs/playbook.html"
+    "docs/playbook.html",
+    "docs/STUDIO-STANDARD.md"
    ],
    "command": "npm run sound",
    "status": "built",
@@ -431,6 +462,20 @@
     "docs/AI-ROUTER.md"
    ],
    "command": "python3 tools/ai.py list",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "WORKER",
+   "name": "Free agent worker",
+   "does": "Runs the free NVIDIA models in a tool loop (read/write/patch/search/run/look) so they do multi-step work at no usage cost; path-sandboxed, command allow-list, protected files",
+   "files": [
+    "tools/worker.py"
+   ],
+   "guide": [
+    "docs/COST.md"
+   ],
+   "command": "python3 tools/worker.py \"<task>\"",
    "status": "built",
    "status_note": "✅"
   },

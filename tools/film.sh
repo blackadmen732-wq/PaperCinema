@@ -18,7 +18,9 @@
 #
 # --set <name>   stage the film inside a Blender set: output/sets/<name>.blend, built from library/sets/<name>.json
 #                when it is not there yet (castle-courtyard, dojo-interior, bamboo-forest, ganryujima-beach, …)
-# --gpu          pack the job, send it to Kaggle (gpu/kaggle_blender/run.sh), wait, fetch the frames
+# --gpu          pack the job, send it to Kaggle (gpu/kaggle_blender/run.sh), wait, fetch the frames.
+#                BROKEN as of 24 Nov and it says so and stops: Kaggle cancels the kernel 11-18 s into every
+#                render with no message. docs/KAGGLE-RENDER.md has the measurements. FILM_GPU_ANYWAY=1 tries it.
 #
 # THE LOCAL RENDER (no --gpu) is the one that always works, so it is built to be lived with:
 # --from A --to B   render only that stretch of frames (same thing as --frames A-B; either end may be left out)
@@ -67,6 +69,25 @@ case "$RES" in *x*) ;; *) die "--res wants WxH, for example 540x960 (got '$RES')
 [ -z "$WORKERS" ] || case "$WORKERS" in *[!0-9]*|0) die "--workers wants a number of processes (got '$WORKERS')" ;; esac
 for t in node ffmpeg ffprobe python3; do command -v $t >/dev/null || die "$t is not installed (needed by the pipeline)"; done
 [ "$GPU" = 1 ] || [ -x "$B" ] || die "no Blender at $B — set BLENDER=/path/to/blender, or render on the free GPU with --gpu"
+# --gpu is OFF: the Kaggle run is killed 11-18 s into every Blender render (CANCEL_ACKNOWLEDGED, no message).
+# Everything that was blamed for it has been measured and cleared: the weekly GPU quota, the GPU being attached
+# or idle, the render device, memory (3.5 of 30 GiB, no cgroup OOM), disk, the CPU quota, the attached dataset,
+# the folder the frames and the log go to, the resolution, the sample count, and dust/slash/blur/glare. The
+# table of runs is in docs/KAGGLE-RENDER.md. Until that is understood, refuse rather than waste 10 minutes.
+if [ "$GPU" = 1 ] && [ -z "${FILM_GPU_ANYWAY:-}" ]; then
+  echo "--gpu is not usable: the Kaggle kernel is cancelled 11-18 s into every Blender render, with no" >&2
+  echo "failure message. Measured and ruled out: GPU quota, GPU attachment, an idle GPU, the render device," >&2
+  echo "memory (no OOM), disk, the CPU quota, the dataset mount, the output folder, the picture settings and" >&2
+  echo "every effect switch. The whole table of runs: docs/KAGGLE-RENDER.md" >&2
+  echo >&2
+  echo "Render here instead — it finishes, it resumes, and it uses the four cores:" >&2
+  echo "  bash tools/film.sh $FILM                      # 360x640 preview, ~7 s a frame" >&2
+  echo "  bash tools/film.sh $FILM --full               # 720x1280 / 48 samples" >&2
+  echo "  bash tools/film.sh $FILM --from 96 --to 191   # one stretch; existing frames are kept" >&2
+  echo >&2
+  echo "Or Kaggle's CPU session, which is not killed:  bash gpu/kaggle_blender/run.sh push --cpu" >&2
+  die "step 5 GPU: the free GPU farm is broken (FILM_GPU_ANYWAY=1 forces a try anyway)."
+fi
 [ "$GPU" = 0 ] || command -v kaggle >/dev/null || die "the kaggle CLI is not installed, so --gpu cannot send the job"
 DUR=$(python3 -c "import json;print(json.load(open('$FILM'))['duration'])") || die "the film file has no duration"
 FPS=$(python3 -c "import json;print(json.load(open('$FILM')).get('fps',24))")
