@@ -32,7 +32,7 @@ If `output/<name>-sound.mp4` exists (or `--sound file`), the mix is measured too
 | Check | Category | Rule (numbers in `RULE` at the top of the tool) | Severity |
 |---|---|---|---|
 | `hook-black`, `hook-no-subject`, `hook-slow` | hook | first frame not black; subject on screen within 0.5 s; something moves within 2 s | major / major / minor |
-| `subject-off-screen` | staging | a subject has ≥ 50% of its joints in frame | critical from 3 frames |
+| `subject-off-screen` | staging | a subject has ≥ 50% of its joints in frame (a close-up counts: figure larger than the frame with a key joint in it) | critical from 3 frames |
 | `subject-tiny`, `subject-small` | staging | subject height ≥ 7% (12% for longer than 1 s) of the frame | major / minor |
 | `subject-occluded`, `subject-part-hidden` | camera | head and chest not behind an object | critical from 3 frames / minor |
 | `camera-under-ground`, `camera-in-geometry` | camera | lens ≥ 0.08 m above ground, ≥ 0.12 m from any geometry | critical |

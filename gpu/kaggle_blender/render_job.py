@@ -4,7 +4,7 @@
 import subprocess, os, time, glob
 JOB = {
     'script': 'blender/character/trellis_shot.py',
-    'args': ['--model', 'ronin_base', '--frames', '1-96', '--samples', '128', '--res', '1080x1920', '--out', '/kaggle/working/frames/'],
+    'args': ['--model', 'ronin_base', '--frames', '1-96', '--samples', '48', '--res', '720x1280', '--out', '/kaggle/working/frames/'],
     'mp4': '/kaggle/working/shot.mp4',
 }
 t0 = time.time()
@@ -14,6 +14,7 @@ def sh(c, show=1500):
     print((r.stdout + r.stderr)[-show:], flush=True)
     return r.returncode
 sh('nvidia-smi -L')
+# Kaggle gives two T4s; Cycles uses both (blender/gpu_setup.py turns on every CUDA device).
 os.chdir('/kaggle/tmp') if os.path.isdir('/kaggle/tmp') else os.makedirs('/kaggle/tmp') or os.chdir('/kaggle/tmp')
 sh('curl -sL https://download.blender.org/release/Blender4.5/blender-4.5.16-linux-x64.tar.xz | tar -xJ && ls')
 sh('apt-get install -y -qq libxi6 libxxf86vm1 libxfixes3 libxrender1 libgl1 libxkbcommon0 libsm6 >/dev/null 2>&1; true')

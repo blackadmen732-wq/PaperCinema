@@ -3,6 +3,7 @@
   "about": "Inner castle courtyard at night: raked gravel, a stone path to a turret gate, battered ishigaki walls left and right, white plaster walls with tile caps, the keep rising behind under the moon, stone lanterns, a pine, ground fog. Duel line along X; the camera looks toward +Y (the keep).",
   "seed": 7,
   "clear": 1.8,
+  "polyhaven": true,
   "lighting": {
     "preset": "night",
     "sun": {

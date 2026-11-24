@@ -3,6 +3,7 @@
   "about": "Port of the v1 Ganryujima world (blender/world/build_world.py) as a set: dawn over the strait, paper sea, the duel beach, pines, mountain rings, the paper sun. Same marks and camera anchors as the v1 world; sand, rocks and bark use the realistic set materials.",
   "seed": 1,
   "clear": 1.6,
+  "polyhaven": true,
   "lighting": {
     "preset": "dawn",
     "sun": {

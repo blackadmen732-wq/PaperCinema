@@ -142,14 +142,14 @@ def ph_config(S, preset):
     return cfg
 
 
-def hdri_stats(img, clamp):
+def hdri_stats(img, clamp, step=2):
     """Mean radiance (solid-angle weighted, after clamping at clamp x mean) and the brightest spot's u of an
     equirectangular image."""
     import numpy as np
     w, h = img.size
     px = np.empty(w * h * 4, dtype=np.float32)
     img.pixels.foreach_get(px)
-    px = px.reshape(h, w, 4)[::2, ::2, :3]
+    px = px.reshape(h, w, 4)[::step, ::step, :3]
     lum = px[..., 0] * 0.2126 + px[..., 1] * 0.7152 + px[..., 2] * 0.0722
     rows = lum.shape[0]
     lat = (np.arange(rows) + 0.5) / rows * math.pi - math.pi / 2         # row 0 = bottom
@@ -161,6 +161,44 @@ def hdri_stats(img, clamp):
         cap = clamp * mean_c
     iy, ix = np.unravel_index(int(np.argmax(lum)), lum.shape)
     return mean_c, cap, (ix + 0.5) / lum.shape[1], (iy + 0.5) / rows
+
+
+def sky_probe(world, clamp):
+    """Mean radiance of the procedural world (clamped like the HDRI) from a tiny equirectangular render, so the HDRI
+    can be normalised to the same overall ambient: the photo changes where light comes from and its colour, not the
+    exposure the set was tuned for."""
+    sc = bpy.data.scenes.new('_sky_probe')
+    sc.world = world
+    sc.render.engine = 'CYCLES'
+    sc.cycles.device = 'CPU'
+    sc.cycles.samples = 8
+    sc.cycles.use_denoising = False
+    sc.render.threads_mode = 'FIXED'
+    sc.render.threads = 2
+    sc.render.resolution_x, sc.render.resolution_y, sc.render.resolution_percentage = 128, 64, 100
+    sc.render.image_settings.file_format = 'OPEN_EXR'
+    sc.render.use_compositing = False
+    cd = bpy.data.cameras.new('_sky_probe')
+    cd.type = 'PANO'
+    try:
+        cd.panorama_type = 'EQUIRECTANGULAR'
+    except Exception:
+        cd.cycles.panorama_type = 'EQUIRECTANGULAR'
+    cam = bpy.data.objects.new('_sky_probe', cd)
+    sc.collection.objects.link(cam)
+    cam.rotation_euler = (math.pi / 2, 0, 0)
+    sc.camera = cam
+    path = os.path.join(REPO, 'output', 'sets', '_sky_probe.exr')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    sc.render.filepath = path
+    bpy.ops.render.render(write_still=True, scene=sc.name)
+    img = bpy.data.images.load(path)
+    mean, cap, _, _ = hdri_stats(img, clamp, step=1)
+    bpy.data.images.remove(img)
+    bpy.data.objects.remove(cam)
+    bpy.data.cameras.remove(cd)
+    bpy.data.scenes.remove(sc)
+    return mean
 
 
 def add_hdri(world, cfg, sun):
@@ -200,7 +238,9 @@ def add_hdri(world, cfg, sun):
     cl.operation = 'MINIMUM'
     cl.inputs[1].default_value = (cap, cap, cap)
     hs = T.node('ShaderNodeHueSaturation', Color=cl.outputs['Vector'], Saturation=base.get('sat', 1.0))
-    strength = base.get('ambient', 0.1) / max(mean, 1e-6)
+    sky = sky_probe(world, base.get('clamp', 8))
+    target = base['ambient'] if 'ambient' in base else base.get('gain', 1.0) * sky
+    strength = target / max(mean, 1e-6)
     bg2 = T.node('ShaderNodeBackground', Color=hs.outputs['Color'], Strength=strength)
     light = bg2.outputs['Background']
     mixw = base.get('mix', 1.0)
@@ -208,12 +248,15 @@ def add_hdri(world, cfg, sun):
         mx0 = T.node('ShaderNodeMixShader', Fac=mixw)
         T.link(bg.outputs['Background'], mx0.inputs[1]); T.link(light, mx0.inputs[2])
         light = mx0.outputs['Shader']
+    # camera rays (and part of the glossy rays: water and lacquer must still mirror the sky the camera sees) keep
+    # the procedural world; `reflect` = how much of the HDRI the glossy rays see
     lp = T.node('ShaderNodeLightPath')
-    mx = T.node('ShaderNodeMixShader', Fac=lp.outputs['Is Camera Ray'])
+    keep = T.math('MAXIMUM', lp.outputs['Is Camera Ray'], T.math('MULTIPLY', lp.outputs['Is Glossy Ray'], 1.0 - base.get('reflect', 0.4)))
+    mx = T.node('ShaderNodeMixShader', Fac=keep)
     T.link(light, mx.inputs[1])
     T.link(bg.outputs['Background'], mx.inputs[2])
     T.link(mx.outputs['Shader'], wo.inputs['Surface'])
-    print(f"  polyhaven HDRI {base['id']}: mean {mean:.4f} -> ambient {base.get('ambient', 0.1)} (x{strength:.2f}), "
+    print(f"  polyhaven HDRI {base['id']}: mean {mean:.4f}, procedural sky {sky:.4f} -> target {target:.4f} (x{strength:.2f}), "
           f"sun clamped at {cap:.3f}, hot spot u={u:.2f} v={v:.2f} turned {math.degrees(rot):.0f} deg to az {sun.get('az', 0)}")
     return base['id']
 

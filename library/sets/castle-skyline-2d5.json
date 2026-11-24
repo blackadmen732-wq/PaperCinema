@@ -3,6 +3,7 @@
   "about": "Mostly 2.5D set (the reference-video method): a small real 3D foreground (gravel, stone path, two lit lanterns, rocks, a pine) in front of paper-cut silhouette cards spaced in depth (trees, the castle skyline with lit windows, hills, mountains, clouds) that fade into a dusk haze. Real parallax for a moving camera at a fraction of the render cost. Compare with castle-courtyard (full 3D).",
   "seed": 5,
   "clear": 1.6,
+  "polyhaven": true,
   "lighting": {
     "preset": "dusk",
     "sun": {

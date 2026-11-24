@@ -3,6 +3,7 @@
   "about": "Timber dojo hall by day: polished plank floor, posts and heavy beams, a board ceiling, plaster walls with a high barred window band on the left that throws sun shafts through dusty air, backlit shoji on the right, an alcove with a hanging scroll at the back. Camera inside, looking toward +Y.",
   "seed": 3,
   "clear": 1.6,
+  "polyhaven": true,
   "lighting": {
     "preset": "day",
     "sun": {

@@ -3,6 +3,9 @@
   "about": "Moso bamboo forest in morning mist: a packed-earth path between tall leaning culms, leaf litter and moss, low sun from behind the grove cutting shafts through the canopy and the mist, a mossy stone lantern and boulders by the path. Camera looks along the path (+Y), into the light.",
   "seed": 11,
   "clear": 1.4,
+  "polyhaven": {
+    "hdri": "forest"
+  },
   "lighting": {
     "preset": "day",
     "sun": {

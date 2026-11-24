@@ -421,6 +421,20 @@
    "status_note": "✅"
   },
   {
+   "id": "AIROUTER",
+   "name": "Free model router",
+   "does": "Sends writing, code, reasoning and image review to free models (Cerebras, NVIDIA Nemotron 550B / vision, Groq, Kimi), with fallback order and a usage log, so Claude usage goes to direction only",
+   "files": [
+    "tools/ai.py"
+   ],
+   "guide": [
+    "docs/AI-ROUTER.md"
+   ],
+   "command": "python3 tools/ai.py list",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "BLENDERSKILLS",
    "name": "Blender Skills pack (existing tool)",
    "does": "94 Blender skills for Claude Code (MIT, github.com/arjun988/blender-skills): camera-cinematography, animation, rigging, lighting, lookdev, materials, rendering, compositing, vfx-fx, cloth-sim, historical-worlds, qa-review…",

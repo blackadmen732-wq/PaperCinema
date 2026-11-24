@@ -88,7 +88,7 @@ export function installAudit(o) {
       if (f.sword && shown(f.sword)) {
         const yo = f.yOff ?? -0.012;
         const g = f.sword.localToWorld(new THREE.Vector3(0, yo, 0)), tip = f.sword.localToWorld(new THREE.Vector3(f.bladeLen, yo, 0));
-        F.blade = { guard: r3(g), tip: r3(tip), tipScreen: project(tip) };
+        F.blade = { guard: r3(g), tip: r3(tip), tipScreen: project(tip), guardScreen: project(g) };
         // the blade passing through the lens: distance from the camera to the blade segment
         const ab = tip.clone().sub(g), k = Math.max(0, Math.min(1, camPos.clone().sub(g).dot(ab) / ab.lengthSq()));
         F.bladeToCam = +g.clone().addScaledVector(ab, k).distanceTo(camPos).toFixed(3);

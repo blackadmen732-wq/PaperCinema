@@ -85,10 +85,19 @@ Director's scores (taste + numbers). "Tool" = `tools/audit.mjs` on the same film
 | Silent or mushy hits | body-time cues through the ramps (`events.warp`), ground cues, new synthesised sounds | audit `hit-*`, `sound-mush`, `sound-out-of-date` |
 | No hook | `film.fade` | audit `hook-*` |
 
+Final check (`node tools/audit.mjs film/dash-test.json --frames output/frames-dt`, on the re-rendered film with its
+new mix): **PASS, 0 critical, 0 major, 6 minor** (tool score 8.5 → 9.7; the first render: 1 critical, 7 major, 12 minor).
+The same tool on the older films: `motion-test` FAILS (frames 39–42: the arm-slide camera shows an unreadable
+close-up of a sleeve; a 150° whip without a cut at 2.88 s; the clash is 12 dB *under* the whoosh), `kuroko-duel` passes
+with 9 majors (foot slides, one hand pop at 4.71 s, two clashes not above the whoosh). Those are real and are next.
+
 ## 5. Still open
 - The dash is still a body sliding with planted feet (the audit keeps it as a minor: "dust covers it"). It needs a
   real sprint cycle or a two-key leap (feet off the ground).
 - True motion blur is not built; the afterimages are flat boxes of light on the stand-in figure.
+- The mix is quiet (−21.7 LUFS; target −14): `sound.mjs` has no loudness stage yet. The first cut is 8 dB over its
+  whoosh (rule 9).
+- The ending holds one standing pose for about 2.5 s; chiburi filaments draw straight lines through the figure.
 - The stand-in figure: flat faces, no fold shading. The origami samurai is the real fix.
 - One hard shadow map; a softer penumbra needs a second, blurred map or the Blender render.
 - Rack focus needs depth of field (not in the preview).

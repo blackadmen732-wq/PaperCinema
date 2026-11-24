@@ -133,8 +133,11 @@ F.forEach((d, i) => {
 const isCut = (i) => cuts.has(i);
 const free = (d) => d.free === true || d.impactFrame;       // a shot that is not about the fighters, or the one-frame ink page
 
-// V1: subject off screen
-for (const r of runs(F, (d) => !free(d) && subjectsOf(d).length > 0 && !subjectsOf(d).some((id) => d.fighters[id].onScreen >= RULE.onScreenMin))) {
+// V1: subject off screen. A close-up counts as seen: the figure is larger than the frame and at least one key joint is in it.
+const inFrame = (q) => q && q[2] > 0.02 && q[0] >= 0 && q[0] <= 1 && q[1] >= 0 && q[1] <= 1;
+// ...or an insert on the sword: the camera is within 1.5 m and the guard or the tip is in the frame
+const seen = (f) => f.onScreen >= RULE.onScreenMin || (f.box[3] - f.box[1] > 1.2 && f.onScreen >= 0.12) || (f.dist < 1.5 && f.blade && [0, 0.25, 0.5, 0.75, 1].some((k) => inFrame(f.blade.guardScreen.map((v, i) => v + (f.blade.tipScreen[i] - v) * k))));
+for (const r of runs(F, (d) => !free(d) && subjectsOf(d).length > 0 && !subjectsOf(d).some((id) => seen(d.fighters[id])))) {
   const n = r.frames.length * STEP;
   add('subject-off-screen', 'staging', n >= 3 ? 'critical' : 'major', r.frames[0].t, r.frames[r.frames.length - 1].t,
     `no subject is in the frame for ${n} frame(s) (best: ${Math.max(...r.frames.map((d) => Math.max(...subjectsOf(d).map((id) => d.fighters[id].onScreen)))) * 100 | 0}% of the joints)`,
@@ -280,7 +283,7 @@ if (META.ramps?.length) {
 // H: the hook
 {
   const first = F.filter((d) => d.t <= 0.5);
-  if (!first.some((d) => free(d) || subjectsOf(d).some((id) => d.fighters[id].onScreen >= 0.5))) add('hook-no-subject', 'hook', 'major', 0, 0.5, 'no subject on screen in the first half second', 'a Short is judged in 1 second: open on the character or on the action');
+  if (!first.some((d) => free(d) || subjectsOf(d).some((id) => seen(d.fighters[id])))) add('hook-no-subject', 'hook', 'major', 0, 0.5, 'no subject on screen in the first half second', 'a Short is judged in 1 second: open on the character or on the action');
   const p0 = PIX.find((p) => p.i === 0);
   if (p0 && p0.mean < RULE.lumaBlack + 4) add('hook-black', 'hook', 'major', 0, 0, `the film opens on black (first frame luma ${p0.mean})`, 'no fade from black on a Short: the first frame is the thumbnail of the scroll (film.fade.in ≤ 0.12)');
   const move = F.findIndex((d, i) => i > 0 && (isCut(i) || d.camStep / DT > 0.25 || vis(d).some((id) => F[i - 1].fighters[id].visible && Object.keys(d.fighters[id].joints).some((j) => dist(d.fighters[id].joints[j], F[i - 1].fighters[id].joints[j]) / DT > 1.2))));
@@ -360,8 +363,8 @@ if (soundPath && fs.existsSync(soundPath)) {
 // ---------- 4. score + report ----------
 // the same fault found several times counts with a falling weight (1, 0.5, 0.33…), so one broken beat does not zero a category
 const scores = Object.fromEntries(CATS.map((c) => [c, 10]));
-const seen = {};
-for (const f of [...findings].sort((a, b) => a.t0 - b.t0)) { const k = (seen[f.check] = (seen[f.check] ?? 0) + 1); scores[f.cat] = Math.max(0, scores[f.cat] - WEIGHT[f.sev] / k); }
+const nSeen = {};
+for (const f of [...findings].sort((a, b) => a.t0 - b.t0)) { const k = (nSeen[f.check] = (nSeen[f.check] ?? 0) + 1); scores[f.cat] = Math.max(0, scores[f.cat] - WEIGHT[f.sev] / k); }
 for (const c of CATS) scores[c] = +scores[c].toFixed(1);
 const total = +(CATS.reduce((s, c) => s + scores[c], 0) / CATS.length).toFixed(1);
 const count = (s) => findings.filter((f) => f.sev === s).length;
