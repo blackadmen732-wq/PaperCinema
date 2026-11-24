@@ -514,20 +514,22 @@ def kimono_sheet(sg, over, shoulder=0.268, step=0.024):
         C=(sg * (sh - 0.066), -0.120, 1.250),
         D=(sg * 0.153, -0.098 if over else -0.088, SHEET_TUCK),
         M=(sg * 0.001, core_front(1.28) - off, 1.28),
-        E=(-sg * 0.125, core_front(SHEET_TUCK) - (off if over else 0.005), SHEET_TUCK),
+        E=(-sg * 0.125, core_front(SHEET_TUCK) - off if over else -0.066, SHEET_TUCK),
         Bs2=(sg * (sh - 0.050), 0.122, 1.250),
         Bc2=(-sg * 0.016 if over else 0.0, 0.138 if over else 0.128, 1.250),
-        Bc=(-sg * 0.016 if over else 0.0, 0.114 if over else 0.104, 1.440))
+        Bc=(-sg * 0.016 if over else 0.0, 0.114 if over else 0.104, 1.440),
+        LF=(sg * (sh + 0.006), -0.094, 1.340), LR=(sg * (sh + 0.006), 0.005, 1.362),
+        LB=(sg * (sh + 0.006), 0.096, 1.340))
     return K
 
 
 # --------------------------------------------------------------------------- sleeve cone frame
 # Six ridge lines fan from the shoulder to a wide, slanted mouth. Offsets are from the shoulder socket, +x
 # outboard. Order: inner-front, front, outer-front, outer-back, back (the low folded corner), inner-back.
-SLV_TOP = [(-0.065, -0.064, 0.000), (-0.005, -0.078, -0.014), (0.028, -0.064, -0.030),
-           (0.028, 0.072, -0.030), (-0.005, 0.090, -0.014), (-0.065, 0.072, 0.000)]
-SLV_MOUTH = [(-0.075, -0.085, -0.400), (0.030, -0.150, -0.440), (0.092, -0.100, -0.520),
-             (0.100, 0.110, -0.660), (0.020, 0.175, -0.720), (-0.075, 0.100, -0.600)]
+SLV_TOP = [(-0.065, -0.064, -0.022), (-0.005, -0.078, -0.030), (0.028, -0.064, -0.042),
+           (0.028, 0.072, -0.042), (-0.005, 0.090, -0.030), (-0.065, 0.072, -0.022)]
+SLV_MOUTH = [(-0.075, -0.085, -0.360), (0.060, -0.160, -0.400), (0.190, -0.110, -0.470),
+             (0.210, 0.100, -0.560), (0.090, 0.180, -0.610), (-0.075, 0.100, -0.520)]
 
 
 def sleeve_point(i, t, S, sg, spread=1.0, off=0.0):
@@ -540,6 +542,24 @@ def sleeve_point(i, t, S, sg, spread=1.0, off=0.0):
         d = math.hypot(p[0] - cx, p[1] - cy) or 1.0
         p = (p[0] + (p[0] - cx) / d * off, p[1] + (p[1] - cy) / d * off, p[2])
     return (S.x + sg * p[0], S.y + p[1], S.z + p[2])
+
+
+def sleeve_ring(ts, S, sg, spread=1.0, off=0.0, valley=0.020):
+    """One ring of the sleeve cone. `ts` is one t or six (a slanted cut). Between the three outboard ridges
+    a VALLEY crease is folded in, deepening toward the mouth: the same mountain/valley language as the kasa."""
+    ts = [ts] * 6 if isinstance(ts, (int, float)) else list(ts)
+    R = [Vector(sleeve_point(i, ts[i], S, sg, spread, off)) for i in range(6)]
+    c = sum(R, Vector()) / 6
+    out = []
+    for i in range(6):
+        out.append(tuple(R[i]))
+        if i in (1, 2, 3) and valley:
+            m = (R[i] + R[i + 1]) / 2
+            d = Vector((c.x - m.x, c.y - m.y, 0.0))
+            tm = (ts[i] + ts[i + 1]) / 2
+            m = m + d.normalized() * valley * tm * spread + Vector((0, 0, 0.012 * tm))
+            out.append(tuple(m))
+    return out
 
 
 # --------------------------------------------------------------------------- hakama leg cone frame
@@ -602,14 +622,15 @@ def kimono_layered(ctx, P, rnd):
             [ctx.mat('washi_bleached'), ctx.mat('seam_shadow')], thickness=0.006)
     for tag, sg, over in (('under', -1, False), ('over', 1, True)):
         K = kimono_sheet(sg, over, P['shoulder'], P['step'])
-        names = ['Rn', 'Rs', 'Fn', 'Fs', 'Bn', 'Bs', 'C', 'D', 'M', 'E', 'Bs2', 'Bc2', 'Bc']
+        names = ['Rn', 'Rs', 'Fn', 'Fs', 'Bn', 'Bs', 'C', 'D', 'M', 'E', 'Bs2', 'Bc2', 'Bc', 'LF', 'LR', 'LB']
         ix = {n: i for i, n in enumerate(names)}
         F = [('Rn', 'Rs', 'Fs', 'Fn'),            # shoulder top, front half: the big flat shoulder plane
              ('Rn', 'Bn', 'Bs', 'Rs'),            # shoulder top, back half
              ('Fn', 'Fs', 'M'),                   # chest plane running to the diagonal
              ('Fs', 'C', 'M'),                    # the fold from the shoulder tip to the sternum
              ('C', 'D', 'E', 'M'),                # the wrap down to the waist, tucked under the obi
-             ('Bn', 'Bc2', 'Bs2', 'Bs'), ('Bn', 'Bc', 'Bc2')]      # back yoke with a free lower edge
+             ('Bn', 'Bc2', 'Bs2', 'Bs'), ('Bn', 'Bc', 'Bc2'),      # back yoke with a free lower edge
+             ('Fs', 'Rs', 'LR', 'LF'), ('Rs', 'Bs', 'LB', 'LR')]   # the lip folded down over the sleeve head
         bm = shell([K[n] for n in names], [[ix[n] for n in f] for f in F])
         if over:                                   # the dark slot behind the overlap, flush on the under sheet
             U = kimono_sheet(-1, False, P['shoulder'], P['step'])
@@ -675,7 +696,8 @@ def eri_crossed(ctx, P, rnd):
             c, s = math.cos(a), math.sin(a)
             zb = 1.446 + 0.018 * abs(c)
             lo.append((r * c, 0.012 + ry * s, zb - 0.012))
-            hi.append(((r + lean) * c, 0.012 + (ry + lean * 1.3) * s, zb + h * (0.72 + 0.28 * max(s, 0))))
+            rise = 0.22 + 0.78 * min(max((s + 0.85) / 1.1, 0.0), 1.0)      # low at the lapels, full at the nape
+            hi.append(((r + lean) * c, 0.012 + (ry + lean * 1.3) * s, zb + h * rise * (1.0 + 0.3 * max(s, 0))))
         bm = bmesh.new()
         skin_rings(bm, [lo, hi], close=False)
         ctx.add(f'eri_{tag}', tidy(bm), [ctx.mat(key), ctx.mat('washi_shade')], thickness=0.008)
@@ -720,11 +742,14 @@ def obi_knot(ctx, P, rnd):
          (xk - 0.040, yk - 0.004, zk - k * 1.75), (xk - 0.082, yk - 0.004, zk - k * 1.55)],
         [(0, 1, 2, 3), (4, 5, 6, 7)])),
         [ctx.mat('washi_natural'), ctx.mat('seam_shadow')], thickness=0.008)
-    ctx.add('obi_knot', tidy(shell(
-        [(xk, yk - 0.018, zk + k * 0.62), (xk + k * 0.60, yk - 0.018, zk), (xk, yk - 0.018, zk - k * 0.62),
-         (xk - k * 0.60, yk - 0.018, zk), (xk, yk - 0.034, zk)],
-        [(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)])),
-        [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.012)
+    # the knot itself: the strip passed once round the sash — a keeper loop standing proud, slightly askew
+    yo = -OBI_HD - 0.006
+    lp = []
+    for dx, lean in ((-k * 0.36, -0.010), (k * 0.36, 0.010)):
+        lp += [(xk + dx + lean, yo, z0 + h + 0.012), (xk + dx + lean, yo - 0.030, z0 + h + 0.004),
+               (xk + dx - lean, yo - 0.030, z0 - 0.004), (xk + dx - lean, yo, z0 - 0.012)]
+    ctx.add('obi_knot', tidy(shell(lp, [(0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6)])),
+            [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.010)
     z0, z1 = OBI_Z[0] + 0.050, OBI_Z[0] + P['height'] + 0.030
     yk = OBI_HD + 0.016
     ctx.add('koshiita', tidy(shell([(-0.090, yk + 0.006, z0), (0.090, yk + 0.006, z0),
@@ -753,9 +778,8 @@ def sleeve_upper_folded(ctx, P, rnd):
     """Upper sleeve: the top tier of the sleeve cone — six big planes fanning out from under the shoulder sheet, cut off on a diagonal so the hanging bag steps out from beneath it."""
     S, sg = ctx.socket, ctx.side
     cut = [0.40, 0.44, 0.54, 0.60, 0.56, 0.46]            # the diagonal lower edge: high in front, low behind
-    top = [sleeve_point(i, 0.0, S, sg, P['spread'], 0.003) for i in range(6)]
-    bot = [sleeve_point(i, cut[i] * (0.6 + 0.4 * P['spread']), S, sg, P['spread'], P['step'])
-           for i in range(6)]
+    top = sleeve_ring(0.0, S, sg, P['spread'], 0.003)
+    bot = sleeve_ring([c * (0.6 + 0.4 * P['spread']) for c in cut], S, sg, P['spread'], P['step'])
     bm = bmesh.new()
     skin_rings(bm, [top, bot], cap_first=True)
     return ctx.add(f'sleeve_upper_{"L" if sg > 0 else "R"}', tidy(bm),
@@ -778,20 +802,20 @@ def tamoto_wide(ctx, P, rnd):
     S0, sg = ctx.socket, ctx.side
     S = Vector((S0.x, S0.y, REST['lS'][2]))                # the cone is measured from the shoulder
     sp, reach = P['spread'], P['reach']
-    top = [sleeve_point(i, 0.30 * (0.6 + 0.4 * sp), S, sg, sp, -0.014) for i in range(6)]
-    mouth = [sleeve_point(i, reach, S, sg, sp) for i in range(6)]
+    top = sleeve_ring(0.30 * (0.6 + 0.4 * sp), S, sg, sp, -0.014)
+    mouth = sleeve_ring(reach, S, sg, sp)
     bm = bmesh.new()
     skin_rings(bm, [top, mouth])
     # the cuff: the mouth edge turned back on itself, a full sheet proud, so the opening has a lip
-    c0 = [sleeve_point(i, reach - P['cuff'], S, sg, sp, 0.011) for i in range(6)]
-    c1 = [sleeve_point(i, reach + 0.004, S, sg, sp, 0.011) for i in range(6)]
+    c0 = sleeve_ring(reach - P['cuff'], S, sg, sp, 0.011)
+    c1 = sleeve_ring(reach + 0.004, S, sg, sp, 0.011)
     skin_rings(bm, [c0, c1])
     ob = ctx.add(f'tamoto_{"L" if sg > 0 else "R"}', tidy(bm),
                  [ctx.mat(P.get('material', 'washi_bleached'), glow=True), ctx.mat('washi_shade')],
                  thickness=0.009)
     g = sleeve_point(1, reach * 0.9, S, sg, sp)
     ctx.add(f'tamoto_glow_{"L" if sg > 0 else "R"}',
-            box(S.x + sg * 0.02, 0.0, g[2] + 0.03, 0.10 * sp + 0.03, 0.16 * sp + 0.04, 0.012),
+            box(S.x + sg * 0.05 * sp, 0.0, g[2] + 0.05, 0.06 * sp + 0.02, 0.09 * sp + 0.03, 0.012),
             [ctx.emit('sleeve', 2.2)], thickness=0.0, to_camera=False)
     return ob
 
@@ -811,7 +835,7 @@ def forearm_folded(ctx, P, rnd):
     S, sg = ctx.socket, ctx.side
     r = P['radius']
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(5, r * 0.90, S.z + 0.060, cx=S.x, phase=0.6),
+    skin_rings(bm, [poly_ring(5, r * 1.00, S.z + 0.100, cx=S.x, phase=0.6),
                     poly_ring(5, r, S.z - 0.14, cx=S.x, phase=0.6),
                     poly_ring(5, r * 0.88, S.z - 0.285, cx=S.x, phase=0.6)])
     return ctx.add(f'forearm_{"L" if sg > 0 else "R"}', bm,
@@ -1052,11 +1076,11 @@ def tassels(ctx, P, rnd):
     last = None
     for k in range(int(P['count'])):
         x = 0.040 + k * 0.058
-        ctx.add(f'tassel_cord_{k}', box(x, -0.150, hz + 0.02 - k * 0.02, 0.005, 0.006, 0.085),
+        ctx.add(f'tassel_cord_{k}', box(x, -OBI_HD - 0.046, hz + 0.02 - k * 0.02, 0.005, 0.006, 0.085),
                 [ctx.mat('card_indigo'), ctx.mat('seam_shadow')], thickness=0.0)
         bm = bmesh.new()
-        skin_rings(bm, [poly_ring(5, 0.020, hz - 0.030 - k * 0.02, cx=x, cy=-0.150),
-                        poly_ring(5, 0.006, hz - 0.115 - k * 0.02, cx=x, cy=-0.150)], cap_first=True)
+        skin_rings(bm, [poly_ring(5, 0.020, hz - 0.030 - k * 0.02, cx=x, cy=-OBI_HD - 0.046),
+                        poly_ring(5, 0.006, hz - 0.115 - k * 0.02, cx=x, cy=-OBI_HD - 0.046)], cap_first=True)
         last = ctx.add(f'tassel_{k}', bm, [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')],
                        thickness=0.004)
     return last

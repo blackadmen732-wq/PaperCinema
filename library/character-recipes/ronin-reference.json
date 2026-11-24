@@ -1,7 +1,7 @@
 {
   "id": "ronin-reference",
   "name": "Ronin (reference match)",
-  "note": "The locked quality target: built to match research/ref-origami-samurai-standing.jpg \u2014 pleated kasa with radial ribs and a rolled rim, angular folded mask with eye slits, big flat shoulder planes, lapels crossed left over right with a dark seam slot, wide hanging sleeves as separate bags, a wrapped obi with a knot, and TWO REAL PLEATED LEGS down to pointed tabi.",
+  "note": "The locked quality target: built to match research/ref-origami-samurai-standing.jpg — pleated kasa, angular mask, ONE big diagonal kimono sheet (left over right) with a second sheet crossing under it, a standing stepped collar clear of the neck, wide two-tier sleeve bags with open mouths, a proud obi the sheets tuck under, a diagonal robe skirt, and TWO REAL knife-pleated hakama legs with a front split and a flared lower tier.",
   "proportion": "standard",
   "seed": 3,
   "glow": [
@@ -83,19 +83,17 @@
       "sockets": [
         "hip_side.L"
       ]
-    },
-    {
-      "part": "tassels",
-      "scale": 1.0
     }
   ],
   "pose": "neutral",
   "pose_overrides": {
-    "stance": 0.34,
-    "rsz": 0.22,
-    "lsz": -0.22,
-    "rsx": -0.06,
-    "lsx": -0.06,
+    "stance": 0.3,
+    "rsz": 0.02,
+    "lsz": -0.02,
+    "rsx": -0.08,
+    "lsx": -0.08,
+    "rex": -0.28,
+    "lex": -0.28,
     "hx": 0.06
   }
 }
