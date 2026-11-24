@@ -36,6 +36,7 @@ python3 blender/sets/kit.py            # list every kit piece and its parameters
 | `--exposure` | lighting `exposure` | AgX exposure override |
 | `--frame` | 1 | Particles and rain are animated over frames 1–240 |
 | `--no-fog`, `--no-post` | off | Skip fog pieces / the compositor (bloom, vignette) |
+| `--polyhaven`, `--no-polyhaven` | the set's `polyhaven` | Force the Poly Haven layer (CC0 photo textures + HDRI ambient, §5b) on or off for this build: before/after checks |
 
 ## 2. The sets
 
@@ -95,7 +96,8 @@ Rules of thumb:
 ## 4. The kit (`blender/sets/kit.py`)
 
 `python3 blender/sets/kit.py` prints this list with every default. Geometry is real (individual stones, planks,
-tiles, culms), faceted like folded card, with a faint washi-fibre bump; textures are procedural (no images).
+tiles, culms), faceted like folded card, with a faint washi-fibre bump; textures are procedural, with an optional
+Poly Haven photo layer on top (§5b).
 
 | Piece | What | Main params |
 |---|---|---|
@@ -171,6 +173,44 @@ Helpers: `MB.box / cyl / stone / tube / grid / poly`, `tile_patch`, `hip_roof`, 
 Fighters always get the three-point rig from `lighting.fighter` (key, fill, rim area lights placed in the mark's
 frame), plus their inner lantern (`lamp_scale`). The rim is what separates a paper figure from a dark set: keep it
 the brightest of the three at night. Compositor: bloom (glare) and a soft vignette.
+
+## 5b. POLYHAVEN: real CC0 texture detail and HDRI ambient (`"polyhaven": true`)
+
+All five sets have `"polyhaven": true` (bamboo: `{"hdri": "forest"}`). It adds two things and keeps the paper look:
+
+1. **Photo detail in the set materials.** Each recipe has a `ph` role (`stone`, `stone_rough`, `plaster`, `wood`,
+   `wood_floor`, `roof_tiles`, `gravel`, `sand`, `earth`, `forest_floor`, `bamboo`, `bark`, `bark_cherry`, `tatami`;
+   set in `_M()` in `kit.py`). `ph_layer()` in `paper_materials.py` projects the Poly Haven maps triplanar in object
+   space (kit meshes have no UVs; sharp blend so facets stay crisp; offset per stone / plank by `piece_rand`) and mixes
+   them **into** the procedural result: the photo's light/dark pattern multiplies the procedural colour (`detail`),
+   its hue pulls only a little (`tint`), its displacement joins the procedural + washi-fibre bump (`bump`), its
+   roughness and AO (both normalised to their mean) vary roughness and darken crevices. True-normal facets, fibre
+   and per-piece tone stay. Paper, shoji, lacquer, foliage and glow materials get no photo layer.
+2. **HDRI ambient** (`build_set.py` `add_hdri`). Diffuse rays (and 25 % of glossy rays, `reflect`) see a Poly Haven
+   HDRI; the **camera still sees the procedural sky**. The HDRI is normalised to the mean radiance of the procedural
+   sky it replaces (a 128×64 equirect probe render, `gain` 1.0 = same), its colour pulled 70 % to the procedural
+   sky's average colour (`match`, so the art-directed mood stays), its photographed sun clamped off (`clamp` × mean:
+   the set's sun / moon lamp keeps the only hard shadow) and its brightest spot turned to the set's sun azimuth.
+   Key / fill / rim and practical lights are untouched.
+
+```json
+"polyhaven": true                                         // textures + the preset's HDRI (night/dusk/dawn/day/overcast)
+"polyhaven": {"hdri": "forest", "detail": 0.8}            // other HDRI role; detail scales every role's detail/tint/bump
+"polyhaven": {"textures": false, "hdri": {"role": "night", "gain": 1.3, "match": 1.0}}
+"materials": {"gravel": {"ph": null}, "stone": {"ph": {"role": "stone", "tile": 3.0}}}   // per material
+```
+
+Assets: `python3 tools/polyhaven.py sync` downloads every id in `library/polyhaven.json` (role → id + mix settings)
+to `assets/polyhaven/<id>/` (≈95 MB, not committed; textures 1k, stone/plaster/gravel 2k, HDRIs 2k);
+`assets/polyhaven/CREDITS.md` (committed) lists id, name, authors, CC0. `search <words> [--type hdris]` and
+`get <id> [--res 2k]` find and add more. Without the cache the build prints a warning and stays procedural.
+
+What it changed (540×960, 24 spp, before/after sheets `output/sets/ph-<set>.png`): gravel reads as real river
+pebbles with moonlit glints (castle, skyline), the bamboo path and forest floor get stones, twigs and leaf litter
+(the biggest gain), the beach sand gets grain, the dojo ceiling and plaster get subtle wood grain and stains. Cost:
+about +15–25 % render time (image lookups) and +1–2 s build. Weak spots: the dressed path stones of the skyline read a
+little darker than before; roof tiles change little (the relief is modelled); a too-high `detail` on plaster or wood
+looks like dirt, keep plaster ≤ 0.4.
 
 ## 6. Render settings and measured times
 

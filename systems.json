@@ -613,6 +613,24 @@
    "status_note": "🧪 v1"
   },
   {
+   "id": "POLYHAVEN",
+   "name": "Poly Haven layer (CC0 photo textures + HDRI ambient)",
+   "does": "Search / download / cache CC0 Poly Haven textures (diffuse, normal GL, roughness, displacement, AO) and HDRIs, a role → asset manifest, a triplanar photo-detail layer mixed into the set materials (detail, tint, bump, roughness, AO; facets and washi fibre kept) and an HDRI lighting world (normalised and colour-matched to the procedural sky, sun clamped, camera still sees the procedural sky). On per set with `\"polyhaven\": true`",
+   "files": [
+    "tools/polyhaven.py",
+    "library/polyhaven.json",
+    "assets/polyhaven/CREDITS.md",
+    "blender/world/paper_materials.py",
+    "blender/sets/build_set.py"
+   ],
+   "guide": [
+    "docs/SETS.md"
+   ],
+   "command": "python3 tools/polyhaven.py sync",
+   "status": "test",
+   "status_note": "🧪 v1"
+  },
+  {
    "id": "BLENDERFILM",
    "name": "Blender film render (TRELLIS hero)",
    "does": "The owner's reference character fights in Blender from film data: `tools/export_motion.mjs` writes what the preview engine really did per frame (joints, sword, camera, trees, events → `output/<film>.motion.json`); `rig_trellis.py` rigs any TRELLIS `.glb` (our joint names + a table to the standard humanoid names, bone-heat skin with scripted cleanup, relit paper, inner lantern, real-metal katana in a two-hand IK grip, sleeve follow-through) with three drivers: `library/poses.json`, film motion, BVH motion capture; `film_blender.py` renders it with dark cinematic light re-set per frame from the camera, the slash as swept light, dust, tree props, motion blur, and the film's camera or 12 named camera moves / a per-film plan",
@@ -912,6 +930,14 @@
   [
    "MOCAP",
    "FILM"
+  ],
+  [
+   "POLYHAVEN",
+   "PAPERMAT"
+  ],
+  [
+   "POLYHAVEN",
+   "SETS"
   ],
   [
    "FILM",

@@ -616,8 +616,10 @@ def ph_layer(T, ph, col, rough, height, *, pr=None, axis='Z', base_color=None):
         photo = _scale_col(T, diff, max(0.05, min(4.0, base_l / dl)))
         col2 = T.mix_rgb(tint, col2, photo)
     if 'ao' in F and aok > 0:
-        ao = _ph_triplanar(T, _ph_image(F['ao'], True), vec, grain)
-        aov = T.node('ShaderNodeSeparateColor', Color=ao).outputs[0]
+        aimg = _ph_image(F['ao'], True)
+        am = max(0.05, _ph_stats(aimg, False)[0])
+        aov = T.node('ShaderNodeSeparateColor', Color=_ph_triplanar(T, aimg, vec, grain)).outputs[0]
+        aov = T.math('MINIMUM', T.math('DIVIDE', aov, am), 1.15)        # normalised: crevices darken, mean stays
         col2 = _scale_col(T, col2, T.math('MULTIPLY_ADD', T.math('SUBTRACT', aov, 1.0), aok, 1.0))
     r2 = rough
     if 'rough' in F and rdet > 0:

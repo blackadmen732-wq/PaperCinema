@@ -20,7 +20,7 @@ Options:
                          build, whatever the set's "polyhaven" says (before/after comparisons)
 
 The JSON format (see docs/SETS.md): name, seed, lighting {preset, sky, sun, exposure, look, fighter, bloom,
-vignette}, polyhaven (true | {textures, detail, hdri: role | {role, ambient, clamp, sat, rot, mix} | false}),
+vignette}, polyhaven (true | {textures, detail, hdri: role | {role, gain, clamp, sat, match, reflect, rot, mix} | false}),
 materials {key: {overrides}}, pieces [{kit, name, pos, rot, scale, seed, params}], marks {MARK_x:
 {pos, face}}, cameras {CAM_x: {pos, look | look_mark + look_z, lens, fstop, focus, note}}, preview_cams, render.
 """
@@ -160,7 +160,9 @@ def hdri_stats(img, clamp, step=2):
         mean_c = float((np.minimum(lum, cap) * wgt).sum() / (wgt.sum() * lum.shape[1]))
         cap = clamp * mean_c
     iy, ix = np.unravel_index(int(np.argmax(lum)), lum.shape)
-    return mean_c, cap, (ix + 0.5) / lum.shape[1], (iy + 0.5) / rows
+    k = np.minimum(1.0, cap / np.maximum(lum, 1e-9))[..., None]               # clamp the colour like the luminance
+    rgb = tuple(float(v) for v in ((px * k) * wgt[..., None]).sum(axis=(0, 1)) / (wgt.sum() * lum.shape[1]))
+    return mean_c, cap, (ix + 0.5) / lum.shape[1], (iy + 0.5) / rows, rgb
 
 
 def sky_probe(world, clamp):
@@ -193,12 +195,12 @@ def sky_probe(world, clamp):
     sc.render.filepath = path
     bpy.ops.render.render(write_still=True, scene=sc.name)
     img = bpy.data.images.load(path)
-    mean, cap, _, _ = hdri_stats(img, clamp, step=1)
+    mean, cap, _, _, rgb = hdri_stats(img, clamp, step=1)
     bpy.data.images.remove(img)
     bpy.data.objects.remove(cam)
     bpy.data.cameras.remove(cd)
     bpy.data.scenes.remove(sc)
-    return mean
+    return mean, rgb
 
 
 def add_hdri(world, cfg, sun):
@@ -220,7 +222,7 @@ def add_hdri(world, cfg, sun):
     if not files or 'hdri' not in files:
         return None
     img = bpy.data.images.load(files['hdri'], check_existing=True)
-    mean, cap, u, v = hdri_stats(img, base.get('clamp', 8))
+    mean, cap, u, v, hrgb = hdri_stats(img, base.get('clamp', 8))
     ang_h = (u - 0.5) * 2 * math.pi
     a = math.radians(sun.get('az', 0))
     ang_s = math.atan2(math.cos(a), -math.sin(a))
@@ -238,10 +240,20 @@ def add_hdri(world, cfg, sun):
     cl.operation = 'MINIMUM'
     cl.inputs[1].default_value = (cap, cap, cap)
     hs = T.node('ShaderNodeHueSaturation', Color=cl.outputs['Vector'], Saturation=base.get('sat', 1.0))
-    sky = sky_probe(world, base.get('clamp', 8))
+    sky, srgb = sky_probe(world, base.get('clamp', 8))
+    # colour match: pull the photo's overall colour toward the procedural sky's (the set's art-directed mood),
+    # `match` 0 = the photo's own colour, 1 = the procedural sky's average colour; the photo's directional variation stays
+    match = base.get('match', 0.7)
+    lum3 = lambda c: max(1e-9, 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2])
+    gain3 = [((srgb[i] / lum3(srgb)) / max(1e-9, hrgb[i] / lum3(hrgb))) ** match for i in range(3)]
+    gl = lum3(gain3)
+    gain3 = [g / gl for g in gain3]
+    cm = T.node('ShaderNodeVectorMath', Vector=hs.outputs['Color'])
+    cm.operation = 'MULTIPLY'
+    cm.inputs[1].default_value = gain3
     target = base['ambient'] if 'ambient' in base else base.get('gain', 1.0) * sky
     strength = target / max(mean, 1e-6)
-    bg2 = T.node('ShaderNodeBackground', Color=hs.outputs['Color'], Strength=strength)
+    bg2 = T.node('ShaderNodeBackground', Color=cm.outputs['Vector'], Strength=strength)
     light = bg2.outputs['Background']
     mixw = base.get('mix', 1.0)
     if mixw < 1.0:
@@ -249,15 +261,15 @@ def add_hdri(world, cfg, sun):
         T.link(bg.outputs['Background'], mx0.inputs[1]); T.link(light, mx0.inputs[2])
         light = mx0.outputs['Shader']
     # camera rays (and part of the glossy rays: water and lacquer must still mirror the sky the camera sees) keep
-    # the procedural world; `reflect` = how much of the HDRI the glossy rays see
+    # the procedural world; `reflect` = how much of the HDRI the glossy rays see (default 0.25)
     lp = T.node('ShaderNodeLightPath')
-    keep = T.math('MAXIMUM', lp.outputs['Is Camera Ray'], T.math('MULTIPLY', lp.outputs['Is Glossy Ray'], 1.0 - base.get('reflect', 0.4)))
+    keep = T.math('MAXIMUM', lp.outputs['Is Camera Ray'], T.math('MULTIPLY', lp.outputs['Is Glossy Ray'], 1.0 - base.get('reflect', 0.25)))
     mx = T.node('ShaderNodeMixShader', Fac=keep)
     T.link(light, mx.inputs[1])
     T.link(bg.outputs['Background'], mx.inputs[2])
     T.link(mx.outputs['Shader'], wo.inputs['Surface'])
     print(f"  polyhaven HDRI {base['id']}: mean {mean:.4f}, procedural sky {sky:.4f} -> target {target:.4f} (x{strength:.2f}), "
-          f"sun clamped at {cap:.3f}, hot spot u={u:.2f} v={v:.2f} turned {math.degrees(rot):.0f} deg to az {sun.get('az', 0)}")
+          f"colour x({gain3[0]:.2f}, {gain3[1]:.2f}, {gain3[2]:.2f}), sun clamped at {cap:.3f}, hot spot u={u:.2f} v={v:.2f} turned {math.degrees(rot):.0f} deg to az {sun.get('az', 0)}")
     return base['id']
 
 
