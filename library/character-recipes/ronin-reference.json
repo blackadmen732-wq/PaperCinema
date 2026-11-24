@@ -89,5 +89,13 @@
       "scale": 1.0
     }
   ],
-  "pose": "neutral"
+  "pose": "neutral",
+  "pose_overrides": {
+    "stance": 0.34,
+    "rsz": 0.22,
+    "lsz": -0.22,
+    "rsx": -0.06,
+    "lsx": -0.06,
+    "hx": 0.06
+  }
 }

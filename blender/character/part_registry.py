@@ -81,8 +81,8 @@ SOCKETS = {
     'waist':      _socket((0, 0.00, 0.92), 'torso', 'up', 0.18),
     'obi':        _socket((0, 0.00, 0.94), 'torso', 'up', 0.20),
     'back':       _socket((0, 0.11, 1.22), 'torso', 'back', 0.10),
-    'hip_side.L': _socket((0.19, -0.10, 0.99), 'torso', 'out', 0.06, side=1),
-    'hip_side.R': _socket((-0.19, -0.10, 0.99), 'torso', 'out', 0.06, side=-1),
+    'hip_side.L': _socket((0.185, -0.055, 0.945), 'torso', 'out', 0.06, side=1),
+    'hip_side.R': _socket((-0.185, -0.055, 0.945), 'torso', 'out', 0.06, side=-1),
     'shoulder.L': _socket((0.23, 0.00, 1.39), 'lS', 'down', 0.085, side=1),
     'shoulder.R': _socket((-0.23, 0.00, 1.39), 'rS', 'down', 0.085, side=-1),
     'elbow.L':    _socket((0.23, 0.00, 1.09), 'lT', 'down', 0.075, side=1),
@@ -144,16 +144,21 @@ def V(x, y, z):
     return Vector((x, y, z))
 
 
-def poly_ring(n, r, z, *, cx=0.0, cy=0.0, flute=0.0, sy=1.0, phase=0.0, front_pull=0.0):
-    """One ring of a folded tube. `flute` pushes every second vertex in: that is a pleat, not a curve."""
+def poly_ring(n, r, z, *, cx=0.0, cy=0.0, flute=0.0, sy=1.0, phase=0.0, front_pull=0.0, lift=0.0):
+    """One ring of a folded tube. `flute` pushes every second vertex in and `lift` pushes it up: together
+    that is a real pleat (a fold with a ridge and a valley), not a wobble in a curve."""
     out = []
     for i in range(n):
         a = 2 * math.pi * i / n + phase
-        rr = r * (1 - flute if i % 2 else 1.0)
+        odd = i % 2
+        rr = r * (1 - flute if odd else 1.0)
+        z = z + lift if odd else z - (lift if lift else 0.0)
         x, y = cx + rr * math.cos(a), cy + rr * math.sin(a) * sy
         if front_pull and math.sin(a) < 0:
             y -= front_pull * -math.sin(a)
         out.append((x, y, z))
+        if lift:
+            z = z - lift if odd else z + lift
     return out
 
 
@@ -268,7 +273,7 @@ class PartCtx:
         return m
 
     # ---- geometry
-    def add(self, name, bm, mats, *, thickness=0.006, flat=True, rim_mat=True):
+    def add(self, name, bm, mats, *, thickness=0.006, flat=True, rim_mat=True, to_camera=True):
         """Turn a bmesh into a part object: thickness, hard facets, per-facet tone, a cut paper edge."""
         me = bpy.data.meshes.new(name + self.suffix)
         bm.normal_update()
@@ -291,6 +296,10 @@ class PartCtx:
             if rim_mat and len(me.materials) > 1:
                 mod.material_offset_rim = 1       # the cut edge of the sheet gets its own tone
         ob['pc_part'] = name
+        if not to_camera:          # a lantern inside the paper: it LIGHTS, it is never seen as a white box
+            ob.visible_camera = False
+            ob.visible_shadow = False
+            ob['pc_internal'] = 1
         self.objects.append(ob)
         return ob
 
@@ -310,18 +319,18 @@ def kasa_wide(ctx, P, rnd):
     S = ctx.socket
     n, R = int(P['ribs']), P['radius']
     apex, zr = S.z + P['rise'], S.z + P['brim_lift']
-    rings = [poly_ring(n, R * 0.055, apex, flute=0.0),
-             poly_ring(n, R * 0.60, apex - (apex - zr) * 0.60, flute=0.085),
-             poly_ring(n, R, zr, flute=0.105)]
+    rings = [poly_ring(n, R * 0.05, apex, flute=0.0),
+             poly_ring(n, R * 0.58, apex - (apex - zr) * 0.58, flute=0.085, lift=0.009),
+             poly_ring(n, R, zr, flute=0.105, lift=0.016)]
     bm = bmesh.new()
     skin_rings(bm, rings, cap_first=True)
     kasa = ctx.add('kasa', bm, [ctx.mat(P.get('material', 'washi_hat')), ctx.mat('washi_shade')],
                    thickness=0.0075)
     # rolled rim: a low-poly ring of card folded back on itself, the crisp line the reference ends on
     rim = bmesh.new()
-    skin_rings(rim, [poly_ring(n, R, zr + P['rim_roll'] * 0.5, flute=0.105),
+    skin_rings(rim, [poly_ring(n, R, zr + P['rim_roll'] * 0.5, flute=0.105, lift=0.016),
                      poly_ring(n, R + P['rim_roll'], zr, flute=0.02),
-                     poly_ring(n, R, zr - P['rim_roll'] * 0.9, flute=0.105)])
+                     poly_ring(n, R, zr - P['rim_roll'] * 0.9, flute=0.105, lift=0.016)])
     ctx.add('kasa_rim', rim, [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.004)
     # the shadow under the brim, so the mask sits in a dark cave like the reference
     ring = bmesh.new()
@@ -361,7 +370,7 @@ def hachigane(ctx, P, rnd):
 
 
 @part('mask_angular', slot='face', socket='face', bone='head', size=(0.9, 1.12), material='washi_natural',
-      length=0.22, width=0.105, ridge=0.035, slit=0.012, tags=('reference',),
+      length=0.205, width=0.134, ridge=0.046, slit=0.014, tags=('reference',),
       proportions=('slim', 'standard', 'broad'))
 def mask_angular(ctx, P, rnd):
     """Angular folded face: a nose ridge down the centre, flat cheek planes, a cut chin and two eye slits."""
@@ -398,7 +407,7 @@ def mask_angular(ctx, P, rnd):
 
 
 @part('mask_long', slot='face', socket='face', bone='head', size=(0.9, 1.12), material='washi_bleached',
-      length=0.26, width=0.092, ridge=0.042, slit=0.010, proportions=('slim', 'standard'))
+      length=0.235, width=0.112, ridge=0.052, slit=0.012, proportions=('slim', 'standard'))
 def mask_long(ctx, P, rnd):
     """A longer, narrower mask with a deeper nose ridge: the gaunt ronin read."""
     return mask_angular(ctx, P, rnd)
@@ -442,7 +451,7 @@ def neck_column(ctx, P, rnd):
     """The folded neck: a short five-sided column, deliberately dark so the collar gap glows around it."""
     S = ctx.socket
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(5, P['radius'] * 1.08, S.z - 0.05), poly_ring(5, P['radius'], S.z + 0.095)])
+    skin_rings(bm, [poly_ring(5, P['radius'] * 1.12, S.z - 0.06), poly_ring(5, P['radius'], S.z + 0.055)])
     return ctx.add('neck', bm, [ctx.mat('washi_shade', glow=True), ctx.mat('seam_shadow')], thickness=0.005)
 
 
@@ -465,19 +474,27 @@ def kimono_layered(ctx, P, rnd):
     body = ctx.add('kimono_body', bm, [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')],
                    thickness=0.008)
     # the glowing core seen through the collar gap and the sleeve mouths
-    ctx.add('inner_lantern', box(0, 0.0, cz + 0.02, 0.10, 0.07, 0.30), [ctx.emit('core', 2.6)], thickness=0.0)
+    ctx.add('inner_lantern', box(0, 0.0, cz + 0.02, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
+            thickness=0.0, to_camera=False)
     # shoulder yoke: the two big flat planes that give the reference its square, angular shoulders
     sh = P['shoulder']
+    out = sh * 1.22                                   # the shoulder sheet reaches out OVER the sleeve
     for sgn in (1, -1):
-        pts = [(sgn * 0.035, -d * sh * 0.92, cz + 0.255), (sgn * sh * 1.08, -d * sh * 0.60, cz + 0.21),
-               (sgn * sh * 1.04, -d * sh * 0.70, cz - 0.02), (sgn * 0.045, -d * sh * 1.02, cz + 0.045)]
-        ctx.gap(f'yoke_gap_{sgn}', pts, push=(0, 0.010, 0), grow=0.004)
-        ctx.add(f'yoke_{sgn}', panel(pts, bulge=-0.012),
-                [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.0075)
-        back = [(sgn * 0.035, d * sh * 0.80, cz + 0.255), (sgn * sh * 1.02, d * sh * 0.52, cz + 0.20),
-                (sgn * sh * 0.98, d * sh * 0.60, cz + 0.02), (sgn * 0.040, d * sh * 0.90, cz + 0.05)]
-        ctx.add(f'yoke_back_{sgn}', panel(back, bulge=0.010, normal=(0, 1, 0)),
-                [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.0065)
+        # the cape over the shoulder: neck → shoulder tip, sloping out and down
+        cape = [(sgn * 0.048, -0.055, cz + 0.265), (sgn * out, -0.045, cz + 0.150),
+                (sgn * out * 0.98, 0.085, cz + 0.145), (sgn * 0.048, 0.095, cz + 0.250)]
+        ctx.add(f'yoke_{sgn}', panel(cape, bulge=-0.010, normal=(0, 0, 1)),
+                [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.008)
+        # the big diagonal plane from the shoulder tip down to the sternum: the reference's dominant shape
+        front = [(sgn * 0.048, -0.075, cz + 0.262), (sgn * out, -0.060, cz + 0.148),
+                 (sgn * out * 0.90, -0.105, cz - 0.040), (sgn * 0.040, -0.142, cz + 0.040)]
+        ctx.gap(f'yoke_gap_{sgn}', front, push=(0, 0.012, 0), grow=0.005)
+        ctx.add(f'yoke_front_{sgn}', panel(front, bulge=-0.014),
+                [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.0085)
+        back = [(sgn * 0.044, 0.095, cz + 0.250), (sgn * out * 0.96, 0.082, cz + 0.145),
+                (sgn * out * 0.86, 0.108, cz - 0.030), (sgn * 0.038, 0.128, cz + 0.040)]
+        ctx.add(f'yoke_back_{sgn}', panel(back, bulge=0.012, normal=(0, 1, 0)),
+                [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.0075)
     return body
 
 
@@ -490,7 +507,7 @@ def kimono_plain(ctx, P, rnd):
 
 
 @part('eri_crossed', slot='collar', socket='collar', bone='upper', size=(0.9, 1.12), material='washi_bleached',
-      width=0.082, drop=0.40, tags=('reference',), proportions=('slim', 'standard', 'broad'))
+      width=0.090, drop=0.235, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def eri_crossed(ctx, P, rnd):
     """Crossed lapels, LEFT OVER RIGHT, each a folded strip with thickness and a dark slot behind it."""
     cz = REST['upper'][2]
@@ -498,11 +515,11 @@ def eri_crossed(ctx, P, rnd):
     top, bot = cz + 0.235, cz - drop + 0.10
     made = []
     # under lapel first (wearer's right, +x in three.js terms is our left), then the over lapel on top of it
-    for tag, sgn, y, sheet in (('under', -1, 0.004, 'washi_shade'), ('over', 1, -0.012, 'washi_bleached')):
-        inner_t = (sgn * 0.030, -0.148 + y, top)
-        outer_t = (sgn * 0.128, -0.118 + y, top - 0.02)
-        inner_b = (-sgn * 0.052, -0.138 + y, bot)
-        outer_b = (-sgn * 0.052 + sgn * w * 1.5, -0.120 + y, bot + 0.035)
+    for tag, sgn, y, sheet in (('under', -1, 0.004, 'washi_shade'), ('over', 1, -0.016, 'washi_bleached')):
+        inner_t = (sgn * 0.040, -0.138 + y, top)
+        outer_t = (sgn * 0.168, -0.092 + y, top - 0.045)
+        inner_b = (-sgn * 0.030, -0.148 + y, bot)
+        outer_b = (-sgn * 0.030 + sgn * w * 1.25, -0.126 + y, bot + 0.058)
         pts = [inner_t, outer_t, outer_b, inner_b]
         if tag == 'over':
             ctx.gap('eri_gap', pts, push=(0, 0.009, 0), grow=0.006)
@@ -520,27 +537,27 @@ def eri_crossed(ctx, P, rnd):
 
 
 @part('eri_narrow', slot='collar', socket='collar', bone='upper', size=(0.9, 1.12), material='card_indigo',
-      width=0.055, drop=0.34, proportions=('standard', 'broad'), tags=('armour',))
+      width=0.055, drop=0.215, proportions=('standard', 'broad'), tags=('armour',))
 def eri_narrow(ctx, P, rnd):
     """A narrow dark collar that disappears under armour, still crossed left over right."""
     return eri_crossed(ctx, P, rnd)
 
 
 @part('obi_knot', slot='obi', socket='obi', bone='torso', size=(0.9, 1.1), material='washi_shade',
-      height=0.105, knot=0.085, cord=True, tags=('reference',), proportions=('slim', 'standard', 'broad'))
+      height=0.125, knot=0.085, cord=True, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def obi_knot(ctx, P, rnd):
     """The sash: a wrapped band of card, a folded knot on the left hip and a thin cord over it."""
     hz = REST['torso'][2]
     h = P['height']
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(7, 0.196, hz + 0.015, flute=0.015, sy=0.68, phase=0.45),
-                    poly_ring(7, 0.206, hz + 0.015 + h * 0.5, flute=0.02, sy=0.68, phase=0.45),
-                    poly_ring(7, 0.194, hz + 0.015 + h, flute=0.015, sy=0.68, phase=0.45)])
+    skin_rings(bm, [poly_ring(7, 0.188, hz + 0.015, flute=0.015, sy=0.62, phase=0.45),
+                    poly_ring(7, 0.200, hz + 0.015 + h * 0.5, flute=0.02, sy=0.62, phase=0.45),
+                    poly_ring(7, 0.186, hz + 0.015 + h, flute=0.015, sy=0.62, phase=0.45)])
     band = ctx.add('obi', bm, [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.010)
     # a second wrap, offset, with a shadow slot: the reference's obi is clearly two passes of one strip
     bm2 = bmesh.new()
-    skin_rings(bm2, [poly_ring(7, 0.203, hz + 0.028, flute=0.012, sy=0.665, phase=0.45),
-                     poly_ring(7, 0.208, hz + 0.028 + h * 0.42, flute=0.012, sy=0.665, phase=0.45)])
+    skin_rings(bm2, [poly_ring(7, 0.197, hz + 0.030, flute=0.012, sy=0.615, phase=0.45),
+                     poly_ring(7, 0.203, hz + 0.030 + h * 0.46, flute=0.012, sy=0.615, phase=0.45)])
     ctx.add('obi_wrap2', bm2, [ctx.mat('washi_natural'), ctx.mat('seam_shadow')], thickness=0.008)
     k = P['knot']
     ctx.add('obi_knot', box(0.175, -0.055, hz + h * 0.5, k, k * 0.55, k * 0.8, rot=(0, 0.25, -0.35)),
@@ -574,7 +591,7 @@ def sleeve_upper_folded(ctx, P, rnd):
     bm = bmesh.new()
     skin_rings(bm, [poly_ring(5, r * P['flare'], S.z + 0.075, cx=S.x + sg * 0.012, phase=0.3),
                     poly_ring(5, r * 1.04, S.z - 0.09, cx=S.x, phase=0.3),
-                    poly_ring(5, r * 0.94, S.z - 0.30, cx=S.x - sg * 0.006, phase=0.3)])
+                    poly_ring(5, r * 0.94, S.z - 0.335, cx=S.x - sg * 0.006, phase=0.3)])
     return ctx.add(f'sleeve_upper_{"L" if sg > 0 else "R"}', bm,
                    [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.006)
 
@@ -588,13 +605,13 @@ def kote_narrow(ctx, P, rnd):
 
 @part('tamoto_wide', slot='sleeve_hanging', socket=['elbow.L', 'elbow.R'], rigid=False,
       bones=['lE', 'lS', 'lT'], size=(0.85, 1.2), material='washi_bleached',
-      drop=0.34, width=0.115, mouth=0.10, tags=('reference',), proportions=('slim', 'standard', 'broad'))
+      drop=0.40, width=0.150, mouth=0.125, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def tamoto_wide(ctx, P, rnd):
     """The wide hanging sleeve as a SEPARATE folded bag: box-folded, open at the bottom, lit from inside."""
     S, sg = ctx.socket, ctx.side
     x, d, w, m = S.x, P['drop'], P['width'], P['mouth']
-    zt, zb = S.z + 0.10, S.z + 0.10 - d
-    xo = x + sg * 0.012                               # the bag hangs a little outboard of the arm
+    zt, zb = S.z + 0.155, S.z + 0.155 - d
+    xo = x + sg * 0.035                               # the bag hangs clear, outboard of the arm
     # eight corners + two crease points: a box fold, not a cylinder
     pts = [(xo - w * 0.42, -m, zt), (xo + w * 0.58, -m * 0.92, zt),         # 0 1  mouth top, front
            (xo + w * 0.62, m * 0.92, zt), (xo - w * 0.42, m, zt),           # 2 3  mouth top, back
@@ -608,7 +625,8 @@ def tamoto_wide(ctx, P, rnd):
     ob = ctx.add(f'tamoto_{"L" if sg > 0 else "R"}', bm,
                  [ctx.mat('washi_bleached', glow=True), ctx.mat('washi_shade')], thickness=0.0065)
     ctx.add(f'tamoto_glow_{"L" if sg > 0 else "R"}',
-            box(xo + w * 0.1, 0, zb + 0.03, w * 0.9, m * 1.6, 0.012), [ctx.emit('sleeve', 2.2)], thickness=0.0)
+            box(xo + w * 0.1, 0, zb + 0.03, w * 0.9, m * 1.6, 0.012), [ctx.emit('sleeve', 2.2)],
+            thickness=0.0, to_camera=False)
     return ob
 
 
@@ -627,7 +645,7 @@ def forearm_folded(ctx, P, rnd):
     S, sg = ctx.socket, ctx.side
     r = P['radius']
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(5, r * 1.12, S.z + 0.065, cx=S.x, phase=0.6),
+    skin_rings(bm, [poly_ring(5, r * 1.20, S.z + 0.145, cx=S.x, phase=0.6),
                     poly_ring(5, r, S.z - 0.14, cx=S.x, phase=0.6),
                     poly_ring(5, r * 0.88, S.z - 0.285, cx=S.x, phase=0.6)])
     return ctx.add(f'forearm_{"L" if sg > 0 else "R"}', bm,
@@ -652,26 +670,44 @@ def kote_plated(ctx, P, rnd):
 @part('hand_folded', slot='hand', socket=['hand.L', 'hand.R'], bone=None, size=(0.9, 1.1),
       material='washi_natural', fingers=4, length=0.095, proportions=('slim', 'standard', 'broad'))
 def hand_folded(ctx, P, rnd):
-    """Folded-finger hand: a creased palm plate and four tapered paper blades, with a thumb laid across."""
+    """Folded-finger hand: ONE sheet — a creased palm with four blades folded out of its lower edge."""
     S, sg = ctx.socket, ctx.side
     x, z = S.x, S.z
-    bm = box(x, 0, z - 0.028, 0.050, 0.062, 0.062)
     L = P['length']
-    for k in range(int(P['fingers'])):
-        y = -0.024 + k * 0.016
-        tip_z = z - 0.028 - L * (1.0 - 0.10 * abs(k - 1.5))
-        join(bm, shell([(x - 0.013, y - 0.006, z - 0.052), (x + 0.013, y - 0.006, z - 0.052),
-                        (x + 0.013, y + 0.006, z - 0.052), (x - 0.013, y + 0.006, z - 0.052),
-                        (x + sg * 0.008, y - 0.004, tip_z), (x + sg * 0.008, y + 0.004, tip_z)],
-                       [(0, 1, 4), (1, 2, 5, 4), (2, 3, 5), (3, 0, 4, 5), (0, 3, 2, 1)]))
-    join(bm, box(x - sg * 0.034, -0.030, z - 0.052, 0.022, 0.030, 0.052, rot=(0.25, -sg * 0.4, 0)))
-    return ctx.add(f'hand_{"L" if sg > 0 else "R"}', bm,
-                   [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.004)
+    # the palm: a single plate, bowed slightly outward, hanging from the wrist
+    t0, t1 = (x - sg * 0.010, -0.032, z + 0.028), (x + sg * 0.012, 0.032, z + 0.028)
+    b0, b1 = (x - sg * 0.016, -0.038, z - 0.038), (x + sg * 0.016, 0.038, z - 0.038)
+    mid = ((t0[0] + t1[0]) / 2 + sg * 0.012, 0.0, (t0[2] + b0[2]) / 2)     # the crease down the palm
+    pts = [t0, t1, b1, b0, mid]
+    F = [(0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)]
+    n = int(P['fingers'])
+    for k in range(n):
+        u0, u1 = k / n + 0.03, (k + 1) / n - 0.03
+        def on_edge(u):
+            return tuple(b0[i] + (b1[i] - b0[i]) * u for i in range(3))
+        r0, r1 = on_edge(u0), on_edge(u1)
+        curl = L * (1.0 - 0.12 * abs(k - (n - 1) / 2))
+        tip = (sg * 0.030, 0.0, -curl)
+        p0 = tuple(r0[i] + tip[i] for i in range(3))
+        p1 = tuple(r1[i] + tip[i] for i in range(3))
+        knuckle = (0.5 * (r0[0] + r1[0]) + sg * 0.011, 0.5 * (r0[1] + r1[1]), 0.5 * (r0[2] + r1[2]) - curl * 0.42)
+        i = len(pts)
+        pts += [r0, r1, p1, p0, knuckle]
+        F += [(i, i + 1, i + 4), (i + 1, i + 2, i + 4), (i + 2, i + 3, i + 4), (i + 3, i, i + 4)]
+    # the thumb: one more blade folded off the front edge of the palm, laid across
+    th0 = (x - sg * 0.004, -0.040, z + 0.006)
+    th1 = (x + sg * 0.016, -0.044, z - 0.012)
+    th2 = (x + sg * 0.040, -0.052, z - 0.058)
+    i = len(pts)
+    pts += [th0, th1, th2, (x + sg * 0.030, -0.030, z - 0.050)]
+    F += [(i, i + 1, i + 2, i + 3)]
+    return ctx.add(f'hand_{"L" if sg > 0 else "R"}', shell(pts, F),
+                   [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.005)
 
 
 # =========================================================================== PARTS: legs
 @part('hakama_pleated', slot='thigh', socket=['hip.L', 'hip.R'], rigid=False, bones=['lthigh', 'hips'],
-      size=(0.85, 1.2), material='washi_natural', pleats=8, top=0.150, bottom=0.185, flute=0.22,
+      size=(0.85, 1.2), material='washi_natural', pleats=8, top=0.118, bottom=0.132, flute=0.26,
       tags=('reference', 'legs'), proportions=('slim', 'standard', 'broad'))
 def hakama_pleated(ctx, P, rnd):
     """A REAL hakama leg, upper half: a deeply pleated tube around its own thigh bone (the models had no legs)."""
@@ -679,16 +715,16 @@ def hakama_pleated(ctx, P, rnd):
     n = int(P['pleats'])
     z0, z1 = S.z + 0.045, REST['lshin'][2] - 0.01
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(n, P['top'] * 0.95, z0, cx=S.x + sg * 0.01, flute=P['flute'] * 0.55, phase=0.2),
-                    poly_ring(n, P['top'], z0 - 0.16, cx=S.x + sg * 0.012, flute=P['flute'], phase=0.2),
-                    poly_ring(n, P['bottom'], z1, cx=S.x + sg * 0.015, flute=P['flute'], phase=0.2)])
+    skin_rings(bm, [poly_ring(n, P['top'] * 0.98, z0, cx=S.x + sg * 0.030, flute=P['flute'] * 0.55, phase=0.2),
+                    poly_ring(n, P['top'], z0 - 0.16, cx=S.x + sg * 0.034, flute=P['flute'], lift=0.008, phase=0.2),
+                    poly_ring(n, P['bottom'], z1, cx=S.x + sg * 0.038, flute=P['flute'], lift=0.010, phase=0.2)])
     creases(bm, inset=0.005, depth=-0.0025, share=0.2, rnd=rnd)
     return ctx.add(f'hakama_thigh_{"L" if sg > 0 else "R"}', bm,
                    [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.0075)
 
 
 @part('hakama_shin_pleated', slot='shin', socket=['knee.L', 'knee.R'], rigid=False, bones=['lshin', 'lthigh'],
-      size=(0.85, 1.2), material='washi_natural', pleats=8, top=0.185, hem=0.205, flute=0.24, hem_tilt=0.045,
+      size=(0.85, 1.2), material='washi_natural', pleats=8, top=0.132, hem=0.145, flute=0.26, hem_tilt=0.050,
       tags=('reference', 'legs'), proportions=('slim', 'standard', 'broad'))
 def hakama_shin_pleated(ctx, P, rnd):
     """The hakama leg below the knee: wider, with a tilted hem that catches the light like folded card."""
@@ -696,9 +732,9 @@ def hakama_shin_pleated(ctx, P, rnd):
     n = int(P['pleats'])
     z0, z1 = S.z + 0.02, REST['lfoot'][2] + 0.055
     bm = bmesh.new()
-    rings = [poly_ring(n, P['top'], z0, cx=S.x + sg * 0.015, flute=P['flute'], phase=0.2),
-             poly_ring(n, P['hem'] * 0.92, z0 - 0.22, cx=S.x + sg * 0.018, flute=P['flute'], phase=0.2),
-             poly_ring(n, P['hem'], z1, cx=S.x + sg * 0.02, flute=P['flute'] * 1.1, phase=0.2)]
+    rings = [poly_ring(n, P['top'], z0, cx=S.x + sg * 0.038, flute=P['flute'], lift=0.010, phase=0.2),
+             poly_ring(n, P['hem'] * 0.94, z0 - 0.22, cx=S.x + sg * 0.040, flute=P['flute'], lift=0.012, phase=0.2),
+             poly_ring(n, P['hem'], z1, cx=S.x + sg * 0.042, flute=P['flute'] * 1.1, lift=0.014, phase=0.2)]
     for i, p in enumerate(rings[-1]):                                 # tilt the hem: front corner drops
         a = 2 * math.pi * i / n + 0.2
         rings[-1][i] = (p[0], p[1], p[2] + P['hem_tilt'] * math.cos(a))
@@ -726,7 +762,7 @@ def hakama_shin_plain(ctx, P, rnd):
 
 
 @part('hakama_apron', slot='armor', socket='obi', bone='hakama', size=(0.9, 1.15), layer=52,
-      material='washi_natural', pleats=7, drop=0.42, width=0.235, tags=('reference', 'legs'),
+      material='washi_natural', pleats=7, drop=0.46, width=0.145, top=-0.055, tags=('reference', 'legs'),
       proportions=('slim', 'standard', 'broad'))
 def hakama_apron(ctx, P, rnd):
     """The hakama's front apron and back koshiita board: the two flat sheets that hang BETWEEN the legs."""
@@ -736,10 +772,10 @@ def hakama_apron(ctx, P, rnd):
         pts = []
         for i in range(n):
             t = i / (n - 1) - 0.5
-            pts.append((t * 2 * P['width'] * 0.78, y * (0.115 + 0.010 * math.cos(t * 6)), hz + 0.02))
+            pts.append((t * 2 * P['width'] * 0.80, y * (0.112 + 0.010 * math.cos(t * 6)), hz + P['top']))
         for i in reversed(range(n)):
             t = i / (n - 1) - 0.5
-            pts.append((t * 2 * P['width'], y * (0.145 + 0.014 * math.cos(t * 6)), hz - P['drop']))
+            pts.append((t * 2 * P['width'], y * (0.140 + 0.014 * math.cos(t * 6)), hz - P['drop']))
         bm = panel(pts)
         creases(bm, inset=0.006, depth=-0.004, share=1.0, rnd=rnd)
         ob = ctx.add(f'hakama_apron_{tag}', bm, [ctx.mat(sheet, glow=True), ctx.mat('washi_shade')],
@@ -767,7 +803,7 @@ def tabi_zori(ctx, P, rnd):
     bm = shell(pts, F)
     bmesh.ops.translate(bm, vec=(0, 0, S.z), verts=bm.verts)
     ob = ctx.add(f'tabi_{"L" if sg > 0 else "R"}', bm,
-                 [ctx.mat('washi_bleached'), ctx.mat('washi_shade')], thickness=0.005)
+                 [ctx.mat(P.get('material', 'washi_bleached')), ctx.mat('washi_shade')], thickness=0.005)
     ctx.add(f'zori_{"L" if sg > 0 else "R"}',
             panel([(x - 0.058, heel + 0.015, S.z - 0.004), (x + 0.058, heel + 0.015, S.z - 0.004),
                    (x + 0.050, toe + 0.01, S.z - 0.004), (x - 0.050, toe + 0.01, S.z - 0.004)]),
@@ -826,15 +862,16 @@ def do_plates(ctx, P, rnd):
 
 
 @part('katana_sheathed', slot='accessory', socket=['hip_side.L', 'hip_side.R'], bone='torso', size=(0.9, 1.1),
-      material='card_indigo', length=0.86, tilt=14.0, proportions=('slim', 'standard', 'broad'))
+      material='card_indigo', length=0.80, tilt=-14.0, swing=13.0, tsuka=0.22, proportions=('slim', 'standard', 'broad'))
 def katana_sheathed(ctx, P, rnd):
     """The sword at the hip: a folded paper saya and tsuka in one line, mouth at the obi, tip low behind."""
     S, sg = ctx.socket, ctx.side
     mouth = Vector((S.x, S.y, S.z))
-    tilt = Matrix.Rotation(math.radians(P['tilt']), 3, 'X') @ Matrix.Rotation(math.radians(10 * sg), 3, 'Z')
+    tilt = (Matrix.Rotation(math.radians(P['tilt']), 3, 'X')
+            @ Matrix.Rotation(math.radians(P['swing'] * sg), 3, 'Z'))
     last = None
     for nm, y0, y1, w, key in (('saya', 0.0, P['length'], 0.030, 'card_indigo'),
-                               ('tsuka', -0.30, 0.0, 0.036, 'washi_shade')):
+                               ('tsuka', -P['tsuka'], 0.0, 0.036, 'washi_shade')):
         bm = box(0, (y0 + y1) / 2, 0, w, y1 - y0, w * 0.82)
         bmesh.ops.rotate(bm, verts=bm.verts, cent=(0, 0, 0), matrix=tilt)
         bmesh.ops.translate(bm, vec=mouth, verts=bm.verts)

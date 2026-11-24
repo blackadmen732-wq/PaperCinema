@@ -376,13 +376,25 @@ def load_recipe(path):
         parent = load_recipe(p if p.endswith('.json') else p + '.json')
         merged = dict(parent)
         merged.update({k: v for k, v in r.items() if k != 'extends'})
-        if 'swap' in r:                      # swap parts by slot, keeping the rest of the parent's kit
-            by_slot = {reg.PARTS[e['part']]['slot']: e for e in merged['parts']}
-            for e in r['swap']:
-                by_slot[reg.PARTS[e['part']]['slot']] = e
-            for e in r.get('drop', []):
-                by_slot.pop(e, None)
-            merged['parts'] = [by_slot[s] for s in by_slot] + [e for e in r.get('add', [])]
+        if 'swap' in r or 'add' in r or 'drop' in r:
+            # Swap by SLOT (one kasa, one torso, one obi…), except the slots that legitimately hold several
+            # parts at once — there armour and accessories are swapped, added and dropped BY NAME.
+            multi = {'armor', 'accessory'}
+
+            def k(e):
+                sl = reg.PARTS[e['part']]['slot']
+                return e['part'] if sl in multi else sl
+            kit = {k(e): e for e in merged['parts']}
+            for e in r.get('swap', []):
+                kit[k(e)] = e
+            for name in r.get('drop', []):
+                kit.pop(name, None)
+                for key, e in list(kit.items()):
+                    if e['part'] == name or reg.PARTS[e['part']]['slot'] == name:
+                        kit.pop(key, None)
+            for e in r.get('add', []):
+                kit[k(e)] = e
+            merged['parts'] = list(kit.values())
         r = merged
     return r
 
@@ -492,12 +504,27 @@ def main():
               '[--still p.png | --turnaround p.png] [--light neutral|cinematic]')
         return
     recipe = load_recipe(os.path.abspath(rpath))
-    ch = build(recipe, pose=arg('pose', recipe.get('pose', 'neutral')), yaw=math.radians(float(arg('ry', 0))))
+    ch = build(recipe, pose=arg('pose', recipe.get('pose', 'neutral')),
+               pose_overrides=None if arg('pose') else recipe.get('pose_overrides'), yaw=math.radians(float(arg('ry', 0))))
     if arg('still') or arg('turnaround'):
         studio(scene, arg('light', 'neutral'))
         render_settings(scene, arg('res', '420x740'), arg('samples', 24))
         center, height = frame(ch['objects'])
-        if arg('turnaround'):
+        if arg('poses'):
+            # a pose sweep (or a slash): one still per pose, same camera, so motion is the only variable
+            a = math.radians(float(arg('angle', 34)))
+            d = float(arg('dist', 0) or height * 2.55)
+            camera(scene, (-math.sin(a) * d, -math.cos(a) * d, center[2] + 0.12), center,
+                   float(arg('lens', 70)))
+            out = arg('poses_out') or arg('still') or 'output/character/pose.png'
+            for nm in arg('poses').split(','):
+                ch['rig'].pose(nm, **(recipe.get('pose_overrides', {}) if nm == 'neutral' else {}))
+                c2, h2 = frame(ch['objects'])      # re-frame: the pose is the subject, not the framing
+                d2 = float(arg('dist', 0) or h2 * 2.55)
+                camera(scene, (-math.sin(a) * d2, -math.cos(a) * d2, c2[2] + 0.12), c2,
+                       float(arg('lens', 70)))
+                render(scene, out.replace('.png', f'-{nm}.png'))
+        elif arg('turnaround'):
             turnaround(scene, arg('turnaround'), center=center,
                        dist=float(arg('dist', 0) or height * 2.55), lens=float(arg('lens', 70)))
         else:

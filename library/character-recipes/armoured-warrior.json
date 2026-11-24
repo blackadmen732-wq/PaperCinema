@@ -1,0 +1,100 @@
+{
+  "id": "armoured-warrior",
+  "name": "Armoured warrior (same skeleton, swapped parts)",
+  "extends": "ronin-reference.json",
+  "note": "Proof that the factory is modular: ONE skeleton, a different character made only by swapping parts in this file. Broader shoulders, lamellar plates over the chest and shoulders, a brow band instead of a kasa, narrow fighting sleeves, plain dark card legs and war boots. Nothing in blender/ changes.",
+  "proportion": "broad",
+  "seed": 11,
+  "glow": [
+    1.0,
+    0.3,
+    0.1
+  ],
+  "glow_strength": 2.2,
+  "pose": "neutral",
+  "pose_overrides": {
+    "stance": 0.4,
+    "rsz": 0.3,
+    "lsz": -0.3,
+    "rsx": -0.1,
+    "lsx": -0.1,
+    "tx": 0.04
+  },
+  "swap": [
+    {
+      "part": "hachigane",
+      "scale": 1.05
+    },
+    {
+      "part": "mask_long",
+      "scale": 1.0
+    },
+    {
+      "part": "topknot",
+      "scale": 1.0
+    },
+    {
+      "part": "kimono_plain",
+      "scale": 1.05
+    },
+    {
+      "part": "eri_narrow",
+      "scale": 1.0
+    },
+    {
+      "part": "obi_plain",
+      "scale": 1.0
+    },
+    {
+      "part": "kote_narrow",
+      "scale": 1.0
+    },
+    {
+      "part": "tamoto_narrow",
+      "scale": 1.0
+    },
+    {
+      "part": "kote_plated",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_plain",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_shin_plain",
+      "scale": 1.0
+    },
+    {
+      "part": "boot_plated",
+      "scale": 1.0
+    }
+  ],
+  "add": [
+    {
+      "part": "sode_lamellar",
+      "scale": 1.1
+    },
+    {
+      "part": "do_plates",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_apron",
+      "scale": 0.95,
+      "params": {
+        "drop": 0.3,
+        "width": 0.165
+      }
+    }
+  ],
+  "drop": [
+    "tassels"
+  ],
+  "paper": {
+    "washi_natural": "card_indigo",
+    "washi_bleached": "washi_shade",
+    "washi_shade": "card_charcoal"
+  },
+  "lamp_scale": 0.8
+}
