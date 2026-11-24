@@ -7,6 +7,7 @@
   "duration": 16,
   "motion": {
     "overlap": true,
+    "lockFeet": true,
     "note": "anime layer: follow-through lag, snap easing, overshoot (docs/ANIMATION.md §10)"
   },
   "cast": {

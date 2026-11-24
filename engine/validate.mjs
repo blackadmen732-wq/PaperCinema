@@ -175,7 +175,8 @@ if (AS !== undefined) {
   if (AS.whoosh?.maxPerSec !== undefined && (!isNum(AS.whoosh.maxPerSec) || AS.whoosh.maxPerSec < 1)) err('autoSounds.whoosh.maxPerSec', 'must be ≥ 1');
 }
 if (film.combat !== undefined && typeof film.combat !== 'boolean') err('combat', 'must be true or false (false = no contact detection, hit-stop or combat effects)');
-if (film.motion !== undefined && (typeof film.motion !== 'object' || (film.motion.overlap !== undefined && typeof film.motion.overlap !== 'boolean'))) err('motion', 'must be { "overlap": true | false }');
+if (film.motion !== undefined && (typeof film.motion !== 'object' || (film.motion.overlap !== undefined && typeof film.motion.overlap !== 'boolean'))) err('motion', 'must be { "overlap": true | false, "lockFeet": true | false | { … } }');
+if (film.motion?.lockFeet !== undefined && typeof film.motion.lockFeet !== 'boolean' && typeof film.motion.lockFeet !== 'object') err('motion.lockFeet', 'must be true, false or an object of overrides (docs/ANIMATION.md §12)');
 
 // --- post FX (engine/fx.js, docs/EFFECTS-CATALOG.md)
 const MOODS = ['neutral', 'dawn', 'lantern', 'moonlit', 'demonic', 'kurosawa', 'ash'];   // keep in step with MOODS in engine/fx.js

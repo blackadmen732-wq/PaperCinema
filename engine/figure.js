@@ -51,6 +51,7 @@ export function makeFigure(c) {
   // (solveLegs) so feet stay planted and knees bend when the hips drop.
   const leg = (sgn) => {
     const thigh = new THREE.Group();
+    thigh.rotation.order = 'ZXY';            // bend in the leg plane (x), then roll the plane sideways (z)
     root.add(thigh);
     const tLeg = m(new THREE.CylinderGeometry(0.11, 0.15, LEG.thigh, 5, 1, true), P(c.hakama));
     tLeg.position.y = -LEG.thigh / 2;
@@ -361,8 +362,8 @@ export function applyPose(f, p) {
   f.root.position.set(p.x, p.y, p.z);
   // balance: hips drop with crouch and shift over the loaded foot
   f.hips.position.set(0, LEG.hipY - p.crouch, p.weight * p.stance * 0.35);
-  if (f.legs) solveLegs(f, p);
   f.root.rotation.set(p.rx, p.ry, p.rz);
+  if (f.legs) solveLegs(f, p);                 // after the root transform: world-locked feet need it
   const v = (k) => p[k] ?? 0;
   f.torso.rotation.set(p.tx + p.weight * 0.05, p.ty, p.tz);
   if (f.upper) f.upper.rotation.set(v('cx'), v('cy'), v('cz'));
@@ -677,21 +678,35 @@ export function solveArm(f, side, target, pole, weight = 1) {
 }
 
 // ---------------------------------------------------------------------------
-// LEGS (analytic two-bone IK in the figure's side plane)
-// Feet are planted from the stance; the hip height comes from crouch. Knees always bend forward.
+// LEGS (analytic two-bone IK)
+// Default: the feet are placed from the stance in the figure's side plane, so they follow the hips.
+// With `p._feet` (engine/footlock.js) each foot is given a WORLD position instead: the foot is pinned
+// to the ground and the leg is solved from it, so the hips move over the feet instead of dragging
+// them. The target is brought into the root's frame, so the leg plane can now tilt sideways: the
+// thigh takes a z-roll (hip abduction, Euler order ZXY) and bends in the rolled plane.
+// Knees always bend forward.
 // ---------------------------------------------------------------------------
+const _legM = new THREE.Matrix4(), _legV = new THREE.Vector3();
 export function solveLegs(f, p) {
   const L1 = LEG.thigh, L2 = LEG.shin;
   const hipY = LEG.hipY - p.crouch - 0.02, hipZ = p.weight * p.stance * 0.35;
+  if (p._feet) { f.root.updateMatrix(); _legM.copy(f.root.matrix).invert(); }   // root hangs off the scene
   for (const leg of [f.legs.r, f.legs.l]) {
     const front = leg.side < 0;                       // right foot leads
-    let fz = (front ? 1 : -1) * p.stance / 2, fy = LEG.footY;
-    if (p.stride > 0) {                               // walking: feet swing in opposite phase
+    let fx = leg.side * 0.1, fz = (front ? 1 : -1) * p.stance / 2, fy = LEG.footY;
+    if (p._feet) {
+      const w = front ? p._feet.r : p._feet.l;
+      _legV.set(w[0], w[1], w[2]).applyMatrix4(_legM);
+      fx = _legV.x; fy = _legV.y; fz = _legV.z;
+    } else if (p.stride > 0) {                        // walking: feet swing in opposite phase
       const ph = p.phase + (front ? 0 : Math.PI);
       fz += Math.sin(ph) * p.stride / 2;
       fy += Math.max(0, Math.cos(ph)) * 0.07;
     }
-    let dz = fz - hipZ, dy = fy - hipY;
+    // roll the leg plane sideways so it contains the hip→foot line, then solve inside that plane
+    const sx = fx - leg.side * 0.1, sy = fy - hipY;
+    const roll = Math.atan2(sx, -sy) + leg.side * 0.04;
+    let dz = fz - hipZ, dy = -Math.hypot(sx, sy);
     let d = Math.hypot(dz, dy);
     const maxD = (L1 + L2) * 0.999;
     if (d > maxD) { dz *= maxD / d; dy *= maxD / d; d = maxD; }
@@ -701,7 +716,7 @@ export function solveLegs(f, p) {
     const kz = hipZ + L1 * Math.sin(thighAng), ky = hipY - L1 * Math.cos(thighAng);
     const shinAng = Math.atan2(hipZ + dz - kz, -(hipY + dy - ky));
     leg.thigh.position.set(leg.side * 0.1, hipY, hipZ);
-    leg.thigh.rotation.set(-thighAng, 0, leg.side * 0.04);
+    leg.thigh.rotation.set(-thighAng, 0, roll);
     leg.shin.rotation.x = -(shinAng - thighAng);
     leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0));   // flat on the ground (+ ankle)
   }

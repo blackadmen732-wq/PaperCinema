@@ -7,6 +7,7 @@ import { makeKuroko } from './kuroko.js';
 import { expandMoves } from './moves.js';
 import { makeKatana, makeBokken, makeBoat, makeOar } from './props.js';
 import { makeFigure, holdInHand, applyPose, track, smooth, makeMotion, resolveKeys, windowWeight, solveArm, gripHand, reachHand, BASE_POSE } from './figure.js';
+import { lockFeet } from './footlock.js';
 import { paper, rng } from './paper.js';
 import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
@@ -147,7 +148,10 @@ const EV = film.events ?? {};
 const ev = (name, fallback) => EV[name] ?? fallback;
 const PERF = film.performances ?? {};
 const MOVES = await (await fetch('/library/moves.json')).json();
-const motionOf = (id) => makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES), POSES), film.motion ?? {});   // film.motion.overlap = anime layer
+const motionOf = (id) => {   // film.motion.overlap = anime layer, film.motion.lockFeet = planted feet + weight
+  const m = makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES), POSES), film.motion ?? {});
+  return film.motion?.lockFeet ? lockFeet(m, film.duration ?? 36, film.motion.lockFeet) : m;
+};
 const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');
 const boatPose = { ...BASE_POSE, ...POSES[PERF.musashi.boatPose ?? 'stand-blade-low'] };

@@ -331,7 +331,10 @@ const isWhoosh = (c) => /whoosh|swing|dash/.test(c.sfx ?? c.id);
   for (let i = 1; i < wh.length; i++) if (wh[i].sfx && wh[i].sfx === wh[i - 1].sfx && wh[i].t - wh[i - 1].t < 1.5) add('same-whoosh-twice', 'sound', 'minor', wh[i - 1].t, wh[i].t, `the same whoosh ("${wh[i].sfx}") twice in a row`, 'use at least 3 whoosh sources and rotate them');
   for (const w of wh) if (wh.filter((x) => x.t >= w.t && x.t < w.t + 1).length > 3) { add('too-many-whooshes', 'sound', 'minor', w.t, w.t + 1, 'more than 3 whooshes in one second', 'autoSounds.whoosh.maxPerSec: 2'); break; }
 }
-const soundPath = opt('sound', fs.existsSync(`output/${NAME}-sound.mp4`) ? `output/${NAME}-sound.mp4` : null);
+// The mixed film: tools/film.sh writes output/<name>-final.mp4 (levelled, -14 LUFS), engine/sound.mjs alone
+// writes output/<name>-sound.mp4. Measure the finished one when it is there, so the loudness and the
+// hit-above-whoosh rules are checked on what the audience hears.
+const soundPath = opt('sound', [`output/${NAME}-final.mp4`, `output/${NAME}-sound.mp4`].find((f) => fs.existsSync(f)) ?? null);
 let SOUND = null;
 if (soundPath && fs.existsSync(soundPath)) {
   const SR = 16000, pcm = spawnSync('ffmpeg', ['-loglevel', 'error', '-i', soundPath, '-ac', '1', '-ar', String(SR), '-f', 's16le', '-'], { maxBuffer: 1 << 28 }).stdout;

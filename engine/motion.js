@@ -18,6 +18,7 @@ import { expandMoves } from './moves.js';
 import { makeKatana } from './props.js';
 import { loadCharacter } from './library.js';
 import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, gripHand, smooth } from './figure.js';
+import { lockFeet } from './footlock.js';
 import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
 import { clamp, bladeSeg, closestSegSeg, RATE } from './combat.js';
@@ -63,7 +64,9 @@ for (const [id, c] of Object.entries(film.cast)) {
   const k = makeKatana();
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
-  const motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
+  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
+  // film.motion.lockFeet: plant the feet in the world and let the weight fall on them (engine/footlock.js)
+  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
   if (c.hidden) fig.root.visible = false;               // an invisible target (e.g. the tree) the hero looks at
   cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, hidden: !!c.hidden, phase: Object.keys(cast).length * 1.7,
     demonic: !!c.demonic, glow: c.glow, makeGhost: () => makeFigure(spec) };

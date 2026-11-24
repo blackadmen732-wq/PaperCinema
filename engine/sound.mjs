@@ -10,7 +10,7 @@
 // Credits for every sound (title, author, licence, link) go to assets/sfx/credits.json.
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d; };
@@ -141,7 +141,9 @@ const hitTimes = [...(evData?.impacts ?? []), ...(evData?.contacts ?? [])]
 const dipCurve = () => {
   if (!PRE_DIP || !hitTimes.length) return '';
   const depth = 1 - 10 ** (-PRE_DIP / 20);
-  const w = hitTimes.map((t) => `clip(min((t-${(t - 0.42).toFixed(3)})/0.12,(${(t - 0.03).toFixed(3)}-t)/0.09),0,1)`);
+  // open over 0.12 s from t-0.42, hold wide open to t-0.06, shut in 0.04 s: the whole of the window the audit
+  // measures against (t-0.30 … t-0.03) is dipped, and the transient itself (from t-0.01) is untouched.
+  const w = hitTimes.map((t) => `clip(min((t-${(t - 0.42).toFixed(3)})/0.12,(${(t - 0.02).toFixed(3)}-t)/0.04),0,1)`);
   const amt = w.reduce((a, b) => (a ? `max(${a},${b})` : b), '');
   return `volume=eval=frame:volume='1-${depth.toFixed(4)}*${amt}'`;
 };
@@ -187,22 +189,46 @@ if (voiceIdx.length && duckIdx.length) {
   mixIn += '[bedsd]';
   console.log(`  ducking ${duckIdx.length} bed/music cue(s) by ${d.db ?? 8} dB under ${voiceIdx.length} voice line(s) (${opt('duck', 'exact')})`);
 }
-// LEVEL: mix once to measure it, then once more with the makeup gain that puts the film at about -14 LUFS
-// under a true-peak ceiling of -1 dBFS (broadcast/Shorts practice; the audit checks both).
+// LEVEL (two measured passes): the film has to land at -14 LUFS integrated under a true peak of -1 dBFS
+// (Shorts/broadcast practice; docs/STUDIO-STANDARD.md, and tools/audit.mjs fails the film outside -14 ± 2).
+// A fight mix cannot get there with one linear gain — the clashes are 15 dB above the rest, so ffmpeg's
+// loudnorm would switch to its dynamic mode and flatten exactly the transients the hits live on. Instead:
+// measure the whole programme, apply ONE makeup gain with a true-peak limiter after it, measure again and
+// correct for what the limiter shaved. The dynamics (and the dipped hole before each hit) survive.
 const TARGET = +opt('lufs', -14), CEIL = +opt('peak', -1);
 const CEIL_LIN = (10 ** (CEIL / 20)).toFixed(4);
-const chain = (gain) => `${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,` +
+const chain = (gain, meter) => `${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,` +
   `afade=t=out:st=${film.duration - 1.5}:d=1.5,volume=${gain.toFixed(2)}dB,` +
-  `alimiter=level=false:limit=${CEIL_LIN}[mix]`;
-const probe = `output/.${base}-level.wav`;
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(0)).join(';'),
-  '-map', '[mix]', '-t', String(film.duration), probe]);
-const eb = String(execFileSync('bash', ['-c', `ffmpeg -hide_banner -nostats -i "${probe}" -af ebur128 -f null - 2>&1`]));
-const lufs = parseFloat((eb.match(/Integrated loudness:\s+I:\s+(-?[\d.]+)/) ?? [])[1]);
-const gain = Number.isFinite(lufs) ? Math.max(-24, Math.min(24, TARGET - lufs)) : 0;
-console.log(`  level: mix measures ${lufs} LUFS → ${gain >= 0 ? '+' : ''}${gain.toFixed(1)} dB makeup, ceiling ${CEIL} dBFS`);
-fs.rmSync(probe, { force: true });
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(gain)).join(';'),
+  `alimiter=level=false:limit=${CEIL_LIN}${meter ? ',ebur128=peak=true' : ''}[mix]`;
+// spawnSync, not a shell: the filter graph is full of single quotes (the dip expressions) and no amount of
+// shell quoting survives that.
+const ff = (a) => {
+  const r = spawnSync('ffmpeg', a, { encoding: 'utf8', maxBuffer: 1 << 26 });
+  if (r.status !== 0) {
+    console.error(((r.stderr ?? '') + (r.stdout ?? '')).split('\n').slice(-12).join('\n'));
+    throw new Error(`sound: ffmpeg failed (exit ${r.status}) — see the lines above`);
+  }
+  return (r.stderr ?? '') + (r.stdout ?? '');
+};
+const measure = (gain) => {
+  const txt = ff(['-hide_banner', '-nostats', '-y', ...inputs, '-filter_complex', filters.concat(chain(gain, true)).join(';'),
+    '-map', '[mix]', '-t', String(film.duration), '-f', 'null', '-']);
+  const g = (re) => { const m = txt.match(re); return m ? parseFloat(m[1]) : NaN; };
+  return { lufs: g(/Integrated loudness:\s+I:\s+(-?[\d.]+)/), tp: g(/True peak:\s*\n\s*Peak:\s+(-?[\d.]+)/) };
+};
+const clamp = (g) => Math.max(-24, Math.min(24, g));
+const m1 = measure(0);
+let gain = Number.isFinite(m1.lufs) ? clamp(TARGET - m1.lufs) : 0;
+console.log(`  level pass 1: the mix measures ${m1.lufs} LUFS, true peak ${m1.tp} dBFS` +
+  ` → ${gain >= 0 ? '+' : ''}${gain.toFixed(1)} dB makeup, ceiling ${CEIL} dBFS`);
+if (gain) {
+  const m2 = measure(gain);
+  const corr = Number.isFinite(m2.lufs) ? clamp(gain + (TARGET - m2.lufs)) : gain;
+  console.log(`  level pass 2: with the gain and the limiter it measures ${m2.lufs} LUFS, true peak ${m2.tp} dBFS` +
+    ` → ${corr >= 0 ? '+' : ''}${corr.toFixed(1)} dB for the final mix`);
+  gain = corr;
+}
+ff(['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(gain, false)).join(';'),
   '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(film.duration), out]);
 console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length + autoCues.length + voiceCues.length} sounds` +
   `${voiceCues.length ? ` (${voiceCues.length} voice lines)` : ''}. Credits: ${creditsPath}`);

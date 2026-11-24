@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ONE COMMAND: a finished vertical film with sound, rendered in Blender.
 #
-#   tools/film.sh film/<name>.json [--set <name>] [--gpu] [--frames a-b] [--res WxH] [--samples N] [--skip-audit]
+#   tools/film.sh film/<name>.json [--set <name>] [--gpu] [--from A] [--to B] [--frames a-b]
+#                                  [--res WxH] [--samples N] [--full] [--workers N] [--fresh] [--skip-audit]
 #
 # The chain (every step fails loudly and stops):
 #   1 validate   node engine/validate.mjs            the film file itself
@@ -18,6 +19,17 @@
 # --set <name>   stage the film inside a Blender set: output/sets/<name>.blend, built from library/sets/<name>.json
 #                when it is not there yet (castle-courtyard, dojo-interior, bamboo-forest, ganryujima-beach, …)
 # --gpu          pack the job, send it to Kaggle (gpu/kaggle_blender/run.sh), wait, fetch the frames
+#
+# THE LOCAL RENDER (no --gpu) is the one that always works, so it is built to be lived with:
+# --from A --to B   render only that stretch of frames (same thing as --frames A-B; either end may be left out)
+# --workers N       N Blender processes side by side, each on its own core (default: one per core, max 4), all
+#                   niced; four one-thread processes beat one four-thread process by about 2.5x on this machine
+# --fresh           re-render frames that are already in output/blender/<name>/ (by default they are KEPT and the
+#                   render resumes, so a stopped or part-finished render costs nothing to pick up again)
+# --res / --samples the picture. Local default is a preview on this four-core machine: 360x640 at 16 samples
+#                   (~4 s/frame over the four workers; 432x768 at 24 is ~3x that, 540x960 at 32 about 13 s/frame
+#                   and 720x1280 at 48 about 30 s/frame — and all of it doubles when another agent is busy here).
+# --full            the delivery picture instead: 720x1280 at 48 samples (what --gpu uses)
 set -uo pipefail
 R=$(cd "$(dirname "$0")/.." && pwd); cd "$R"
 B=${BLENDER:-/opt/blender-dl/blender-4.5.16-linux-x64/blender}
@@ -28,18 +40,28 @@ step() { echo; echo "=== $* ==="; }
 [ -f "$FILM" ] || die "no such film file: $FILM"
 NAME=$(basename "$FILM" .json)
 
-SET= GPU=0 FRAMES= RES=720x1280 SAMPLES=48 AUDIT=1
+SET= GPU=0 FRAMES= RES= SAMPLES= AUDIT=1 FROM= TO= WORKERS= FRESH=0 FULL=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --set) SET=${2:?--set needs a set name}; shift 2 ;;
     --gpu) GPU=1; shift ;;
     --frames) FRAMES=${2:?--frames needs a-b}; shift 2 ;;
+    --from) FROM=${2:?--from needs a frame number}; shift 2 ;;
+    --to) TO=${2:?--to needs a frame number}; shift 2 ;;
     --res) RES=${2:?}; shift 2 ;;
     --samples) SAMPLES=${2:?}; shift 2 ;;
+    --workers) WORKERS=${2:?--workers needs a number}; shift 2 ;;
+    --fresh) FRESH=1; shift ;;
+    --full) FULL=1; shift ;;
     --skip-audit) AUDIT=0; shift ;;
     *) die "unknown option: $1" ;;
   esac
 done
+# the picture: the GPU renders at delivery size, this machine at preview size unless --full or --res/--samples say otherwise
+if [ "$FULL" = 1 ] || [ "$GPU" = 1 ]; then RES=${RES:-720x1280}; SAMPLES=${SAMPLES:-48}
+else RES=${RES:-360x640}; SAMPLES=${SAMPLES:-16}; fi
+case "$RES" in *x*) ;; *) die "--res wants WxH, for example 540x960 (got '$RES')" ;; esac
+[ -z "$WORKERS" ] || case "$WORKERS" in *[!0-9]*|0) die "--workers wants a number of processes (got '$WORKERS')" ;; esac
 for t in node ffmpeg ffprobe python3; do command -v $t >/dev/null || die "$t is not installed (needed by the pipeline)"; done
 [ "$GPU" = 1 ] || [ -x "$B" ] || die "no Blender at $B — set BLENDER=/path/to/blender, or render on the free GPU with --gpu"
 [ "$GPU" = 0 ] || command -v kaggle >/dev/null || die "the kaggle CLI is not installed, so --gpu cannot send the job"
@@ -47,7 +69,17 @@ DUR=$(python3 -c "import json;print(json.load(open('$FILM'))['duration'])") || d
 FPS=$(python3 -c "import json;print(json.load(open('$FILM')).get('fps',24))")
 NF=$(python3 -c "print(int(round($DUR*$FPS)))")
 echo "FILM $NAME · ${DUR}s · $FPS fps · $NF frames · $RES · $SAMPLES samples · $([ "$GPU" = 1 ] && echo 'Kaggle T4 GPU' || echo 'this machine')${SET:+ · set $SET}"
-[ -n "$FRAMES" ] || FRAMES="0-$((NF - 1))"
+if [ -n "$FRAMES" ]; then
+  [ -z "$FROM$TO" ] || die "use --frames a-b or --from/--to, not both"
+  case "$FRAMES" in *-*) ;; *) die "--frames wants a-b, for example 24-47 (got '$FRAMES')" ;; esac
+else
+  FRAMES="${FROM:-0}-${TO:-$((NF - 1))}"
+fi
+FA=${FRAMES%%-*}; FB=${FRAMES##*-}
+case "$FA$FB" in *[!0-9]*) die "--frames/--from/--to want frame numbers (got '$FRAMES')" ;; esac
+[ "$FB" -lt "$NF" ] || die "frame $FB is past the end of the film: it has $NF frames (0-$((NF - 1)))"
+[ "$FA" -le "$FB" ] || die "the frame range runs backwards: $FRAMES"
+FRAMES="$FA-$FB"
 
 step "1/9 validate"
 node engine/validate.mjs "$FILM" || die "step 1 validate: the film file has errors above. Fix every ✗ and run again."
@@ -95,8 +127,40 @@ if [ "$GPU" = 1 ]; then
   cp "output/kaggle-render/$NAME/frames/"*.png "$FR/" 2>/dev/null || die "step 5 GPU: the run returned no frames (see output/kaggle-render/$NAME/blender.log)."
 else
   mkdir -p "$FR"
-  nice -n 10 "$B" -b -t 2 -P blender/film_blender.py -- --film "$FILM" --out "$FR/" --frames "$FRAMES" \
-    --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || die "step 5 render: Blender failed (see the traceback above)."
+  [ "$FRESH" = 0 ] || rm -f "$FR"/f*.png
+  CORES=$(nproc)
+  W=${WORKERS:-$((CORES > 4 ? 4 : CORES))}
+  # The work left to do: every frame of the range that has no PNG yet (so a stopped render just carries on),
+  # split into contiguous blocks of about the same size — one Blender process per block, one core each.
+  # Line 1 of the plan is how many frames are missing; then one line per worker: the ranges it renders.
+  PLAN=$(python3 "$R/tools/render_plan.py" "$FR" "$FA" "$FB" "$W") \
+    || die "step 5 render: could not work out which frames are missing from $FR."
+  TODO=$(echo "$PLAN" | head -1)
+  HAVE=$((FB - FA + 1 - TODO))
+  if [ "$TODO" = 0 ]; then
+    echo "all $((FB - FA + 1)) frames are already in $FR — nothing to render (--fresh re-renders them)"
+  else
+    NW=$(echo "$PLAN" | tail -n +2 | grep -c .)
+    T=$((CORES / NW)); [ "$T" -ge 1 ] || T=1
+    echo "$TODO frame(s) to render, $HAVE already there · $NW process(es) x $T thread(s), niced"
+    i=0; PIDS=; LOGS=
+    for runs in $(echo "$PLAN" | tail -n +2 | tr ' ' ','); do
+      i=$((i + 1)); LOG="output/$NAME-render-w$i.log"; LOGS="$LOGS $LOG"
+      ( for r in $(echo "$runs" | tr ',' ' '); do
+          nice -n 10 "$B" -b -t "$T" -P blender/film_blender.py -- --film "$FILM" --out "$FR/" --frames "$r" \
+            --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || exit 1
+        done ) > "$LOG" 2>&1 &
+      PIDS="$PIDS $!"
+      echo "  worker $i: frames $(echo "$runs" | tr ',' ' ') -> $LOG"
+    done
+    BAD=0
+    for pid in $PIDS; do wait "$pid" || BAD=$((BAD + 1)); done
+    if [ "$BAD" -gt 0 ]; then
+      for l in $LOGS; do echo; echo "--- tail of $l"; tail -25 "$l"; done
+      die "step 5 render: $BAD of $i Blender process(es) failed (tails above; full logs:$LOGS)."
+    fi
+    grep -h "Cycles device:" $LOGS | head -1
+  fi
 fi
 N=$(ls "$FR"/f*.png 2>/dev/null | wc -l)
 [ "$N" -gt 0 ] || die "step 5 render: no frames in $FR."
@@ -133,11 +197,20 @@ a = next((s for s in p['streams'] if s['codec_type'] == 'audio'), None)
 txt = subprocess.run(['bash', '-c', f'ffmpeg -hide_banner -i "{f}" -af volumedetect -f null - 2>&1'],
                      capture_output=True, text=True).stdout
 peak = re.search(r'max_volume: (-?[\d.]+)', txt); mean = re.search(r'mean_volume: (-?[\d.]+)', txt)
+# the two numbers the mix is judged by (docs/STUDIO-STANDARD.md): integrated loudness and true peak
+eb = subprocess.run(['bash', '-c', f'ffmpeg -hide_banner -nostats -i "{f}" -af ebur128=peak=true -f null - 2>&1'],
+                    capture_output=True, text=True).stdout
+lufs = re.search(r'Integrated loudness:\s+I:\s+(-?[\d.]+)', eb)
+tp = re.search(r'Peak:\s+(-?[\d.]+|-inf) dBFS', eb.split('True peak:')[-1]) if 'True peak:' in eb else None
 print(f'FILM READY  {f}')
 print(f'  {float(p["format"]["duration"]):.2f} s · {v["width"]}x{v["height"]} · {v["r_frame_rate"]} fps · '
       f'{int(p["format"]["size"]) / 1e6:.1f} MB · {v["codec_name"]}'
       + (f' + {a["codec_name"]} {a["sample_rate"]} Hz' if a else '  (NO AUDIO TRACK)'))
-if peak: print(f'  audio peak {peak.group(1)} dBFS · mean {mean.group(1)} dBFS')
+if peak: print(f'  audio peak {peak.group(1)} dBFS · mean {mean.group(1)} dBFS'
+                + (f' · {lufs.group(1)} LUFS integrated' if lufs else '')
+                + (f' · true peak {tp.group(1)} dBFS' if tp else ''))
+if lufs and abs(float(lufs.group(1)) + 14) > 2:
+    print(f'  WARNING: {lufs.group(1)} LUFS is outside the -14 ± 2 target')
 print(f'  frames output/blender/{name}/ · silent cut output/{name}.mp4 · audit output/{name}.audit.md')
 PY
 echo

@@ -479,3 +479,92 @@ export function contactFx(contacts, o = {}) {
     { t: c.t, effect: 'bloom-pulse', amount: (o.bloom ?? 0.5) + (o.bloomI ?? 0.6) * c.intensity, dur: 0.3 },
   ]);
 }
+
+// ---------- FIGHT DIRECTOR: verify a strike before anything acts on it ----------
+// The plan's fight pipeline, as ONE post-pass over the contact analysis (docs/ARCHITECTURE.md §Fight Director).
+// It never changes the motion; it measures what the engine did and emits ONE verified event per strike, which then
+// drives contact + sound + camera + damage. A finding means the strike is not trustworthy yet.
+//
+//   const C = combat.analyse({ ... });
+//   const D = combat.direct({ film, fighters, pose, C, fps });     // cheap: it re-poses only around each contact
+//   window.EVENTS.strikes = D.strikes;  window.EVENTS.fightDirector = D.findings;
+//
+//   1 reach      are the fighters within weapon reach at the planned clash? (blade + arm, 1.65 m by default)
+//   2 reaction   does the defender's body answer within 0-3 frames of the contact?
+//   3 aim (IK)   did the clash aim actually put the blades together (residual gap under 3 cm)?
+//   4 sub-frame  blade trajectories at 240 Hz: no tunnelling through each other, no teleporting tip
+//   5 one event  { id, t, tb, point, intensity, attacker, defender, verified, drives }
+export const REACH = { arm: 0.74, slack: 0.12 };          // shoulder to grip, plus how much a lunge adds
+
+export function direct({ film, fighters, pose, C, fps = 24 }) {
+  const findings = [];
+  const say = (check, sev, t, msg, fix) => findings.push({ check, sev, t: +(+t).toFixed(3), f: Math.round(t * fps), msg, fix });
+  const byId = Object.fromEntries(fighters.map((f) => [f.id, f]));
+  const S = C.samples ?? [];
+  const at = (tb) => S[clamp(Math.round(tb * RATE), 0, S.length - 1)] ?? null;
+  const posOf = (f) => f.fig.root.getWorldPosition(new THREE.Vector3());
+
+  // 1. reach at every planned clash: the two fighters must be able to touch before the keys pretend they do
+  for (const cl of film.clashes ?? []) {
+    const att = byId[cl.attacker], def = byId[cl.defender];
+    if (!att || !def || !pose) continue;
+    pose(cl.t);
+    const d = posOf(att).distanceTo(posOf(def));
+    const reach = (att.bladeLen ?? 0.91) + REACH.arm + REACH.slack;
+    if (d > reach) say('out-of-reach', 'major', cl.t, `${cl.attacker} is ${d.toFixed(2)} m from ${cl.defender} at the clash but can only reach ${reach.toFixed(2)} m`,
+      `close the gap by ${(d - reach + 0.1).toFixed(2)} m in the keys before ${cl.t.toFixed(2)} s (a lunge or a step), or move the clash later`);
+    // 3. did the aim work? the smallest blade gap inside the clash window
+    const t0 = cl.t - (cl.ramp ?? 0.1), t1 = cl.until ?? cl.t + 0.2;
+    let gap = 9;
+    for (let tb = t0; tb <= t1; tb += 1 / RATE) gap = Math.min(gap, at(tb)?.d ?? 9);
+    if (gap > 0.03) say('aim-missed', 'major', cl.t, `the clash aim leaves ${(gap * 100).toFixed(1)} cm between the blades (no contact is detected)`,
+      'raise the clash "maxDeg" (the wrist correction is clamped), set "s" nearer the middle of the blade, or fix the two keyed arcs so they cross');
+  }
+
+  // 4. sub-frame trajectories: tunnelling (the blades swap sides between two samples) and teleporting tips
+  for (let i = 1; i < S.length; i++) {
+    const gap = Math.min(S[i].d, S[i - 1].d);
+    const closing = (S[i - 1].d - S[i].d) * RATE;                    // m/s of approach
+    if (gap > 0.03 && gap < 0.2 && closing * (1 / RATE) > gap * 1.2 && S[i].d > S[i - 1].d)
+      say('sub-frame-tunnel', 'major', S[i].tb, `the blades pass through each other between two 240 Hz samples (gap ${(gap * 100).toFixed(1)} cm, closing ${closing.toFixed(0)} m/s)`,
+        'slow the body through the cut (film.ramps) or raise the contact threshold: a contact must be detected, not skipped');
+    for (const [key, who] of [['tipH', fighters[0].id], ['tipF', fighters[1].id]]) {
+      const v = S[i][key].distanceTo(S[i - 1][key]) * RATE;
+      if (v > 60) say('tip-teleport', 'minor', S[i].tb, `${who}: the blade tip moves at ${v.toFixed(0)} m/s`, 'an in-between or a speed ramp: above ~50 m/s no smear can cover it');
+    }
+  }
+
+  // 2 + 5. one verified event per contact
+  const strikes = (C.contacts ?? []).map((c, i) => {
+    const s = at(c.tb);
+    const fast = (s?.vH ?? 0) >= (s?.vF ?? 0);
+    const attacker = fast ? fighters[0].id : fighters[1].id;
+    const defender = fast ? fighters[1].id : fighters[0].id;
+    let reaction = null;
+    if (pose) {                                                       // the defender's body speed around the contact
+      const probe = [];
+      for (let k = -6; k <= 8; k++) {
+        const tb = c.tb + k / fps;
+        if (tb < 0) continue;
+        pose(tb);
+        probe.push({ k, p: posOf(byId[defender]).clone(), h: byId[defender].fig.rH.getWorldPosition(new THREE.Vector3()) });
+      }
+      const sp = probe.slice(1).map((r, j) => ({ k: r.k, v: r.p.distanceTo(probe[j].p) * fps + r.h.distanceTo(probe[j].h) * fps }));
+      const before = sp.filter((r) => r.k <= 0);
+      const base = before.length ? before.reduce((a, r) => a + r.v, 0) / before.length : 0;
+      const jump = sp.find((r) => r.k > 0 && r.v > Math.max(0.6, base * 1.6));
+      reaction = jump ? jump.k : null;
+      if (reaction === null) say('no-reaction', 'major', c.t, `${defender} does not answer the blow at ${c.t.toFixed(2)} s (no change of body speed in the 8 frames after it)`,
+        'every contact needs a reaction inside 3 frames: a recoil key on the defender (library/moves.json "stagger", "parry-recoil")');
+      else if (reaction > 3) say('reaction-late', 'minor', c.t, `${defender} answers the blow ${reaction} frames late`, 'move the reaction key to 1-3 frames after the contact: later reads as a miss');
+    }
+    return {
+      id: `blade-contact.${String(i).padStart(2, '0')}`,
+      t: +(c.t ?? c.tb).toFixed(4), tb: +c.tb.toFixed(4), point: c.point, intensity: c.intensity, speed: c.vRel,
+      attacker, defender, reactionFrames: reaction,
+      verified: !findings.some((f) => f.sev === 'major' && Math.abs(f.t - (c.t ?? c.tb)) < 0.12),
+      drives: ['contact', 'sound', 'camera', 'damage'],
+    };
+  });
+  return { strikes, findings, verified: strikes.every((s) => s.verified) };
+}

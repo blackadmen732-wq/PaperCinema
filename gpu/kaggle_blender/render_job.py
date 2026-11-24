@@ -39,7 +39,16 @@ B = '/kaggle/tmp/blender-4.5.16-linux-x64/blender'
 FRAMES = '/kaggle/tmp/frames'
 os.makedirs(FRAMES, exist_ok=True)
 CORES = JOB.get('cores', '0-3')
-THREADS = JOB.get('threads', len(CORES.split(',')))
+# "0-3" is four cores, not one: count the ranges out (len(CORES.split(',')) said 1 and starved Cycles).
+def ncores(spec):
+    n = 0
+    for part in spec.split(','):
+        a, _, b = part.partition('-')
+        n += int(b) - int(a) + 1 if b else 1
+    return max(1, n)
+
+
+THREADS = JOB.get('threads', ncores(CORES))
 print('setup', int(time.time() - t0), f's · cores {CORES} · {THREADS} Cycles threads', flush=True)
 
 
@@ -64,7 +73,11 @@ def render(stage, out):
                                shell=True, capture_output=True, text=True).stdout.split('\n')[0].strip()
             tail = subprocess.run(f'tail -c 4000 {lg} | tr "\\r" "\\n" | grep -v "^$" | tail -1',
                                   shell=True, capture_output=True, text=True).stdout.strip()[:100]
-            print(f'  [{int(time.time() - t1):5d}s] {n} frames | gpu {g} | {tail}', flush=True)
+            # RAM too: a Kaggle GPU session has ~13 GB (a CPU one 30 GB) and is killed without a message
+            # when it runs out, which looks exactly like the CANCEL_ACKNOWLEDGED this job used to die of.
+            mem = subprocess.run("awk '/MemAvailable/{printf \"%.1fG avail\", $2/1048576}' /proc/meminfo",
+                                 shell=True, capture_output=True, text=True).stdout.strip()
+            print(f'  [{int(time.time() - t1):5d}s] {n} frames | gpu {g} | ram {mem} | {tail}', flush=True)
             ticks += 1
     rc = p.wait()
     n = len(glob.glob(f'{out}/*.png'))
