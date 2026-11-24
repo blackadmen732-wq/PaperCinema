@@ -325,13 +325,13 @@ def kasa_wide(ctx, P, rnd):
     bm = bmesh.new()
     skin_rings(bm, rings, cap_first=True)
     kasa = ctx.add('kasa', bm, [ctx.mat(P.get('material', 'washi_hat')), ctx.mat('washi_shade')],
-                   thickness=0.0075)
+                   thickness=0.0045)
     # rolled rim: a low-poly ring of card folded back on itself, the crisp line the reference ends on
     rim = bmesh.new()
     skin_rings(rim, [poly_ring(n, R, zr + P['rim_roll'] * 0.5, flute=0.105, lift=0.016),
                      poly_ring(n, R + P['rim_roll'], zr, flute=0.02),
                      poly_ring(n, R, zr - P['rim_roll'] * 0.9, flute=0.105, lift=0.016)])
-    ctx.add('kasa_rim', rim, [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.004)
+    ctx.add('kasa_rim', rim, [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.0028)
     # the shadow under the brim, so the mask sits in a dark cave like the reference
     ring = bmesh.new()
     skin_rings(ring, [poly_ring(n, R * 0.26, zr + 0.075, flute=0.0),
@@ -398,11 +398,16 @@ def mask_angular(ctx, P, rnd):
     # eye slits: a cut through the sheet, the lantern burning out of it
     for sgn in (1, -1):
         ctx.add(f'eye_{"L" if sgn > 0 else "R"}',
-                box(sgn * w * 0.50, -r * 0.80, mid + 0.055, 0.052, 0.016, P['slit'],
-                    rot=(0, sgn * 0.22, sgn * -0.20)), [ctx.emit('eye', 26.0)], thickness=0.0)
+                box(sgn * w * 0.46, -r * 0.86, mid + 0.052, 0.062, 0.016, P['slit'],
+                    rot=(0, sgn * 0.26, sgn * -0.22)), [ctx.emit('eye', 26.0)], thickness=0.0)
+        # the cut: a dark slot behind the slit, so the eye is a HOLE in the sheet, not a painted mark
         ctx.add(f'eye_slot_{"L" if sgn > 0 else "R"}',
-                box(sgn * w * 0.50, -r * 0.62, mid + 0.055, 0.062, 0.012, P['slit'] * 2.1,
-                    rot=(0, sgn * 0.22, sgn * -0.20)), [ctx.mat('seam_shadow')], thickness=0.0)
+                box(sgn * w * 0.46, -r * 0.58, mid + 0.052, 0.076, 0.030, P['slit'] * 2.4,
+                    rot=(0, sgn * 0.26, sgn * -0.22)), [ctx.mat('seam_shadow')], thickness=0.0)
+        # a crease running from the eye slit down to the jaw, the way a folded mask is scored
+        ctx.add(f'eye_crease_{"L" if sgn > 0 else "R"}',
+                box(sgn * w * 0.60, -r * 0.80, chin + 0.095, 0.010, 0.012, 0.115,
+                    rot=(0, sgn * 0.30, sgn * 0.10)), [ctx.mat('seam_shadow')], thickness=0.0)
     return face
 
 
@@ -615,11 +620,12 @@ def tamoto_wide(ctx, P, rnd):
     # eight corners + two crease points: a box fold, not a cylinder
     pts = [(xo - w * 0.42, -m, zt), (xo + w * 0.58, -m * 0.92, zt),         # 0 1  mouth top, front
            (xo + w * 0.62, m * 0.92, zt), (xo - w * 0.42, m, zt),           # 2 3  mouth top, back
-           (xo - w * 0.50, -m * 1.25, zb + 0.055), (xo + w * 0.74, -m * 1.15, zb + 0.030),   # 4 5
-           (xo + w * 0.78, m * 1.10, zb + 0.030), (xo - w * 0.50, m * 1.20, zb + 0.055),     # 6 7
-           (xo + w * 0.16, -m * 1.42, zb - 0.02), (xo + w * 0.16, m * 1.35, zb - 0.02)]      # 8 9 the fold line
-    F = [(0, 1, 5, 4), (3, 7, 6, 2), (0, 4, 7, 3), (1, 2, 6, 5),
-         (4, 5, 8), (5, 6, 9, 8), (7, 8, 9), (4, 8, 7), (0, 3, 2, 1)]
+           (xo - w * 0.46, -m * 1.30, zb + 0.075), (xo + w * 0.82, -m * 1.18, zb + 0.020),  # 4 5
+           (xo + w * 0.86, m * 1.12, zb + 0.020), (xo - w * 0.46, m * 1.26, zb + 0.075),     # 6 7
+           (xo + w * 0.30, -m * 1.44, zb - 0.045), (xo + w * 0.30, m * 1.36, zb - 0.045)]    # 8 9 fold line
+    # no bottom cap and no top cap: the sleeve is a sheet folded into a bag, open at both ends, so the
+    # lantern inside it shows and it never reads as a solid block
+    F = [(0, 1, 5, 4), (3, 7, 6, 2), (0, 4, 7, 3), (1, 2, 6, 5), (5, 6, 9, 8), (4, 8, 9, 7)]
     bm = shell(pts, F)
     creases(bm, inset=0.006, depth=-0.003, share=0.5, rnd=rnd)
     ob = ctx.add(f'tamoto_{"L" if sg > 0 else "R"}', bm,
@@ -762,7 +768,7 @@ def hakama_shin_plain(ctx, P, rnd):
 
 
 @part('hakama_apron', slot='armor', socket='obi', bone='hakama', size=(0.9, 1.15), layer=52,
-      material='washi_natural', pleats=7, drop=0.46, width=0.145, top=-0.055, tags=('reference', 'legs'),
+      material='washi_natural', pleats=7, drop=0.38, width=0.118, top=-0.055, tags=('reference', 'legs'),
       proportions=('slim', 'standard', 'broad'))
 def hakama_apron(ctx, P, rnd):
     """The hakama's front apron and back koshiita board: the two flat sheets that hang BETWEEN the legs."""

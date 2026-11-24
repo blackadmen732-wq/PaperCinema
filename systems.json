@@ -631,6 +631,25 @@
    "status_note": "🧪 v1"
   },
   {
+   "id": "CHARFACTORY",
+   "name": "Modular origami character factory",
+   "does": "A character = one JSON recipe in `library/character-recipes/`: parts picked from a registry of folded paper pieces (kasa wide/narrow, hachigane, angular/long face masks with eye slits, hair and topknot, layered or plain kimono body with shoulder-to-sternum planes, crossed left-over-right lapels, obi with knot and cord, upper and hanging sleeves as separate folded bags, forearm and kote, folded-finger hands, TWO real pleated hakama legs, tabi+zori or war boots, sode and do lamellar plates, sheathed katana, tassels), each snapped to a socket on the shared humanoid rig (the same joint names as `engine/figure.js` and `rig_trellis.py`, so `library/poses.json` drives it), scaled inside an approved range, dressed from one washi material family with world-scale fibre, rigid parts parented to a bone and flexible ones skinned across 2-3 bones. A second character is made by swapping parts in the recipe only. `part_validator.py` gates the library: material, scale, fibre, pivot, socket, self-intersection, solidify spikes, joint gaps across a five-pose sweep and silhouette readability",
+   "files": [
+    "blender/character/part_registry.py",
+    "blender/character/modular_builder.py",
+    "blender/character/part_validator.py",
+    "library/character-recipes/",
+    "library/paper-materials/",
+    "blender/world/paper_materials.py"
+   ],
+   "guide": [
+    "docs/CHARACTER-FACTORY.md"
+   ],
+   "command": "blender -b -P blender/character/modular_builder.py -- --recipe library/character-recipes/ronin-reference.json --turnaround output/character/t.png --light cinematic",
+   "status": "test",
+   "status_note": "🧪 v1 (two characters; stills + pose sweep)"
+  },
+  {
    "id": "BLENDERFILM",
    "name": "Blender film render (TRELLIS hero)",
    "does": "The owner's reference character fights in Blender from film data: `tools/export_motion.mjs` writes what the preview engine really did per frame (joints, sword, camera, trees, events → `output/<film>.motion.json`); `rig_trellis.py` rigs any TRELLIS `.glb` (our joint names + a table to the standard humanoid names, bone-heat skin with scripted cleanup, relit paper, inner lantern, real-metal katana in a two-hand IK grip, sleeve follow-through) with three drivers: `library/poses.json`, film motion, BVH motion capture; `film_blender.py` renders it with dark cinematic light re-set per frame from the camera, the slash as swept light, dust, tree props, motion blur, and the film's camera or 12 named camera moves / a per-film plan",
