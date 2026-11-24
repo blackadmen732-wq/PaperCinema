@@ -5,3 +5,9 @@ assets/sfx/_cand.*
 __pycache__/
 assets/polyhaven/*
 !assets/polyhaven/CREDITS.md
+
+# graphify knowledge graph: rebuilt locally in ~8 s by `graphify update .`,
+# and graph.json is rewritten whole on every change, so it is not worth 11 MB
+# of repo churn. The .graphifyignore rules ARE committed, so every machine
+# builds the same graph.
+graphify-out/

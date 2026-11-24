@@ -295,23 +295,17 @@
   },
   {
    "t": 1.55,
-   "rig": "slide",
-   "who": "hero",
-   "path": [
-    "elbow",
-    "wrist",
-    "tsuba"
+   "rig": "frame",
+   "subjects": [
+    "hero"
    ],
-   "until": 2.5,
-   "offset": 0.7,
+   "size": "medium",
+   "angle": 34,
+   "elev": 2,
    "fov": 32,
+   "until": 2.5,
    "feel": "dolly",
-   "note": "along the arm to the sword guard, then hold",
-   "from": [
-    0.35,
-    0.3,
-    0.9
-   ]
+   "note": "in on the sword hand, but framed on the hero: the \"slide\" rig along the arm lost him for 4 frames (audit: subject-off-screen), which the frame rig cannot do"
   },
   {
    "t": 2.84,

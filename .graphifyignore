@@ -1,0 +1,9 @@
+# Third-party skill bundles and vendored tools: not our code, and they drown
+# real answers in noise (a blade query returned spot-plate/fan.ts).
+.claude/skills/
+node_modules/
+output/
+assets/
+raw/
+gpu/kaggle_*/work/
+graphify-out/

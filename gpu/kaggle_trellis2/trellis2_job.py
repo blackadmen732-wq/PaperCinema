@@ -59,9 +59,12 @@ sh('mkdir -p /kaggle/tmp/ext && cd /kaggle/tmp/ext && '
    'git clone -q --recursive https://github.com/JeffreyXiang/CuMesh.git && '
    'git clone -q --recursive https://github.com/JeffreyXiang/FlexGEMM.git && '
    'cp -r /kaggle/working/TRELLIS2/o-voxel ./o-voxel')
+sh(env + f'{PY} -m pip -q install "setuptools<70" wheel ninja packaging; nvcc --version | tail -2; '
+   f'{CXX} --version | head -1; {PY} -c "import torch;print(torch.version.cuda, torch.__version__)"', show=1500)
 for e in ['FlexGEMM', 'CuMesh', 'o-voxel']:
-    sh(env + f'cd /kaggle/tmp/ext && {PY} -m pip install --no-build-isolation ./{e} 2>&1 | '
-       'grep -iE "error|nvcc|cuda|success|fatal" | tail -25', show=3000)
+    # keep the WHOLE build log: the first run filtered it and lost the actual compiler diagnostic
+    sh(env + f'cd /kaggle/tmp/ext && {PY} -m pip install -v --no-build-isolation ./{e} '
+       f'> /kaggle/working/build_{e}.log 2>&1; echo "exit $?"; tail -60 /kaggle/working/build_{e}.log', show=6000)
 for m in ['torch', 'xformers', 'flexgemm', 'cumesh', 'o_voxel', 'utils3d']:
     sh(f'{PY} -c "import {m}; print({m}.__name__, getattr({m}, \'__version__\', \'\'))" || echo MISSING {m}', show=400)
 print('install done in', int(time.time() - t0), 's', flush=True)

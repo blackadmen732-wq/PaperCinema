@@ -959,6 +959,52 @@
    "command": "node tools/render_supervisor.mjs film/x.json --plan",
    "status": "test",
    "status_note": "🧪 v1"
+  },
+  {
+   "id": "UEEXPORT",
+   "name": "Unreal export (verified FBX)",
+   "does": "Our rigged origami character → an Unreal-ready FBX, with Epic's own Send-to-Unreal settings and a round-trip verifier: three files (Skeletal Mesh, an Animation Sequence with root motion, an A-pose retarget source), UE5 Mannequin or Mixamo bone names, and ten checks on a re-import (175 cm scale, Z up, `root` at the origin, root motion in metres, skin weights, baked curves, bone names). Epic's `send2ue` / `ue2rigify` add-ons are installed (MIT) for the live push the day Unreal exists",
+   "files": [
+    "blender/character/export_unreal.py",
+    "output/unreal/"
+   ],
+   "guide": [
+    "docs/UNREAL-EXPORT.md"
+   ],
+   "command": "blender -b -t 2 -P blender/character/export_unreal.py -- --model ronin_base --names ue5 --motion output/dash-test.motion.json --f0 0 --f1 48 --out output/unreal/ronin_dash.fbx",
+   "status": "built",
+   "status_note": "✅ verified (3 files PASS)"
+  },
+  {
+   "id": "TOOLSEVAL",
+   "name": "Outside-tool evaluation",
+   "does": "Nine third-party tools checked against rule 6 (code AND weights read separately), installed where safe, tested on our own assets, and recorded: Epic BlenderTools (kept), Rigger (GPL, tested, does not beat our rig), FreeMoCap (AGPL, needs 2+ cameras), RGB MoCap (non-commercial models, study only), TRELLIS.2 (MIT weights; nvdiffrast/nvdiffrec are the non-commercial trap), three agent-skill repos, FilmAgent, Fab's five licence pitfalls, Unreal_Tools",
+   "files": [
+    "docs/TOOLS-EVALUATED.md",
+    "docs/MOCAP-RESEARCH.md",
+    "output/rigger/"
+   ],
+   "guide": [
+    "docs/TOOLS-EVALUATED.md"
+   ],
+   "command": null,
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
+   "id": "TRELLIS2",
+   "name": "TRELLIS.2 Kaggle job",
+   "does": "Image → 3D with Microsoft TRELLIS.2-4B (code MIT, weights MIT) on Kaggle's free T4, built like `gpu/kaggle_trellis/`: own Python 3.10 + torch 2.6/cu124, xformers (a T4 is sm_75, so no flash-attn and no native bf16), FlexGEMM + CuMesh + o-voxel, GLB export through `o_voxel.postprocess.to_glb`. It deliberately does not install nvdiffrast or nvdiffrec (NVIDIA Source Code Licence, non-commercial) and writes no preview video — the neutral-light clay renders that compare a generation against TRELLIS v1 are done in Blender with `clay_compare.py`",
+   "files": [
+    "gpu/kaggle_trellis2/",
+    "blender/character/clay_compare.py"
+   ],
+   "guide": [
+    "docs/TOOLS-EVALUATED.md"
+   ],
+   "command": "bash gpu/kaggle_trellis2/run.sh push",
+   "status": "test",
+   "status_note": "🧪 run 1: the three CUDA add-ons failed to build on the T4"
   }
  ],
  "connections": [
