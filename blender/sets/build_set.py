@@ -16,9 +16,12 @@ Options:
   --seed N               override the set seed                       --exposure EV  override the grade
   --frame N              frame to render (particles and rain move)   --no-fog     skip fog pieces (fast look check)
   --no-post              skip the compositor (bloom, vignette)
+  --polyhaven / --no-polyhaven   force the Poly Haven layer (CC0 photo textures + HDRI ambient) on / off for this
+                         build, whatever the set's "polyhaven" says (before/after comparisons)
 
 The JSON format (see docs/SETS.md): name, seed, lighting {preset, sky, sun, exposure, look, fighter, bloom,
-vignette}, materials {key: {overrides}}, pieces [{kit, name, pos, rot, scale, seed, params}], marks {MARK_x:
+vignette}, polyhaven (true | {textures, detail, hdri: role | {role, ambient, clamp, sat, rot, mix} | false}),
+materials {key: {overrides}}, pieces [{kit, name, pos, rot, scale, seed, params}], marks {MARK_x:
 {pos, face}}, cameras {CAM_x: {pos, look | look_mark + look_z, lens, fstop, focus, note}}, preview_cams, render.
 """
 import json
@@ -117,6 +120,102 @@ def build_sky(scene, sky, sun):
         ob.rotation_euler = (-sun_dir(sun['elev'], sun['az'])).to_track_quat('-Z', 'Y').to_euler()
         return ob
     return None
+
+
+# =========================================================================== Poly Haven HDRI ambient
+PH_HDRI = {'night': 'night', 'dusk': 'dusk', 'dawn': 'dawn', 'day': 'day', 'overcast': 'overcast'}
+
+
+def ph_config(S, preset):
+    """The set's "polyhaven" block normalised to a dict (None = off). --polyhaven / --no-polyhaven override it."""
+    v = S.get('polyhaven', False)
+    if flag('no-polyhaven'):
+        return None
+    if flag('polyhaven') and not v:
+        v = True
+    if not v:
+        return None
+    cfg = dict(v) if isinstance(v, dict) else {}
+    cfg.setdefault('textures', True)
+    cfg.setdefault('detail', 1.0)
+    cfg.setdefault('hdri', PH_HDRI.get(preset, 'night'))
+    return cfg
+
+
+def hdri_stats(img, clamp):
+    """Mean radiance (solid-angle weighted, after clamping at clamp x mean) and the brightest spot's u of an
+    equirectangular image."""
+    import numpy as np
+    w, h = img.size
+    px = np.empty(w * h * 4, dtype=np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(h, w, 4)[::2, ::2, :3]
+    lum = px[..., 0] * 0.2126 + px[..., 1] * 0.7152 + px[..., 2] * 0.0722
+    rows = lum.shape[0]
+    lat = (np.arange(rows) + 0.5) / rows * math.pi - math.pi / 2         # row 0 = bottom
+    wgt = np.cos(lat)[:, None]
+    mean = float((lum * wgt).sum() / (wgt.sum() * lum.shape[1]))
+    cap = clamp * mean
+    for _ in range(3):                                                   # mean of the clamped image
+        mean_c = float((np.minimum(lum, cap) * wgt).sum() / (wgt.sum() * lum.shape[1]))
+        cap = clamp * mean_c
+    iy, ix = np.unravel_index(int(np.argmax(lum)), lum.shape)
+    return mean_c, cap, (ix + 0.5) / lum.shape[1], (iy + 0.5) / rows
+
+
+def add_hdri(world, cfg, sun):
+    """Light the set with a Poly Haven HDRI while the camera keeps seeing the procedural sky: diffuse and glossy
+    rays see the HDRI (brightness normalised to `ambient`, the photographed sun clamped off so the set's sun or
+    moon lamp keeps the only hard shadow, brightest spot turned to the set's sun azimuth), camera rays see the old
+    world. Key / fill / rim and practical lights are untouched."""
+    ent = cfg['hdri']
+    if not ent:
+        return None
+    M = pm.PH['manifest'] or {}
+    over = dict(ent) if isinstance(ent, dict) else {'role': ent}
+    base = dict(M.get('hdris', {}).get(over.get('role'), {}))
+    if not base:
+        print('  ! polyhaven: no HDRI role', over.get('role'))
+        return None
+    base.update({k: v for k, v in over.items() if k != 'role'})
+    files = pm.ph_files(base['id'])
+    if not files or 'hdri' not in files:
+        return None
+    img = bpy.data.images.load(files['hdri'], check_existing=True)
+    mean, cap, u, v = hdri_stats(img, base.get('clamp', 8))
+    ang_h = (u - 0.5) * 2 * math.pi
+    a = math.radians(sun.get('az', 0))
+    ang_s = math.atan2(math.cos(a), -math.sin(a))
+    rot = ang_s - ang_h + math.radians(base.get('rot', 0))
+    nt = world.node_tree
+    T = pm._NT(nt)
+    bg = nt.nodes['Background']
+    wo = nt.nodes['World Output']
+    tc = T.node('ShaderNodeTexCoord')
+    mp = T.node('ShaderNodeMapping', Vector=tc.outputs['Generated'])
+    mp.inputs['Rotation'].default_value = (0, 0, rot)
+    env = T.node('ShaderNodeTexEnvironment', Vector=mp.outputs['Vector'])
+    env.image = img
+    cl = T.node('ShaderNodeVectorMath', Vector=env.outputs['Color'])
+    cl.operation = 'MINIMUM'
+    cl.inputs[1].default_value = (cap, cap, cap)
+    hs = T.node('ShaderNodeHueSaturation', Color=cl.outputs['Vector'], Saturation=base.get('sat', 1.0))
+    strength = base.get('ambient', 0.1) / max(mean, 1e-6)
+    bg2 = T.node('ShaderNodeBackground', Color=hs.outputs['Color'], Strength=strength)
+    light = bg2.outputs['Background']
+    mixw = base.get('mix', 1.0)
+    if mixw < 1.0:
+        mx0 = T.node('ShaderNodeMixShader', Fac=mixw)
+        T.link(bg.outputs['Background'], mx0.inputs[1]); T.link(light, mx0.inputs[2])
+        light = mx0.outputs['Shader']
+    lp = T.node('ShaderNodeLightPath')
+    mx = T.node('ShaderNodeMixShader', Fac=lp.outputs['Is Camera Ray'])
+    T.link(light, mx.inputs[1])
+    T.link(bg.outputs['Background'], mx.inputs[2])
+    T.link(mx.outputs['Shader'], wo.inputs['Surface'])
+    print(f"  polyhaven HDRI {base['id']}: mean {mean:.4f} -> ambient {base.get('ambient', 0.1)} (x{strength:.2f}), "
+          f"sun clamped at {cap:.3f}, hot spot u={u:.2f} v={v:.2f} turned {math.degrees(rot):.0f} deg to az {sun.get('az', 0)}")
+    return base['id']
 
 
 # =========================================================================== compositor
@@ -375,7 +474,14 @@ def main():
 
     Lg = S.get('lighting', {})
     Lg = merge(PRESETS.get(Lg.get('preset', 'night'), PRESETS['night']), Lg)
+    phc = ph_config(S, S.get('lighting', {}).get('preset', 'night'))
+    pm.ph_enable(bool(phc), scale=phc['detail'] if phc else 1.0)        # loads library/polyhaven.json
     sun = build_sky(scene, Lg['sky'], Lg['sun'])
+    if phc:
+        add_hdri(scene.world, phc, Lg['sun'])
+    pm.PH['on'] = bool(phc and phc['textures'])                          # texture layer for every recipe built below
+    scene['polyhaven'] = bool(phc)
+    print('  polyhaven:', 'off' if not phc else f"textures {'on' if phc['textures'] else 'off'}, hdri {phc['hdri']}")
     if sun:
         colls['LIGHTS'].objects.link(sun)
     scene['set_sun'] = {'sun_elev': Lg['sun']['elev'], 'sun_az': Lg['sun']['az']}

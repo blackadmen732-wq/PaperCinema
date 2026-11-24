@@ -3,3 +3,5 @@ output/
 gpu/.pod.json
 assets/sfx/_cand.*
 __pycache__/
+assets/polyhaven/*
+!assets/polyhaven/CREDITS.md

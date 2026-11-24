@@ -141,8 +141,18 @@ The owner's direction: capture comes from an existing mocap app that exports BVH
 - **Tree props** from `film.props.trees` with the engine's cut and split motion.
 - **Depth**: three rows of torn-paper ridges far behind and in front of the action line (2.5D layers).
 - Motion blur (off across hard cuts), a soft glare, depth of field focused on the chest.
-- `--set output/sets/dojo.blend --at x,y,z,yaw` stages the film inside a built set (`docs/SETS.md`); our lights
-  drop to 45%. Not yet tested on stills.
+
+### In a set (`docs/SETS.md`)
+
+```bash
+# the film inside a built set: the action line is laid on MARK_hero → MARK_foe, centred between the marks
+... film_blender.py -- --film film/dash-test.json --set output/sets/castle.blend --out output/blender/dash-test-castle/ --times 1.167,4.208
+# a set still with the TRELLIS characters on the marks in a pose (hero = ronin_base, other roles = samurai_front)
+... blender/sets/build_set.py -- --set castle-courtyard --preview output/sets/castle_trellis.png --with-character hero:chudan:trellis,foe:hasso:trellis
+```
+In a set the set's own light stays and our fighter lights drop to 30% (`--light` scales them); `--at x,y,z,yaw`
+places the action by hand. Tested on stills: `output/blender/dash-test-castle/sheet.png`, `output/sets/castle_trellis.png`.
+`rt.place(ch, location, yaw, collection)` stands a character anywhere from your own script.
 
 ## 6. Camera: moves and the beat → camera table
 
@@ -201,5 +211,7 @@ Next, in order of value:
 - No visible hands: two paper fists sit on the handle.
 - The model is 1.75 m to the hat tip with short legs, so strides are shorter than the preview's.
 - The blade path is lower than the engine's (shoulders at 1.20 m, not 1.39 m): prop cut heights differ by that much.
-- BVH: tested with a synthetic file only; finger, toe and wrist rotations are ignored.
+- BVH: tested with a synthetic file only (`output/blender/bvh-test/sheet.png`); finger, toe and wrist rotations are ignored.
+- `samurai_front` and the other models use the hero's landmarks until someone measures them (§8).
+- In a set the film's camera can pass through walls or props: the KUROKO guards know the preview's world, not the set. Use `--cam plan` or check stills.
 - Only motion-page films export; only the first fighter has been rendered.
