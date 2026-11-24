@@ -616,7 +616,7 @@ def kimono_layered(ctx, P, rnd):
     rings = [outline_ring(CORE_OUTLINE, z, hw, pw(z, CORE_HD)) for z, hw in wz]
     rings.append(outline_ring(CORE_OUTLINE, 1.452, 0.062, 0.060))
     skin_rings(bm, rings, cap_last=True)
-    body = ctx.add('kimono_body', tidy(bm), [ctx.mat('washi_shade', glow=ctx.lit(0.30)), ctx.mat('seam_shadow')],
+    body = ctx.add('kimono_body', tidy(bm), [ctx.mat('washi_shade', glow=ctx.lit(0.15)), ctx.mat('seam_shadow')],
                    thickness=0.008)
     # the glowing core seen through the collar gap and the sleeve mouths
     ctx.add('inner_lantern', box(0, 0.0, 1.20, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
@@ -681,10 +681,11 @@ def eri_crossed(ctx, P, rnd):
         top = fn + Vector((-sg * 0.010, 0.012, 0.016))          # the band starts up at the collar stand
         st = [(top, 0.004), (m, -0.003), (e, 0.004)]             # (edge point, how much the far edge sits back)
         pts = []
-        for p, back in st:
-            free = p + nrm * 0.008 + Vector((0, -proud, 0))
-            ridge = p - nrm * (w * 0.42) + Vector((0, -proud - 0.009, 0))
-            inner = p - nrm * w + Vector((0, -proud + back, 0))
+        for k, (p, back) in enumerate(st):
+            pr = proud if k < 2 else proud - 0.022            # the last station dives under the obi
+            free = p + nrm * 0.008 + Vector((0, -pr, 0))
+            ridge = p - nrm * (w * 0.42) + Vector((0, -pr - (0.009 if k < 2 else 0.0), 0))
+            inner = p - nrm * w + Vector((0, -pr + back, 0))
             pts += [tuple(free), tuple(ridge), tuple(inner)]
         F = [(0, 1, 4, 3), (1, 2, 5, 4), (3, 4, 7, 6), (4, 5, 8, 7)]
         made = ctx.add(f'eri_{tag}', tidy(shell(pts, F)),

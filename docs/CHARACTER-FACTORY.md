@@ -179,18 +179,37 @@ full slash — all real poses from `library/poses.json`).
 
 - a **pleated kasa**: radial ribs that fold up *and* in, a rolled rim, and a dark cave under the brim;
 - an **angular mask** with a nose ridge, cut cheek planes and eye slits the lantern burns through;
-- **big flat shoulder planes** running from the neck out to the shoulder and down to the sternum;
-- **crossed lapels, left over right**, with a dark seam slot behind the overlap;
-- a wrapped **obi** that reads as two passes of one strip, with a knot and a cord;
-- **wide hanging sleeves** that are separate folded bags, open and lit inside;
-- **two real pleated hakama legs** down to pointed tabi — the single biggest failure of the fused models;
+- a **wrapped kimono of few, big sheets**: ONE diagonal sheet (left over right) across the chest, a second sheet
+  crossing under it a full step behind, both folded over the shoulder into flat shoulder planes and a back yoke,
+  both tucked under the obi; a folded lapel band rides proud along each diagonal;
+- a **standing collar in two steps** (outer collar + inner juban collar) rising from the lapels to the nape, with a
+  real slot between it and the neck;
+- a proud **obi** the sheets tuck under: band, second pass, keeper-loop knot with two tails, cord, koshiita behind;
+- **wide sleeve bags in two tiers** cut from one cone (`SLV_TOP` → `SLV_MOUTH`): the upper tier fans out from under
+  the shoulder lip and is cut on a diagonal, the hanging bag steps out beneath it to a big slanted OPEN mouth with a
+  turned-back cuff; valley creases between the ridges, like the kasa;
+- a **diagonal robe skirt** below the obi that continues the lapel's line, then **two real knife-pleated hakama legs**
+  with an open front split, and a flared lower tier stepping out from under the long pleated sheet;
+- silhouette: sleeves ≈ 2.2× the waist, hem ≈ 1.6× the waist — never a column;
 - paper thickness visible at every cut edge, and a dark gap wherever two sheets meet.
 
 Verify it the way a studio does: `--turnaround` under **both** `--light neutral` and `--light cinematic`,
 plus a pose sweep, and look at every still. `python3 tools/ai.py review <png> "compare to a folded-paper
 samurai: what is wrong?"` is a free second opinion (AGENTS.md rule 02) and costs nothing.
 
+## Judge the geometry in clay first
+
+Materials and light hide weak form. Strip them: a Workbench render with no lights and no materials (cavity
+shading only) shows whether the SHEETS read. Torso and lapels share `kimono_sheet()`, both sleeve parts share
+`sleeve_ring()`, both leg parts share `leg_ring()` — change the frame, not one part, or the layers stop lining up.
+Outer sheets take no inner glow (`ctx.lit(0)`); only sheets seen from inside (sleeve bag, lower hem tier, juban)
+take a little, or the cinematic render washes the folds out.
+
 ## Known weak spots
+
+- In the library's `neutral` pose the arms swing 7° inward, so the hands sit behind the hip; the recipe's own
+  `pose_overrides` hang them straight so they show below the sleeve mouths.
+- Arms overhead (jodan) push the wide sleeves through the kasa brim.
 
 - The pose sweep proves the parts stay joined; it does not prove the *cloth* reads — skinned sleeves and
   hakama interpolate linearly across 2-3 bones, so a deep crouch pinches the hakama a little.
