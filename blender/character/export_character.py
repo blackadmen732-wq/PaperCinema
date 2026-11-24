@@ -25,8 +25,13 @@ def material_info(material):
     }
 
 
-def export_character(recipe_path, output):
+def export_character(recipe_path, output, part=None):
     recipe = mb.load_recipe(recipe_path)
+    if part:
+        parts = [entry for entry in recipe['parts'] if entry['part'] == part]
+        if not parts:
+            raise ValueError(f'Part {part!r} is missing from recipe {recipe["id"]!r}')
+        recipe = dict(recipe, parts=parts)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.unit_settings.system = 'METRIC'
@@ -73,6 +78,7 @@ def export_character(recipe_path, output):
         staged_manifest.write_text(json.dumps({
             'version': 1,
             'recipe': recipe['id'],
+            'part': part,
             'units': 'metres',
             'forward': '-Y',
             'up': '+Z',
@@ -90,11 +96,12 @@ def export_character(recipe_path, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--recipe', type=Path, required=True)
+    parser.add_argument('--part', help='Export only this mounted part and its skeleton')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else [])
     if args.out.suffix.lower() != '.fbx':
         parser.error('--out must end in .fbx')
-    export_character(args.recipe, args.out.resolve())
+    export_character(args.recipe, args.out.resolve(), args.part)
 
 
 if __name__ == '__main__':

@@ -48,6 +48,7 @@ def flag(n):
 
 # =========================================================================== poses (port of engine/figure.js)
 POSES = json.load(open(os.path.join(REPO, 'library', 'poses.json')))
+CATALOG = json.loads((Path(REPO) / 'library' / 'character-models.json').read_text(encoding='utf-8'))
 BASE = dict(x=0, y=0, z=0, ry=0, rx=0, rz=0, tx=0, ty=0, tz=0, hx=0, hy=0, hz=0, rsx=0.05, rsz=0.12, rex=-0.15,
             lsx=0.05, lsz=-0.12, lex=-0.15, rwx=0, lwx=0, rwz=0, lwz=0, sway=0, swayx=0, stance=0.12, crouch=0,
             weight=0, cx=0, cy=0, cz=0, nx=0, ny=0, rcy=0, rcz=0, lcy=0, lcz=0, rsy=0, lsy=0, rfy=0, lfy=0,
@@ -239,9 +240,15 @@ def parent_rigid(ob, joint):
     return ob
 
 
-def lay_paper_grain(ob, origin):
+def lay_paper_grain(ob, origin, scale=1.0):
     """Keep the texel density in metres and store the grain in the mesh before skinning."""
     mesh = ob.data
+    if 'PaperGrain' in mesh.uv_layers:
+        ob['pc_unfolded'] = True
+        if scale != 1.0:
+            for loop in mesh.uv_layers['PaperGrain'].data:
+                loop.uv *= scale
+        return
     uv = mesh.uv_layers.new(name='PaperGrain')
     radial = bool(mesh.materials[0].get('pc_grain_radial'))
     for poly in mesh.polygons:
@@ -304,7 +311,7 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
                 if scale != 1.0:                       # scale the MESH about the socket: object scale stays 1
                     ob.data.transform(Matrix.Translation(ctx.socket) @ Matrix.Scale(scale, 4)
                                       @ Matrix.Translation(-ctx.socket))
-                lay_paper_grain(ob, ctx.socket)
+                lay_paper_grain(ob, ctx.socket, scale)
                 bind[ob.name] = ('skin' if not spec['rigid'] else 'rigid', bone, bones)
                 built.append(ob)
             report.append(f'{key:<22}{sock:<14}{len(made)} objects  scale {scale:.2f}')
@@ -422,6 +429,14 @@ def load_recipe(path, ancestors=()):
     return merged
 
 
+def cast_recipe(recipe_id=None, character=None, *, lead=True):
+    """Resolve the production recipe by explicit override, film character, or stage role."""
+    name = recipe_id or CATALOG['cast'].get(character) or CATALOG['default_hero' if lead else 'default_foe']
+    if not name or Path(name).name != name or '\\' in name:
+        raise ValueError(f'Expected a character recipe ID, got {name!r}')
+    return load_recipe(Path(REPO) / 'library' / 'character-recipes' / (name + '.json'))
+
+
 # =========================================================================== lighting + render
 def studio(scene, kind='neutral', coll=None):
     """neutral = the flat studio that hides nothing (the one the models were audited under);
@@ -487,6 +502,8 @@ def render(scene, path):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     scene.render.filepath = os.path.abspath(path)
     bpy.ops.render.render(write_still=True)
+    if not os.path.isfile(scene.render.filepath):
+        raise RuntimeError(f'Blender did not write {path}')
     print('wrote', path)
     return path
 

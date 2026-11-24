@@ -1,15 +1,21 @@
-# 3D assets
+# 3D character assets
 
-Generated from your reference images with **Microsoft TRELLIS** (MIT licence, commercial use OK) on a rented RunPod RTX 4090.
+The production cast lives in [character recipes](../library/character-recipes/). Blender films and sets resolve
+the cast through [the character catalog](../library/character-models.json). Each recipe builds a rigged
+character with independent arms and legs and assigns paper materials separately from the geometry.
 
-| File | From | Notes |
+The seven GLBs in `models/` are the original Microsoft TRELLIS references. Their generated paint and
+reconstructed silhouettes are useful for comparing against the modular rebuilds.
+
+| Original GLB | Production replacement | What to check |
 |---|---|---|
-| `models/ronin_base.glb` | Straw-hat samurai (your base image) | Clean. Inner glow baked into the texture. |
-| `models/samurai_front.glb` | Front-facing samurai with sword | Clean, full body |
-| `models/gold_armor.glb` | Gold origami armored samurai | Red paint splash from the background got included. Needs cleanup. |
-| `models/kimono_swordswoman.glb` | Red/teal kimono swordswoman | The red sun disc behind her became a disc shape. Needs cleanup. |
-| `models/kasa_hat.glb` | Straw hat on its own | Clean accessory for the library |
+| `ronin_base.glb` | `ronin-reference` | Folded sleeves and collar, narrow amber eye openings, separate legs |
+| `origami_samurai_s7.glb` | `ronin-reference` | This source is another seed of the same design |
+| `origami_samurai_s21.glb` | `ronin-reference` | This source is another seed of the same design |
+| `samurai_front.glb` | `front-samurai` | Indigo cloth, uncovered head, shorter cuffs |
+| `gold_armor.glb` | `gold-armour` | Ochre card scales and no background paint geometry |
+| `kimono_swordswoman.glb` | `kimono-swordswoman` | Teal and vermilion paper, hair ribbons and no sun disc |
+| `kasa_hat.glb` | `kasa_wide` | Radial ribs, folded rim, suspended headband and stand-alone export |
 
-`previews/*_turntable.mp4` show each model spinning.
-
-Regenerate: `python3 gpu/pod.py start` → upload images to `/workspace/in` → run `gpu/gen_trellis.py` → `python3 gpu/pod.py stop`.
+Use the [character guide](../docs/CHARACTER-FACTORY.md) to render, pose or export the replacements.
+The sculpting comparisons are under `previews/`. The original TRELLIS-generation scripts are in `gpu/`.

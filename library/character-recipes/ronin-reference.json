@@ -16,9 +16,10 @@
       "part": "kasa_wide",
       "scale": 1.0,
       "params": {
-        "radius": 0.425,
-        "rise": 0.29,
-        "ribs": 24
+        "radius": 0.371,
+        "rise": 0.288,
+        "ribs": 24,
+        "brim_lift": 0.111
       }
     },
     {
@@ -92,12 +93,13 @@
   "pose": "neutral",
   "pose_overrides": {
     "stance": 0.34,
-    "rsz": 0.4,
-    "lsz": -0.31,
-    "rsx": -0.18,
-    "lsx": -0.32,
-    "hx": 0.13,
-    "rex": -1.38,
-    "lex": -1.18
+    "rsz": 0.48,
+    "lsz": -0.39,
+    "rsx": -0.11,
+    "lsx": -0.18,
+    "hx": 0.05,
+    "rex": -1.08,
+    "lex": -0.98,
+    "hy": 0.1
   }
 }

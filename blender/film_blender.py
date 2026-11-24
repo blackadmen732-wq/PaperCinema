@@ -1,4 +1,4 @@
-"""BLENDERFILM: render a film's performance and camera in Blender with the TRELLIS hero. Guide: docs/CHARACTER-BLENDER.md.
+"""BLENDERFILM: render the film's performance and camera with the modular paper cast.
 
   B=/opt/blender-dl/blender-4.5.16-linux-x64/blender
   node tools/export_motion.mjs film/dash-test.json                      # once per film change → output/dash-test.motion.json
@@ -13,7 +13,7 @@
                     side-track, over-shoulder, blade-close (library/blender-cameras.json → "moves")
   --bvh take.bvh    motion capture instead of a film: any BVH (Blender's importer), retargeted onto the character;
                     --cam defaults to circle; --two-hand puts the left hand on the handle; --bvh-forward -Y|Y|X|-X
-  --model ronin_base   which TRELLIS model plays the first fighter       --mode heat|panels|cloak|rigid
+  --model ronin_base   explicitly cast a legacy TRELLIS model           --mode heat|panels|cloak|rigid
   --recipes hero=ronin-reference,foe=armoured-warrior   cast modular paper characters by actor ID
   --res 432x768 --samples 16 --fog 0.012 --no-blur --no-slash --no-dust --no-glare
   --set output/sets/dojo.blend   stage the film inside a built set (blender/sets/, docs/SETS.md): the action line is laid
@@ -22,7 +22,7 @@
   --save file.blend    keep the scene
 
 What it builds
-  * the character (blender/character/rig_trellis.py) baked from output/<film>.motion.json: the engine's real joints
+  * the cast from library/character-models.json, driven by the real joints in output/<film>.motion.json
   * the katana in a two-hand grip, the inner lantern, the film's tree props
   * dark cinematic light (research/reference-videos.md): about 70% darkness, a warm key from the camera's side, a strong
     cool rim from behind that follows the camera, a low fill; the glow is the brightest thing on screen
@@ -478,15 +478,18 @@ def main():
         cid, sep, recipe_id = assignment.partition('=')
         if not sep or cid not in cids or cid in recipes or not recipe_id or '/' in recipe_id or '\\' in recipe_id:
             raise ValueError(f'Invalid cast assignment {assignment!r}. Use actor=recipe with actors {", ".join(cids)}.')
-        recipe = os.path.join(REPO, 'library', 'character-recipes', recipe_id + '.json')
-        recipes[cid] = modular.load_recipe(recipe)
-    models = (arg('model', 'ronin_base')).split(',')
+        recipes[cid] = modular.cast_recipe(recipe_id)
+    legacy = arg('model')
+    models = legacy.split(',') if legacy else []
     f_lo, f_hi = min(frames) - 1, max(frames) + 1
     solved = {}
     for n, cid in enumerate(cids):
-        demonic = mo['meta']['cast'].get(cid, {}).get('demonic', False)
-        if cid in recipes:
-            solved[cid] = bake_modular(recipes[cid], mo, cid, root, demonic, f_lo, f_hi)
+        actor = mo['meta']['cast'].get(cid, {})
+        demonic = actor.get('demonic', False)
+        if cid in recipes or not models:
+            recipe = recipes.get(cid) or modular.cast_recipe(character=actor.get('character'), lead=n == 0)
+            print(f'[film_blender] cast {cid}: {recipe["id"]}')
+            solved[cid] = bake_modular(recipe, mo, cid, root, demonic, f_lo, f_hi)
             continue
         ch = rt.build_character(models[min(n, len(models) - 1)], mode=arg('mode', 'heat'), name='RIG_' + cid, demonic=demonic)
         ch['rig'].parent = root

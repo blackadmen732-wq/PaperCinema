@@ -23,8 +23,7 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
 ## Build a modular paper character
 
 Each character is a recipe in [`library/character-recipes/`](library/character-recipes). Pick the mask, hat,
-collar, sleeves and trousers, then choose the paper sheets. The same skeleton drives the ivory Ronin, the
-armoured warrior and the Sage Wayfarer, whose right sleeve is shorter than the left.
+collar, sleeves and trousers, then choose the paper sheets. Six recipes share the same skeleton. Blender films and sets cast them by default. The [asset inventory](assets/README.md) maps all seven source GLBs to a recipe or an accessory.
 
 ```bash
 blender -b --python-exit-code 1 -P blender/character/modular_builder.py -- \

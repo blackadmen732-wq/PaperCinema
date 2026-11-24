@@ -1,5 +1,7 @@
 # The hero in Blender: rig, film render, motion capture, camera
 
+Production casts use the [modular character catalog](CHARACTER-FACTORY.md). The TRELLIS rig below is available for source comparison with `--model ronin_base`.
+
 The owner's reference character (TRELLIS model `assets/models/ronin_base.glb`) fights in Blender, driven by the same
 film data as the browser preview. The box figures in `engine/*.js` are the preview; this is the picture.
 

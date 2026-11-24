@@ -147,7 +147,7 @@ and circular inheritance.
 ## Materials and folds
 
 Each sheet lives in `library/paper-materials/`. The master material uses two crossing fiber fields and finer
-pulp grain to give the surface a woven finish. The mesh stores this grain in rest-pose `PaperGrain` UVs.
+pulp grain to give the surface a woven finish. The mesh stores this grain in rest-pose `PaperGrain` UVs. The continuous garment wraps carry their grain across folds. The closed wraps have one marked seam.
 When the sleeves bend, the surface pattern moves with them. Planar garment UVs use one UV unit per metre.
 The kasa uses an angular coordinate around the brim with the radius in metres. Add a sheet by copying and
 renaming a material JSON, then use `paper` in a recipe to map an existing sheet to it.
@@ -163,15 +163,27 @@ npx playwright install chromium
 node tools/export_motion.mjs film/motion-test.json
 
 blender -b --python-exit-code 1 -P blender/film_blender.py -- \
-  --film film/motion-test.json --recipes hero=ronin-reference,foe=armoured-warrior \
+  --film film/motion-test.json \
   --times 0.5,2.0 --out output/blender/modular-proof
 ```
 
-The Blender film uses the existing world-space performance and camera export. The selected actors use modular
-paper shells. The film carries the performance's animated sword prop outside the body rig.
+The Blender film uses the existing world-space performance and camera export. The catalog chooses the modular
+recipe from the film cast. Use `--recipes hero=ronin-reference,foe=gold-armour` to override a film cast.
+Use `--model ronin_base` when comparing the original generated mesh. The film carries the performance's animated sword prop outside the body rig.
 The motion export currently accepts films using `engine/motion.html`. To use an installed copy of Chromium,
 set `PAPERCINEMA_CHROMIUM` to its executable path. Use `--no-denoise` in the Blender commands on builds
 without Cycles denoising support.
+
+## Render the catalogue shot
+
+```bash
+blender -b --python-exit-code 1 -P blender/character/character_shot.py -- \
+  --recipe ronin-reference --frames 1-12 --out output/character/shot
+```
+
+The Kaggle render job runs this entry point and encodes the PNG sequence only after it verifies the frame range.
+Use `bash gpu/kaggle_blender/run.sh pack` to package the current recipes and paper sheets, then `push` to
+start the job and `get` to retrieve the result.
 
 ## Export a character to Unreal
 
@@ -179,6 +191,8 @@ without Cycles denoising support.
 blender -b --python-exit-code 1 -P blender/character/export_character.py -- \
   --recipe library/character-recipes/ronin-reference.json --out output/unreal/ronin.fbx
 ```
+
+For the standalone kasa, add `--part kasa_wide` to the same command.
 
 The export writes the bind-pose skeletal mesh, its `PC_Rig_v1` bone hierarchy, weights, paper edge geometry,
 UVs and a `.materials.json` sidecar. Every visible rigid sheet has one bone at full weight. Flexible sleeves
@@ -201,6 +215,7 @@ full slash — all real poses from `library/poses.json`).
 |---|---|
 | `material` | a mesh has an empty material slot |
 | `paper_uv` | a part is missing rest-pose grain UVs |
+| `continuous_grain` | authored grain jumps across a shared garment edge with no marked seam |
 | `scale` | object scale is not 1 (the fibre-size failure) |
 | `fibre` | the sheet's density is outside `WASHI_FIBRE_RANGE` |
 | `pivot` | the part has no rigid parent or skin binding |
