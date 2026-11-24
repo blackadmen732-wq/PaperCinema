@@ -13,16 +13,17 @@
   ],
   "fibre_density": 1.15,
   "fibre_direction": "lengthwise",
-  "fibre_strength": 0.13,
+  "fibre_strength": 0.36,
   "roughness": 0.78,
-  "sheen": 0.32,
+  "sheen": 0.08,
   "thickness_mm": 0.35,
   "fold_darkening": 0.22,
   "edge_wear": 0.2,
-  "translucency": 0.4,
+  "translucency": 0.192,
   "inner_light": 1.25,
   "facet_variation": 0.05,
   "shimi": "amber-soak",
   "note": "Thin, bright, very translucent: sleeves, collar, the sheets meant to glow.",
-  "id": "washi_bleached"
+  "id": "washi_bleached",
+  "grain_contrast": 0.44
 }

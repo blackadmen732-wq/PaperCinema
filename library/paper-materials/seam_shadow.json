@@ -24,5 +24,6 @@
   "facet_variation": 0.02,
   "shimi": null,
   "note": "Not a sheet: the dark slot that sits behind every overlap so a join reads as two pieces of paper.",
-  "id": "seam_shadow"
+  "id": "seam_shadow",
+  "grain_contrast": 0.1
 }

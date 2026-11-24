@@ -24,5 +24,6 @@
   "facet_variation": 0.05,
   "shimi": "ink-bleed",
   "note": "Heavy dark card: hakama, armour plates, the second character. Worn white at every folded edge.",
-  "id": "card_indigo"
+  "id": "card_indigo",
+  "grain_contrast": 0.3
 }

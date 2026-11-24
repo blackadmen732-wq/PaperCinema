@@ -13,7 +13,7 @@ What it does, in order:
   2. loads the recipe's parts from blender/character/part_registry.py, snaps each one to its socket in the
      rest pose, scales it INSIDE its approved range (scaling the mesh, never the object, so the washi fibre
      stays world-size on every part), and assigns its sheet from library/paper-materials/;
-  3. hides faces that are sealed inside another part of the same bone;
+  3. projects paper grain into UVs in the rest pose;
   4. parents rigid parts to their bone and skins flexible ones (sleeves, hakama legs) across 2-3 bones;
   5. poses it and hands back {'rig', 'joints', 'objects', 'collection'}.
 
@@ -23,11 +23,10 @@ import json
 import math
 import os
 import sys
+from pathlib import Path
 
-import bmesh
 import bpy
 from mathutils import Matrix, Vector
-from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, '..', '..'))
@@ -240,49 +239,26 @@ def parent_rigid(ob, joint):
     return ob
 
 
-# =========================================================================== internal faces
-def hide_internal_faces(objs, bind):
-    """Delete faces sealed inside another RIGID part on the same bone: they never show and cost samples."""
-    removed = 0
-    rigid = [o for o in objs if bind.get(o.name, ('rigid', None))[0] == 'rigid' and o.type == 'MESH'
-             and len(o.data.polygons) < 3000]
-    trees = {}
-    for o in rigid:
-        bm = bmesh.new()
-        bm.from_mesh(o.data)
-        bm.transform(o.matrix_world)
-        trees[o.name] = (BVHTree.FromBMesh(bm), [v.co.copy() for v in bm.verts])
-        bm.free()
-    for a in rigid:
-        for b in rigid:
-            if a is b or bind[a.name][1] != bind[b.name][1]:
-                continue
-            if reg.PARTS.get(b.get('pc_part', ''), {}).get('layer', 0) <= \
-               reg.PARTS.get(a.get('pc_part', ''), {}).get('layer', 0):
-                continue
-            tree = trees[b.name][0]
-            bm = bmesh.new()
-            bm.from_mesh(a.data)
-            bm.transform(a.matrix_world)
-            kill = []
-            for f in bm.faces:
-                c = f.calc_center_median()
-                hits, o2 = 0, c
-                for _ in range(6):                      # odd number of crossings = inside
-                    r = tree.ray_cast(o2 + Vector((0, 0, 1e-4)), Vector((0.31, 0.47, 0.83)))
-                    if r[0] is None:
-                        break
-                    hits += 1
-                    o2 = r[0] + Vector((0.31, 0.47, 0.83)) * 1e-4
-                if hits % 2 == 1:
-                    kill.append(f)
-            if kill and len(kill) < len(bm.faces):
-                bm.transform(a.matrix_world.inverted())
-                bmesh.ops.delete(bm, geom=kill, context='FACES')
-                bm.to_mesh(a.data)
-                removed += len(kill)
-            bm.free()
-    return removed
+def lay_paper_grain(ob, origin):
+    """Keep the texel density in metres and store the grain in the mesh before skinning."""
+    mesh = ob.data
+    uv = mesh.uv_layers.new(name='PaperGrain')
+    radial = bool(mesh.materials[0].get('pc_grain_radial'))
+    for poly in mesh.polygons:
+        normal = poly.normal
+        upright = Vector((0, 0, 1)) if abs(normal.z) < 0.9 else Vector((0, 1, 0))
+        across = upright.cross(normal).normalized()
+        along = normal.cross(across).normalized()
+        center = poly.center - origin
+        heading = math.atan2(center.y, center.x)
+        for i in poly.loop_indices:
+            point = mesh.vertices[mesh.loops[i].vertex_index].co - origin
+            if radial:
+                angle = math.atan2(point.y, point.x)
+                turn = (heading + (angle - heading + math.pi) % math.tau - math.pi) / math.tau
+                uv.data[i].uv = (turn, math.hypot(point.x, point.y))
+            else:
+                uv.data[i].uv = (point.dot(across), point.dot(along))
 
 
 # =========================================================================== build
@@ -290,6 +266,9 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
           seed=None, pose_overrides=None):
     """Build one character from a recipe dict. Returns {'rig','joints','objects','collection','recipe'}."""
     name = name or recipe.get('id', 'CHARACTER')
+    if isinstance(pose, str) and pose not in POSES:
+        raise ValueError(f'{name}: unknown pose {pose!r}')
+    entries = sorted(validated_parts(recipe['parts']), key=lambda e: reg.PARTS[e['part']]['layer'])
     scene = bpy.context.scene
     if collection is None:
         collection = bpy.data.collections.new(name)
@@ -302,27 +281,21 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
                       suffix='' if name == 'CHARACTER' else '_' + name,
                       proportion=recipe.get('proportion', 'standard'))
     bind, built, report = {}, [], []
-    entries = sorted(recipe['parts'], key=lambda e: reg.PARTS[e['part']]['layer'])
     for entry in entries:
         key = entry['part']
-        if key not in reg.PARTS:
-            raise KeyError(f'recipe {name}: no such part {key!r} (see part_registry.py)')
         spec = reg.PARTS[key]
         scale = float(entry.get('scale', 1.0))
-        lo, hi = spec['size']
-        if not (lo - 1e-6 <= scale <= hi + 1e-6):
-            raise ValueError(f'{key}: scale {scale} outside the approved range {lo}-{hi}')
-        socks = entry.get('sockets') or spec['socket']
+        socks = entry['sockets']
         for sock in socks:
             S = reg.SOCKETS[sock]
             ctx.socket = Vector(S['pos'])
             ctx.sock = sock
             ctx.side = S['side'] if S['side'] else 1
-            before = set(ctx.objects)
+            before = len(ctx.objects)
             P = dict(spec['defaults'])
             P.update(entry.get('params', {}))
             spec['fn'](ctx, P, ctx.rnd)
-            made = [o for o in ctx.objects if o not in before]
+            made = ctx.objects[before:]
             bone = entry.get('bone') or spec['bone'] or S['bone']
             bones = [_mirror(b, ctx.side) for b in (entry.get('bones') or spec['bones'])] or [bone]
             for ob in made:
@@ -331,11 +304,11 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
                 if scale != 1.0:                       # scale the MESH about the socket: object scale stays 1
                     ob.data.transform(Matrix.Translation(ctx.socket) @ Matrix.Scale(scale, 4)
                                       @ Matrix.Translation(-ctx.socket))
+                lay_paper_grain(ob, ctx.socket)
                 bind[ob.name] = ('skin' if not spec['rigid'] else 'rigid', bone, bones)
                 built.append(ob)
             report.append(f'{key:<22}{sock:<14}{len(made)} objects  scale {scale:.2f}')
     bpy.context.view_layer.update()
-    hidden = hide_internal_faces(built, {k: (v[0], v[1]) for k, v in bind.items()})
     for ob in built:
         kind, bone, bones = bind[ob.name]
         if kind == 'skin' and len(ob.data.vertices):
@@ -361,42 +334,92 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
         lo.location = Vector(off)
     bpy.context.view_layer.update()
     print('\n'.join(report))
-    print(f'[builder] {name}: {len(built)} objects, {hidden} internal faces removed, '
+    print(f'[builder] {name}: {len(built)} objects, '
           f'{sum(len(o.data.polygons) for o in built)} faces')
     return {'rig': rig, 'joints': rig.J, 'objects': built, 'collection': collection, 'recipe': recipe,
             'armature': rig.rig, 'bind': bind}
 
 
-def load_recipe(path):
-    with open(path) as fh:
-        r = json.load(fh)
-    base = r.get('extends')
-    if base:
-        p = base if os.path.isabs(base) else os.path.join(os.path.dirname(os.path.abspath(path)), base)
-        parent = load_recipe(p if p.endswith('.json') else p + '.json')
-        merged = dict(parent)
-        merged.update({k: v for k, v in r.items() if k != 'extends'})
-        if 'swap' in r or 'add' in r or 'drop' in r:
-            # Swap by SLOT (one kasa, one torso, one obi…), except the slots that legitimately hold several
-            # parts at once — there armour and accessories are swapped, added and dropped BY NAME.
-            multi = {'armor', 'accessory'}
+def part_mount(entry):
+    part = entry['part']
+    slot = reg.PARTS[part]['slot']
+    return part if slot in {'armor', 'accessory'} else slot
 
-            def k(e):
-                sl = reg.PARTS[e['part']]['slot']
-                return e['part'] if sl in multi else sl
-            kit = {k(e): e for e in merged['parts']}
-            for e in r.get('swap', []):
-                kit[k(e)] = e
-            for name in r.get('drop', []):
-                kit.pop(name, None)
-                for key, e in list(kit.items()):
-                    if e['part'] == name or reg.PARTS[e['part']]['slot'] == name:
-                        kit.pop(key, None)
-            for e in r.get('add', []):
-                kit[k(e)] = e
-            merged['parts'] = list(kit.values())
-        r = merged
-    return r
+
+def part_entries(entries):
+    for entry in entries:
+        part = entry['part']
+        if part not in reg.PARTS:
+            raise ValueError(f'Unknown part {part!r}. List valid parts with part_registry.py.')
+        spec = reg.PARTS[part]
+        minimum, maximum = spec['size']
+        scale = float(entry.get('scale', 1.0))
+        if not minimum <= scale <= maximum:
+            raise ValueError(f'{part}: scale {scale} outside the approved range {minimum}–{maximum}')
+        sockets = entry.get('sockets', spec['socket'])
+        if not isinstance(sockets, list) or not sockets or len(sockets) != len(set(sockets)):
+            raise ValueError(f'{part}: supply a non-empty list of distinct sockets')
+        for socket in sockets:
+            if socket not in spec['socket']:
+                raise ValueError(f'{part}: socket {socket!r} is incompatible. Expected {spec["socket"]}.')
+        unknown = entry.get('params', {}).keys() - spec['defaults'].keys()
+        if unknown:
+            raise ValueError(f'{part}: unknown parameters {", ".join(sorted(unknown))}')
+        for bone in ([entry['bone']] if 'bone' in entry else []) + entry.get('bones', []):
+            if bone not in reg.REST:
+                raise ValueError(f'{part}: unknown bone {bone!r}')
+        yield dict(entry, sockets=sockets)
+
+
+def validated_parts(entries):
+    validated, occupied = [], set()
+    for entry in part_entries(entries):
+        mounts = {(part_mount(entry), socket) for socket in entry['sockets']}
+        if occupied & mounts:
+            raise ValueError(f'{entry["part"]}: a part already occupies {sorted(occupied & mounts)}')
+        occupied.update(mounts)
+        validated.append(entry)
+    if not validated:
+        raise ValueError('Recipe must contain at least one part.')
+    return validated
+
+
+def load_recipe(path, ancestors=()):
+    path = Path(path).resolve()
+    if path in ancestors:
+        raise ValueError('Circular recipe inheritance: ' + ' → '.join(p.name for p in (*ancestors, path)))
+    recipe = json.loads(path.read_text(encoding='utf-8'))
+    base = recipe.pop('extends', None)
+    parent = load_recipe(path.parent / (base if base.endswith('.json') else base + '.json'),
+                         (*ancestors, path)) if base else {}
+    swaps, additions, drops = (recipe.pop(key, []) for key in ('swap', 'add', 'drop'))
+    kit = {}
+    for entry in validated_parts(recipe.get('parts', parent.get('parts', []))):
+        for socket in entry['sockets']:
+            kit[part_mount(entry), socket] = dict(entry, sockets=[socket])
+    for entry in validated_parts(swaps) if swaps else ():
+        for socket in entry['sockets']:
+            kit[part_mount(entry), socket] = dict(entry, sockets=[socket])
+    kit = {mount: entry for mount, entry in kit.items()
+           if entry['part'] not in drops and reg.PARTS[entry['part']]['slot'] not in drops}
+    for entry in validated_parts(additions) if additions else ():
+        for socket in entry['sockets']:
+            kit[part_mount(entry), socket] = dict(entry, sockets=[socket])
+    # Consolidate equivalent entries to preserve the public recipe shape and render order.
+    grouped = {}
+    for entry in kit.values():
+        key = json.dumps({k: v for k, v in entry.items() if k != 'sockets'}, sort_keys=True)
+        if key in grouped:
+            grouped[key]['sockets'].extend(entry['sockets'])
+        else:
+            grouped[key] = dict(entry, sockets=list(entry['sockets']))
+    merged = parent | recipe
+    merged['parts'] = validated_parts(grouped.values())
+    merged['paper'] = parent.get('paper', {}) | recipe.get('paper', {})
+    unknown_sheets = (merged['paper'].keys() | set(merged['paper'].values())) - pm.washi_sheet_ids()
+    if unknown_sheets:
+        raise ValueError(f'{path.name}: unknown paper sheets {", ".join(sorted(unknown_sheets))}')
+    return merged
 
 
 # =========================================================================== lighting + render
@@ -409,15 +432,16 @@ def studio(scene, kind='neutral', coll=None):
     w.use_nodes = True
     bg = w.node_tree.nodes['Background']
     if kind == 'neutral':
-        bg.inputs[0].default_value = (0.55, 0.56, 0.58, 1)
-        bg.inputs[1].default_value = 1.4
-        rig = (((-2.5, -3, 3.2), 400, 2.5, (1, 1, 1)), ((3, -1.5, 2), 160, 2, (1, 1, 1)),
-               ((0, 3.5, 2.5), 200, 3, (1, 1, 1)))
-        exposure = 0.0
+        bg.inputs[0].default_value = (0.66, 0.72, 0.75, 1)
+        bg.inputs[1].default_value = 0.40
+        rig = (((-2.6, -2.4, 3.45), 390, 1.45, (1.0, 0.98, 0.96)),
+               ((2.0, -2.1, 1.7), 58, 2.0, (0.87, 0.94, 1.0)),
+               ((0, 3.5, 2.5), 165, 2.4, (1, 1, 1)))
+        exposure = 0.2
     else:
         bg.inputs[0].default_value = (0.010, 0.012, 0.020, 1)
         bg.inputs[1].default_value = 0.35
-        rig = (((-2.2, -2.4, 2.9), 160, 1.2, (1.0, 0.95, 0.88)),
+        rig = (((-2.2, -2.4, 3.25), 270, 1.2, (1.0, 0.95, 0.88)),
                ((2.6, 1.9, 2.4), 110, 1.0, (0.70, 0.80, 1.0)),
                ((0.4, -3.4, 0.5), 14, 1.5, (1.0, 0.72, 0.42)))
         exposure = -0.35
@@ -436,10 +460,10 @@ def studio(scene, kind='neutral', coll=None):
     return scene
 
 
-def render_settings(scene, res='420x740', samples=24):
+def render_settings(scene, res='420x740', samples=24, denoise=True):
     scene.render.engine = 'CYCLES'
     scene.cycles.samples = int(samples)
-    scene.cycles.use_denoising = True
+    scene.cycles.use_denoising = denoise
     scene.cycles.device = 'CPU'
     x, y = res.split('x')
     scene.render.resolution_x, scene.render.resolution_y = int(x), int(y)
@@ -471,14 +495,16 @@ def frame(objs):
     """Centre and height of what was actually built, so a turnaround always fills the frame."""
     lo = Vector((9e9, 9e9, 9e9))
     hi = Vector((-9e9, -9e9, -9e9))
+    depsgraph = bpy.context.evaluated_depsgraph_get()
     for o in objs:
-        if o.type != 'MESH' or not len(o.data.vertices):
+        if o.type != 'MESH' or not len(o.data.vertices) or o.get('pc_internal'):
             continue
-        for v in o.bound_box:
-            w = o.matrix_world @ Vector(v)
+        evaluated = o.evaluated_get(depsgraph)
+        for v in evaluated.data.vertices:
+            w = evaluated.matrix_world @ v.co
             lo = Vector((min(lo.x, w.x), min(lo.y, w.y), min(lo.z, w.z)))
             hi = Vector((max(hi.x, w.x), max(hi.y, w.y), max(hi.z, w.z)))
-    return (0.0, 0.0, (lo.z + hi.z) / 2), max(hi.z - lo.z, 0.5)
+    return tuple((lo + hi) / 2), max(hi.z - lo.z, 0.5)
 
 
 VIEWS = (('front', 0), ('three-quarter', 40), ('side', 90), ('back', 180))
@@ -488,7 +514,7 @@ def turnaround(scene, out, center=(0, 0, 0.95), dist=4.3, lens=70, views=VIEWS, 
     files = []
     for nm, deg in views:
         a = math.radians(deg)
-        camera(scene, (-math.sin(a) * dist, -math.cos(a) * dist,
+        camera(scene, (center[0] - math.sin(a) * dist, center[1] - math.cos(a) * dist,
                        center[2] + 0.12 if eye is None else eye), center, lens)
         files.append(render(scene, out.replace('.png', f'-{nm}.png')))
     return files
@@ -508,29 +534,29 @@ def main():
                pose_overrides=None if arg('pose') else recipe.get('pose_overrides'), yaw=math.radians(float(arg('ry', 0))))
     if arg('still') or arg('turnaround'):
         studio(scene, arg('light', 'neutral'))
-        render_settings(scene, arg('res', '420x740'), arg('samples', 24))
+        render_settings(scene, arg('res', '420x740'), arg('samples', 24), denoise=not flag('no-denoise'))
         center, height = frame(ch['objects'])
         if arg('poses'):
-            # a pose sweep (or a slash): one still per pose, same camera, so motion is the only variable
+            # Reframe each pose using the evaluated silhouette.
             a = math.radians(float(arg('angle', 34)))
-            d = float(arg('dist', 0) or height * 2.55)
-            camera(scene, (-math.sin(a) * d, -math.cos(a) * d, center[2] + 0.12), center,
-                   float(arg('lens', 70)))
             out = arg('poses_out') or arg('still') or 'output/character/pose.png'
             for nm in arg('poses').split(','):
                 ch['rig'].pose(nm, **(recipe.get('pose_overrides', {}) if nm == 'neutral' else {}))
                 c2, h2 = frame(ch['objects'])      # re-frame: the pose is the subject, not the framing
                 d2 = float(arg('dist', 0) or h2 * 2.55)
-                camera(scene, (-math.sin(a) * d2, -math.cos(a) * d2, c2[2] + 0.12), c2,
+                camera(scene, (c2[0] - math.sin(a) * d2, c2[1] - math.cos(a) * d2, c2[2] + 0.12), c2,
                        float(arg('lens', 70)))
                 render(scene, out.replace('.png', f'-{nm}.png'))
         elif arg('turnaround'):
             turnaround(scene, arg('turnaround'), center=center,
                        dist=float(arg('dist', 0) or height * 2.55), lens=float(arg('lens', 70)))
         else:
-            a = math.radians(float(arg('angle', 28)))
+            a = math.radians(float(arg('angle', 38 if flag('portrait') else 28)))
+            if flag('portrait'):
+                center = (*center[:2], center[2] + height * 0.22)
+                height *= 0.67
             d = float(arg('dist', 0) or height * 2.55)
-            camera(scene, (-math.sin(a) * d, -math.cos(a) * d, center[2] + 0.12), center,
+            camera(scene, (center[0] - math.sin(a) * d, center[1] - math.cos(a) * d, center[2] + 0.12), center,
                    float(arg('lens', 70)))
             render(scene, arg('still'))
     if arg('out'):

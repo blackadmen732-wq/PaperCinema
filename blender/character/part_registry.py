@@ -132,7 +132,7 @@ def part(name, *, slot, socket, bone=None, bones=None, rigid=True, size=(0.9, 1.
         PARTS[name] = dict(
             name=name, fn=fn, slot=slot, socket=socks, bone=bone, bones=list(bones or []), rigid=rigid,
             size=tuple(size), layer=SLOTS[slot][1] if layer is None else layer, material=material, rim=rim,
-            proportions=tuple(proportions), tags=tuple(tags), defaults=defaults,
+            proportions=tuple(proportions), tags=tuple(tags), defaults={'material': material, **defaults},
             doc=(fn.__doc__ or '').strip().split('\n')[0])
         return fn
     return deco
@@ -261,8 +261,11 @@ class PartCtx:
     # ---- materials: one family, world-scale fibre, every sheet from library/paper-materials/
     def mat(self, key, *, glow=None, color=None):
         key = self.overrides.get(key, key)
+        # The sheet reflects and transmits light. Only the narrow openings should read as emissive.
+        if glow is True:
+            glow = (self.glow[0], min(self.glow[1] * 0.018, 0.08))
         return pm.PC_Washi_Master(key, scale=1.0, suffix=self.suffix,
-                                  glow=(self.glow if glow is True else glow), color=color)
+                                  glow=glow, color=color)
 
     def emit(self, key='glow', strength=None):
         nm = 'PC_Glow_' + key + self.suffix
@@ -270,6 +273,10 @@ class PartCtx:
         m = bpy.data.materials.get(nm)
         if m is None:
             m = pm.emission_material(nm, self.glow[0], self.glow[1] if strength is None else strength)
+            m.diffuse_color = (*self.glow[0], 1)
+            m.metallic = 0.0
+            m['pc_emission_color'] = self.glow[0]
+            m['pc_emission_strength'] = self.glow[1] if strength is None else strength
         return m
 
     # ---- geometry
@@ -312,31 +319,41 @@ class PartCtx:
 
 # =========================================================================== PARTS: head
 @part('kasa_wide', slot='hat', socket='head_top', bone='head', size=(0.85, 1.15), material='washi_hat',
-      ribs=22, radius=0.40, rise=0.255, brim_lift=0.075, rim_roll=0.013, tags=('reference',),
+      ribs=22, radius=0.40, rise=0.255, brim_lift=0.075, rim_roll=0.008, tags=('reference',),
       proportions=('slim', 'standard', 'broad'))
 def kasa_wide(ctx, P, rnd):
     """Wide pleated kasa: radial ribs from the apex, a folded brim break and a rolled rim (the reference hat)."""
     S = ctx.socket
     n, R = int(P['ribs']), P['radius']
     apex, zr = S.z + P['rise'], S.z + P['brim_lift']
-    rings = [poly_ring(n, R * 0.05, apex, flute=0.0),
-             poly_ring(n, R * 0.58, apex - (apex - zr) * 0.58, flute=0.085, lift=0.009),
-             poly_ring(n, R, zr, flute=0.105, lift=0.016)]
+    rings = [poly_ring(n, R * 0.018, apex),
+             poly_ring(n, R * 0.66, apex - (apex - zr) * 0.65, flute=0.024, lift=0.005),
+             poly_ring(n, R, zr, flute=0.030, lift=0.006)]
     bm = bmesh.new()
     skin_rings(bm, rings, cap_first=True)
     kasa = ctx.add('kasa', bm, [ctx.mat(P.get('material', 'washi_hat')), ctx.mat('washi_shade')],
                    thickness=0.0045)
+    # Thin raised ribs follow the folded cone. Use the same straw paper as the shell.
+    ribs = bmesh.new()
+    for i in range(n):
+        rows = []
+        for ring, half_width in zip(rings, (0.0002, 0.0022, 0.0026)):
+            p = Vector(ring[i]) + Vector((0, 0, 0.002))
+            d = Vector((-p.y, p.x, 0)).normalized() * half_width
+            rows.append([tuple(p - d), tuple(p + Vector((0, 0, half_width))), tuple(p + d)])
+        skin_rings(ribs, rows, close=False)
+    ctx.add('kasa_ribs', ribs, [ctx.mat('washi_bleached'), ctx.mat('washi_shade')], thickness=0.0015)
     # rolled rim: a low-poly ring of card folded back on itself, the crisp line the reference ends on
     rim = bmesh.new()
-    skin_rings(rim, [poly_ring(n, R, zr + P['rim_roll'] * 0.5, flute=0.105, lift=0.016),
-                     poly_ring(n, R + P['rim_roll'], zr, flute=0.02),
-                     poly_ring(n, R, zr - P['rim_roll'] * 0.9, flute=0.105, lift=0.016)])
+    skin_rings(rim, [poly_ring(n, R, zr + P['rim_roll'] * 0.45, flute=0.030, lift=0.006),
+                     poly_ring(n, R + P['rim_roll'], zr, flute=0.030, lift=0.006),
+                     poly_ring(n, R, zr - P['rim_roll'] * 0.45, flute=0.030, lift=0.006)])
     ctx.add('kasa_rim', rim, [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.0028)
     # the shadow under the brim, so the mask sits in a dark cave like the reference
     ring = bmesh.new()
     skin_rings(ring, [poly_ring(n, R * 0.26, zr + 0.075, flute=0.0),
-                      poly_ring(n, R * 0.94, zr + 0.004, flute=0.08)])
-    ctx.add('kasa_under', ring, [ctx.mat('seam_shadow')], thickness=0.002, rim_mat=False)
+                      poly_ring(n, R * 0.86, zr + 0.008, flute=0.025)])
+    ctx.add('kasa_under', ring, [ctx.mat('washi_shade')], thickness=0.002, rim_mat=False)
     return kasa
 
 
@@ -375,40 +392,42 @@ def hachigane(ctx, P, rnd):
 def mask_angular(ctx, P, rnd):
     """Angular folded face: a nose ridge down the centre, flat cheek planes, a cut chin and two eye slits."""
     S = ctx.socket
-    w, L, r = P['width'], P['length'], P['ridge']
-    top, mid, chin = S.z + L * 0.42, S.z + L * 0.02, S.z - L * 0.58
-    # 0 crown, 1/2 brow sides, 3 nose bridge, 4/5 cheek sides, 6 nose tip, 7/8 jaw, 9 chin, 10/11 back
-    P3 = [(0, 0.02, top + 0.02),
-          (w * 0.92, 0.015, top - 0.015), (-w * 0.92, 0.015, top - 0.015),
-          (0, -r * 0.85, top - 0.045),
-          (w * 0.96, -0.018, mid), (-w * 0.96, -0.018, mid),
-          (0, -r, mid - 0.015),
-          (w * 0.62, -0.012, chin + 0.055), (-w * 0.62, -0.012, chin + 0.055),
-          (0, -r * 0.68, chin),
-          (w * 0.52, 0.085, top - 0.03), (-w * 0.52, 0.085, top - 0.03),
-          (w * 0.40, 0.075, chin + 0.03), (-w * 0.40, 0.075, chin + 0.03),
-          (0, 0.085, chin + 0.02)]
-    F = [(0, 3, 1), (0, 2, 3), (1, 3, 6, 4), (2, 5, 6, 3), (4, 6, 9, 7), (5, 8, 9, 6),
-         (7, 9, 14, 12), (8, 13, 14, 9), (0, 1, 10), (0, 11, 2), (1, 4, 12, 10), (2, 11, 13, 5),
-         (4, 7, 12), (5, 13, 8), (10, 12, 14, 11), (11, 14, 13)]
-    bm = shell(P3, F)
-    creases(bm, inset=0.0035, depth=-0.0018, share=0.55, rnd=rnd)
-    face = ctx.add('face_mask', bm, [ctx.mat(P.get('material', 'washi_natural'), glow=True), ctx.mat('washi_shade')],
-                   thickness=0.0075)
-    # eye slits: a cut through the sheet, the lantern burning out of it
-    for sgn in (1, -1):
-        ctx.add(f'eye_{"L" if sgn > 0 else "R"}',
-                box(sgn * w * 0.46, -r * 0.86, mid + 0.052, 0.062, 0.016, P['slit'],
-                    rot=(0, sgn * 0.26, sgn * -0.22)), [ctx.emit('eye', 26.0)], thickness=0.0)
-        # the cut: a dark slot behind the slit, so the eye is a HOLE in the sheet, not a painted mark
-        ctx.add(f'eye_slot_{"L" if sgn > 0 else "R"}',
-                box(sgn * w * 0.46, -r * 0.58, mid + 0.052, 0.076, 0.030, P['slit'] * 2.4,
-                    rot=(0, sgn * 0.26, sgn * -0.22)), [ctx.mat('seam_shadow')], thickness=0.0)
-        # a crease running from the eye slit down to the jaw, the way a folded mask is scored
-        ctx.add(f'eye_crease_{"L" if sgn > 0 else "R"}',
-                box(sgn * w * 0.60, -r * 0.80, chin + 0.095, 0.010, 0.012, 0.115,
-                    rot=(0, sgn * 0.30, sgn * 0.10)), [ctx.mat('seam_shadow')], thickness=0.0)
-    return face
+    width, length, ridge = P['width'], P['length'], P['ridge']
+    if not 0 < P['slit'] < length * 0.12:
+        raise ValueError("Mask slit must be positive and narrower than 12 percent of the mask height.")
+    front = S.y - ridge
+
+    def point(x, y, z):
+        return (x * width, front + y * ridge, S.z + z * length)
+
+    for sign, side in ((1, 'L'), (-1, 'R')):
+        def mirror(points):
+            points = [(sign * x, y, z) for x, y, z in points]
+            return points if sign > 0 else points[::-1]
+
+        crown, temple = point(0, 1.35, 0.48), point(0.91, 1.65, 0.23)
+        bridge, tip = point(0, 0.06, 0.18), point(0, -0.42, -0.17)
+        jaw, chin = point(0.55, 0.64, -0.34), point(0, 0.32, -0.58)
+        ear, cheek = point(0.86, 1.60, -0.15), point(0.62, 0.38, -0.18)
+        inner, outer = Vector(point(0.16, 0.0, 0.22)), Vector(point(0.81, 1.02, 0.055))
+        slit = Vector((0, 0, P['slit']))
+        below, lower_outer = inner - slit, outer - slit * 0.62
+        sheet = ctx.mat(P['material'])
+        shade = ctx.mat('washi_shade')
+        paper = bmesh.new()
+        for pts in ((crown, temple, outer, inner, bridge), (temple, ear, lower_outer, outer),
+                    (bridge, below, cheek, tip), (below, lower_outer, ear, cheek),
+                    (tip, cheek, jaw, chin), (cheek, ear, jaw)):
+            join(paper, panel(mirror(pts)))
+        ctx.add('mask_' + side, paper, [sheet, shade], thickness=0.0028)
+        # This is a layer behind a real opening between the two folded sheets.
+        recess = Vector((0, 0.005, 0))
+        opening = [inner + recess, outer + recess, lower_outer + recess, below + recess]
+        ctx.add('eye_' + side, panel(mirror(opening)),
+                [ctx.emit('eye', ctx.glow[1] * 3.0)], thickness=0.0)
+        side_panel = [temple, point(0.66, 3.4, 0.32), point(0.53, 3.1, -0.26), jaw, ear]
+        ctx.add('mask_side_' + side, panel(mirror(side_panel), bulge=0.003, normal=(sign, 0, 0)),
+                [shade, ctx.mat('seam_shadow')], thickness=0.0035)
 
 
 @part('mask_long', slot='face', socket='face', bone='head', size=(0.9, 1.12), material='washi_bleached',
@@ -456,7 +475,9 @@ def neck_column(ctx, P, rnd):
     """The folded neck: a short five-sided column, deliberately dark so the collar gap glows around it."""
     S = ctx.socket
     bm = bmesh.new()
-    skin_rings(bm, [poly_ring(5, P['radius'] * 1.12, S.z - 0.06), poly_ring(5, P['radius'], S.z + 0.055)])
+    skin_rings(bm, [poly_ring(5, P['radius'] * 1.40, S.z - 0.095),
+                    poly_ring(5, P['radius'] * 1.1, S.z - 0.018, cy=-0.012),
+                    poly_ring(5, P['radius'] * 0.92, S.z + 0.065, cy=-0.034)])
     return ctx.add('neck', bm, [ctx.mat('washi_shade', glow=True), ctx.mat('seam_shadow')], thickness=0.005)
 
 
@@ -476,7 +497,7 @@ def kimono_layered(ctx, P, rnd):
                     poly_ring(7, P['shoulder'] * 0.80, cz + 0.255, flute=0.03, sy=d - 0.06, phase=0.45)],
                cap_last=True)
     creases(bm, inset=0.005, depth=-0.0025, share=0.35, rnd=rnd)
-    body = ctx.add('kimono_body', bm, [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')],
+    body = ctx.add('kimono_body', bm, [ctx.mat(P['material'], glow=True), ctx.mat('washi_shade')],
                    thickness=0.008)
     # the glowing core seen through the collar gap and the sleeve mouths
     ctx.add('inner_lantern', box(0, 0.0, cz + 0.02, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
@@ -486,17 +507,17 @@ def kimono_layered(ctx, P, rnd):
     out = sh * 1.22                                   # the shoulder sheet reaches out OVER the sleeve
     for sgn in (1, -1):
         # the cape over the shoulder: neck → shoulder tip, sloping out and down
-        cape = [(sgn * 0.048, -0.055, cz + 0.265), (sgn * out, -0.045, cz + 0.150),
-                (sgn * out * 0.98, 0.085, cz + 0.145), (sgn * 0.048, 0.095, cz + 0.250)]
+        cape = [(sgn * 0.077, -0.045, cz + 0.31), (sgn * out, -0.087, cz + 0.167),
+                (sgn * out * 0.94, 0.085, cz + 0.155), (sgn * 0.08, 0.068, cz + 0.275)]
         ctx.add(f'yoke_{sgn}', panel(cape, bulge=-0.010, normal=(0, 0, 1)),
-                [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.008)
+                [ctx.mat(P['material']), ctx.mat('washi_shade')], thickness=0.008)
         # the big diagonal plane from the shoulder tip down to the sternum: the reference's dominant shape
-        front = [(sgn * 0.048, -0.075, cz + 0.262), (sgn * out, -0.060, cz + 0.148),
-                 (sgn * out * 0.90, -0.105, cz - 0.040), (sgn * 0.040, -0.142, cz + 0.040)]
+        front = [(sgn * 0.077, -0.046, cz + 0.31), (sgn * out, -0.087, cz + 0.167),
+                 (sgn * out * 0.82, -0.135, cz + 0.002), (sgn * 0.097, -0.146, cz - 0.079)]
         ctx.gap(f'yoke_gap_{sgn}', front, push=(0, 0.012, 0), grow=0.005)
         ctx.add(f'yoke_front_{sgn}', panel(front, bulge=-0.014),
-                [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.0085)
-        back = [(sgn * 0.044, 0.095, cz + 0.250), (sgn * out * 0.96, 0.082, cz + 0.145),
+                [ctx.mat(P['material']), ctx.mat('washi_shade')], thickness=0.0085)
+        back = [(sgn * 0.080, 0.068, cz + 0.275), (sgn * out * 0.94, 0.085, cz + 0.155),
                 (sgn * out * 0.86, 0.108, cz - 0.030), (sgn * 0.038, 0.128, cz + 0.040)]
         ctx.add(f'yoke_back_{sgn}', panel(back, bulge=0.012, normal=(0, 1, 0)),
                 [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.0075)
@@ -512,19 +533,19 @@ def kimono_plain(ctx, P, rnd):
 
 
 @part('eri_crossed', slot='collar', socket='collar', bone='upper', size=(0.9, 1.12), material='washi_bleached',
-      width=0.090, drop=0.235, tags=('reference',), proportions=('slim', 'standard', 'broad'))
+      width=0.105, drop=0.235, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def eri_crossed(ctx, P, rnd):
     """Crossed lapels, LEFT OVER RIGHT, each a folded strip with thickness and a dark slot behind it."""
     cz = REST['upper'][2]
     w, drop = P['width'], P['drop']
-    top, bot = cz + 0.235, cz - drop + 0.10
+    top, bot = cz + 0.32, cz - drop + 0.10
     made = []
     # under lapel first (wearer's right, +x in three.js terms is our left), then the over lapel on top of it
     for tag, sgn, y, sheet in (('under', -1, 0.004, 'washi_shade'), ('over', 1, -0.016, 'washi_bleached')):
-        inner_t = (sgn * 0.040, -0.138 + y, top)
-        outer_t = (sgn * 0.168, -0.092 + y, top - 0.045)
-        inner_b = (-sgn * 0.030, -0.148 + y, bot)
-        outer_b = (-sgn * 0.030 + sgn * w * 1.25, -0.126 + y, bot + 0.058)
+        inner_t = (sgn * 0.039, -0.068 + y, top)
+        outer_t = (sgn * (0.051 + w), -0.090 + y, top - 0.078)
+        inner_b = (-sgn * 0.134, -0.151 + y, bot + 0.018)
+        outer_b = (-sgn * 0.134 + sgn * w * 1.02, -0.168 + y, bot - 0.040)
         pts = [inner_t, outer_t, outer_b, inner_b]
         if tag == 'over':
             ctx.gap('eri_gap', pts, push=(0, 0.009, 0), grow=0.006)
@@ -536,8 +557,9 @@ def eri_crossed(ctx, P, rnd):
                  tuple(Vector(outer_t) + Vector((-sgn * 0.022, -0.006, -0.014))),
                  tuple(Vector(outer_b) + Vector((-sgn * 0.016, -0.006, 0.012))),
                  tuple(Vector(inner_b) + Vector((sgn * 0.014, -0.006, 0.012)))]
-        ctx.add(f'eri_fold_{tag}', panel(inset), [ctx.mat('washi_natural'), ctx.mat('seam_shadow')],
-                thickness=0.004)
+        if tag == 'over':
+            ctx.add(f'eri_fold_{tag}', panel(inset), [ctx.mat('washi_natural'), ctx.mat('washi_shade')],
+                    thickness=0.0024)
     return made[-1]
 
 
@@ -598,7 +620,7 @@ def sleeve_upper_folded(ctx, P, rnd):
                     poly_ring(5, r * 1.04, S.z - 0.09, cx=S.x, phase=0.3),
                     poly_ring(5, r * 0.94, S.z - 0.335, cx=S.x - sg * 0.006, phase=0.3)])
     return ctx.add(f'sleeve_upper_{"L" if sg > 0 else "R"}', bm,
-                   [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.006)
+                   [ctx.mat(P['material'], glow=True), ctx.mat('washi_shade')], thickness=0.006)
 
 
 @part('kote_narrow', slot='sleeve_upper', socket=['shoulder.L', 'shoulder.R'], bone=None, size=(0.9, 1.1),
@@ -612,7 +634,7 @@ def kote_narrow(ctx, P, rnd):
       bones=['lE', 'lS', 'lT'], size=(0.85, 1.2), material='washi_bleached',
       drop=0.40, width=0.150, mouth=0.125, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def tamoto_wide(ctx, P, rnd):
-    """The wide hanging sleeve as a SEPARATE folded bag: box-folded, open at the bottom, lit from inside."""
+    """The Wide sleeve bag: triangular folds and an open paper edge with light inside."""
     S, sg = ctx.socket, ctx.side
     x, d, w, m = S.x, P['drop'], P['width'], P['mouth']
     zt, zb = S.z + 0.155, S.z + 0.155 - d
@@ -625,11 +647,19 @@ def tamoto_wide(ctx, P, rnd):
            (xo + w * 0.30, -m * 1.44, zb - 0.045), (xo + w * 0.30, m * 1.36, zb - 0.045)]    # 8 9 fold line
     # no bottom cap and no top cap: the sleeve is a sheet folded into a bag, open at both ends, so the
     # lantern inside it shows and it never reads as a solid block
-    F = [(0, 1, 5, 4), (3, 7, 6, 2), (0, 4, 7, 3), (1, 2, 6, 5), (5, 6, 9, 8), (4, 8, 9, 7)]
+    pts += [(xo + w * 0.42, -m * 1.25, zt - d * 0.32),
+            (xo - w * 0.05, -m * 1.40, zt - d * 0.68),
+            (xo - w * 0.73, -m * 0.12, zt - d * 0.35),
+            (xo - w * 0.63, m * 0.28, zt - d * 0.64),
+            (xo + w * 0.84, -m * 0.13, zt - d * 0.36),
+            (xo + w * 0.74, m * 0.32, zt - d * 0.68)]
+    F = [(0, 1, 10), (1, 5, 10), (0, 10, 11), (0, 11, 4), (10, 5, 8, 11), (11, 8, 4),
+         (3, 7, 6, 2), (0, 4, 12), (0, 12, 3), (3, 12, 13), (3, 13, 7), (12, 4, 13), (4, 7, 13),
+         (1, 2, 14), (2, 15, 14), (2, 6, 15), (1, 14, 5), (5, 14, 15), (5, 15, 6),
+         (5, 6, 9, 8), (4, 8, 9, 7)]
     bm = shell(pts, F)
-    creases(bm, inset=0.006, depth=-0.003, share=0.5, rnd=rnd)
     ob = ctx.add(f'tamoto_{"L" if sg > 0 else "R"}', bm,
-                 [ctx.mat('washi_bleached', glow=True), ctx.mat('washi_shade')], thickness=0.0065)
+                 [ctx.mat(P['material'], glow=True), ctx.mat('washi_shade')], thickness=0.0065)
     ctx.add(f'tamoto_glow_{"L" if sg > 0 else "R"}',
             box(xo + w * 0.1, 0, zb + 0.03, w * 0.9, m * 1.6, 0.012), [ctx.emit('sleeve', 2.2)],
             thickness=0.0, to_camera=False)
@@ -655,7 +685,7 @@ def forearm_folded(ctx, P, rnd):
                     poly_ring(5, r, S.z - 0.14, cx=S.x, phase=0.6),
                     poly_ring(5, r * 0.88, S.z - 0.285, cx=S.x, phase=0.6)])
     return ctx.add(f'forearm_{"L" if sg > 0 else "R"}', bm,
-                   [ctx.mat('washi_natural'), ctx.mat('washi_shade')], thickness=0.005)
+                   [ctx.mat(P['material']), ctx.mat('washi_shade')], thickness=0.005)
 
 
 @part('kote_plated', slot='forearm', socket=['elbow.L', 'elbow.R'], bone=None, size=(0.9, 1.1),
@@ -693,9 +723,10 @@ def hand_folded(ctx, P, rnd):
             return tuple(b0[i] + (b1[i] - b0[i]) * u for i in range(3))
         r0, r1 = on_edge(u0), on_edge(u1)
         curl = L * (1.0 - 0.12 * abs(k - (n - 1) / 2))
-        tip = (sg * 0.030, 0.0, -curl)
-        p0 = tuple(r0[i] + tip[i] for i in range(3))
-        p1 = tuple(r1[i] + tip[i] for i in range(3))
+        joint = Vector(r0).lerp(Vector(r1), 0.5)
+        tip = joint + Vector((-sg * 0.025, 0.0, -curl * 0.72))
+        half = (Vector(r1) - Vector(r0)) * 0.34
+        p0, p1 = tuple(tip - half), tuple(tip + half)
         knuckle = (0.5 * (r0[0] + r1[0]) + sg * 0.011, 0.5 * (r0[1] + r1[1]), 0.5 * (r0[2] + r1[2]) - curl * 0.42)
         i = len(pts)
         pts += [r0, r1, p1, p0, knuckle]
@@ -726,7 +757,7 @@ def hakama_pleated(ctx, P, rnd):
                     poly_ring(n, P['bottom'], z1, cx=S.x + sg * 0.038, flute=P['flute'], lift=0.010, phase=0.2)])
     creases(bm, inset=0.005, depth=-0.0025, share=0.2, rnd=rnd)
     return ctx.add(f'hakama_thigh_{"L" if sg > 0 else "R"}', bm,
-                   [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.0075)
+                   [ctx.mat(P['material'], glow=True), ctx.mat('washi_shade')], thickness=0.0075)
 
 
 @part('hakama_shin_pleated', slot='shin', socket=['knee.L', 'knee.R'], rigid=False, bones=['lshin', 'lthigh'],
@@ -748,7 +779,7 @@ def hakama_shin_pleated(ctx, P, rnd):
     skin_rings(bm, rings)
     creases(bm, inset=0.005, depth=-0.0025, share=0.2, rnd=rnd)
     return ctx.add(f'hakama_shin_{"L" if sg > 0 else "R"}', bm,
-                   [ctx.mat('washi_natural', glow=True), ctx.mat('washi_shade')], thickness=0.0075)
+                   [ctx.mat(P['material'], glow=True), ctx.mat('washi_shade')], thickness=0.0075)
 
 
 @part('hakama_plain', slot='thigh', socket=['hip.L', 'hip.R'], rigid=False, bones=['lthigh', 'hips'],

@@ -32,7 +32,10 @@ const VERT = film.format === 'vertical' && !args.includes('--horizontal');
 
 const server = await serve(0);
 const port = server.address().port;
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({
+  executablePath: process.env.PAPERCINEMA_CHROMIUM || undefined,
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
 const page = await browser.newPage({ viewport: VERT ? { width: 720, height: 1280 } : { width: film.width, height: film.height } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 const HOOK = 'window.PC ??= { cast, camera, stage, TREES: typeof TREES !== "undefined" ? TREES : [] };\n';

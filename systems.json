@@ -633,11 +633,12 @@
   {
    "id": "CHARFACTORY",
    "name": "Modular origami character factory",
-   "does": "A character = one JSON recipe in `library/character-recipes/`: parts picked from a registry of folded paper pieces (kasa wide/narrow, hachigane, angular/long face masks with eye slits, hair and topknot, layered or plain kimono body with shoulder-to-sternum planes, crossed left-over-right lapels, obi with knot and cord, upper and hanging sleeves as separate folded bags, forearm and kote, folded-finger hands, TWO real pleated hakama legs, tabi+zori or war boots, sode and do lamellar plates, sheathed katana, tassels), each snapped to a socket on the shared humanoid rig (the same joint names as `engine/figure.js` and `rig_trellis.py`, so `library/poses.json` drives it), scaled inside an approved range, dressed from one washi material family with world-scale fibre, rigid parts parented to a bone and flexible ones skinned across 2-3 bones. A second character is made by swapping parts in the recipe only. `part_validator.py` gates the library: material, scale, fibre, pivot, socket, self-intersection, solidify spikes, joint gaps across a five-pose sweep and silhouette readability",
+   "does": "A character = one JSON recipe in `library/character-recipes/`: parts picked from a registry of folded paper pieces (kasa wide/narrow, hachigane, angular/long face masks with eye slits, hair and topknot, layered or plain kimono body with shoulder-to-sternum planes, crossed left-over-right lapels, obi with knot and cord, upper and hanging sleeves as separate folded bags, forearm and kote, folded-finger hands, TWO real pleated hakama legs, tabi+zori or war boots, sode and do lamellar plates, sheathed katana, tassels), each snapped to a socket on the shared humanoid rig (the same joint names as `engine/figure.js` and `rig_trellis.py`, so `library/poses.json` drives it), scaled inside an approved range, dressed from one washi material family with world-scale fibre, rigid parts parented to a bone and flexible ones skinned across 2-3 bones. Parts on paired sockets can swap independently by side. Blender film casts use these recipes and the resolved motion export. Skeletal FBX and a material manifest carry the bind pose into Unreal. `part_validator.py` gates the library: material, grain UVs, scale, fibre, pivot, socket, self-intersection, solidify spikes, joint gaps across a five-pose sweep and silhouette readability",
    "files": [
     "blender/character/part_registry.py",
     "blender/character/modular_builder.py",
     "blender/character/part_validator.py",
+    "blender/character/export_character.py",
     "library/character-recipes/",
     "library/paper-materials/",
     "blender/world/paper_materials.py"
@@ -647,7 +648,7 @@
    ],
    "command": "blender -b -P blender/character/modular_builder.py -- --recipe library/character-recipes/ronin-reference.json --turnaround output/character/t.png --light cinematic",
    "status": "test",
-   "status_note": "🧪 v1 (two characters; stills + pose sweep)"
+   "status_note": "🧪 v2 (three recipes; Blender and FBX)"
   },
   {
    "id": "BLENDERFILM",

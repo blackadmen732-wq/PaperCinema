@@ -1,0 +1,37 @@
+{
+  "id": "wayfarer",
+  "name": "Sage Wayfarer",
+  "extends": "ronin-reference.json",
+  "seed": 29,
+  "swap": [
+    {
+      "part": "kasa_narrow"
+    },
+    {
+      "part": "mask_long"
+    },
+    {
+      "part": "obi_plain"
+    },
+    {
+      "part": "tamoto_narrow",
+      "sockets": [
+        "elbow.R"
+      ]
+    }
+  ],
+  "drop": [
+    "tassels"
+  ],
+  "paper": {
+    "washi_natural": "washi_sage"
+  },
+  "pose_overrides": {
+    "stance": 0.31,
+    "rsz": 0.26,
+    "lsz": -0.31,
+    "rex": -0.8,
+    "lex": -0.45,
+    "hx": 0.08
+  }
+}

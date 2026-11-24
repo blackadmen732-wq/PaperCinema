@@ -22,7 +22,10 @@ const VERT = args.includes('--vertical') || (film.format === 'vertical' && !args
 
 const server = await serve(0);
 const port = server.address().port;
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({
+  executablePath: process.env.PAPERCINEMA_CHROMIUM || undefined,
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
 const page = await browser.newPage({ viewport: VERT ? { width: 720, height: 1280 } : { width: film.width, height: film.height } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 page.on('console', (m) => { if (m.type() === 'error') console.error('console:', m.text()); });

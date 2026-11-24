@@ -197,6 +197,9 @@ def validate(recipe_path, poses=None, only=None):
         mats = [m for m in ob.data.materials if m]
         check('material', ob.name, len(mats) > 0 and len(mats) == len(ob.data.materials),
               f'{len(mats)}/{len(ob.data.materials)} slots filled')
+        uv = ob.data.uv_layers.get('PaperGrain')
+        check('paper_uv', ob.name, uv is not None and len(uv.data) == len(ob.data.loops),
+              'rest-pose grain UVs')
         s = ob.scale
         check('scale', ob.name, abs(s.x - 1) < 1e-4 and abs(s.y - 1) < 1e-4 and abs(s.z - 1) < 1e-4,
               f'object scale {tuple(round(v, 4) for v in s)} (must be 1: fibre size is world scale)')

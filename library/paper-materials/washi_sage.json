@@ -1,0 +1,29 @@
+{
+  "label": "Sage-dyed kozo washi",
+  "paper_type": "washi-kozo",
+  "color": [
+    0.2,
+    0.3,
+    0.23
+  ],
+  "translucent_color": [
+    0.55,
+    0.62,
+    0.44
+  ],
+  "fibre_density": 1.0,
+  "fibre_direction": "lengthwise",
+  "fibre_strength": 0.36,
+  "roughness": 0.82,
+  "sheen": 0.08,
+  "thickness_mm": 0.45,
+  "fold_darkening": 0.28,
+  "edge_wear": 0.16,
+  "translucency": 0.1536,
+  "inner_light": 1.0,
+  "facet_variation": 0.07,
+  "shimi": "amber-soak",
+  "note": "Muted green sheet for traveling clothes and sashes.",
+  "id": "washi_sage",
+  "grain_contrast": 0.7
+}

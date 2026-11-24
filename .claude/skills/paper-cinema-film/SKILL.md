@@ -65,7 +65,7 @@ Read `AGENTS.md` once per session (then `SYSTEMS.md` to find any system); this s
 - **A new pose:** add it to `library/poses.json`, then check it in the pose gallery.
 - **A new location:** sets are still code in `engine/world.js`. Build one there, or ask the owner.
 - **Blender sets:** final Blender renders use a set from `library/sets/` (castle-courtyard, dojo-interior, bamboo-forest, ganryujima-beach, castle-skyline-2d5). A new location is a new JSON there, built from the kit; preview it with `blender/sets/build_set.py -- --set <name> --preview output/sets/<name>.png --with-character hero:<pose>,foe:<pose>` and look at the stills. Guide: `docs/SETS.md`.
-- **Realistic (Blender) renders:** follow `docs/BLENDER-PLAN.md`. Its scripts are not built yet (milestone M1 onward).
+- **Modular Blender cast:** author characters in `library/character-recipes/`, validate the five poses and inspect neutral and cinematic stills. Use `blender/film_blender.py -- --recipes actor=recipe` for a film. See `docs/CHARACTER-FACTORY.md` for the character and Unreal FBX handoff.
 
 ## Anime motion and clashes (new)
 - Put `"motion": { "overlap": true }` in the film, and on strikes use `"ease": "snap"`, `"drag": 0` on the contact key, `"settle": true` after it, `"ease": "antic"` on the wind-up. Jumps: `"arc": <height m>` on the take-off key. See `docs/ANIMATION.md` §10.

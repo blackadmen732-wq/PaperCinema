@@ -20,6 +20,21 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
    - `main.js`: choreography (who moves when), camera, titles and effects
 4. **Render** (`engine/render.mjs`). Opens the film in headless Chrome, renders frame by frame (deterministic) and pipes the frames to ffmpeg.
 
+## Build a modular paper character
+
+Each character is a recipe in [`library/character-recipes/`](library/character-recipes). Pick the mask, hat,
+collar, sleeves and trousers, then choose the paper sheets. The same skeleton drives the ivory Ronin, the
+armoured warrior and the Sage Wayfarer, whose right sleeve is shorter than the left.
+
+```bash
+blender -b --python-exit-code 1 -P blender/character/modular_builder.py -- \
+  --recipe library/character-recipes/ronin-reference.json --light neutral --portrait \
+  --still output/character/ronin.png
+```
+
+The [character factory guide](docs/CHARACTER-FACTORY.md) covers recipe edits, pose validation, casting
+the characters in a Blender film, and exporting a skeletal FBX and material sheet for Unreal.
+
 ## Guides
 
 - **`AGENTS.md`**: start here. **`SYSTEMS.md`**: every system and how it connects. **`docs/README.md`**: which guide, when.
@@ -31,8 +46,11 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
 
 ## Commands
 
+Install with Node.js 20 or newer.
+
 ```bash
-npm install
+npm ci
+npx playwright install chromium
 ```
 
 Render the full film (writes `output/ganryujima.mp4`):
