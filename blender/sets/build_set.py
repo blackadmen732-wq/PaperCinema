@@ -10,7 +10,8 @@ Options:
   --set NAME|PATH        library/sets/NAME.json or a path              --out PATH   .blend to save (default output/sets/NAME.blend)
   --preview PATH         render stills (first cam -> PATH, others -> PATH-CAM_x.png)
   --cams A,B             camera anchors to render (default: the set's "preview_cams", else its first camera)
-  --with-character LIST  role:pose[:demon] separated by commas; role = mark name without MARK_ (hero, foe, ...)
+  --with-character LIST  role:pose[:demon][:trellis[=model]] separated by commas; role = mark name without MARK_ (hero, foe, ...);
+                         :trellis = the rigged TRELLIS character (hero: ronin_base, others: samurai_front) instead of the box origami
   --res WxH (540x960)    --samples N (set's render.samples or 32)    --quick (270x480, 12 samples)
   --seed N               override the set seed                       --exposure EV  override the grade
   --frame N              frame to render (particles and rain move)   --no-fog     skip fog pieces (fast look check)
@@ -318,9 +319,19 @@ def add_characters(scene, coll, specs, marks, fighter):
         yaw = mk.rotation_euler.z + math.pi
         ch = bpy.data.collections.new('CHAR_' + role)
         coll.children.link(ch)
-        res = osam.build(pose, tuple(mk.location), yaw, demon=demon, seed=3 + len(made), name='CHAR_' + role, collection=ch,
-                         lamp_scale=fighter.get('lamp_scale', 0.12), seam_glow=fighter.get('seam_glow', 1.6),
-                         eye_glow=fighter.get('eye_glow', 14.0), inner_glow=fighter.get('inner_glow', 1.5))
+        tre = next((x for x in parts[2:] if x.startswith('trellis')), None)
+        if tre:
+            # the owner's TRELLIS character, rigged (blender/character/rig_trellis.py, docs/CHARACTER-BLENDER.md):
+            # role:pose:trellis  (hero = ronin_base, any other role = samurai_front)  or  role:pose:trellis=<model>
+            import rig_trellis as rtr
+            model = tre.split('=')[1] if '=' in tre else ('ronin_base' if role == 'hero' else 'samurai_front')
+            res = rtr.build_character(model, name='RIG_' + role, demonic=demon)
+            rtr.apply_frame(res, rtr.pose_frame(pose if pose != 'standing' else 'chudan'))
+            rtr.place(res, tuple(mk.location), yaw, collection=ch)
+        else:
+            res = osam.build(pose, tuple(mk.location), yaw, demon=demon, seed=3 + len(made), name='CHAR_' + role, collection=ch,
+                             lamp_scale=fighter.get('lamp_scale', 0.12), seam_glow=fighter.get('seam_glow', 1.6),
+                             eye_glow=fighter.get('eye_glow', 14.0), inner_glow=fighter.get('inner_glow', 1.5))
         M = mk.matrix_world
         aim = mk.location + Vector((0, 0, 1.25))
         for nm in ('key', 'fill', 'rim'):

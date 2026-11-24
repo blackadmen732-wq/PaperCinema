@@ -142,7 +142,9 @@ for ob in (cam, look):
 
 # ---------------- render ----------------
 sc.render.engine = 'CYCLES'
-sc.cycles.device = 'CPU'
+sys.path.insert(0, os.path.join(REPO, 'blender'))
+from gpu_setup import use_gpu  # noqa: E402
+use_gpu(sc)
 sc.cycles.samples = int(arg('samples', 48))
 sc.cycles.use_denoising = True
 sc.cycles.volume_bounces = 1

@@ -15,7 +15,9 @@
                     --cam defaults to circle; --two-hand puts the left hand on the handle; --bvh-forward -Y|Y|X|-X
   --model ronin_base   which TRELLIS model plays the first fighter       --mode heat|panels|cloak|rigid
   --res 432x768 --samples 16 --fog 0.012 --no-blur --no-slash --no-dust --no-glare
-  --set output/sets/dojo.blend [--at x,y,z,yawDeg]   stage the film inside a built set (blender/sets/); default: dark stage
+  --set output/sets/dojo.blend   stage the film inside a built set (blender/sets/, docs/SETS.md): the action line is laid
+                    on MARK_hero → MARK_foe; [--at x,y,z,yawDeg] places it by hand; --light 0.5 scales our fighter lights.
+                    Default: a bare dark stage
   --save file.blend    keep the scene
 
 What it builds
@@ -450,6 +452,20 @@ def main():
     if arg('at'):
         x, y, z, yaw = [float(v) for v in arg('at').split(',')]
         root.matrix_world = Matrix.Translation((x, y, z)) @ Matrix.Rotation(math.radians(yaw), 4, 'Z')
+    elif arg('set'):
+        # a built set (docs/SETS.md): the film's action line is laid on the duel line MARK_hero → MARK_foe, its middle
+        # on the middle of the marks; the set's own box characters, if any, are hidden
+        mh, mf = bpy.data.objects.get('MARK_hero'), bpy.data.objects.get('MARK_foe')
+        xs = [fr['cast'][c]['J']['root'][0] for fr in mo['frames'] for c in fr['cast']]
+        mid = Vector((sum(v.x for v in xs) / len(xs), sum(v.y for v in xs) / len(xs), 0))
+        if mh and mf:
+            d = mf.location - mh.location
+            yaw = math.atan2(d.y, d.x)
+            centre = (mh.location + mf.location) / 2
+            root.matrix_world = Matrix.Translation(centre) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Translation(-mid)
+        for ob in bpy.data.objects:
+            if ob.name.startswith('CHAR_') or any(c.name.startswith('CHAR_') for c in ob.users_collection):
+                ob.hide_render = True
 
     # ----- cast
     cids = [c for c in mo['frames'][0]['cast']]
@@ -512,7 +528,7 @@ def main():
     for f in frames:
         sc.frame_set(f + 1)
         t = mo['frames'][f]['t']
-        cpos, cq = camera.cam.location.copy(), camera.cam.rotation_quaternion.copy()
+        cpos = camera.cam.location.copy()                     # FILM_ROOT space (lights are its children too)
         chest = solved[hero][f]['chest'].translation
         light_rig(sc, root, cpos, chest, power, with_set=bool(arg('set')))
         camera.cam.data.dof.focus_distance = max(0.3, (chest - cpos).length)
@@ -563,7 +579,7 @@ def light_rig(sc, root, cam, subject, power=1.0, with_set=False):
     to_cam = to_cam.normalized() if to_cam.length > 1e-3 else Vector((0, -1, 0))
     right = Vector((-to_cam.y, to_cam.x, 0))
     aim = Vector((subject.x, subject.y, max(0.9, subject.z)))
-    k = power * (0.45 if with_set else 1.0)
+    k = power * (0.3 if with_set else 1.0)
     obs = [
         rt.spot('LIGHT_rim', aim - to_cam * 3.4 + right * 2.2 + Vector((0, 0, 2.2)), aim + Vector((0, 0, 0.1)), 1900 * k, (0.55, 0.70, 1.0), 30, 0.5, 0.12),
         rt.spot('LIGHT_rim2', aim - to_cam * 3.0 - right * 2.8 + Vector((0, 0, 1.0)), aim, 700 * k, (0.60, 0.72, 1.0), 32, 0.5, 0.2),

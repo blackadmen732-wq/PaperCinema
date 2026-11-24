@@ -741,6 +741,29 @@ def build_character(model='ronin_base', mode='heat', height=None, name=None, dem
             'material': mat, 'sword': sword, 'refs': refs, 'L': (L1, L2), 'T': (T1, T2), 'mode': mode, 'hist': {}}
 
 
+def place(ch, location=(0, 0, 0), yaw=0.0, collection=None):
+    """Stand the character somewhere: everything (rig, meshes, katana, lantern) hangs from one empty. yaw 0 = facing -Y.
+    Pose or bake first or after: poses are in the character's own space."""
+    root = ch.get('root')
+    if root is None:
+        root = bpy.data.objects.new('CHARROOT_' + ch['rig'].name, None)
+        bpy.context.scene.collection.objects.link(root)
+        ch['root'] = root
+        for ob in (ch['rig'], ch['sword']):
+            if ob is not None:
+                ob.parent = root
+    root.location = location
+    root.rotation_euler = (0, 0, yaw)
+    if collection is not None:
+        for ob in [root, ch['rig'], ch['sword'], ch['mesh'], *ch['feet'], *ch['fists'], *[l for l, _ in ch['lanterns']], *([ch['core']] if ch.get('core') else [])]:
+            if ob is None:
+                continue
+            for c in list(ob.users_collection):
+                c.objects.unlink(ob)
+            collection.objects.link(ob)
+    return root
+
+
 # ----------------------------------------------------------------------------------------------- frames (engine truth)
 JOINTS = ['root', 'hips', 'waist', 'chest', 'neck', 'head', 'clavicle.R', 'shoulder.R', 'elbow.R', 'twist.R', 'hand.R',
           'clavicle.L', 'shoulder.L', 'elbow.L', 'twist.L', 'hand.L', 'thigh.R', 'shin.R', 'foot.R', 'thigh.L', 'shin.L', 'foot.L']
@@ -1075,7 +1098,7 @@ def a_pose(ch, arm_out=0.75):
     """Make the REST pose an A-pose (arms out and down, about 45°), the bind pose retarget tools expect. The model's own
     rest is "arms folded"; this poses it, bakes the mesh there and makes that the new rest. Run it LAST, like
     export_names(): after it the folded-pose measurements this file's driver uses no longer describe the rig."""
-    apply_frame(ch, pose_frame({'rsz': arm_out, 'lsz': -arm_out, 'rsx': 0.0, 'lsx': 0.0, 'rex': -0.08, 'lex': -0.08, 'stance': 0.0}, two_hand=False))
+    apply_frame(ch, pose_frame({'rsz': -arm_out, 'lsz': arm_out, 'rsx': 0.0, 'lsx': 0.0, 'rex': -0.08, 'lex': -0.08, 'stance': 0.0}, two_hand=False))
     bpy.context.view_layer.update()
     for ob in [ch['mesh'], *ch['feet'], *ch['fists'], *([ch['core']] if ch.get('core') else [])]:
         bpy.ops.object.select_all(action='DESELECT')
