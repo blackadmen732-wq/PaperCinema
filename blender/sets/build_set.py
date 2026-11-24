@@ -247,7 +247,7 @@ def snap_marks(scene, marks, reach=2.5):
             if not hit:
                 break
             if any(k in ob.name for k in SKIP_SNAP):
-                p = loc - Vector((0, 0, 0.01))
+                p = loc - Vector((0, 0, 1e-4))
                 continue
             if abs(loc.z - m.location.z) > 0.005:
                 print(f'  mark {name}: snapped z {m.location.z:.2f} -> {loc.z:.2f} ({ob.name})')
@@ -374,6 +374,7 @@ def main():
     marks = make_marks(scene, colls['MARKS'], S.get('marks', {}), S.get('clear', 1.6))
     ctx = kit.Ctx(scene, colls['SET'], seed=seed, materials=S.get('materials', {}))
     ctx.clear = [(m.location.x, m.location.y, S.get('clear', 1.6)) for n, m in marks.items() if n in ('MARK_hero', 'MARK_foe', 'MARK_center')]
+    ctx.clear += [(c['pos'][0], c['pos'][1], 0.8) for c in S.get('cameras', {}).values()]     # never grow a culm through a lens
     counts = {}
     for spec in S.get('pieces', []) + Lg.get('pieces', []):
         if flag('no-fog') and spec['kit'] in ('fog',):

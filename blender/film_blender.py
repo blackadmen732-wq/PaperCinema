@@ -91,7 +91,7 @@ def build_tree(tr, parent):
     """The engine's paper tree (engine/motion.js makeTree): a stump, and a top in two halves that the export moves."""
     H, cy, R = tr.get('height', 3.2), tr.get('cut', {}).get('y', 1.1), 0.16
     sc = tr.get('crown', 0.7)
-    bark, blossom = mat_paper('TREE_bark', (0.07, 0.04, 0.025)), mat_paper('TREE_crown', hex_rgb(tr.get('color', '#e9a3b4')), 0.8, 0.12)
+    bark, blossom = mat_paper('TREE_bark', (0.07, 0.04, 0.025)), mat_paper('TREE_crown', hex_rgb(tr.get('color', '#e9a3b4')), 0.8, 0.02)
     B = lambda p: Vector((p[0], -p[2], p[1]))
 
     def frustum(bm, r0, r1, y0, y1, th0, th1, n, mat):
@@ -565,7 +565,7 @@ def light_rig(sc, root, cam, subject, power=1.0, with_set=False):
     aim = Vector((subject.x, subject.y, max(0.9, subject.z)))
     k = power * (0.45 if with_set else 1.0)
     obs = [
-        rt.spot('LIGHT_rim', aim - to_cam * 3.4 + right * 2.2 + Vector((0, 0, 2.2)), aim + Vector((0, 0, 0.1)), 2600 * k, (0.55, 0.70, 1.0), 30, 0.5, 0.12),
+        rt.spot('LIGHT_rim', aim - to_cam * 3.4 + right * 2.2 + Vector((0, 0, 2.2)), aim + Vector((0, 0, 0.1)), 1900 * k, (0.55, 0.70, 1.0), 30, 0.5, 0.12),
         rt.spot('LIGHT_rim2', aim - to_cam * 3.0 - right * 2.8 + Vector((0, 0, 1.0)), aim, 700 * k, (0.60, 0.72, 1.0), 32, 0.5, 0.2),
         rt.spot('LIGHT_key', aim + to_cam * 2.6 - right * 2.6 + Vector((0, 0, 2.7)), aim, 800 * k, (1.0, 0.84, 0.66), 30, 0.6, 0.35),
         rt.spot('LIGHT_fill', aim + to_cam * 3.5 + right * 2.5 + Vector((0, 0, 0.5)), aim, 70 * k, (0.45, 0.55, 1.0), 40, 0.6, 0.5),

@@ -78,4 +78,5 @@ npm run preview                                          # live preview in a bro
   - the anime effects pack; a 3-second Shorts opening; Blender slash v2
   - rigging the TRELLIS models
 - **Next first:** re-render the duel (`film/kuroko-duel.json` now uses the shared combat layer `engine/combat.js`: clashes, hit-stop, eyes, auto sounds, FX); then the items marked next in `docs/FIX-LIST.md`.
+- **Blender hero:** `docs/CHARACTER-BLENDER.md` (the TRELLIS character rigged, film and BVH drivers, `blender/film_blender.py`).
 - **Limits:** the browser preview's set is still code in `engine/world.js`; Blender sets (`blender/sets/build_set.py`) place posed characters on marks but do not yet play a film timeline.

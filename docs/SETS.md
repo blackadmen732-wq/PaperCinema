@@ -84,7 +84,8 @@ Rules of thumb:
 - `seed` per piece re-rolls only that piece; the set `seed` re-rolls all. Same seeds = identical set.
 - Marks are snapped onto the surface below them (terrain, floor, sand; fog, particles and foliage ignored),
   searching from `snap_reach` (2.5 m) above the mark so roofs over an interior never catch them. `"snap_marks": false` turns it off.
-- Scatter pieces (bamboo, rocks) keep `clear` metres free around `MARK_hero`, `MARK_foe`, `MARK_center`.
+- Scatter pieces (bamboo, rocks) keep `clear` metres free around `MARK_hero`, `MARK_foe`, `MARK_center`, and 0.8 m
+  around every camera anchor.
 - Materials are keys (below); `"materials": {"key": {kwarg: value}}` overrides a recipe for the whole set, and
   `"stone#2"` makes a second copy of a recipe with its own overrides.
 - Put a mark on the duel line and make the camera anchors look at marks (`look_mark`), so moving the duel moves the
@@ -184,8 +185,8 @@ All include the two origami samurai.
 |---|---|---|---|---|
 | `castle-skyline-2d5` (2.5D) | 0.4 | 7 k | 7.6 s | CAM_wide 112 s, CAM_medium 116 s |
 | `castle-courtyard` (full 3D, fog) | 35–55 (the keep's tiled roofs: 30–50) | 237 k | 14–15 s | CAM_wide 204 s, CAM_medium 281 s |
-| `dojo-interior` (fog, sun shafts) | 1.8 | 14 k | 20–21 s | CAM_wide DOJO_FINAL |
-| `bamboo-forest` (mist, 520 culms, 1.2 M faces) | 5–6 | 1.2 M | 16–34 s | CAM_wide BAMBOO_FINAL |
+| `dojo-interior` (fog, sun shafts) | 1.8 | 14 k | 20–21 s | CAM_wide 281 s |
+| `bamboo-forest` (mist, 520 culms, 1.2 M faces) | 5–6 | 1.2 M | 16–34 s | CAM_wide 199–208 s |
 | `ganryujima-beach` (ocean) | 0.5 | 21 k | 10 s | CAM_medium 124 s |
 
 2.5D versus full 3D at the same framing and size: about half the render time (112 s vs 204 s for CAM_wide under

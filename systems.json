@@ -599,6 +599,23 @@
    "status_note": "🧪 v1"
   },
   {
+   "id": "BLENDERFILM",
+   "name": "Blender film render (TRELLIS hero)",
+   "does": "The owner's reference character fights in Blender from film data: `tools/export_motion.mjs` writes what the preview engine really did per frame (joints, sword, camera, trees, events → `output/<film>.motion.json`); `rig_trellis.py` rigs any TRELLIS `.glb` (our joint names + a table to the standard humanoid names, bone-heat skin with scripted cleanup, relit paper, inner lantern, real-metal katana in a two-hand IK grip, sleeve follow-through) with three drivers: `library/poses.json`, film motion, BVH motion capture; `film_blender.py` renders it with dark cinematic light re-set per frame from the camera, the slash as swept light, dust, tree props, motion blur, and the film's camera or 12 named camera moves / a per-film plan",
+   "files": [
+    "tools/export_motion.mjs",
+    "blender/character/rig_trellis.py",
+    "blender/film_blender.py",
+    "library/blender-cameras.json"
+   ],
+   "guide": [
+    "docs/CHARACTER-BLENDER.md"
+   ],
+   "command": "blender -b -P blender/film_blender.py -- --film film/dash-test.json --out output/blender/dash-test/ --times 0.3,1.15,4.2",
+   "status": "test",
+   "status_note": "🧪 v1 (stills; one fighter)"
+  },
+  {
    "id": "GPU",
    "name": "GPU jobs",
    "does": "Rent/run/stop RunPod pods (self-destruct timer); TRELLIS image → 3D",
@@ -881,6 +898,22 @@
   [
    "MOCAP",
    "FILM"
+  ],
+  [
+   "FILM",
+   "BLENDERFILM"
+  ],
+  [
+   "MODELS",
+   "BLENDERFILM"
+  ],
+  [
+   "ENGINE",
+   "BLENDERFILM"
+  ],
+  [
+   "BLENDERFILM",
+   "BLENDER"
   ]
  ]
 }
