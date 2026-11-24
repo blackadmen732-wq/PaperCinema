@@ -34,6 +34,16 @@ blender -b --python-exit-code 1 -P blender/character/modular_builder.py -- \
 The [character factory guide](docs/CHARACTER-FACTORY.md) covers recipe edits, pose validation, casting
 the characters in a Blender film, and exporting a skeletal FBX and material sheet for Unreal.
 
+## Render a studio short
+
+[Paper Awakens](docs/STUDIO-FILM.md) is a three-shot Blender example. One scene file drives the cast, pose
+changes, camera cuts, lighting and sound. The command writes an editable Blender project and a finished MP4.
+
+```bash
+blender -b --python-exit-code 1 -P blender/studio_film.py -- \
+  --scene film/studio/paper-awakens.json --out output/paper-awakens
+```
+
 ## Guides
 
 - **`AGENTS.md`**: start here. **`SYSTEMS.md`**: every system and how it connects. **`docs/README.md`**: which guide, when.

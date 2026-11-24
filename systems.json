@@ -668,6 +668,22 @@
    "status_note": "🧪 v1 (stills; one fighter)"
   },
   {
+   "id": "STUDIOFILM",
+   "name": "Studio film production",
+   "does": "A scene file sets the modular cast, pose keys, planted feet, paper follow-through, studio or set, tracked focus, camera cuts and sound. Bakes the editable Blender project, framing and contact audit and the MP4.",
+   "files": [
+    "blender/studio_film.py",
+    "film/studio/paper-awakens.json",
+    "engine/sound.mjs"
+   ],
+   "guide": [
+    "docs/STUDIO-FILM.md"
+   ],
+   "command": "blender -b -P blender/studio_film.py -- --scene film/studio/paper-awakens.json --out output/paper-awakens",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "GPU",
    "name": "GPU jobs",
    "does": "Rent/run/stop RunPod pods (self-destruct timer); TRELLIS image → 3D",

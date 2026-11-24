@@ -153,7 +153,7 @@ class Rig:
     def rot(self, j, rx, ry, rz):
         self.J[j].rotation_euler = (rx, -rz, ry)
 
-    def pose(self, name='standing', **over):
+    def pose(self, name='standing', *, plant_width=None, **over):
         p = dict(BASE)
         p.update(POSES.get(name, {}) if isinstance(name, str) else (name or {}))
         p.update(over)
@@ -175,9 +175,22 @@ class Rig:
         self.rot('hakama', p['swayx'], 0, p['sway'])
         L1, L2 = 0.46, 0.44
         hy, hzz = hipY - 0.02, hipZ
+        if plant_width is not None:
+            from rig_trellis import ik2
         for s, side in (('r', -1), ('l', 1)):
             front = side < 0
             fz, fy = (1 if front else -1) * p['stance'] / 2, 0.04
+            if plant_width is not None:
+                hip = T(side * .1, hy, hzz)
+                target = T(side * plant_width / 2, fy, fz)
+                knee, ankle = ik2(hip, target, L1, L2, Vector((side * .12, -1.0, 0)))
+                thigh = Vector((0, 0, -1)).rotation_difference(knee - hip)
+                shin = Vector((0, 0, -1)).rotation_difference(ankle - knee)
+                J[s + 'thigh'].location = hip
+                J[s + 'thigh'].rotation_euler = thigh.to_euler('YZX')
+                J[s + 'shin'].rotation_euler = (thigh.inverted() @ shin).to_euler('YZX')
+                J[s + 'foot'].rotation_euler = shin.inverted().to_euler('YZX')
+                continue
             dz, dy = fz - hzz, fy - hy
             d = math.hypot(dz, dy)
             mx = (L1 + L2) * 0.999
