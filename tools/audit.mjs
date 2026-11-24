@@ -64,7 +64,10 @@ const angle = (a, b) => (Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] *
 // ---------- 1. measure ----------
 const server = await serve(0);
 const port = server.address().port;
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const browser = await chromium.launch({
+  executablePath: process.env.PAPERCINEMA_CHROMIUM || undefined,
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
 const page = await browser.newPage({ viewport: VERT ? { width: 720, height: 1280 } : { width: film.width ?? 1280, height: film.height ?? 720 } });
 page.on('pageerror', (e) => console.error('PAGE ERROR:', e.message));
 const pagePath = opt('page', film.page ?? 'engine/index.html');

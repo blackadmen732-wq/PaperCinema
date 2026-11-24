@@ -1,4 +1,4 @@
-"""BLENDERFILM: render a film's performance and camera in Blender with the TRELLIS hero. Guide: docs/CHARACTER-BLENDER.md.
+"""BLENDERFILM: render the film's performance and camera with the modular paper cast.
 
   B=/opt/blender-dl/blender-4.5.16-linux-x64/blender
   node tools/export_motion.mjs film/dash-test.json                      # once per film change → output/dash-test.motion.json
@@ -13,7 +13,8 @@
                     side-track, over-shoulder, blade-close (library/blender-cameras.json → "moves")
   --bvh take.bvh    motion capture instead of a film: any BVH (Blender's importer), retargeted onto the character;
                     --cam defaults to circle; --two-hand puts the left hand on the handle; --bvh-forward -Y|Y|X|-X
-  --model ronin_base   which TRELLIS model plays the first fighter       --mode heat|panels|cloak|rigid
+  --model ronin_base   explicitly cast a legacy TRELLIS model           --mode heat|panels|cloak|rigid
+  --recipes hero=ronin-reference,foe=armoured-warrior   cast modular paper characters by actor ID
   --res 432x768 --samples 16 --fog 0.012 --no-blur --no-slash --no-dust --no-glare
   --set output/sets/dojo.blend   stage the film inside a built set (blender/sets/, docs/SETS.md): the action line is laid
                     on MARK_hero → MARK_foe; [--at x,y,z,yawDeg] places it by hand; --light 0.5 scales our fighter lights.
@@ -21,7 +22,7 @@
   --save file.blend    keep the scene
 
 What it builds
-  * the character (blender/character/rig_trellis.py) baked from output/<film>.motion.json: the engine's real joints
+  * the cast from library/character-models.json, driven by the real joints in output/<film>.motion.json
   * the katana in a two-hand grip, the inner lantern, the film's tree props
   * dark cinematic light (research/reference-videos.md): about 70% darkness, a warm key from the camera's side, a strong
     cool rim from behind that follows the camera, a low fill; the glow is the brightest thing on screen
@@ -46,6 +47,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(HERE, 'character'))
 sys.path.insert(0, os.path.join(HERE, 'world'))
 import rig_trellis as rt  # noqa: E402
+import modular_builder as modular  # noqa: E402
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 arg = lambda n, d=None: ARGV[ARGV.index('--' + n) + 1] if '--' + n in ARGV else d
@@ -469,16 +471,30 @@ def main():
 
     # ----- cast
     cids = [c for c in mo['frames'][0]['cast']]
-    models = (arg('model', 'ronin_base')).split(',')
+    recipes = {}
+    for assignment in (arg('recipes') or '').split(','):
+        if not assignment:
+            continue
+        cid, sep, recipe_id = assignment.partition('=')
+        if not sep or cid not in cids or cid in recipes or not recipe_id or '/' in recipe_id or '\\' in recipe_id:
+            raise ValueError(f'Invalid cast assignment {assignment!r}. Use actor=recipe with actors {", ".join(cids)}.')
+        recipes[cid] = modular.cast_recipe(recipe_id)
+    legacy = arg('model')
+    models = legacy.split(',') if legacy else []
     f_lo, f_hi = min(frames) - 1, max(frames) + 1
-    chars, solved = {}, {}
+    solved = {}
     for n, cid in enumerate(cids):
-        demonic = mo['meta']['cast'].get(cid, {}).get('demonic', False)
+        actor = mo['meta']['cast'].get(cid, {})
+        demonic = actor.get('demonic', False)
+        if cid in recipes or not models:
+            recipe = recipes.get(cid) or modular.cast_recipe(character=actor.get('character'), lead=n == 0)
+            print(f'[film_blender] cast {cid}: {recipe["id"]}')
+            solved[cid] = bake_modular(recipe, mo, cid, root, demonic, f_lo, f_hi)
+            continue
         ch = rt.build_character(models[min(n, len(models) - 1)], mode=arg('mode', 'heat'), name='RIG_' + cid, demonic=demonic)
         ch['rig'].parent = root
         ch['sword'].parent = root
         solved[cid] = rt.bake(ch, mo, cid, f_lo, f_hi)
-        chars[cid] = ch
     hero = cids[0]
 
     # ----- props
@@ -519,6 +535,8 @@ def main():
     dust = None if flag('no-dust') else Dust(ground, root)
 
     rt.render_settings(sc, arg('res', '432x768'), arg('samples', 16), blur=not flag('no-blur'), threads=int(arg('threads', 2)))
+    sc.cycles.use_denoising = not flag('no-denoise')
+    sc.render.fps = mo['fps']
     if not flag('no-glare'):
         glare(sc)
     power = float(arg('light', 1.0))
@@ -543,6 +561,65 @@ def main():
         print(f'[film_blender] frame {f} t={t:.3f}s blade {peak:.0f} m/s → {sc.render.filepath}')
     if arg('save'):
         bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(arg('save')))
+
+
+MODULAR_JOINTS = {
+    'root': 'root', 'hips': 'hips', 'torso': 'waist', 'upper': 'chest', 'neck': 'neck', 'head': 'head',
+    'hakama': 'hakama',
+}
+for side in ('L', 'R'):
+    for short, long in [('C', 'clavicle'), ('S', 'shoulder'), ('E', 'elbow'), ('T', 'twist'), ('H', 'hand'),
+                        ('thigh', 'thigh'), ('shin', 'shin'), ('foot', 'foot')]:
+        MODULAR_JOINTS[side.lower() + short] = f'{long}.{side}'
+
+
+def bake_modular(recipe, motion, cid, root, demonic, first, last):
+    """Use the exported transforms for the modular armature, rigid paper sheets and film lights."""
+    sword_params = motion['meta'].get('sword', {})
+    sword = rt.make_katana(name='KATANA_' + cid, length=sword_params.get('bladeLen', 0.91),
+                           tsuka=sword_params.get('handle', 0.33), demonic=demonic)
+    sword.parent = root
+    # This recipe's belt prop includes a complete sheathed blade. The film supplies the animated prop.
+    recipe = dict(recipe, parts=[p for p in recipe['parts'] if p['part'] != 'katana_sheathed'],
+                  glow=((1.0, 0.06, 0.045) if demonic else recipe.get('glow', (1.0, 0.55, 0.18))))
+    ch = modular.build(recipe, pose='neutral', name=cid)
+    rig = ch['rig']
+    rig.rig.parent = root
+    rig.J['root'].parent = root
+    prior = {}
+
+    def key(target, matrix, frame):
+        target.rotation_mode = 'QUATERNION'
+        location, rotation, _ = matrix.decompose()
+        if target.name in prior and prior[target.name].dot(rotation) < 0:
+            rotation.negate()
+        prior[target.name] = rotation
+        target.location, target.rotation_quaternion = location, rotation
+        target.keyframe_insert('location', frame=frame)
+        target.keyframe_insert('rotation_quaternion', frame=frame)
+
+    solved = {}
+    for f in range(max(first, 0), min(last, len(motion['frames']) - 1) + 1):
+        frame = motion['frames'][f]['cast'][cid]
+        joints = frame['J']
+        transforms = {bone: rt.TR(*joints[name if name != 'hakama' or name in joints else 'hips'])
+                      for bone, name in MODULAR_JOINTS.items()}
+        bones = {bone: transforms[bone] @ Matrix.Translation(-Vector(modular.reg.REST[bone])) @ rig.rest_bone[bone]
+                 for bone in rig.order}
+        for bone in rig.order:
+            parent = modular.reg.PARENT.get(bone)
+            space = (bones[parent] @ rig.rest_bone[parent].inverted() @ rig.rest_bone[bone]) if parent else rig.rest_bone[bone]
+            local = transforms[parent].inverted() @ transforms[bone] if parent else transforms[bone]
+            key(rig.J[bone], local, f + 1)
+            key(rig.rig.pose.bones[bone], space.inverted() @ bones[bone], f + 1)
+        blade = rt.TR(*frame['sword'])
+        key(sword, blade, f + 1)
+        solved[f] = {'chest': transforms['upper'], 'SWORD': blade}
+    for ob in (rig.rig, sword, *rig.J.values()):
+        for curve in rt._fcurves(ob.animation_data.action):
+            for point in curve.keyframe_points:
+                point.interpolation = 'LINEAR'
+    return solved
 
 
 def backdrop(root, mo):

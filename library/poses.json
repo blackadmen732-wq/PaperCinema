@@ -1,6 +1,24 @@
 {
  "_about": "Named poses for the shared paper body. Angles are radians. A film's performances list refers to these names; each key can override any joint. Joints: tx/ty/tz torso lean/turn/side-bend · hx/hy head nod/turn · rsx/rsz right shoulder forward/sideways · rex right elbow (negative = bend) · rwx right wrist · lsx/lsz/lex/lwx left arm. Negative rsx/lsx lifts the arm forward and up (-1.57 = straight forward, -2.8 = overhead). Lower body: stance = feet apart front-to-back in metres (right foot forward), crouch = hip drop in metres (knees bend automatically), weight = -1 back foot … +1 front foot. Added joints: cx/cy/cz chest bend/turn/side above the waist, nx/ny neck, hz head roll, rcy/rcz (lcy/lcz) clavicle forward/shrug, rsy/lsy shoulder twist, rfy/lfy forearm twist, rwz/lwz wrist side-bend (the cutting snap), rax/lax ankles, lid eyelids (0 open, 1 shut; only on faces with eyes).",
  "neutral": {},
+ "wide-stance": {
+  "stance": 0.75,
+  "crouch": 0.26,
+  "weight": 0.2,
+  "tx": 0.12,
+  "ty": 0.35,
+  "cy": 0.15,
+  "hy": -0.3,
+  "hx": -0.05,
+  "lsx": -1.25,
+  "lsz": 0.25,
+  "lex": -0.25,
+  "lwx": 0.3,
+  "rsx": 0.35,
+  "rsz": 0.55,
+  "rex": -0.35,
+  "rcz": 0.05
+ },
  "rest-hand-on-hilt": {
   "rsx": -0.35,
   "rsz": 0.5,

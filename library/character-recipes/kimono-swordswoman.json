@@ -1,0 +1,73 @@
+{
+  "id": "kimono-swordswoman",
+  "name": "Hana",
+  "extends": "ronin-reference.json",
+  "seed": 19,
+  "proportion": "slim",
+  "drop": [
+    "hat",
+    "tassels"
+  ],
+  "paper": {
+    "washi_natural": "washi_teal",
+    "washi_shade": "washi_teal"
+  },
+  "pose": "neutral",
+  "pose_overrides": {
+    "stance": 0.28,
+    "rsz": 0.34,
+    "lsz": -0.31,
+    "rsx": -0.21,
+    "lsx": -0.3,
+    "lex": -0.5,
+    "rex": -0.84
+  },
+  "swap": [
+    {
+      "part": "hair_ribbon_bun"
+    },
+    {
+      "part": "mask_long",
+      "scale": 0.94
+    },
+    {
+      "part": "neck_column",
+      "scale": 0.94
+    },
+    {
+      "part": "kimono_layered",
+      "params": {
+        "shoulder": 0.225,
+        "chest": 0.181,
+        "waist": 0.143
+      }
+    },
+    {
+      "part": "sleeve_upper_folded",
+      "scale": 0.94
+    },
+    {
+      "part": "tamoto_wide",
+      "params": {
+        "width": 0.132,
+        "drop": 0.374,
+        "mouth": 0.113,
+        "material": "washi_vermilion"
+      }
+    },
+    {
+      "part": "hakama_pleated",
+      "scale": 0.95
+    },
+    {
+      "part": "hakama_shin_pleated",
+      "scale": 0.95
+    },
+    {
+      "part": "eri_crossed",
+      "params": {
+        "material": "washi_vermilion"
+      }
+    }
+  ]
+}

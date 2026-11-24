@@ -1,0 +1,29 @@
+{
+  "label": "Vermilion-dyed washi",
+  "paper_type": "washi-mitsumata",
+  "color": [
+    0.55,
+    0.105,
+    0.066
+  ],
+  "translucent_color": [
+    0.78,
+    0.22,
+    0.09
+  ],
+  "fibre_density": 1.15,
+  "fibre_direction": "lengthwise",
+  "fibre_strength": 0.36,
+  "roughness": 0.78,
+  "sheen": 0.08,
+  "thickness_mm": 0.35,
+  "fold_darkening": 0.22,
+  "edge_wear": 0.2,
+  "translucency": 0.192,
+  "inner_light": 1.25,
+  "facet_variation": 0.05,
+  "shimi": "amber-soak",
+  "note": "Pulp-dyed sheet for modular character recipes.",
+  "id": "washi_vermilion",
+  "grain_contrast": 0.44
+}

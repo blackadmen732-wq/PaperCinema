@@ -20,6 +20,30 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
    - `main.js`: choreography (who moves when), camera, titles and effects
 4. **Render** (`engine/render.mjs`). Opens the film in headless Chrome, renders frame by frame (deterministic) and pipes the frames to ffmpeg.
 
+## Build a modular paper character
+
+Each character is a recipe in [`library/character-recipes/`](library/character-recipes). Pick the mask, hat,
+collar, sleeves and trousers, then choose the paper sheets. Six recipes share the same skeleton. Blender films and sets cast them by default. The [asset inventory](assets/README.md) maps all seven source GLBs to a recipe or an accessory.
+
+```bash
+blender -b --python-exit-code 1 -P blender/character/modular_builder.py -- \
+  --recipe library/character-recipes/ronin-reference.json --light neutral --portrait \
+  --still output/character/ronin.png
+```
+
+The [character factory guide](docs/CHARACTER-FACTORY.md) covers recipe edits, pose validation, casting
+the characters in a Blender film, and exporting a skeletal FBX and material sheet for Unreal.
+
+## Render a studio short
+
+[Paper Awakens](docs/STUDIO-FILM.md) is a three-shot Blender example. One scene file drives the cast, pose
+changes, camera cuts, lighting and sound. The command writes an editable Blender project and a finished MP4.
+
+```bash
+blender -b --python-exit-code 1 -P blender/studio_film.py -- \
+  --scene film/studio/paper-awakens.json --out output/paper-awakens
+```
+
 ## Guides
 
 - **`AGENTS.md`**: start here. **`SYSTEMS.md`**: every system and how it connects. **`docs/README.md`**: which guide, when.
@@ -31,8 +55,11 @@ research/*.md  →  film/*.json (shot list)  →  engine/ (paper 3D world + chor
 
 ## Commands
 
+Install with Node.js 20 or newer.
+
 ```bash
-npm install
+npm ci
+npx playwright install chromium
 ```
 
 Render the full film (writes `output/ganryujima.mp4`):

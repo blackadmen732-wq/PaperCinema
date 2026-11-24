@@ -23,6 +23,7 @@ const dir = 'assets/sfx';
 fs.mkdirSync(dir, { recursive: true });
 const creditsPath = path.join(dir, 'credits.json');
 const credits = fs.existsSync(creditsPath) ? JSON.parse(fs.readFileSync(creditsPath, 'utf8')) : {};
+const localOnly = args.includes('--local-only');
 const UA = { 'User-Agent': 'paper-cinema/1.0' };
 
 function stats(file) {
@@ -39,6 +40,7 @@ async function find(cue) {
   if (cue.file) return fs.existsSync(cue.file) ? cue.file : (console.log(`✗ ${cue.id}: missing file ${cue.file}`), null);
   const file = path.join(dir, `${cue.id}.mp3`);
   if (fs.existsSync(file) && credits[cue.id] && !args.includes('--refresh')) return file;
+  if (localOnly) throw new Error(`Missing local sound ${cue.id}: ${file}`);
   const url = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cue.query)}&license=cc0,by&page_size=20`;
   const res = await (await fetch(url, { headers: UA })).json();
   const cands = (res.results ?? []).filter((r) => r.duration && r.duration >= cue.min && r.duration <= cue.max && r.url);
@@ -129,7 +131,10 @@ for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
   const f = await find(lib);
   if (f) placed.push({ cue, f });
 }
-fs.writeFileSync(creditsPath, JSON.stringify(credits, null, 2));
+if (localOnly && placed.length !== (film.sounds?.length ?? 0) + autoCues.length + voiceCues.length) {
+  throw new Error('A local audio cue failed to load.');
+}
+if (!localOnly) fs.writeFileSync(creditsPath, JSON.stringify(credits, null, 2));
 
 // PLACE + MIX
 const inputs = ['-i', video];
@@ -169,9 +174,10 @@ if (voiceIdx.length && duckIdx.length) {
   mixIn += '[bedsd]';
   console.log(`  ducking ${duckIdx.length} bed/music cue(s) by ${d.db ?? 8} dB under ${voiceIdx.length} voice line(s) (${opt('duck', 'exact')})`);
 }
+const ending = Math.min(film.duration, 1.5);
 filters.push(`${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,alimiter=limit=0.9,` +
-  `afade=t=out:st=${film.duration - 1.5}:d=1.5[mix]`);
+  `apad,afade=t=out:st=${film.duration - ending}:d=${ending}[mix]`);
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.join(';'),
-  '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(film.duration), out]);
+  '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-t', String(film.duration), out]);
 console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length + autoCues.length + voiceCues.length} sounds` +
   `${voiceCues.length ? ` (${voiceCues.length} voice lines)` : ''}. Credits: ${creditsPath}`);

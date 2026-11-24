@@ -29,7 +29,7 @@ python3 blender/sets/kit.py            # list every kit piece and its parameters
 | `--out` | `output/sets/<name>.blend` | Saved set (open it in your own scripts and film inside) |
 | `--preview` | none | Render stills from `--cams` |
 | `--cams` | the set's `preview_cams` | Comma list of `CAM_*` anchors |
-| `--with-character` | none | `hero:wide-stance,foe:hasso:demon`: builds `blender/character/origami_samurai.py` on `MARK_<role>`, facing the mark's direction, plus the set's fighter key / fill / rim lights. Add `:trellis` (`hero:chudan:trellis,foe:hasso:trellis`) to place the rigged TRELLIS character instead (`docs/CHARACTER-BLENDER.md`) |
+| `--with-character` | none | Place modular characters on `MARK_<role>`, for example `hero:wide-stance,foe:hasso:demon`. Use `foe:hasso:recipe=gold-armour` to choose a recipe. The other render paths are available with `:trellis[=model]` and `:prototype`. |
 | `--res`, `--samples` | set `render` block, else 540x960, 32 | Preview size and Cycles samples (OpenImageDenoise on) |
 | `--quick` | off | 270x480, 12 samples: composition and light check in 15–30 s |
 | `--seed` | set `seed` | Re-roll every piece (stones, culms, trees) at once |

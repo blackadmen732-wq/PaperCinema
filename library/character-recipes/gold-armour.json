@@ -1,0 +1,9 @@
+{
+  "id": "gold-armour",
+  "name": "Ochre armoured warrior",
+  "extends": "armoured-warrior.json",
+  "seed": 18,
+  "paper": {
+    "card_charcoal": "card_ochre"
+  }
+}

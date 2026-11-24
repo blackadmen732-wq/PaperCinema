@@ -1,0 +1,29 @@
+{
+  "label": "Ochre-dyed armour card",
+  "paper_type": "card-stock",
+  "color": [
+    0.57,
+    0.29,
+    0.088
+  ],
+  "translucent_color": [
+    0.75,
+    0.49,
+    0.22
+  ],
+  "fibre_density": 0.85,
+  "fibre_direction": "vertical",
+  "fibre_strength": 0.1,
+  "roughness": 0.72,
+  "sheen": 0.3,
+  "thickness_mm": 0.9,
+  "fold_darkening": 0.4,
+  "edge_wear": 0.35,
+  "translucency": 0.06,
+  "inner_light": 0.3,
+  "facet_variation": 0.05,
+  "shimi": "ink-bleed",
+  "note": "Pulp-dyed sheet for modular character recipes.",
+  "id": "card_ochre",
+  "grain_contrast": 0.3
+}

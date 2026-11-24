@@ -197,6 +197,24 @@ def validate(recipe_path, poses=None, only=None):
         mats = [m for m in ob.data.materials if m]
         check('material', ob.name, len(mats) > 0 and len(mats) == len(ob.data.materials),
               f'{len(mats)}/{len(ob.data.materials)} slots filled')
+        uv = ob.data.uv_layers.get('PaperGrain')
+        check('paper_uv', ob.name, uv is not None and len(uv.data) == len(ob.data.loops),
+              'rest-pose grain UVs')
+        if ob.get('pc_unfolded') and uv:
+            edges = {}
+            for face in ob.data.polygons:
+                loops = list(face.loop_indices)
+                for a, b in zip(loops, loops[1:] + loops[:1]):
+                    va, vb = ob.data.loops[a].vertex_index, ob.data.loops[b].vertex_index
+                    da, db = uv.data[a].uv.copy(), uv.data[b].uv.copy()
+                    if va > vb:
+                        va, vb, da, db = vb, va, db, da
+                    edges.setdefault((va, vb), []).append((da, db))
+            marked = {tuple(sorted(e.vertices)) for e in ob.data.edges if e.use_seam}
+            broken = [edge for edge, samples in edges.items() if len(samples) == 2 and edge not in marked
+                      and any((a - b).length > 1e-6 for a, b in zip(*samples))]
+            check('continuous_grain', ob.name, not broken,
+                  f'{len(broken)} unmarked UV breaks across shared geometry edges')
         s = ob.scale
         check('scale', ob.name, abs(s.x - 1) < 1e-4 and abs(s.y - 1) < 1e-4 and abs(s.z - 1) < 1e-4,
               f'object scale {tuple(round(v, 4) for v in s)} (must be 1: fibre size is world scale)')
@@ -223,8 +241,12 @@ def validate(recipe_path, poses=None, only=None):
         check('spike', ob.name, sp < 0.35, f'modifiers grow the part by {sp * 100:.0f}% of its own size')
 
     # ---- the pose sweep
-    for pose in (poses or SWEEP):
-        ch['rig'].pose(pose)
+    samples = [(pose, pose, {}) for pose in (poses or SWEEP)]
+    if not poses:
+        display = recipe.get('pose', 'neutral')
+        samples.append((f'display:{display}', display, recipe.get('pose_overrides', {})))
+    for pose, key, overrides in samples:
+        ch['rig'].pose(key, **overrides)
         dg = bpy.context.evaluated_depsgraph_get()
         pts = {k: [p for ob in v if not ob.get('pc_internal') for p in world_points(ob, dg)]
                for k, v in by_slot.items()}

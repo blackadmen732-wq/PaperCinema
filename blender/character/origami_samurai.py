@@ -127,9 +127,6 @@ def W(name):
 
 # ---------------------------------------------------------------------------- poses (port of engine/figure.js applyPose)
 POSES = json.load(open(os.path.join(REPO, 'library', 'poses.json')))
-POSES['wide-stance'] = {   # second reference: deep side stance, lead arm reaching forward, rear arm back
-    'stance': 0.75, 'crouch': 0.26, 'weight': 0.2, 'tx': 0.12, 'ty': 0.35, 'cy': 0.15, 'hy': -0.3, 'hx': -0.05,
-    'lsx': -1.25, 'lsz': 0.25, 'lex': -0.25, 'lwx': 0.3, 'rsx': 0.35, 'rsz': 0.55, 'rex': -0.35, 'rcz': 0.05}
 POSES['standing'] = {'tx': 0.06, 'hx': 0.22, 'nx': 0.1, 'rsx': -0.55, 'rsz': 0.35, 'rex': -1.4, 'lsx': -0.5, 'lsz': -0.4, 'lex': -1.45, 'stance': 0.18}
 BASE = dict(x=0, y=0, z=0, ry=0, rx=0, rz=0, tx=0, ty=0, tz=0, hx=0, hy=0, hz=0, rsx=0.05, rsz=0.12, rex=-0.15, lsx=0.05,
             lsz=-0.12, lex=-0.15, rwx=0, lwx=0, rwz=0, lwz=0, sway=0, swayx=0, stance=0.12, crouch=0, weight=0,

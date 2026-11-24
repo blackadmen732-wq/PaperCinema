@@ -633,11 +633,12 @@
   {
    "id": "CHARFACTORY",
    "name": "Modular origami character factory",
-   "does": "A character = one JSON recipe in `library/character-recipes/`: parts picked from a registry of folded paper pieces (kasa wide/narrow, hachigane, angular/long face masks with eye slits, hair and topknot, layered or plain kimono body with shoulder-to-sternum planes, crossed left-over-right lapels, obi with knot and cord, upper and hanging sleeves as separate folded bags, forearm and kote, folded-finger hands, TWO real pleated hakama legs, tabi+zori or war boots, sode and do lamellar plates, sheathed katana, tassels), each snapped to a socket on the shared humanoid rig (the same joint names as `engine/figure.js` and `rig_trellis.py`, so `library/poses.json` drives it), scaled inside an approved range, dressed from one washi material family with world-scale fibre, rigid parts parented to a bone and flexible ones skinned across 2-3 bones. A second character is made by swapping parts in the recipe only. `part_validator.py` gates the library: material, scale, fibre, pivot, socket, self-intersection, solidify spikes, joint gaps across a five-pose sweep and silhouette readability",
+   "does": "A character = one JSON recipe in `library/character-recipes/`: parts picked from a registry of folded paper pieces (kasa wide/narrow, hachigane, angular/long face masks with eye slits, hair and topknot, layered or plain kimono body with shoulder-to-sternum planes, crossed left-over-right lapels, obi with knot and cord, upper and hanging sleeves as separate folded bags, forearm and kote, folded-finger hands, TWO real pleated hakama legs, tabi+zori or war boots, sode and do lamellar plates, sheathed katana, tassels), each snapped to a socket on the shared humanoid rig (the same joint names as `engine/figure.js` and `rig_trellis.py`, so `library/poses.json` drives it), scaled inside an approved range, dressed from one washi material family with world-scale fibre, rigid parts parented to a bone and flexible ones skinned across 2-3 bones. Parts on paired sockets can swap independently by side. Blender film casts use these recipes and the resolved motion export. Skeletal FBX and a material manifest carry the bind pose into Unreal. `part_validator.py` gates the library: material, continuous grain UVs, scale, fibre, pivot, socket, self-intersection, solidify spikes, joint gaps across a five-pose sweep and silhouette readability",
    "files": [
     "blender/character/part_registry.py",
     "blender/character/modular_builder.py",
     "blender/character/part_validator.py",
+    "blender/character/export_character.py",
     "library/character-recipes/",
     "library/paper-materials/",
     "blender/world/paper_materials.py"
@@ -647,12 +648,12 @@
    ],
    "command": "blender -b -P blender/character/modular_builder.py -- --recipe library/character-recipes/ronin-reference.json --turnaround output/character/t.png --light cinematic",
    "status": "test",
-   "status_note": "🧪 v1 (two characters; stills + pose sweep)"
+   "status_note": "🧪 v3 (six recipes and standalone kasa)"
   },
   {
    "id": "BLENDERFILM",
-   "name": "Blender film render (TRELLIS hero)",
-   "does": "The owner's reference character fights in Blender from film data: `tools/export_motion.mjs` writes what the preview engine really did per frame (joints, sword, camera, trees, events → `output/<film>.motion.json`); `rig_trellis.py` rigs any TRELLIS `.glb` (our joint names + a table to the standard humanoid names, bone-heat skin with scripted cleanup, relit paper, inner lantern, real-metal katana in a two-hand IK grip, sleeve follow-through) with three drivers: `library/poses.json`, film motion, BVH motion capture; `film_blender.py` renders it with dark cinematic light re-set per frame from the camera, the slash as swept light, dust, tree props, motion blur, and the film's camera or 12 named camera moves / a per-film plan",
+   "name": "Blender film render",
+   "does": "The modular cast is selected through `library/character-models.json`. The film plays from world-space motion data: `tools/export_motion.mjs` writes what the preview engine really did per frame (joints, sword, camera, trees, events → `output/<film>.motion.json`); `rig_trellis.py` rigs any TRELLIS `.glb` (our joint names + a table to the standard humanoid names, bone-heat skin with scripted cleanup, relit paper, inner lantern, real-metal katana in a two-hand IK grip, sleeve follow-through) with three drivers: `library/poses.json`, film motion, BVH motion capture; `film_blender.py` renders it with dark cinematic light re-set per frame from the camera, the slash as swept light, dust, tree props, motion blur, and the film's camera or 12 named camera moves / a per-film plan",
    "files": [
     "tools/export_motion.mjs",
     "blender/character/rig_trellis.py",
@@ -665,6 +666,22 @@
    "command": "blender -b -P blender/film_blender.py -- --film film/dash-test.json --out output/blender/dash-test/ --times 0.3,1.15,4.2",
    "status": "test",
    "status_note": "🧪 v1 (stills; one fighter)"
+  },
+  {
+   "id": "STUDIOFILM",
+   "name": "Studio film production",
+   "does": "A scene file sets the modular cast, pose keys, planted feet, paper follow-through, studio or set, tracked focus, camera cuts and sound. Bakes the editable Blender project, framing and contact audit and the MP4.",
+   "files": [
+    "blender/studio_film.py",
+    "film/studio/paper-awakens.json",
+    "engine/sound.mjs"
+   ],
+   "guide": [
+    "docs/STUDIO-FILM.md"
+   ],
+   "command": "blender -b -P blender/studio_film.py -- --scene film/studio/paper-awakens.json --out output/paper-awakens",
+   "status": "built",
+   "status_note": "✅"
   },
   {
    "id": "GPU",
@@ -682,17 +699,19 @@
   },
   {
    "id": "MODELS",
-   "name": "3D models",
-   "does": "5 models from reference images (TRELLIS, MIT)",
+   "name": "3D character catalog",
+   "does": "Seven TRELLIS source GLBs map to rigged character recipes or the kasa part. The modular catalogue shot uses the same recipes locally and on Kaggle.",
    "files": [
-    "assets/models/"
+    "assets/models/",
+    "library/character-models.json",
+    "blender/character/character_shot.py"
    ],
    "guide": [
     "assets/README.md"
    ],
    "command": null,
    "status": "built",
-   "status_note": "✅ static (no rig yet)"
+   "status_note": "✅ Blender and FBX"
   },
   {
    "id": "ANATOMY",

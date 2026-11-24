@@ -14,6 +14,7 @@ Every paper surface is the same recipe:
     and aerial haze (`haze`): the surface fades to a haze colour with camera distance. Haze is a cheap stand-in
     for a fog volume and gives the layered mountains their depth.
 """
+import hashlib
 import json
 import math
 import os
@@ -120,10 +121,39 @@ def fibre_height(T, scale=40.0, stretch=6.0, seed=0.0, rot=(0.0, 0.0, 0.0), radi
     return h
 
 
+def sheet_grain(T, repeats, radial=False):
+    """Fine pulp and a soft, irregular cross-grain on the rest-pose UVs (one UV unit per metre)."""
+    mapping = T.node('ShaderNodeUVMap')
+    mapping.uv_map = 'PaperGrain'
+    uv = mapping.outputs['UV']
+    if radial:
+        # The first axis wraps exactly once at the brim seam.
+        sep = T.node('ShaderNodeSeparateXYZ', Vector=uv)
+        azimuth = T.math('MULTIPLY', sep.outputs['X'], math.tau)
+        uv = T.node('ShaderNodeCombineXYZ', X=T.math('COSINE', azimuth), Y=sep.outputs['Y'],
+                    Z=T.math('SINE', azimuth)).outputs[0]
+    wave = T.node('ShaderNodeVectorMath', Vector=uv)
+    wave.operation = 'SCALE'
+    wave.inputs['Scale'].default_value = repeats
+    vec = wave.outputs['Vector']
+    pulp = T.node('ShaderNodeTexNoise', Vector=vec, Scale=4.5, Detail=2.0).outputs['Fac']
+    axes = ((1.0, 0.18, 1.0), (0.20, 1.25, 0.20))
+    grains = []
+    for axis in axes:
+        stretch = T.node('ShaderNodeVectorMath', Vector=vec)
+        stretch.operation = 'MULTIPLY'
+        stretch.inputs[1].default_value = axis
+        grain = T.node('ShaderNodeTexNoise', Vector=stretch.outputs['Vector'], Scale=1.0, Detail=2.0)
+        grains.append(grain.outputs['Fac'])
+    crossing = T.math('MULTIPLY', *grains)
+    return T.math('MULTIPLY_ADD', crossing, 1.5, T.math('MULTIPLY', pulp, 0.3))
+
+
 def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fibre_scale=40.0,
                    fibre_strength=0.12, facet_var=0.10, flat=True, tint=None, tint_z=(0.0, 1.0),
                    stripes=None, glow=None, haze=None, translucent_color=None, seed=None,
-                   fibre_rot=(0.0, 0.0, 0.0), fibre_radial=False, fold_dark=0.0, edge_wear=0.0):
+                   fibre_rot=(0.0, 0.0, 0.0), fibre_radial=False, fold_dark=0.0, edge_wear=0.0,
+                   grain_contrast=0.0):
     """Faceted washi paper.
 
     color            base RGB (linear, 0..1)
@@ -138,6 +168,9 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     haze             (rgb, distance_m, strength): aerial perspective, fades to the haze colour with distance
     """
     m = new_material(name)
+    m.diffuse_color = _rgba(color)
+    m.roughness = rough
+    m.metallic = 0.0
     T = _NT(m.node_tree)
     s = random.Random(name).random() if seed is None else seed
     out = m.node_tree.nodes.new('ShaderNodeOutputMaterial')
@@ -162,8 +195,12 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     attr.attribute_type = 'GEOMETRY'
     attr.attribute_name = FACET_ATTR
     fv = T.math('MULTIPLY_ADD', T.math('SUBTRACT', attr.outputs['Fac'], 0.5), 2.0 * facet_var, 1.0)
-    h = fibre_height(T, fibre_scale, seed=s, rot=fibre_rot, radial=fibre_radial)
-    speck = T.math('MULTIPLY_ADD', h, -0.10, 1.04)
+    if grain_contrast:
+        h = sheet_grain(T, fibre_scale, radial=fibre_radial)
+        speck = T.math('MULTIPLY_ADD', h, grain_contrast, 1.0 - 0.5 * grain_contrast)
+    else:
+        h = fibre_height(T, fibre_scale, seed=s, rot=fibre_rot, radial=fibre_radial)
+        speck = T.math('MULTIPLY_ADD', h, -0.10, 1.04)
     k = T.math('MULTIPLY', fv, speck)
     if fold_dark or edge_wear:
         # Pointiness: 0.5 flat, below = a crease (the valley of a fold), above = a folded edge.
@@ -177,7 +214,7 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     base = T.mix_rgb(1.0, col_sock if col_sock else col, kv.outputs[0], blend='MULTIPLY')
 
     # normal: fibre bump on the flat facet normal
-    bump = T.node('ShaderNodeBump', Strength=fibre_strength, Distance=0.02, Height=h)
+    bump = T.node('ShaderNodeBump', Strength=fibre_strength, Distance=0.0014 if grain_contrast else 0.02, Height=h)
     if flat:
         T.link(geo.outputs['True Normal'], bump.inputs['Normal'])
     rgh = T.math('MULTIPLY_ADD', h, 0.12, rough - 0.05, clamp=True)
@@ -218,8 +255,10 @@ WASHI_FIBRE_RANGE = (0.70, 1.45)   # allowed per-sheet density multiplier (part_
 WASHI_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..',
                          'library', 'paper-materials')
 _WASHI_SPECS = {}
-_WASHI_MATS = {}
 
+
+def washi_sheet_ids():
+    return {name[:-5] for name in os.listdir(WASHI_DIR) if name.endswith('.json')}
 FIBRE_DIRECTIONS = {            # grain direction, in the part's own object space
     'lengthwise': dict(fibre_rot=(0.0, 0.0, 0.0)),            # long fibres along X: sleeves, belts, straps
     'vertical': dict(fibre_rot=(0.0, 0.0, math.pi / 2)),      # along Z-ish: hakama legs, lapels, folds
@@ -256,8 +295,10 @@ def PC_Washi_Master(key, name=None, *, scale=1.0, glow=None, color=None, suffix=
     dens = float(spec.get('fibre_density', 1.0))
     # The name carries everything that changes the material, so one lookup by name is the whole cache: a
     # stale Python reference to a freed datablock can never come back out of here.
-    tag = (round(scale, 4), col, glow, shimi)
-    nm = name or ('PC_Washi_' + key + suffix + ('_%04x' % (abs(hash(tag)) % 0xffff) if tag != (1.0, tuple(spec['color']), None, None) else ''))
+    tag = (round(scale, 4), col, glow, shimi, sorted(over.items()))
+    custom = tag != (1.0, tuple(spec['color']), None, None, [])
+    digest = hashlib.sha256(repr(tag).encode()).hexdigest()[:10] if custom else ''
+    nm = name or ('PC_Washi_' + key + suffix + ('_' + digest if custom else ''))
     have = bpy.data.materials.get(nm)
     if have is not None:
         return have
@@ -277,10 +318,14 @@ def PC_Washi_Master(key, name=None, *, scale=1.0, glow=None, color=None, suffix=
         edge_wear=float(spec.get('edge_wear', 0.15)),
         glow=(tuple(glow[0]), float(glow[1]) * float(spec.get('inner_light', 1.0))) if glow else None,
         translucent_color=tuple(spec['translucent_color']) if spec.get('translucent_color') else None,
-        seed=abs(hash(nm)) % 997 / 997.0, **kw)
+        grain_contrast=float(spec.get('grain_contrast', 0.0)), seed=0.0, **kw)
     m['pc_washi'] = key
     m['pc_fibre_world'] = WASHI_FIBRE * dens
     m['pc_thickness'] = float(spec.get('thickness_mm', 0.4))
+    m['pc_grain_radial'] = kw.get('fibre_radial', False)
+    if glow:
+        m['pc_emission_color'] = tuple(glow[0])
+        m['pc_emission_strength'] = float(glow[1]) * float(spec.get('inner_light', 1.0))
     return m
 
 

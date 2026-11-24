@@ -1,0 +1,33 @@
+{
+  "default_hero": "ronin-reference",
+  "default_foe": "front-samurai",
+  "cast": {
+    "ronin": "ronin-reference",
+    "kojiro": "front-samurai",
+    "musashi": "ronin-reference",
+    "hana": "kimono-swordswoman"
+  },
+  "references": {
+    "ronin_base": {
+      "recipe": "ronin-reference"
+    },
+    "origami_samurai_s7": {
+      "recipe": "ronin-reference"
+    },
+    "origami_samurai_s21": {
+      "recipe": "ronin-reference"
+    },
+    "samurai_front": {
+      "recipe": "front-samurai"
+    },
+    "gold_armor": {
+      "recipe": "gold-armour"
+    },
+    "kimono_swordswoman": {
+      "recipe": "kimono-swordswoman"
+    },
+    "kasa_hat": {
+      "part": "kasa_wide"
+    }
+  }
+}

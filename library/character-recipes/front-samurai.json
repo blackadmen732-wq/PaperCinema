@@ -1,0 +1,36 @@
+{
+  "id": "front-samurai",
+  "name": "Indigo samurai",
+  "extends": "ronin-reference.json",
+  "seed": 17,
+  "drop": [
+    "hat",
+    "tassels"
+  ],
+  "swap": [
+    {
+      "part": "topknot"
+    },
+    {
+      "part": "mask_long"
+    },
+    {
+      "part": "obi_plain"
+    },
+    {
+      "part": "tamoto_narrow"
+    },
+    {
+      "part": "sleeve_upper_folded",
+      "scale": 0.94
+    }
+  ],
+  "paper": {
+    "washi_natural": "card_indigo",
+    "washi_shade": "card_indigo"
+  },
+  "pose": "chudan",
+  "pose_overrides": {
+    "stance": 0.34
+  }
+}
