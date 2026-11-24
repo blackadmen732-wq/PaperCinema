@@ -87,10 +87,24 @@ def new_material(name):
 
 
 # --------------------------------------------------------------------------- the paper recipe
-def fibre_height(T, scale=40.0, stretch=6.0, seed=0.0):
-    """Washi fibre field (0..1): fine pulp noise plus long fibres stretched along object X."""
+def fibre_height(T, scale=40.0, stretch=6.0, seed=0.0, rot=(0.0, 0.0, 0.0), radial=False):
+    """Washi fibre field (0..1): fine pulp noise plus long fibres stretched along object X.
+
+    rot      rotate the object-space lookup, so the long fibres run along the part's own grain
+             (lengthwise down a sleeve, along the folds of a hakama leg)
+    radial   lay the grain out from the object's Z axis instead (a pleated kasa, a rosette):
+             the fibres then run apex → rim like split bamboo ribs
+    """
     tc = T.node('ShaderNodeTexCoord')
-    mp = T.node('ShaderNodeMapping', Vector=tc.outputs['Object'])
+    src = tc.outputs['Object']
+    if radial:
+        sep = T.node('ShaderNodeSeparateXYZ', Vector=src)
+        r = T.math('SQRT', T.math('ADD', T.math('MULTIPLY', sep.outputs['X'], sep.outputs['X']),
+                                 T.math('MULTIPLY', sep.outputs['Y'], sep.outputs['Y'])))
+        ang = T.math('MULTIPLY', T.math('ARCTAN2', sep.outputs['Y'], sep.outputs['X']), 0.25)
+        src = T.node('ShaderNodeCombineXYZ', X=r, Y=ang, Z=sep.outputs['Z']).outputs[0]
+    mp = T.node('ShaderNodeMapping', Vector=src)
+    mp.inputs['Rotation'].default_value = rot
     mp.inputs['Scale'].default_value = (scale, scale, scale)
     mp.inputs['Location'].default_value = (seed * 13.1, seed * 7.7, seed * 3.3)
     pulp = T.node('ShaderNodeTexNoise', Vector=mp.outputs['Vector'], Scale=4.0, Detail=10.0, Roughness=0.65)
@@ -106,7 +120,8 @@ def fibre_height(T, scale=40.0, stretch=6.0, seed=0.0):
 
 def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fibre_scale=40.0,
                    fibre_strength=0.12, facet_var=0.10, flat=True, tint=None, tint_z=(0.0, 1.0),
-                   stripes=None, glow=None, haze=None, translucent_color=None, seed=None):
+                   stripes=None, glow=None, haze=None, translucent_color=None, seed=None,
+                   fibre_rot=(0.0, 0.0, 0.0), fibre_radial=False, fold_dark=0.0, edge_wear=0.0):
     """Faceted washi paper.
 
     color            base RGB (linear, 0..1)
