@@ -4,7 +4,7 @@
 import subprocess, os, time, glob
 JOB = {
     'script': 'blender/character/trellis_shot.py',
-    'args': ['--model', 'ronin_base', '--frames', '1-48', '--samples', '48', '--res', '720x1280', '--out', '/kaggle/tmp/frames/'],
+    'args': ['--model', 'ronin_base', '--frames', '1-12', '--samples', '48', '--res', '720x1280', '--out', '/kaggle/tmp/frames/'],
     'mp4': '/kaggle/working/shot.mp4',
 }
 t0 = time.time()
@@ -30,7 +30,8 @@ sh(f'tar xzf {src} -C /kaggle/tmp && ls /kaggle/tmp/repo')
 B = '/kaggle/tmp/blender-4.5.16-linux-x64/blender'
 print('setup', int(time.time() - t0), 's', flush=True)
 t1 = time.time()
-sh(f'cd /kaggle/tmp/repo && {B} -b -P {JOB["script"]} -- {" ".join(JOB["args"])}', stream=True)
+sh(f'cd /kaggle/tmp/repo && {B} -b -P {JOB["script"]} -- {" ".join(JOB["args"])} > /kaggle/tmp/blender.log 2>&1; '
+   f'grep -cE "^Saved:" /kaggle/tmp/blender.log; tail -3 /kaggle/tmp/blender.log')
 n = len(glob.glob('/kaggle/tmp/frames/*'))
 print(f'RENDERED {n} frames in {int(time.time() - t1)} s ({(time.time() - t1) / max(n, 1):.1f} s/frame)', flush=True)
 sh(f'ffmpeg -loglevel error -y -framerate 24 -i /kaggle/tmp/frames/f%04d.jpg -c:v libx264 -crf 16 -pix_fmt yuv420p {JOB["mp4"]}')
