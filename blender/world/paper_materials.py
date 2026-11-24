@@ -160,9 +160,17 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     attr.attribute_type = 'GEOMETRY'
     attr.attribute_name = FACET_ATTR
     fv = T.math('MULTIPLY_ADD', T.math('SUBTRACT', attr.outputs['Fac'], 0.5), 2.0 * facet_var, 1.0)
-    h = fibre_height(T, fibre_scale, seed=s)
+    h = fibre_height(T, fibre_scale, seed=s, rot=fibre_rot, radial=fibre_radial)
     speck = T.math('MULTIPLY_ADD', h, -0.10, 1.04)
     k = T.math('MULTIPLY', fv, speck)
+    if fold_dark or edge_wear:
+        # Pointiness: 0.5 flat, below = a crease (the valley of a fold), above = a folded edge.
+        crease = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', 0.5, geo.outputs['Pointiness']), 0.0), 4.0)
+        edge = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', geo.outputs['Pointiness'], 0.5), 0.0), 4.0)
+        if fold_dark:
+            k = T.math('MULTIPLY', k, T.math('SUBTRACT', 1.0, T.math('MULTIPLY', crease, fold_dark), clamp=True))
+        if edge_wear:
+            k = T.math('MULTIPLY_ADD', T.math('MULTIPLY', edge, edge_wear), 0.35, k)
     kv = T.node('ShaderNodeCombineXYZ', X=k, Y=k, Z=k)
     base = T.mix_rgb(1.0, col_sock if col_sock else col, kv.outputs[0], blend='MULTIPLY')
 
