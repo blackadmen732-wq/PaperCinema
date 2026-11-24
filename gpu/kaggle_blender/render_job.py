@@ -4,16 +4,17 @@
 import subprocess, os, time, glob
 JOB = {
     'script': 'blender/character/trellis_shot.py',
-    'args': ['--model', 'ronin_base', '--frames', '1-24', '--samples', '48', '--res', '720x1280', '--out', '/kaggle/working/frames/'],
+    'args': ['--model', 'ronin_base', '--frames', '1-96', '--samples', '48', '--res', '720x1280', '--out', '/kaggle/working/frames/'],
     'mp4': '/kaggle/working/shot.mp4',
 }
 t0 = time.time()
 def sh(c, show=1500, stream=False):
     print('$', c[:200], flush=True)
     if stream:                      # print as it happens, so a cancelled run still shows how far it got
+        c = c + " 2>&1 | grep --line-buffered -E '^Saved:|\\[gpu\\]|Error'"
         p = subprocess.Popen(c, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, executable='/bin/bash')
         for line in p.stdout:                 # one line per finished frame only: Kaggle kills a kernel that floods its log
-            if line.startswith('Saved:') or '[gpu]' in line or 'Error' in line or 'Fra:1 ' in line[:8]:
+            if line.startswith('Saved:') or '[gpu]' in line or 'Error' in line:
                 print(line.rstrip()[:140], flush=True)
         return p.wait()
     r = subprocess.run(c, shell=True, capture_output=True, text=True, executable='/bin/bash')

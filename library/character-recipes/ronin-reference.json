@@ -1,0 +1,93 @@
+{
+  "id": "ronin-reference",
+  "name": "Ronin (reference match)",
+  "note": "The locked quality target: built to match research/ref-origami-samurai-standing.jpg \u2014 pleated kasa with radial ribs and a rolled rim, angular folded mask with eye slits, big flat shoulder planes, lapels crossed left over right with a dark seam slot, wide hanging sleeves as separate bags, a wrapped obi with a knot, and TWO REAL PLEATED LEGS down to pointed tabi.",
+  "proportion": "standard",
+  "seed": 3,
+  "glow": [
+    1.0,
+    0.55,
+    0.18
+  ],
+  "glow_strength": 3.0,
+  "lamp_scale": 1.0,
+  "parts": [
+    {
+      "part": "kasa_wide",
+      "scale": 1.0,
+      "params": {
+        "radius": 0.45,
+        "rise": 0.3,
+        "ribs": 24
+      }
+    },
+    {
+      "part": "mask_angular",
+      "scale": 1.0
+    },
+    {
+      "part": "hair_spikes",
+      "scale": 1.0
+    },
+    {
+      "part": "neck_column",
+      "scale": 1.0
+    },
+    {
+      "part": "kimono_layered",
+      "scale": 1.0
+    },
+    {
+      "part": "eri_crossed",
+      "scale": 1.0
+    },
+    {
+      "part": "obi_knot",
+      "scale": 1.0
+    },
+    {
+      "part": "sleeve_upper_folded",
+      "scale": 1.0
+    },
+    {
+      "part": "tamoto_wide",
+      "scale": 1.0
+    },
+    {
+      "part": "forearm_folded",
+      "scale": 1.0
+    },
+    {
+      "part": "hand_folded",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_pleated",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_shin_pleated",
+      "scale": 1.0
+    },
+    {
+      "part": "hakama_apron",
+      "scale": 1.0
+    },
+    {
+      "part": "tabi_zori",
+      "scale": 1.0
+    },
+    {
+      "part": "katana_sheathed",
+      "scale": 1.0,
+      "sockets": [
+        "hip_side.L"
+      ]
+    },
+    {
+      "part": "tassels",
+      "scale": 1.0
+    }
+  ],
+  "pose": "neutral"
+}

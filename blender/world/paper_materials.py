@@ -254,10 +254,13 @@ def PC_Washi_Master(key, name=None, *, scale=1.0, glow=None, color=None, suffix=
     spec.update({k: v for k, v in over.items() if v is not None})
     col = tuple(color if color is not None else spec['color'])
     dens = float(spec.get('fibre_density', 1.0))
-    nm = name or ('PC_Washi_' + key + suffix)
-    tag = (nm, round(scale, 4), col, glow, shimi)
-    if tag in _WASHI_MATS and bpy.data.materials.get(nm):
-        return _WASHI_MATS[tag]
+    # The name carries everything that changes the material, so one lookup by name is the whole cache: a
+    # stale Python reference to a freed datablock can never come back out of here.
+    tag = (round(scale, 4), col, glow, shimi)
+    nm = name or ('PC_Washi_' + key + suffix + ('_%04x' % (abs(hash(tag)) % 0xffff) if tag != (1.0, tuple(spec['color']), None, None) else ''))
+    have = bpy.data.materials.get(nm)
+    if have is not None:
+        return have
     kw = dict(FIBRE_DIRECTIONS.get(spec.get('fibre_direction', 'lengthwise'), {}))
     if shimi:
         s_col, s_amt = shimi
@@ -278,7 +281,6 @@ def PC_Washi_Master(key, name=None, *, scale=1.0, glow=None, color=None, suffix=
     m['pc_washi'] = key
     m['pc_fibre_world'] = WASHI_FIBRE * dens
     m['pc_thickness'] = float(spec.get('thickness_mm', 0.4))
-    _WASHI_MATS[tag] = m
     return m
 
 
