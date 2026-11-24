@@ -48,7 +48,8 @@ ORDER = {
     'quick':  ['qwen-cerebras', 'qwen-groq'],
     'review': ['vl-nemotron', 'glm-vl'],
 }
-SYSTEM = ('Answer directly with the final answer only: no thinking out loud, no preamble.\n'
+SYSTEM = ('Think silently. Output ONLY the deliverable, after a line containing exactly: FINAL:\n'
+          'Never show your reasoning. If the answer is code, output code only.\n'
           'You work for Paper Cinema: cinematic paper-craft samurai Shorts, vertical 9:16, folded washi '
           'characters lit from inside (amber = human, crimson = demonic), red paint instead of blood, '
           'anime timing (slow wind-up, 3-4 frame snap, settle). Be concrete and brief: numbers, frame counts, '
@@ -136,7 +137,7 @@ def main():
     ap.add_argument('args', nargs='*')
     ap.add_argument('--model')
     ap.add_argument('--sheet', type=int, default=12, help='frames to sample when reviewing a folder')
-    ap.add_argument('--max-tokens', type=int, default=1400)
+    ap.add_argument('--max-tokens', type=int, default=1400, help='reasoning models need 3000+ for code')
     ap.add_argument('--out', help='write the answer to this file too')
     a = ap.parse_args()
 
@@ -169,6 +170,8 @@ def main():
             print(f'  {v:4}  {k}')
         return
 
+    if a.job in ('think', 'code') and a.max_tokens < 3000:
+        a.max_tokens = 3000                      # reasoning models burn tokens thinking before the answer
     if a.job == 'review':
         target = a.args[0]
         prompt = ' '.join(a.args[1:]) or 'List the worst visual problems, with what to change. Be specific.'

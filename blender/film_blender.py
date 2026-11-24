@@ -519,6 +519,11 @@ def main():
     dust = None if flag('no-dust') else Dust(ground, root)
 
     rt.render_settings(sc, arg('res', '432x768'), arg('samples', 16), blur=not flag('no-blur'), threads=int(arg('threads', 2)))
+    # Cycles on the GPU when the machine has one (Kaggle's T4s, RunPod, a local card); BLENDER_GPU=0 forces the CPU.
+    # rig_trellis.render_settings always asks for the CPU, so this has to come after it.
+    sys.path.insert(0, HERE)
+    from gpu_setup import use_gpu
+    print('[film_blender] Cycles device:', use_gpu(sc), flush=True)
     if not flag('no-glare'):
         glare(sc)
     power = float(arg('light', 1.0))

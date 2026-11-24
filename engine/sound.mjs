@@ -131,6 +131,23 @@ for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
 }
 fs.writeFileSync(creditsPath, JSON.stringify(credits, null, 2));
 
+// PRE-HIT DIP (docs/STUDIO-STANDARD.md: a hit stands at least 9 dB above what comes just before it).
+// Every hit the eye sees (the events file's impacts and blade contacts) gets a hole punched in the bed and in
+// the whooshes just before it: -preDip dB from t-0.30 s to t-0.03 s, back up over 0.12 s. The transient then
+// lands in a quieter moment instead of fighting the whoosh that led into it.
+const PRE_DIP = +opt('pre-dip', film.autoSounds?.preDip ?? 11);     // dB (0 turns it off)
+const hitTimes = [...(evData?.impacts ?? []), ...(evData?.contacts ?? [])]
+  .map((h) => +h.t).filter((t) => t > 0.05).sort((a, b) => a - b);
+const dipCurve = () => {
+  if (!PRE_DIP || !hitTimes.length) return '';
+  const depth = 1 - 10 ** (-PRE_DIP / 20);
+  const w = hitTimes.map((t) => `clip(min((t-${(t - 0.42).toFixed(3)})/0.12,(${(t - 0.03).toFixed(3)}-t)/0.09),0,1)`);
+  const amt = w.reduce((a, b) => (a ? `max(${a},${b})` : b), '');
+  return `volume=eval=frame:volume='1-${depth.toFixed(4)}*${amt}'`;
+};
+const DIPC = dipCurve();
+if (DIPC) console.log(`  dipping beds and whooshes ${PRE_DIP} dB before ${hitTimes.length} hit(s)`);
+const WHOOSH = /whoosh|swish|air-cut|shing/i;
 // PLACE + MIX
 const inputs = ['-i', video];
 const filters = [];
@@ -142,7 +159,8 @@ placed.forEach(({ cue, f }, i) => {
   const rate = cue.rate && cue.rate !== 1 ? `asetrate=44100*${cue.rate},aresample=44100,` : '';
   filters.push(`[${i + 1}:a]${rate}atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${cue.bed ? 1.5 : 0.01},` +
     `afade=t=out:st=${(cue.len - fadeOut).toFixed(2)}:d=${fadeOut.toFixed(2)},volume=${cue.gain},` +
-    `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}[a${i}]`);
+    `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}` +
+    `${DIPC && (cue.bed || cue.music || WHOOSH.test(cue.id)) ? ',' + DIPC : ''}[a${i}]`);
 });
 // DUCK: beds and music ("bed" or "music" cues) dip under speech by voice.duck.db (default 8 dB).
 // Default "exact": a volume curve from the known speech windows (precise depth, ramps of attack/release s).
@@ -169,9 +187,22 @@ if (voiceIdx.length && duckIdx.length) {
   mixIn += '[bedsd]';
   console.log(`  ducking ${duckIdx.length} bed/music cue(s) by ${d.db ?? 8} dB under ${voiceIdx.length} voice line(s) (${opt('duck', 'exact')})`);
 }
-filters.push(`${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,alimiter=limit=0.9,` +
-  `afade=t=out:st=${film.duration - 1.5}:d=1.5[mix]`);
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.join(';'),
+// LEVEL: mix once to measure it, then once more with the makeup gain that puts the film at about -14 LUFS
+// under a true-peak ceiling of -1 dBFS (broadcast/Shorts practice; the audit checks both).
+const TARGET = +opt('lufs', -14), CEIL = +opt('peak', -1);
+const CEIL_LIN = (10 ** (CEIL / 20)).toFixed(4);
+const chain = (gain) => `${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,` +
+  `afade=t=out:st=${film.duration - 1.5}:d=1.5,volume=${gain.toFixed(2)}dB,` +
+  `alimiter=level=false:limit=${CEIL_LIN}[mix]`;
+const probe = `output/.${base}-level.wav`;
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(0)).join(';'),
+  '-map', '[mix]', '-t', String(film.duration), probe]);
+const eb = String(execFileSync('bash', ['-c', `ffmpeg -hide_banner -nostats -i "${probe}" -af ebur128 -f null - 2>&1`]));
+const lufs = parseFloat((eb.match(/Integrated loudness:\s+I:\s+(-?[\d.]+)/) ?? [])[1]);
+const gain = Number.isFinite(lufs) ? Math.max(-24, Math.min(24, TARGET - lufs)) : 0;
+console.log(`  level: mix measures ${lufs} LUFS → ${gain >= 0 ? '+' : ''}${gain.toFixed(1)} dB makeup, ceiling ${CEIL} dBFS`);
+fs.rmSync(probe, { force: true });
+execFileSync('ffmpeg', ['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(gain)).join(';'),
   '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(film.duration), out]);
 console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length + autoCues.length + voiceCues.length} sounds` +
   `${voiceCues.length ? ` (${voiceCues.length} voice lines)` : ''}. Credits: ${creditsPath}`);
