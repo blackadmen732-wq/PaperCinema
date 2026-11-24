@@ -5,6 +5,7 @@
 //   node tools/camera_check.mjs film/<name>.json              # measure the film, score every shot, exit 1 on a reject
 //   node tools/camera_check.mjs film/<name>.json --step 2      # long films: measure every 2nd frame
 //   node tools/camera_check.mjs film/<name>.json --json        # the data only
+//   node tools/camera_check.mjs film/<name>.json --from 10.4 --to 13.6   # measure one stretch (long films, one shot)
 //   node tools/camera_check.mjs film/<name>.json --quiet
 //
 // It is also the camera section of the studio audit: tools/audit.mjs imports evaluateCamera() and passes the frames
@@ -438,7 +439,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const META = await page.evaluate(() => window.AUDIT.meta);
   const EVENTS = await page.evaluate(() => window.EVENTS ?? null);
   const F = [];
-  for (let i = 0; i < NF; i += STEP) F.push(await page.evaluate((t) => window.AUDIT.at(t), i / FPS));
+  const i0 = Math.max(0, Math.round(+opt('from', 0) * FPS)), i1 = Math.min(NF, opt('to') ? Math.round(+opt('to') * FPS) : NF);
+  for (let i = i0; i < i1; i += STEP) F.push(await page.evaluate((t) => window.AUDIT.at(t), i / FPS));
   await browser.close();
   server.close();
   const R = evaluateCamera({ F, META, EVENTS, film, STEP });

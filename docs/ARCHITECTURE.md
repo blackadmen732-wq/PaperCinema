@@ -66,6 +66,11 @@ during the strike at f112") and the nearest passing alternative from `library/sh
 `compose` solver (`engine/motion.js`) · the evaluator `tools/camera_check.mjs`, which is also the **camera section
 of the studio audit** (`tools/audit.mjs` imports it, so the two can never disagree) and a required step of the
 `scene-direction` skill · guides `docs/CAMERA.md`, `docs/DIRECTION.md`.
+**Measured on this repo:** `motion-test` is rejected for the authored 160° whip at f69-f77 ("a turn that big is a CUT,
+not a move") and for losing the subject in B2; `kuroko-duel` is rejected for a contact point above the frame edge at
+f158. Put `kuroko-duel`'s S7 beats back at full vertical distance (the state its own note warns about, and
+`docs/FIX-LIST.md`) and it rejects with *"the anchor camera passes through geometry (0.00 m from the lens) at
+f321"* plus *"head and chest are behind a prop"* — the camera inside the pines, caught before a render.
 **Gap:** the proposal is ranked from the library's *measured* numbers, not by re-rendering the alternative. A
 "propose and prove" mode (render the alternative's stills and re-score) is the obvious next step.
 
