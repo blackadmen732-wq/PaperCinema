@@ -208,7 +208,8 @@ to `assets/polyhaven/<id>/` (≈95 MB, not committed; textures 1k, stone/plaster
 What it changed (540×960, 24 spp, before/after sheets `output/sets/ph-<set>.png`): gravel reads as real river
 pebbles with moonlit glints (castle, skyline), the bamboo path and forest floor get stones, twigs and leaf litter
 (the biggest gain), the beach sand gets grain, the dojo ceiling and plaster get subtle wood grain and stains. Cost:
-about +15–25 % render time (image lookups) and +1–2 s build. Weak spots: the dressed path stones of the skyline read a
++10–30 % render time and +1–2 s build (measured CAM_medium / dojo CAM_wide, before → after: castle 117 → 145 s,
+dojo 158 → 205 s, bamboo 100 → 126 s, beach 68 → 74 s, skyline 52 → 64 s). Weak spots: the dressed path stones of the skyline read a
 little darker than before; roof tiles change little (the relief is modelled); a too-high `detail` on plaster or wood
 looks like dirt, keep plaster ≤ 0.4.
 
