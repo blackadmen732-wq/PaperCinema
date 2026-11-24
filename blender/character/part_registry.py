@@ -264,6 +264,11 @@ class PartCtx:
         return pm.PC_Washi_Master(key, scale=1.0, suffix=self.suffix,
                                   glow=(self.glow if glow is True else glow), color=color)
 
+    def lit(self, k=1.0):
+        """The inner-light response scaled down: big outer sheets take none (form first), sheets seen from
+        INSIDE (sleeve mouths, the collar well, under the hem) take a little, so the lantern reads as inside."""
+        return (self.glow[0], self.glow[1] * k) if k > 0 else None
+
     def emit(self, key='glow', strength=None):
         nm = 'PC_Glow_' + key + self.suffix
         nm += '' if strength is None else '_%d' % round(strength * 10)
@@ -611,7 +616,7 @@ def kimono_layered(ctx, P, rnd):
     rings = [outline_ring(CORE_OUTLINE, z, hw, pw(z, CORE_HD)) for z, hw in wz]
     rings.append(outline_ring(CORE_OUTLINE, 1.452, 0.062, 0.060))
     skin_rings(bm, rings, cap_last=True)
-    body = ctx.add('kimono_body', tidy(bm), [ctx.mat('washi_shade', glow=True), ctx.mat('seam_shadow')],
+    body = ctx.add('kimono_body', tidy(bm), [ctx.mat('washi_shade', glow=ctx.lit(0.30)), ctx.mat('seam_shadow')],
                    thickness=0.008)
     # the glowing core seen through the collar gap and the sleeve mouths
     ctx.add('inner_lantern', box(0, 0.0, 1.20, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
@@ -619,7 +624,7 @@ def kimono_layered(ctx, P, rnd):
     # juban: the under-robe showing in the V of the collar, set well back so the neck sits in a real recess
     ctx.add('juban', shell([(0.070, -0.058, 1.458), (-0.070, -0.058, 1.458), (0.0, -0.088, 1.285)],
                            [(0, 1, 2)]),
-            [ctx.mat('washi_bleached'), ctx.mat('seam_shadow')], thickness=0.006)
+            [ctx.mat('washi_bleached', glow=ctx.lit(0.35)), ctx.mat('seam_shadow')], thickness=0.006)
     for tag, sg, over in (('under', -1, False), ('over', 1, True)):
         K = kimono_sheet(sg, over, P['shoulder'], P['step'])
         names = ['Rn', 'Rs', 'Fn', 'Fs', 'Bn', 'Bs', 'C', 'D', 'M', 'E', 'Bs2', 'Bc2', 'Bc', 'LF', 'LR', 'LB']
@@ -642,7 +647,7 @@ def kimono_layered(ctx, P, rnd):
             ctx.add('kimono_seam', panel([tuple(p) for p in slot]), [ctx.mat('seam_shadow')],
                     thickness=0.0015, rim_mat=False)
         ctx.add(f'kimono_{tag}', tidy(bm),
-                [ctx.mat(main if over else 'washi_bleached', glow=over), ctx.mat('washi_shade')],
+                [ctx.mat(main if over else 'washi_bleached'), ctx.mat('washi_shade')],
                 thickness=0.010)
     return body
 
@@ -683,7 +688,7 @@ def eri_crossed(ctx, P, rnd):
             pts += [tuple(free), tuple(ridge), tuple(inner)]
         F = [(0, 1, 4, 3), (1, 2, 5, 4), (3, 4, 7, 6), (4, 5, 8, 7)]
         made = ctx.add(f'eri_{tag}', tidy(shell(pts, F)),
-                       [ctx.mat(sheet if over else 'washi_shade', glow=over), ctx.mat('washi_shade')],
+                       [ctx.mat(sheet if over else 'washi_shade'), ctx.mat('washi_shade')],
                        thickness=0.008 if over else 0.006)
     # the standing collar: two concentric folded bands open at the front. The gap between the inner band and
     # the neck column is the neck shadow slot; the step between the two bands is the collar step.
@@ -783,7 +788,7 @@ def sleeve_upper_folded(ctx, P, rnd):
     bm = bmesh.new()
     skin_rings(bm, [top, bot], cap_first=True)
     return ctx.add(f'sleeve_upper_{"L" if sg > 0 else "R"}', tidy(bm),
-                   [ctx.mat(P.get('material', 'washi_natural'), glow=True), ctx.mat('washi_shade')],
+                   [ctx.mat(P.get('material', 'washi_natural')), ctx.mat('washi_shade')],
                    thickness=0.010)
 
 
@@ -811,7 +816,7 @@ def tamoto_wide(ctx, P, rnd):
     c1 = sleeve_ring(reach + 0.004, S, sg, sp, 0.011)
     skin_rings(bm, [c0, c1])
     ob = ctx.add(f'tamoto_{"L" if sg > 0 else "R"}', tidy(bm),
-                 [ctx.mat(P.get('material', 'washi_bleached'), glow=True), ctx.mat('washi_shade')],
+                 [ctx.mat(P.get('material', 'washi_bleached'), glow=ctx.lit(0.10)), ctx.mat('washi_shade')],
                  thickness=0.009)
     g = sleeve_point(1, reach * 0.9, S, sg, sp)
     ctx.add(f'tamoto_glow_{"L" if sg > 0 else "R"}',
@@ -908,7 +913,7 @@ def hakama_pleated(ctx, P, rnd):
     bm = bmesh.new()
     skin_rings(bm, rings)
     return ctx.add(f'hakama_thigh_{"L" if sg > 0 else "R"}', tidy(bm),
-                   [ctx.mat(P.get('material', 'washi_natural'), glow=True), ctx.mat('washi_shade')],
+                   [ctx.mat(P.get('material', 'washi_natural')), ctx.mat('washi_shade')],
                    thickness=0.009)
 
 
@@ -923,7 +928,7 @@ def hakama_shin_pleated(ctx, P, rnd):
     bm = bmesh.new()
     skin_rings(bm, rings)
     return ctx.add(f'hakama_shin_{"L" if sg > 0 else "R"}', tidy(bm),
-                   [ctx.mat(P.get('material', 'washi_natural'), glow=True), ctx.mat('washi_shade')],
+                   [ctx.mat(P.get('material', 'washi_bleached'), glow=ctx.lit(0.08)), ctx.mat('washi_shade')],
                    thickness=0.009)
 
 
@@ -959,7 +964,7 @@ def hakama_apron(ctx, P, rnd):
     pts = [(w, yT, zt), (xm, yT - 0.004, zt), (-w, yT, zt),
            (-w * 1.08, yB + 0.012, zr), (xm, yB - 0.016, zm), (w * 1.04, yB + 0.030, zl)]
     ob = ctx.add('hakama_apron_front', tidy(shell(pts, [(0, 1, 4, 5), (1, 2, 3, 4)])),
-                 [ctx.mat(P.get('material', 'washi_natural'), glow=True), ctx.mat('washi_shade')],
+                 [ctx.mat(P.get('material', 'washi_bleached')), ctx.mat('washi_shade')],
                  thickness=0.010)
     # back: a plain trapezoid sheet over the back of the legs, with the koshiita board lapped over the obi
     yT, yB = OBI_HD - 0.012, 0.158
@@ -967,7 +972,7 @@ def hakama_apron(ctx, P, rnd):
     ctx.add('hakama_apron_back', tidy(shell([(-w * 0.85, yT, zt), (0, yT + 0.006, zt), (w * 0.85, yT, zt),
                                              (w * 1.05, yB, bz), (0, yB + 0.014, bz - 0.02),
                                              (-w * 1.05, yB, bz)], [(0, 1, 4, 5), (1, 2, 3, 4)])),
-            [ctx.mat('washi_shade', glow=True), ctx.mat('seam_shadow')], thickness=0.009)
+            [ctx.mat('washi_shade'), ctx.mat('seam_shadow')], thickness=0.009)
     return ob
 
 

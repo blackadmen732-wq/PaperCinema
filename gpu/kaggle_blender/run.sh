@@ -30,12 +30,12 @@ case "$cmd" in
       esac
     done
     if [ "$PROBE" = 1 ]; then
-      printf '{"name": "%s", "script": "blender/film_blender.py", "fps": 24, "cores": "0,1", "stages": [
+      printf '{"name": "%s", "script": "blender/film_blender.py", "fps": 24, "cores": "0-3", "stages": [
         {"name": "cpu",   "env": "BLENDER_GPU=0",     "args": [%s]},
         {"name": "cuda",  "env": "BLENDER_GPU=cuda",  "args": [%s]},
         {"name": "optix", "env": "BLENDER_GPU=optix", "args": [%s]}]}\n' "$NAME" "$ARGS" "$ARGS" "$ARGS" > "$S/job.json"
     else
-      printf '{"name": "%s", "script": "blender/film_blender.py", "fps": 24, "cores": "0,1", "args": [%s]}\n' "$NAME" "$ARGS" > "$S/job.json"
+      printf '{"name": "%s", "script": "blender/film_blender.py", "fps": 24, "cores": "0-3", "args": [%s]}\n' "$NAME" "$ARGS" > "$S/job.json"
     fi
     cat "$S/job.json"
     tar czf "$T/up/repo.tgz" --exclude=__pycache__ -C "$T/stage" repo

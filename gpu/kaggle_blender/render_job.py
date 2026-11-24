@@ -38,7 +38,7 @@ sh('find /kaggle/tmp/repo/output -name "*.motion.json" -exec touch {} + 2>/dev/n
 B = '/kaggle/tmp/blender-4.5.16-linux-x64/blender'
 FRAMES = '/kaggle/tmp/frames'
 os.makedirs(FRAMES, exist_ok=True)
-CORES = JOB.get('cores', '0,1')
+CORES = JOB.get('cores', '0-3')
 THREADS = JOB.get('threads', len(CORES.split(',')))
 print('setup', int(time.time() - t0), f's · cores {CORES} · {THREADS} Cycles threads', flush=True)
 
@@ -49,8 +49,7 @@ def render(stage, out):
     t1 = time.time()
     os.makedirs(out, exist_ok=True)
     lg = f'{WORK}/blender-{stage["name"]}.log'
-    # Kaggle kills a session whose container runs out of CPU for its own agent: Blender is niced and pinned to
-    # CORES of the 4 vCPUs, with Cycles on the same number of threads, so the agent always gets a core.
+    # Blender is niced so the session's own agent always gets CPU, and pinned to CORES of the 4 vCPUs.
     cmd = (f'cd /kaggle/tmp/repo && {stage.get("env", "")} nice -n 19 taskset -c {CORES} '
            f'{B} -b -t {THREADS} -P {JOB["script"]} -- {" ".join(stage["args"])} --out {out}/ > {lg} 2>&1')
     print(f'=== STAGE {stage["name"]} START', flush=True)

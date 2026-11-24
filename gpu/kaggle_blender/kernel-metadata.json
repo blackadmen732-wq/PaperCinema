@@ -1,1 +1,15 @@
-{"id": "reviewboost/paper-cinema-blender-render", "title": "paper-cinema-blender-render", "code_file": "render_job.py", "language": "python", "kernel_type": "script", "is_private": true, "enable_gpu": false, "enable_internet": true, "dataset_sources": ["reviewboost/paper-cinema-blender"], "competition_sources": [], "kernel_sources": []}
+{
+ "id": "reviewboost/paper-cinema-blender-render",
+ "title": "paper-cinema-blender-render",
+ "code_file": "render_job.py",
+ "language": "python",
+ "kernel_type": "script",
+ "is_private": true,
+ "enable_gpu": false,
+ "enable_internet": true,
+ "dataset_sources": [
+  "reviewboost/paper-cinema-blender"
+ ],
+ "competition_sources": [],
+ "kernel_sources": []
+}
