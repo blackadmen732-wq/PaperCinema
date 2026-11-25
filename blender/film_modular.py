@@ -146,7 +146,39 @@ for ob in list(rigs.values()) + [cam, cd]:
 # way comes out as two grey figures in a grey void, and that is what every modular render looked
 # like until this line. `cinematic` is the Lantern Origami key: dark, the paper glowing from inside.
 # Pass --light neutral when you are inspecting a model, not shooting it.
-MB.studio(sc, arg('light', 'cinematic'))
+if arg('set'):
+    # A set brings its own world, its own sun and its own fighter key/fill/rim (library/sets/*.json
+    # "lighting"). studio() REPLACES scene.world and adds three area lamps, so calling it here threw
+    # away the set's sky and mist and then put a lamp in shot - the blown white rectangle in the
+    # middle of the bamboo-forest test. Inside a set, the set lights it.
+    #
+    # But the set's SUN alone leaves the cast reading as two dull shapes against a lit world: the
+    # grove is lit for the grove. Every set file carries a `lighting.fighter` rig - key, fill and
+    # rim, as offsets from whoever is standing there - written for exactly this. It was only ever
+    # applied by the set builder's own --with-character preview, so a film never got it. Each actor
+    # now carries that rig, parented to its root, so it travels with the performer through the shot.
+    print('[film] set supplied the world and sun; adding its fighter key/fill/rim per actor')
+    sj = os.path.join(REPO, 'library', 'sets', os.path.splitext(os.path.basename(arg('set')))[0] + '.json')
+    fighter = {}
+    if os.path.exists(sj):
+        fighter = (json.load(open(sj)).get('lighting') or {}).get('fighter') or {}
+    for aid, rig in rigs.items():
+        for role, spec in fighter.items():
+            L = bpy.data.lights.new(f'{role}_{aid}', 'AREA')
+            L.energy = spec.get('energy', 20)
+            L.size = spec.get('size', 1.5)
+            L.color = tuple(spec.get('color', (1, 1, 1)))[:3]
+            o = bpy.data.objects.new(f'L_{role}_{aid}', L)
+            o.visible_camera = False                 # a lamp in shot is a white rectangle
+            off = Vector(spec.get('offset', (0, 2, 2)))
+            o.location = off
+            # aim at the actor's chest, about 1.2 m up from the root the offset is measured from
+            o.rotation_euler = (Vector((0, 0, 1.2)) - off).to_track_quat('-Z', 'Y').to_euler()
+            sc.collection.objects.link(o)
+            o.parent = rig.J['root']                 # travels with the performer
+            o.matrix_parent_inverse = rig.J['root'].matrix_world.inverted()
+else:
+    MB.studio(sc, arg('light', 'cinematic'))
 setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
              samples=int(arg('samples')) if arg('samples') else None)
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]

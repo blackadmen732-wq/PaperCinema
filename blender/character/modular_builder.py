@@ -494,6 +494,9 @@ def studio(scene, kind='neutral', coll=None):
         L = bpy.data.lights.new('L', 'AREA')
         L.energy, L.size, L.color = e, sz, col
         o = bpy.data.objects.new('L', L)
+        # Not visible to camera rays. An area lamp renders as a bright rectangle if it ever lands in
+        # shot; in an empty studio it never does, which is how one reached a finished frame.
+        o.visible_camera = False
         o.location = loc
         o.rotation_euler = (Vector((0, 0, 1.0)) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler()
         coll.objects.link(o)
