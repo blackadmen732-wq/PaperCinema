@@ -31,6 +31,10 @@ sys.path.insert(0, os.path.join(HERE, 'world'))
 sys.path.insert(0, HERE)
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+def flag(n):
+    return '--' + n in ARGV
+
+
 def arg(n, d=None):
     return ARGV[ARGV.index('--' + n) + 1] if '--' + n in ARGV else d
 
@@ -138,6 +142,26 @@ for ob in list(rigs.values()) + [cam, cd]:
     for fc in getattr(act, 'fcurves', []):
         for kp in fc.keyframe_points:
             kp.interpolation = 'LINEAR'
+
+# ---------------------------------------------------------------- the paper slash
+# blender/world/slash_fx.py has had a finished slash in it for weeks and no film ever had one,
+# because nothing imported it. It is driven here from the blade's OWN path in the timeline - the
+# weapon transform is exported every frame and at 4x sub-frame resolution precisely so this is
+# possible - so a kesa-giri comes out diagonal because the cut was diagonal, not because someone
+# typed a tilt. --no-slash turns it off.
+if not flag('no-slash'):
+    try:
+        sys.path.insert(0, os.path.join(HERE, 'world'))
+        import slash_fx
+        import slash_from_blade as SB
+        cuts = SB.add_slashes(TL, FPS, f0, f1, slash_fx,
+                              min_speed=float(arg('slash-speed', 5.0)))
+        for c in cuts:
+            print(f"[film] slash {c['actor']} f{c['f0']}-{c['f1']}  {c['sweep']:+.0f} deg  "
+                  f"r={c['radius']} m  {c['speed']} m/s")
+        print(f'[film] {len(cuts)} slash(es) from the blade path')
+    except Exception as e:
+        print(f'[film] slash effect skipped ({type(e).__name__}: {e})')
 
 # ---------------------------------------------------------------- light and render
 # studio() takes 'neutral' or 'cinematic' only. 'dawn' fell through and rendered black.
