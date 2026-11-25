@@ -358,7 +358,7 @@ export const BASE_POSE = {
   stance: 0.12, crouch: 0, weight: 0, stride: 0, phase: 0,
 };
 
-export function applyPose(f, p) {
+export function applyPose(f, p, prev = null, dt = 0) {
   f.root.position.set(p.x, p.y, p.z);
   // balance: hips drop with crouch and shift over the loaded foot
   f.hips.position.set(0, LEG.hipY - p.crouch, p.weight * p.stance * 0.35);
@@ -378,22 +378,61 @@ export function applyPose(f, p) {
   f.rH.rotation.set(p.rwx, 0, v('rwz'));
   f.lH.rotation.set(p.lwx, 0, v('lwz'));
   for (const lid of f.lids ?? []) lid.scale.y = 0.05 + 0.95 * Math.min(1, Math.max(0, v('lid')));
-  if (f.sleeves?.length) hangCloth(f, v('sway'));
+  if (f.sleeves?.length) {
+    const per = (prev && dt > 0) ? clothDrag(p, prev, dt) : null;
+    hangCloth(f, v('sway'), per ? per[0] : null, per);
+  }
   f.hakama.rotation.z = p.sway;
   f.hakama.rotation.x = p.swayx ?? 0;
 }
 
-/** Sleeves hang toward the ground (80%), whatever the arm does, plus a little swing from the cloth sway. */
+/** Sleeves hang toward the ground, plus the cloth sway, plus DRAG: a sleeve trails behind the way
+ *  the arm and the body are actually moving. Swing the arm forward and the sleeve streams back.
+ *
+ *  Why it is computed from velocity and not accumulated: the engine must draw the same image for
+ *  any time t, asked in any order (window.renderAt(t) is used for stills as well as for frames in
+ *  sequence). A cloth simulation that remembers the previous frame would give a different answer
+ *  depending on what was drawn before it, so a still at 3.2 s would not match frame 77 of the same
+ *  film. Sampling the motion a moment earlier is deterministic: the same t always gives the same
+ *  velocity, and therefore the same sleeve.
+ *
+ *  `drag` arrives in the FIGURE's own space (x = its left, z = its forward), already scaled. */
 const _hq = new THREE.Quaternion(), _hd = new THREE.Vector3(), _hy = new THREE.Vector3(0, -1, 0);
-function hangCloth(f, sway = 0) {
+function hangCloth(f, sway = 0, drag = null, side = null) {
   f.root.updateMatrixWorld(true);
-  for (const g of f.sleeves) {
+  for (let i = 0; i < f.sleeves.length; i++) {
+    const g = f.sleeves[i];
     g.quaternion.identity();
     g.parent.getWorldQuaternion(_hq);
-    _hd.set(sway * 0.4, -1, 0).normalize().applyQuaternion(_hq.invert());
+    const d = drag ? (side?.[i] ?? drag) : null;
+    // Gravity is the -1 on y. Drag pushes the hem the other way from the motion, and the harder the
+    // arm swings the further it goes; clamped so a fast cut can never throw the sleeve above level.
+    const dx = d ? clamp(-d.x, -1.6, 1.6) : 0;
+    const dz = d ? clamp(-d.z, -1.6, 1.6) : 0;
+    _hd.set(sway * 0.4 + dx, -1, dz).normalize().applyQuaternion(_hq.invert());
     g.quaternion.setFromUnitVectors(_hy, _hd);
     g.quaternion.slerp(new THREE.Quaternion(), 0.2);
   }
+}
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+/** How fast each sleeve's anchor is travelling, in the figure's own space.
+ *  Arm length 0.55 m turns a joint's angular rate into the hand's speed; the body term is the
+ *  fighter's own travel, rotated out of world space so a sleeve trails correctly whichever way
+ *  the fighter faces. DRAG_K is how much a given speed bends the cloth. */
+const DRAG_K = 0.22, REACH = 0.59;   // 0.30 upper + 0.29 forearm, the ARM constant below
+function clothDrag(p, prev, dt) {
+  const d = (k) => ((p[k] ?? 0) - (prev[k] ?? 0)) / dt;
+  const ry = p.ry ?? 0, c = Math.cos(-ry), sn = Math.sin(-ry);
+  const vxW = d('x'), vzW = d('z');
+  const bx = vxW * c - vzW * sn, bz = vxW * sn + vzW * c;        // body velocity, figure-local
+  const arm = (sx, sz, ex) => ({
+    x: ((d(sz)) * REACH + bx) * DRAG_K,
+    z: ((d(sx) + d(ex)) * REACH + bz) * DRAG_K,
+  });
+  // f.sleeves is [right, left] (see makeFigure): keep that order.
+  return [arm('rsx', 'rsz', 'rex'), arm('lsx', 'lsz', 'lex')];
 }
 
 export const smooth = (k) => k * k * (3 - 2 * k);

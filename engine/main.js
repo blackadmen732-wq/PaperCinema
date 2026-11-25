@@ -147,6 +147,7 @@ const POSES = await (await fetch('/library/poses.json')).json();
 const EV = film.events ?? {};
 const ev = (name, fallback) => EV[name] ?? fallback;
 const PERF = film.performances ?? {};
+const CLOTH_DT = 1 / 48;   // see engine/motion.js: the sample gap the sleeve drag is measured over
 const MOVES = await (await fetch('/library/moves.json')).json();
 // Recorded-motion moves need their clips. loadClips fetches only the ones this library names.
 const CLIPS = await loadClips(MOVES, async (n) => (await fetch(`/library/mocap/${n}.json`)).json());
@@ -292,7 +293,7 @@ function poseFighters(tb) {
   let kp = addLife(kojiroMotion, tb, kojiroMotion(tb), 0);
   if (duel) kp = react(kp, kojiroMotion, musashiMotion, tb, duel);
   combat.applyEyes(FIGHTERS.kojiro, kp, tb, FILM_TIME, eyeOpts());
-  applyPose(kojiro, kp);
+  applyPose(kojiro, kp, kojiroMotion(Math.max(0, tb - CLOTH_DT)), CLOTH_DT);
   // thumb push (3 cm), then the blade slides out along the scabbard (saya stays on the hip)
   const kDraw = Math.min(1, Math.max(0, (tb - tDraw) / 0.37));
   hipKatana.sword.position.x = -(0.03 * Math.min(1, kDraw * 6) + 0.72 * smooth(Math.max(0, (kDraw - 0.15) / 0.85)));
@@ -312,7 +313,7 @@ function poseFighters(tb) {
     }
   }
   combat.applyEyes(FIGHTERS.musashi, mp, tb, FILM_TIME, eyeOpts());
-  applyPose(musashi, mp);
+  applyPose(musashi, mp, musashiMotion(Math.max(0, tb - CLOTH_DT)), CLOTH_DT);
   handKatana.sword.quaternion.identity(); musashiBokken.quaternion.identity();   // clash aim turns these
   kojiro.root.updateMatrixWorld(true);
   musashi.root.updateMatrixWorld(true);

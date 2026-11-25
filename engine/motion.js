@@ -95,8 +95,18 @@ function poseOf(c, tb) {
 }
 // CLASH AIM, EYES, blade segments, contacts, hit-stop, cues, ribbon, sparks, impact frame: engine/combat.js
 let CONTACTS = null;                                              // set after the contact analysis (auto eye states)
+// ?nodrag=1 turns the sleeve drag off, so tools/clothswing.mjs can measure the SAME film with and
+// without it. Without that comparison a tilt number means little: a sleeve on a raised arm already
+// reads far from vertical before any drag is added.
+const CLOTH_DT = new URLSearchParams(location.search).has('nodrag') ? 0 : 1 / 48;
 function poseAll(tb) {
-  for (const c of Object.values(cast)) { applyPose(c.fig, poseOf(c, tb)); c.sword.quaternion.identity(); }
+  // CLOTH_DT: how far back the motion is sampled to get a velocity for the sleeves. One 48th of a
+  // second is half a frame at 24 fps: long enough to measure a real swing, short enough that the
+  // sleeve reacts on the frame the arm moves rather than trailing a frame behind it.
+  for (const c of Object.values(cast)) {
+    applyPose(c.fig, poseOf(c, tb), c.motion(Math.max(0, tb - CLOTH_DT)), CLOTH_DT);
+    c.sword.quaternion.identity();
+  }
   combat.clashAim(film.clashes, cast, tb);
   for (const c of Object.values(cast)) {
     c.fig.root.updateMatrixWorld(true);
@@ -533,7 +543,16 @@ window.tryPose = (id, pose) => { applyPose(cast[id].fig, { ...cast[id].motion(0)
 window.probe = (tb) => {
   poseAll(tb);
   const r = {};
-  for (const id of ids) { const s = bladeSeg(cast[id]); r[id] = { tip: s.tip.toArray().map((v) => +v.toFixed(3)), guard: s.guard.toArray().map((v) => +v.toFixed(3)), eyes: joint(cast[id], 'eyes').toArray().map((v) => +v.toFixed(3)) }; }
+  for (const id of ids) {
+    const s = bladeSeg(cast[id]);
+    // Which way each sleeve hangs, in world space. Straight down is [0,-1,0]; drag tilts it away
+    // from the direction the arm is swinging, so this is how the cloth is read in the audit.
+    const sl = (cast[id].fig.sleeves ?? []).map((g) => {
+      const v = new THREE.Vector3(0, -1, 0).applyQuaternion(g.getWorldQuaternion(new THREE.Quaternion()));
+      return v.toArray().map((n) => +n.toFixed(3));
+    });
+    r[id] = { tip: s.tip.toArray().map((v) => +v.toFixed(3)), guard: s.guard.toArray().map((v) => +v.toFixed(3)), eyes: joint(cast[id], 'eyes').toArray().map((v) => +v.toFixed(3)), sleeves: sl };
+  }
   const A = bladeSeg(hero), B = bladeSeg(foe);
   r.d = +closestSegSeg(A.a, A.tip, B.a, B.tip).d.toFixed(3);
   return r;
