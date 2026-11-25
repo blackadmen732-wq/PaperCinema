@@ -141,13 +141,10 @@ for ob in (cam, look):
             kp.interpolation = 'BEZIER'; kp.easing = 'EASE_OUT'
 
 # ---------------- render ----------------
-sc.render.engine = 'CYCLES'
 sys.path.insert(0, os.path.join(REPO, 'blender'))
-from gpu_setup import use_gpu  # noqa: E402
-use_gpu(sc)
-sc.cycles.samples = int(arg('samples', 48))
-sc.cycles.use_denoising = True
-sc.cycles.volume_bounces = 1
+from render_engine import setup_render  # noqa: E402
+ENGINE = setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
+                      samples=int(arg('samples')) if arg('samples') else None)
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]
 sc.render.use_motion_blur = True
 try:
