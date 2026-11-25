@@ -22,6 +22,10 @@ import random
 import sys
 import zlib
 
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))
+from bl_compat import object_fcurves  # noqa: E402  (Blender 4.5 / 5.x shim)
+
 try:
     import bmesh
     import bpy
@@ -1575,7 +1579,7 @@ def rain(ctx, P, rnd):
     ob.keyframe_insert('location', index=2, frame=1 + frames)
     ob.location.z += H
     try:
-        fc = [f for f in ob.animation_data.action.fcurves][0]
+        fc = object_fcurves(ob)[0]
     except Exception:
         fc = None
         for layer in ob.animation_data.action.layers:

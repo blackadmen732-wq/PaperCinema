@@ -44,6 +44,8 @@ import sys
 
 import bpy
 import numpy as np
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+from bl_compat import fcurves_of  # noqa: E402  (Blender 4.5 / 5.x shim)
 from mathutils import Matrix, Quaternion, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1048,8 +1050,9 @@ def bake(ch, motion, cid, f0, f1, offset=0):
 def _fcurves(action):
     """fcurves of an action in Blender 4.4+ (slotted actions) and older versions"""
     try:
-        if action.fcurves:
-            return list(action.fcurves)
+        fc = fcurves_of(action)
+        if fc:
+            return fc
     except Exception:                                       # noqa: BLE001
         pass
     out = []

@@ -17,6 +17,10 @@ import os
 import sys
 
 import bpy
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..'))
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from bl_compat import object_fcurves  # noqa: E402  (Blender 4.5 / 5.x shim)
 from mathutils import Euler, Vector
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -91,7 +95,7 @@ key('neck', 1, x=6); key('neck', 54, x=-2); key('neck', 96, x=-2)
 for f, k in ((1, 0), (24, 1), (48, 0), (72, 1), (96, 0)):
     key('chest', f, x=-1.5 * k)
 key('hips', 1, z=0); key('hips', 54, z=-3); key('hips', 96, z=-2)
-for fc in (rig.animation_data.action.fcurves if rig.animation_data and rig.animation_data.action else []):
+for fc in object_fcurves(rig):
     for kp in fc.keyframe_points:
         kp.interpolation = 'BEZIER'
         kp.easing = 'EASE_IN_OUT'
@@ -136,7 +140,7 @@ for f, pos, lk in ((1, (1.3, -4.6, 0.55), (0, 0, 1.15)), (96, (0.45, -2.5, 0.85)
     cam.location = pos; cam.keyframe_insert('location', frame=f)
     look.location = lk; look.keyframe_insert('location', frame=f)
 for ob in (cam, look):
-    for fc in ob.animation_data.action.fcurves:
+    for fc in object_fcurves(ob):
         for kp in fc.keyframe_points:
             kp.interpolation = 'BEZIER'; kp.easing = 'EASE_OUT'
 
@@ -147,7 +151,18 @@ ENGINE = setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
                       samples=int(arg('samples')) if arg('samples') else None)
 
 # ---------------- anime shading (optional) ----------------
-if arg('toon'):
+if arg('aniblend'):
+    # AniBlend (GPL-3.0, QFTIK/aniblend): multi-light cel, screentone, inverted-hull ink outlines.
+    # It does what blender/world/toon.py does and more, so this is the comparison that decides
+    # whether our hand-written one earns its place. Needs Blender 5.x.
+    import addon_utils
+    addon_utils.enable('bl_ext.user_default.aniblend', default_set=True)
+    bpy.context.view_layer.objects.active = mesh
+    mesh.select_set(True)
+    bpy.ops.anime.apply_shader()
+    bpy.ops.anime.add_outline()
+    print('[toon] AniBlend shader + outline applied')
+elif arg('toon'):
     sys.path.insert(0, os.path.join(REPO, 'blender', 'world'))
     from toon import stylize  # noqa: E402
     n = stylize(mesh, tones=int(arg('tones', 2)), terminator=float(arg('terminator', 0.55)),

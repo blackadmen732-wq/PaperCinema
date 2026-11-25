@@ -74,3 +74,36 @@ Every video-to-motion tool wants about 8 GB of VRAM.
 That is not a reason to buy any of them. It is the same wall as Kaggle and EEVEE: a rented RTX 3090
 has 24 GB at 7-18 cents an hour, and the free Kaggle T4 has 16 GB. The tools are free; the hardware
 is the only cost, and most of it is already paid for.
+
+---
+
+## Installed, 2026-11-25
+
+| What | Where | State |
+|---|---|---|
+| **Blender 5.2.5 LTS** | `/opt/blender-dl/blender-5.2.5-linux-x64/blender` | installed beside 4.5.16, both usable |
+| **AniBlend 1.2.0** | `~/.config/blender/5.2/extensions/user_default/aniblend` | enabled; `bpy.ops.anime.*` |
+| **CyclesTooner 1.29.0** | `~/.config/blender/5.2/extensions/user_default/cycles_tooner` | enabled; `bpy.ops.object.add_toon_outline` |
+| Anime-Tools | — | **not installed.** No release zip, and this session's proxy blocks third-party GitHub source archives. Download it by hand if the Step Keys feature is wanted. |
+
+`blender/character/trellis_shot.py --aniblend 1` renders with AniBlend instead of our own
+`blender/world/toon.py`, so the two can be compared on the same frame at any time.
+
+### The comparison, and the verdict
+
+`output/engine-ab/toon2.png` (ours) against `output/engine-ab/aniblend.png` (AniBlend), same model,
+same lighting, same engine, same samples.
+
+**AniBlend wins on the outline, clearly.** It draws a crisp black ink line round the whole
+silhouette and along every crease. Ours tilts a shell outward and hopes; theirs reads as drawn.
+They also have screentone, per-light shadow tints and a hand-tremor option, none of which we have.
+
+Keep `blender/world/toon.py` for one reason only: it runs on Blender 4.5, and the three.js engine
+that renders the films is not Blender at all. For Blender stills and Blender films, use AniBlend.
+
+### Blender 5.x broke our code, and it is worth knowing why
+
+Blender 4.4 introduced slotted actions and 5.x removed the legacy `Action.fcurves` shortcut, so
+every script that walked an action's curves raised `AttributeError: 'Action' object has no attribute
+'fcurves'`. `blender/bl_compat.py` now holds `fcurves_of()` and `object_fcurves()`, which work on
+both versions, and `trellis_shot.py`, `kit.py` and `rig_trellis.py` go through them.
