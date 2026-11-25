@@ -4,10 +4,11 @@
   {
    "id": "films-use-good-character",
    "said": "2026-11-25",
-   "promise": "Films render the modular paper character, not the three.js boxes.",
-   "why": "Three character systems existed and every film used the worst one, so back pleats, cloth drag and paper blotting were all invisible.",
-   "check": "test -f blender/film_modular.py && grep -q 'modular_builder' blender/film_modular.py",
-   "status": "kept"
+   "promise": "No film is rendered with the box character. The finished film uses the modular paper character.",
+   "why": "Three character systems existed and every film used the worst one, so back pleats, cloth drag, the kasa, the angular mask and the paper blotting were all invisible in anything anyone watched. The first version of this check only grepped for a file, which is why three films still went out with boxes on 25 Nov after the problem was written down that morning.",
+   "check": "node tools/promises.mjs --check-character",
+   "status": "kept",
+   "evidence": "`npm run film` is tools/film.mjs, which exports the canonical timeline and renders through blender/film_modular.py with the modular character. Every finished film writes output/<name>.render.json naming the character system that made it; the check reads those files, so a film rendered with boxes is caught by its own output and not by a grep. The boxes survive behind --preview, labelled a storyboard, and a preview writes a sidecar that says so."
   },
   {
    "id": "no-joint-past-limit",

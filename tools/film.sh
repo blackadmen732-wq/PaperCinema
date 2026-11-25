@@ -9,7 +9,12 @@
 #   2 motion     node tools/export_motion.mjs        the engine's real joints and camera → output/<name>.motion.json
 #   3 events     node engine/render.mjs --still 0    blade contacts, hit-stops, auto sound cues → output/<name>.events.json
 #   4 audit      node tools/audit.mjs                studio QA, must pass (no CRITICAL finding)
-#   5 render     blender -P blender/film_blender.py   → output/blender/<name>/f####.png   (--gpu: on Kaggle's free T4s)
+#   5 render     blender -P blender/film_modular.py   → output/blender/<name>/f####.png   (--gpu: on Kaggle's free T4s)
+#               THE MODULAR PAPER CHARACTER. It used to be film_blender.py, which poses a fused TRELLIS
+#               mesh whose arms cannot bend; before that the films came out of the three.js box preview.
+#               Three character systems existed and the pipeline used the worst available one. Frames are
+#               numbered by ABSOLUTE timeline frame so the parallel workers below cannot overwrite
+#               each other.
 #   6 encode     ffmpeg                              → output/<name>.mp4 (silent)
 #   7 voice      python3 tools/voice.py               only when the film has a "voice" list
 #   8 sound      node engine/sound.mjs               auto clash/whoosh cues + Earshot + voice, mixed and muxed
@@ -118,6 +123,11 @@ else
   step "2/9 export motion"
   node tools/export_motion.mjs "$FILM" || die "step 2 export motion: the engine could not play this film (see the error above). If the engine is mid-change and you only want to re-render what is already exported, add --reuse-motion."
   [ -s "output/$NAME.motion.json" ] || die "step 2 export motion: output/$NAME.motion.json was not written."
+  # THE canonical timeline (docs/TIMELINE-FORMAT.md). blender/film_modular.py reads this and nothing
+  # else: 46 pose channels per actor per frame, the same channel names Rig.pose() takes, because both
+  # sides descend from engine/figure.js. Without it the render step has no character to pose.
+  node tools/timeline.mjs "$FILM" || die "step 2 timeline: tools/timeline.mjs could not export $FILM (see the error above)."
+  [ -s "output/$NAME.timeline.json" ] || die "step 2 timeline: output/$NAME.timeline.json was not written."
 fi
 
 step "3/9 events (auto sound cues)"
@@ -179,7 +189,7 @@ else
     for runs in $(echo "$PLAN" | tail -n +2 | tr ' ' ','); do
       i=$((i + 1)); LOG="output/$NAME-render-w$i.log"; LOGS="$LOGS $LOG"
       ( for r in $(echo "$runs" | tr ',' ' '); do
-          nice -n 10 "$B" -b -t "$T" -P blender/film_blender.py -- --film "$FILM" --out "$FR/" --frames "$r" \
+          nice -n 10 "$B" -b -t "$T" -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --frames "$r" \
             --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || exit 1
         done ) > "$LOG" 2>&1 &
       PIDS="$PIDS $!"
@@ -204,6 +214,22 @@ FIRST=$(basename "$(ls "$FR"/f*.png | head -1)" .png); FIRST=${FIRST#f}
 ffmpeg -loglevel error -y -framerate "$FPS" -start_number "$((10#$FIRST))" -i "$FR/f%04d.png" \
   -c:v libx264 -preset medium -crf 17 -pix_fmt yuv420p -movflags +faststart "output/$NAME.mp4" \
   || die "step 6 encode: ffmpeg could not build output/$NAME.mp4 from $FR."
+
+# The render record. library/promises.json promises that no film is made with the box character, and
+# the first version of that check only grepped the source - which is how three films still went out
+# with boxes after the problem had been written down the same morning. This writes down what actually
+# rendered these frames, from inside the step that rendered them, and `node tools/promises.mjs
+# --check-character` reads it. A pipeline that cannot say what it made did not prove anything.
+python3 - "$NAME" "$FR" "$RES" "$SAMPLES" <<'PYRECORD'
+import json, os, sys, glob, datetime
+name, fr, res, samples = sys.argv[1:5]
+json.dump({
+    'film': name, 'character': 'modular', 'recipes': 'library/character-recipes/',
+    'renderer': 'blender/film_modular.py', 'preview': False,
+    'frames': len(glob.glob(os.path.join(fr, 'f*.png'))), 'res': res, 'samples': samples,
+    'mp4': f'output/{name}.mp4', 'at': datetime.datetime.now().isoformat(timespec='seconds'),
+}, open(f'output/{name}.render.json', 'w'), indent=1)
+PYRECORD
 
 if python3 -c "import json,sys;sys.exit(0 if json.load(open('$FILM')).get('voice') else 1)"; then
   step "7/9 voice"

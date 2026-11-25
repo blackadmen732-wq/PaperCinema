@@ -11,11 +11,14 @@
     "render": "node engine/render.mjs",
     "sound": "node engine/sound.mjs",
     "playbook": "python3 docs/build_playbook.py",
-    "film": "node engine/make.mjs",
+    "film": "bash tools/film.sh",
     "preview": "node engine/serve.mjs",
     "shimi": "python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut",
     "systems": "python3 tools/build_systems.py",
-    "new-film": "node engine/new-film.mjs"
+    "new-film": "node engine/new-film.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "promises": "node tools/promises.mjs",
+    "storyboard": "node engine/render.mjs   # FAST box preview, not the film"
   },
   "dependencies": {
     "three": "0.170.0"

@@ -11,3 +11,7 @@ assets/polyhaven/*
 # of repo churn. The .graphifyignore rules ARE committed, so every machine
 # builds the same graph.
 graphify-out/
+
+# Outside tools: fetched by `node tools/vendor.mjs` at the commits vendor/MANIFEST.json pins.
+# The manifest is the contract and IS committed; the checkouts are a cache and are not.
+vendor/*/

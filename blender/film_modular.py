@@ -70,7 +70,12 @@ FRAMES = TL['frames']
 f0, f1 = (int(x) for x in arg('frames', f'0-{len(FRAMES) - 1}').split('-'))
 f1 = min(f1, len(FRAMES) - 1)
 
-bpy.ops.wm.read_factory_settings(use_empty=True)
+if arg('set'):
+    # A built set (docs/SETS.md). The timeline's world coordinates are kept as they are; the set is
+    # expected to be built around the same origin the films use.
+    bpy.ops.wm.open_mainfile(filepath=os.path.abspath(arg('set')))
+else:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
 sc.render.fps = FPS
 
@@ -105,7 +110,7 @@ cam.rotation_mode = 'QUATERNION'
 # armature (modular_builder.Rig), so keying the empties is what moves the mesh.
 for i in range(f0, f1 + 1):
     fr = FRAMES[i]
-    bpy.context.scene.frame_set(i - f0 + 1)
+    bpy.context.scene.frame_set(i + 1)      # ABSOLUTE timeline frame, 1-based
     for aid, rig in rigs.items():
         act = fr['actors'].get(aid)
         if not act:
@@ -137,13 +142,17 @@ for ob in list(rigs.values()) + [cam, cd]:
 # ---------------------------------------------------------------- light and render
 # studio() takes 'neutral' or 'cinematic' only. 'dawn' fell through and rendered black.
 MB.studio(sc, arg('light', 'neutral'))
-setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'))
+setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
+             samples=int(arg('samples')) if arg('samples') else None)
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]
-sc.frame_start, sc.frame_end = 1, f1 - f0 + 1
+# Absolute frame numbers. tools/film.sh renders ranges in parallel into ONE folder, so f0001 must
+# mean timeline frame 0 in every worker; numbering each range from 1 would have every worker
+# overwrite the first frames of every other one and the film would come out as the last range only.
+sc.frame_start, sc.frame_end = f0 + 1, f1 + 1
 out = arg('out', os.path.join(REPO, 'output', 'modular', FILM))
 os.makedirs(out, exist_ok=True)
 sc.render.filepath = os.path.join(out, 'f')
-sc.render.image_settings.file_format = 'JPEG'
+sc.render.image_settings.file_format = arg('format', 'PNG').upper()
 if arg('lookat'):
     # Diagnostic: ignore the timeline's camera orientation and aim at the cast, to prove the
     # characters are in frame at all before trusting the quaternion conversion.
@@ -156,7 +165,7 @@ if arg('lookat'):
     cd.lens = 40
 
 print(f'[film] {f1 - f0 + 1} frames -> {out}')
-bpy.context.scene.frame_set(1)
+bpy.context.scene.frame_set(f0 + 1)
 print('[film] camera at', [round(v,2) for v in cam.location])
 for aid, rig in rigs.items():
     print('[film]', aid, 'root at', [round(v,2) for v in rig.J['root'].location])

@@ -50,7 +50,32 @@ function checkLimits() {
 //   blender/check_sleeve.py  the character the films render (the deformed mesh, under Blender)
 // A fix proved on one is not proved on the other, so library/promises.json runs both.
 
+function checkCharacter() {
+  // Which character system actually made each finished film. tools/film.mjs writes
+  // output/<name>.render.json on every run, so this reads the pipeline's own output instead of
+  // grepping the source for a promise. A film whose sidecar says `boxes` and is not marked as a
+  // preview is the exact failure this ledger exists for.
+  const dir = `${ROOT}output`;
+  if (!fs.existsSync(dir)) { console.log('  nothing rendered yet — cannot check'); return true; }
+  const side = fs.readdirSync(dir).filter((f) => f.endsWith('.render.json'));
+  const mp4 = fs.readdirSync(dir).filter((f) => f.endsWith('.mp4') && !f.endsWith('-sound.mp4'));
+  let bad = 0;
+  for (const f of side) {
+    const r = JSON.parse(fs.readFileSync(`${dir}/${f}`, 'utf8'));
+    if (r.character !== 'modular' && !r.preview) { console.log(`  ${f}: rendered with ${r.character}, not marked a preview`); bad++; }
+  }
+  const unaccounted = mp4.filter((m) => !side.includes(m.replace(/\.mp4$/, '.render.json')));
+  if (unaccounted.length) {
+    // An mp4 with no sidecar predates this check or was made by hand. Say so rather than pass it.
+    console.log(`  ${unaccounted.length} film(s) with no render record: ${unaccounted.join(', ')} — re-render with npm run film`);
+    bad += unaccounted.length;
+  }
+  if (!bad) console.log(`  ${side.length} render record(s): every finished film used the modular paper character`);
+  return bad === 0;
+}
+
 if (args.includes('--check-limits')) process.exit(checkLimits() ? 0 : 1);
+if (args.includes('--check-character')) process.exit(checkCharacter() ? 0 : 1);
 
 // ---------------------------------------------------------------- the ledger
 const L = JSON.parse(fs.readFileSync(`${ROOT}library/promises.json`, 'utf8'));

@@ -12,6 +12,8 @@ swords, paint instead of blood. **Everything in a film is data**; the engine ren
    modules around it (Timeline Exporter, Fight Director, Camera Director, Paper Damage Bridge, Render Supervisor, Visual Critic).
 4. **`.claude/skills/paper-cinema-film/SKILL.md`**: the step-by-step procedure for making a film (Claude Code loads it automatically).
 5. **`docs/README.md`**: which guide to read for which task.
+6. **`SKILLS.md`**: every skill in this repo, grouped by the job it does, with the one command that
+   proves each one works. That file is the map; nothing here is meant to be found by browsing.
 
 ## 2. Folder map
 | Folder | Contains |
@@ -33,7 +35,14 @@ npm install                                              # once
 node engine/new-film.mjs <name> --jp 漢字 --en TITLE      # new film: signature opening + fight + end card (vertical)
 node engine/validate.mjs film/<name>.json                # checker: fix every ✗
 node engine/render.mjs --film film/<name>.json --still auto   # one still per shot → output/stills/ (LOOK at them)
-node engine/make.mjs film/<name>.json                    # whole pipeline: check → stills → render → sound → playbook
+bash tools/film.sh film/<name>.json                      # MAKE THE FILM: the modular paper character, through
+                                                         # Blender, with sound → output/<name>-final.mp4
+node engine/render.mjs --film film/<name>.json           # fast BOX pass: a storyboard, never the deliverable
+node tools/promises.mjs                                  # every promise, with the command that proves it
+node tools/promises.mjs --check-character                # was the last film made with the real character?
+node tools/vendor.mjs --list                             # the outside tools in vendor/, and what each is for
+node tools/vendor.mjs                                    # fetch them all at their pinned commits
+python3 tools/build_skills.py                            # rebuild SKILLS.md, the map of every skill
 node engine/render.mjs --film film/<name>.json --vertical | --horizontal   # force a format
 python3 engine/thumbnail.py film/<name>.json             # 16:9 + 9:16 thumbnails
 python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut     # SHIMI stain (presets in the file)
@@ -69,6 +78,15 @@ npm run preview                                          # live preview in a bro
     Never spawn an Opus or Fable agent for work a haiku agent can do from a clear brief.
 02. **Send heavy text work to the free models** (`tools/ai.py`, rule 00): writing scenes, monologues, routine code, and LOOKING at stills/frames (free vision models) go to Cerebras / NVIDIA / Groq, not to Claude. `python3 tools/ai.py list` shows what is up; `review <png|frames dir>` has a model critique the picture; `write` / `code` / `think` for text. Claude directs, decides and verifies; the free models do the volume. Check `tools/ai.py budget` to see what was saved.
 01. **Fable reviews and plans the detail work.** For movement, camera, ideas, look, fixes and audits, send the work to a Fable agent (model `fable`, currently Fable 5.2) as studio auditor / director, then build what it finds. Every film gets a Fable review of its stills and audit report before the final render.
+00a. **Say the owner's name, Mark, in every reply.** It is a liveness check: it costs one word and it
+proves the reply was written for this project and this person, not produced from a template. An
+assistant that stops saying it has stopped reading, and Mark has said he will read it that way.
+
+00b. **Set a goal, work it, report, continue.** Never finish a turn with nothing to do next. Before
+the turn ends, the next goal is written down - in `library/promises.json` if it was promised out
+loud, in the task list if it is in flight, in `docs/FIX-EVERYTHING.md` if it is owed. "What now?" is
+a question this project should never have to ask.
+
 0a. **A stated fix is a promise, and an unkept promise is a bug.** Saying "I'll fix that next" creates
 an obligation that does not need re-approval: the owner may be distracted or may forget, and an
 agreement reached once must not quietly expire. Write it into `library/promises.json` the moment it

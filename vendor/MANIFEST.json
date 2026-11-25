@@ -1,0 +1,71 @@
+{
+ "_about": "Outside tools this project uses, pinned to an exact commit. `node tools/vendor.mjs` clones every one of them into vendor/<id>/ at the commit named here, so the same bytes come back on any machine, for any agent. The trees themselves are NOT committed: hyperframes alone is 344 MB of docs and test fixtures, and a repository nobody can clone is not a tool anybody can use. The commit is the contract; the clone is a cache.",
+ "_rules": "Only licences that are safe to ship commercial work with (AGENTS.md rule 6): MIT, Apache-2.0, BSD, CC0, CC-BY. A tool that needs a paid seat for a company is not vendored here, and `skill` says what to use instead.",
+ "_verify": "node tools/vendor.mjs --check  — every tool present, at the right commit, with the licence this file claims.",
+ "tools": [
+  {
+   "id": "agent-reach",
+   "name": "Agent Reach",
+   "url": "https://github.com/Panniantong/Agent-Reach.git",
+   "commit": "8d9ecc1f5521fe7d223cde782aaa4005695e2671",
+   "licence": "MIT",
+   "size": "2.3 MB",
+   "what": "Gives an agent eyes on the open web: read and search X/Twitter, Reddit, YouTube, GitHub, Bilibili and XiaoHongShu from one CLI, with no per-platform API keys.",
+   "why_here": "Reference hunting. Every fight beat, camera move and costume detail in this project came from watching real footage; this is how an agent finds and reads that footage itself instead of asking for links.",
+   "skill": ".claude/skills/tool-agent-reach/SKILL.md"
+  },
+  {
+   "id": "trellis2",
+   "name": "TRELLIS.2",
+   "url": "https://github.com/microsoft/TRELLIS.2.git",
+   "commit": "75fbf0183001ed9876c8dbb35de6b68552ee08bd",
+   "licence": "MIT",
+   "size": "39 MB (weights are a separate 4B download from Hugging Face)",
+   "what": "Microsoft's image-to-3D model: one picture in, a textured GLB out, up to 1536 cubed.",
+   "why_here": "Props and set dressing. A drawing of a lantern, a bridge post or a boat becomes a mesh without anyone modelling it. NOT for the characters - see the warning in its skill.",
+   "needs_gpu": true,
+   "skill": ".claude/skills/tool-trellis2/SKILL.md"
+  },
+  {
+   "id": "mcp-for-blender",
+   "name": "Blender MCP",
+   "url": "https://github.com/ahujasid/mcp-for-blender.git",
+   "commit": "a5a8acf2c6ae44a73670e0caf34663f16456d645",
+   "licence": "MIT",
+   "size": "4.8 MB",
+   "what": "An MCP server plus a Blender add-on, so an agent can drive a RUNNING Blender: move objects, set materials, look through the camera, run Python.",
+   "why_here": "Hands inside Blender for look development, where the loop is change-something-and-look. The films themselves stay scripted (blender/film_modular.py), because a film has to render the same way twice.",
+   "needs_gui": true,
+   "skill": ".claude/skills/tool-blender-mcp/SKILL.md"
+  },
+  {
+   "id": "cinecode",
+   "name": "cinecode",
+   "url": "https://github.com/sarpstar/cinecode.git",
+   "commit": "c8a3e7552699360a2b0142c9620882af2069eedb",
+   "licence": "MIT",
+   "size": "30 MB",
+   "what": "Films made with code: an agent writes the script, builds every frame in code (Canvas, three.js, WebGL) and hands back an MP4.",
+   "why_here": "The same bet this project already made - every frame is a pure function of time - built by someone else. Read it for its structure and its titling and sound work, not to replace the engine.",
+   "skill": ".claude/skills/tool-cinecode/SKILL.md"
+  },
+  {
+   "id": "hyperframes",
+   "name": "HyperFrames",
+   "url": "https://github.com/heygen-com/hyperframes.git",
+   "commit": "8f28ec16d2d540db6345ee397f00c9612c347c9d",
+   "licence": "Apache-2.0",
+   "size": "344 MB checked out",
+   "lfs": "clone with GIT_LFS_SKIP_SMUDGE=1",
+   "what": "HTML, CSS and seekable animation rendered to a deterministic MP4. Same input, same frames, every time.",
+   "why_here": "Titles, credits, lower thirds and end cards - typography that is painful in three.js and easy in CSS. Deterministic, so it obeys the same rule as the rest of the pipeline.",
+   "skill": ".claude/skills/tool-hyperframes/SKILL.md"
+  }
+ ],
+ "rejected": [
+  {
+   "name": "Remotion",
+   "why": "Not vendored on purpose. Remotion is free for individuals and teams up to three people, then needs a paid seat per developer for a company. AGENTS.md rule 6 is that nothing in this project may put a licence condition on work that gets sold. HyperFrames (Apache-2.0) and Revideo (MIT) do the same job with no such condition, so HyperFrames is vendored instead."
+  }
+ ]
+}
