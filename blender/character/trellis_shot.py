@@ -145,6 +145,15 @@ sys.path.insert(0, os.path.join(REPO, 'blender'))
 from render_engine import setup_render  # noqa: E402
 ENGINE = setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
                       samples=int(arg('samples')) if arg('samples') else None)
+
+# ---------------- anime shading (optional) ----------------
+if arg('toon'):
+    sys.path.insert(0, os.path.join(REPO, 'blender', 'world'))
+    from toon import stylize  # noqa: E402
+    n = stylize(mesh, tones=int(arg('tones', 2)), terminator=float(arg('terminator', 0.55)),
+                smooth=float(arg('smooth', 0.03)), width=float(arg('outline', 0.004)), scene=sc)
+    print(f'[toon] stylized {n} material(s), outline {arg("outline", 0.004)} m')
+
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]
 sc.render.use_motion_blur = True
 try:
