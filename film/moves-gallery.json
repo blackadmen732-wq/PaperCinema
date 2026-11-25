@@ -1,6 +1,6 @@
 {
  "title": "Moves gallery: every cut and move in library/moves.json, one after another",
- "note": "A test page, not a Short: horizontal so a full lunge fits side-on. Stills: node engine/render.mjs --film film/moves-gallery.json --still <times> --prefix mv-  (times per move in \"index\"). The foe is a standing target, so the cut lines can be judged against a body. spin-cut leaves ry at 2π, so the keys after it carry \"ry\": 6.28319.",
+ "note": "A test page, not a Short: horizontal so a full lunge fits side-on. Stills: node engine/render.mjs --film film/moves-gallery.json --still <times> --prefix mv-  (times per move in \"index\"). The foe is a standing target, so the cut lines can be judged against a body. spin-cut leaves ry at 2\u03c0, so the keys after it carry \"ry\": 6.28319.",
  "page": "engine/motion.html",
  "fps": 24,
  "width": 1280,
@@ -9,7 +9,8 @@
  "duration": 47,
  "mode": "dawn",
  "motion": {
-  "overlap": true
+  "overlap": true,
+  "lockFeet": true
  },
  "cast": {
   "hero": {

@@ -9,7 +9,8 @@
  "duration": 8.0,
  "mode": "dawn",
  "motion": {
-  "overlap": false
+  "overlap": false,
+  "lockFeet": true
  },
  "cast": {
   "hero": {

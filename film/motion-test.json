@@ -1,5 +1,5 @@
 {
- "title": "Motion test: face → arm → blade → anime slash",
+ "title": "Motion test: face \u2192 arm \u2192 blade \u2192 anime slash",
  "page": "engine/motion.html",
  "fps": 24,
  "width": 1280,
@@ -9,7 +9,8 @@
  "mode": "dawn",
  "motion": {
   "overlap": true,
-  "note": "follow-through lag, snap easing and overshoot (docs/ANIMATION.md §8)"
+  "note": "follow-through lag, snap easing and overshoot (docs/ANIMATION.md \u00a78)",
+  "lockFeet": true
  },
  "cast": {
   "hero": {

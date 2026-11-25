@@ -8,36 +8,135 @@
  "format": "horizontal",
  "duration": 11.5,
  "mode": "dawn",
- "motion": { "overlap": true },
- "cast": {
-  "hero": { "character": "kojiro", "face": "eyes" },
-  "target": { "character": "musashi", "hidden": true }
+ "motion": {
+  "overlap": true,
+  "lockFeet": true
  },
- "effects": { "ground": false, "afterimage": false, "speedLines": false, "glints": false, "ribbon": { "minSpeed": 999, "frames": 1 } },
+ "cast": {
+  "hero": {
+   "character": "kojiro",
+   "face": "eyes"
+  },
+  "target": {
+   "character": "musashi",
+   "hidden": true
+  }
+ },
+ "effects": {
+  "ground": false,
+  "afterimage": false,
+  "speedLines": false,
+  "glints": false,
+  "ribbon": {
+   "minSpeed": 999,
+   "frames": 1
+  }
+ },
  "performances": {
   "hero": {
-   "twoHand": [[0, 11.5]],
+   "twoHand": [
+    [
+     0,
+     11.5
+    ]
+   ],
    "keys": [
-    { "t": 0, "pose": "chudan", "x": 0, "z": -1.0, "ry": 0 },
-    { "t": 0.55, "pose": "chudan" },
-    { "t": 0.8, "move": "kiri-oroshi" },
-    { "t": 2.55, "pose": "chudan" },
-    { "t": 2.8, "pose": "hasso" },
-    { "t": 3.05, "move": "kesa-giri" },
-    { "t": 4.2, "pose": "chudan" },
-    { "t": 4.45, "move": "yoko-giri" },
-    { "t": 6.25, "pose": "chudan" },
-    { "t": 6.5, "move": "jump-back" },
-    { "t": 7.95, "pose": "chudan" },
-    { "t": 8.2, "move": "rising-cut" },
-    { "t": 10.05, "pose": "chudan" },
-    { "t": 10.5, "pose": "chudan", "ry": 0.7 },
-    { "t": 11.5, "pose": "chudan", "ry": 0.7 }
+    {
+     "t": 0,
+     "pose": "chudan",
+     "x": 0,
+     "z": -1.0,
+     "ry": 0
+    },
+    {
+     "t": 0.55,
+     "pose": "chudan"
+    },
+    {
+     "t": 0.8,
+     "move": "kiri-oroshi"
+    },
+    {
+     "t": 2.55,
+     "pose": "chudan"
+    },
+    {
+     "t": 2.8,
+     "pose": "hasso"
+    },
+    {
+     "t": 3.05,
+     "move": "kesa-giri"
+    },
+    {
+     "t": 4.2,
+     "pose": "chudan"
+    },
+    {
+     "t": 4.45,
+     "move": "yoko-giri"
+    },
+    {
+     "t": 6.25,
+     "pose": "chudan"
+    },
+    {
+     "t": 6.5,
+     "move": "jump-back"
+    },
+    {
+     "t": 7.95,
+     "pose": "chudan"
+    },
+    {
+     "t": 8.2,
+     "move": "rising-cut"
+    },
+    {
+     "t": 10.05,
+     "pose": "chudan"
+    },
+    {
+     "t": 10.5,
+     "pose": "chudan",
+     "ry": 0.7
+    },
+    {
+     "t": 11.5,
+     "pose": "chudan",
+     "ry": 0.7
+    }
    ]
   },
-  "target": { "keys": [ { "t": 0, "pose": "chudan", "x": 0, "z": 1.6, "ry": 3.14159 }, { "t": 11.5, "pose": "chudan" } ] }
+  "target": {
+   "keys": [
+    {
+     "t": 0,
+     "pose": "chudan",
+     "x": 0,
+     "z": 1.6,
+     "ry": 3.14159
+    },
+    {
+     "t": 11.5,
+     "pose": "chudan"
+    }
+   ]
+  }
  },
  "camera": [
-  { "t": 0, "rig": "orbit", "subjects": ["target"], "deg0": -45, "radius": 6.2, "height": 1.0, "fov": 40, "feel": "locked", "note": "phone on a tripod: 3/4 view from the hero's right front" }
+  {
+   "t": 0,
+   "rig": "orbit",
+   "subjects": [
+    "target"
+   ],
+   "deg0": -45,
+   "radius": 6.2,
+   "height": 1.0,
+   "fov": 40,
+   "feel": "locked",
+   "note": "phone on a tripod: 3/4 view from the hero's right front"
+  }
  ]
 }
