@@ -175,8 +175,16 @@ if arg('set'):
             # aim at the actor's chest, about 1.2 m up from the root the offset is measured from
             o.rotation_euler = (Vector((0, 0, 1.2)) - off).to_track_quat('-Z', 'Y').to_euler()
             sc.collection.objects.link(o)
-            o.parent = rig.J['root']                 # travels with the performer
-            o.matrix_parent_inverse = rig.J['root'].matrix_world.inverted()
+            # FOLLOW THE POSITION, KEEP THE WORLD DIRECTION. Parenting to the root would carry the
+            # light's rotation too, so a performer who turns away would swing their own key light
+            # round behind them and stay lit exactly as before - which reads as no light source at
+            # all. The offsets in a set file are written in the SET's frame (the bamboo key sits
+            # back and to the left, where the sun is), so they are world offsets from wherever the
+            # performer is standing. Copy Location with an offset is that, exactly: it follows
+            # through a dash, a turn or a cut, and the key stays where the sun is.
+            cl = o.constraints.new('COPY_LOCATION')
+            cl.target = rig.J['root']
+            cl.use_offset = True
 else:
     MB.studio(sc, arg('light', 'cinematic'))
 setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
