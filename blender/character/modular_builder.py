@@ -490,7 +490,10 @@ def turnaround(scene, out, center=(0, 0, 0.95), dist=4.3, lens=70, views=VIEWS, 
         a = math.radians(deg)
         camera(scene, (-math.sin(a) * dist, -math.cos(a) * dist,
                        center[2] + 0.12 if eye is None else eye), center, lens)
-        files.append(render(scene, out.replace('.png', f'-{nm}.png')))
+        # A path without .png used to have nothing to replace, so every view wrote to the SAME
+        # file and four renders silently became one. Build the name instead of patching it.
+        base = out[:-4] if out.lower().endswith('.png') else out.rstrip('/') + '/view'
+        files.append(render(scene, f'{base}-{nm}.png'))
     return files
 
 
