@@ -35,6 +35,9 @@ npm install                                              # once
 node engine/new-film.mjs <name> --jp 漢字 --en TITLE      # new film: signature opening + fight + end card (vertical)
 node engine/validate.mjs film/<name>.json                # checker: fix every ✗
 node engine/render.mjs --film film/<name>.json --still auto   # one still per shot → output/stills/ (LOOK at them)
+bash tools/shotsheet.sh film/<name>.json --set bamboo-forest   # 6 frames from the REAL path, one page.
+                                                         # LOOK AT THIS before rendering a film. A model
+                                                         # turnaround on grey hides everything that matters.
 bash tools/film.sh film/<name>.json                      # MAKE THE FILM: the modular paper character, through
                                                          # Blender, with sound → output/<name>-final.mp4
 node engine/render.mjs --film film/<name>.json           # fast BOX pass: a storyboard, never the deliverable

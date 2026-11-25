@@ -16,7 +16,7 @@ says so and stops, and nothing further is worth doing until it passes.
 | 1 | Write the film | `node engine/new-film.mjs <name> --jp 漢字 --en TITLE` | [`paper-cinema-film`](.claude/skills/paper-cinema-film/SKILL.md) |
 | 2 | Check the file | `node engine/validate.mjs film/<name>.json` | same |
 | 3 | Block it out, fast and wrong | `node engine/render.mjs --film film/<name>.json` | same — **boxes, a storyboard, never the deliverable** |
-| 4 | Look at the stills | `node engine/render.mjs --film film/<name>.json --still auto` | [`qa-review`](.claude/skills/qa-review/SKILL.md) |
+| 4 | **Look at six real frames** | `bash tools/shotsheet.sh film/<name>.json --set <set>` | [`qa-review`](.claude/skills/qa-review/SKILL.md) |
 | 5 | **Make the film** | `bash tools/film.sh film/<name>.json` | [`paper-cinema-film`](.claude/skills/paper-cinema-film/SKILL.md) |
 | 6 | Prove it was the real character | `node tools/promises.mjs --check-character` | — |
 | 7 | Keep every promise | `node tools/promises.mjs` | — |
@@ -39,7 +39,7 @@ the frames, which is what step 6 reads.
 | Which guide for which task | `docs/README.md` |
 | This page | `python3 tools/build_skills.py` |
 
-## Three rules that cost people time here
+## Four rules that cost people time here
 
 1. **Boxes are not the character, and neither is the TRELLIS mesh.** Four things here can stand in
    for a person and only one is the character: `modular_builder.py` + `part_registry.py`, rendered by
@@ -49,7 +49,12 @@ the frames, which is what step 6 reads.
 2. **Every frame is a pure function of time.** `window.renderAt(t)` must draw the same image for the
    same `t`, asked in any order, on any machine. Nothing may accumulate between frames. This is what
    lets frames render in parallel and a still match frame 77.
-3. **A stated fix is a promise.** It goes in `library/promises.json` with a command that proves it,
+3. **Review on real frames, never on a model turnaround.** Three bugs shipped into a finished frame
+   on 25 Nov - a studio lamp standing in shot, a cast lit for the set instead of for the shot, and a
+   key light parented to the actor so it orbited with them like a flashlight. None of the three can
+   exist in a turnaround on grey: nothing is ever in shot, nothing is lit by a world, nothing turns.
+   `bash tools/shotsheet.sh` is the loop that would have caught all three, and it costs six frames.
+4. **A stated fix is a promise.** It goes in `library/promises.json` with a command that proves it,
    the moment it is said. Checks that grep for a filename do not count — one of those passed while
    three films went out with the wrong character.
 
