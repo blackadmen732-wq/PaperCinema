@@ -33,6 +33,45 @@ function ridgeShape(seed, base, h, width = 300) {
   return s;
 }
 
+// Sea motion. SWELL_W is how fast the swell rises and falls; SWELL_K ties its phase to distance
+// from shore, so a crest appears to travel inland rather than every row bobbing in unison.
+const SWELL_W = 0.9, SWELL_K = 0.22;
+
+/** Give a wave card live vertices: the crest travels along it while the body stays where it is.
+ *
+ *  Every vertex keeps its rest position. Each frame the top of the card is displaced by a sine
+ *  that moves along x, weighted by how high the vertex sits, so the deep part of the card never
+ *  moves and the lip does all the travelling. The weight is cubed to keep that falloff sharp;
+ *  a linear falloff makes the whole sheet undulate and reads as cloth, not water.
+ *
+ *  Pure function of t, like everything else in the engine: the sea at 3.2 s is the same sea
+ *  whether you asked for a still or arrived there frame by frame. */
+function liveCrest(group) {
+  const parts = [];
+  group.traverse((o) => {
+    if (!o.isMesh) return;
+    const pos = o.geometry.attributes.position;
+    const rest = Float32Array.from(pos.array);
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 1; i < rest.length; i += 3) { if (rest[i] < lo) lo = rest[i]; if (rest[i] > hi) hi = rest[i]; }
+    parts.push({ pos, rest, lo, span: Math.max(1e-3, hi - lo) });
+  });
+  if (!parts.length) return null;
+  return (t, amp, freq) => {
+    for (const p of parts) {
+      const { pos, rest, lo, span } = p;
+      for (let i = 0; i < rest.length; i += 3) {
+        const x = rest[i], y = rest[i + 1];
+        const w = (y - lo) / span;
+        const lift = w * w * w;                       // only the lip moves
+        pos.array[i + 1] = y + lift * amp * 0.9 * Math.sin(x * freq * 1.6 - t * 1.5)
+                             + lift * amp * 0.35 * Math.sin(x * freq * 3.3 + t * 2.1);
+      }
+      pos.needsUpdate = true;
+    }
+  };
+}
+
 function card(shape, mat, z, depth = 0.05) {
   const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 2 });
   const mesh = new THREE.Mesh(g, mat);
@@ -133,7 +172,11 @@ export function buildWorld(scene) {
     g.position.z = z;
     dawn.add(g);
     const r = rng(seed * 3);
-    animated.push({ g, ph: r() * 6, sp: 0.4 + r() * 0.5, ax: 0.35 + r() * 0.4 });
+    // Water reads as water when its SHAPE travels and the body of it stays put. Sliding a whole
+    // wave sideways - which is all this used to do - looks like a paper cut-out being dragged,
+    // because that is exactly what it is. So each card also gets live vertices: see seaSwell().
+    animated.push({ g, ph: r() * 6, sp: 0.4 + r() * 0.5, ax: 0.07 + r() * 0.08, z,
+                    crest: liveCrest(g), amp, freq });
   };
   let seed = 100;
   for (let z = 5.6; z < 66; z += 2.3) {
@@ -242,7 +285,12 @@ export function buildWorld(scene) {
     update(t) {
       for (const a of animated) {
         a.g.position.x = Math.sin(t * a.sp + a.ph) * a.ax;
-        if (!a.studio) a.g.position.y = Math.sin(t * a.sp * 1.7 + a.ph) * 0.03;
+        if (a.studio) continue;
+        // The swell. Phase is tied to the card's distance from shore, so the rise and fall moves
+        // THROUGH the rows instead of every row bobbing together. That one term is most of what
+        // makes a flat sea look like it is rolling in.
+        a.g.position.y = Math.sin(t * SWELL_W - a.z * SWELL_K + a.ph) * 0.05;
+        if (a.crest) a.crest(t, a.amp ?? 0.12, a.freq ?? 0.4);
       }
     },
   };
