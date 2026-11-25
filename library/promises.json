@@ -1,0 +1,53 @@
+{
+  "_about": "Fixes that were stated out loud and are therefore owed (AGENTS.md rule 0a). Each one carries a command that PROVES it, so 'done' is never a claim. `node tools/promises.mjs` runs them all. An unkept promise is a bug, not a preference, and does not need re-approval to keep.",
+  "promises": [
+    {
+      "id": "films-use-good-character",
+      "said": "2026-11-25",
+      "promise": "Films render the modular paper character, not the three.js boxes.",
+      "why": "Three character systems existed and every film used the worst one, so back pleats, cloth drag and paper blotting were all invisible.",
+      "check": "test -f blender/film_modular.py && grep -q 'modular_builder' blender/film_modular.py",
+      "status": "kept"
+    },
+    {
+      "id": "no-joint-past-limit",
+      "said": "2026-11-25",
+      "promise": "No frame of any film puts a joint past its limit.",
+      "why": "The anime dial put the head 53 degrees back, past hx's own limit, and the film still validated because only authored keys were checked.",
+      "check": "node tools/promises.mjs --check-limits",
+      "status": "kept"
+    },
+    {
+      "id": "hakama-pleated-behind",
+      "said": "2026-11-25",
+      "promise": "The hakama is pleated behind as well as in front.",
+      "why": "Orbit is the most-used camera at 71.4 screen-seconds and it circles the character; the back and side were the two angles it looked at most.",
+      "check": "grep -q 'back_pleats' blender/character/part_registry.py",
+      "status": "kept"
+    },
+    {
+      "id": "sleeves-clear-the-head",
+      "said": "2026-11-25",
+      "promise": "A raised arm must not bury the character's head in its own sleeve.",
+      "why": "At an overhead sword raise the tamoto swallows the head and hat entirely. The pose is correct (rsx -1.63 is a real jodan); the sleeve is simply too large to lift. Needs the sleeve to shorten or fold as the arm passes shoulder height.",
+      "check": "node tools/promises.mjs --check-sleeve-clearance",
+      "status": "OPEN"
+    },
+    {
+      "id": "kimono-back-not-a-slab",
+      "said": "2026-11-25",
+      "promise": "The kimono has a back seam and shoulder yoke, so the torso is not one flat slab from behind.",
+      "why": "Found by the turnaround test; still visible in docs/PHASE1-VERDICT.md.",
+      "check": "grep -qE 'back_seam|shoulder_yoke' blender/character/part_registry.py",
+      "status": "OPEN"
+    },
+    {
+      "id": "ground-reacts",
+      "said": "2026-11-25",
+      "promise": "Landings, skids and dashes mark the ground.",
+      "why": "analyseGround already emits land/skid/dash/wake with position, direction and speed. Only dust listens. Cheapest large win in the repo.",
+      "check": "grep -rqE 'groundMark|footprint|scuff' engine/groundfx.js",
+      "status": "OPEN"
+    }
+  ]
+}

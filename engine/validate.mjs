@@ -25,10 +25,7 @@ const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang'];   // a
 const D = film.duration;
 // Joint limits (radians / metres): what the paper body can do without looking broken. Outside = a warning.
 // Same limits the poses in library/cuts.json were solved with (docs/ANIMATION.md §11).
-const LIMITS = { rsx: [-3.1, 0.9], lsx: [-3.1, 0.9], rsz: [-1.6, 1.6], lsz: [-1.6, 1.6], rsy: [-1.2, 1.2], lsy: [-1.2, 1.2], rex: [-2.6, 0], lex: [-2.6, 0],
-  rfy: [-1.6, 1.6], lfy: [-1.6, 1.6], rwx: [-1.0, 1.4], lwx: [-1.0, 1.4], rwz: [-0.6, 0.6], lwz: [-0.6, 0.6], tx: [-0.5, 1.2], ty: [-0.9, 0.9], tz: [-0.6, 0.6],
-  cx: [-0.35, 0.5], cy: [-0.6, 0.6], cz: [-0.35, 0.35], nx: [-0.5, 0.5], ny: [-0.7, 0.7], hx: [-0.6, 0.6], hy: [-0.9, 0.9], hz: [-0.4, 0.4],
-  rcy: [-0.35, 0.35], rcz: [-0.35, 0.35], lcy: [-0.35, 0.35], lcz: [-0.35, 0.35], rax: [-0.6, 0.7], lax: [-0.6, 0.7], stance: [0, 1.3], crouch: [-0.05, 0.6], weight: [-1, 1] };
+import { LIMITS } from './limits.js';   // shared with engine/moves.js, which clamps to them
 const limitWarned = new Set();
 const checkLimits = (where, obj) => {
   for (const [k, v] of Object.entries(obj ?? {})) {
@@ -272,6 +269,10 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
   });
   try {
     const ex = expandMoves(keys, moves, CLIPS);
+    // Check the EXPANDED keys as well. A move with an `anime` dial, or a retargeted capture, makes
+    // its numbers here and not in the film file, so checking only what the author typed missed them
+    // entirely — which is how a head 53 degrees past its limit shipped in a film that validated.
+    for (const k of ex) checkLimits(`${w} (after moves are expanded, t=${k.t}s)`, k);
     for (let j = 1; j < ex.length; j++) if (ex[j].t <= ex[j - 1].t) {
       err(w, `after moves are expanded, a key at ${ex[j].t}s comes before or at ${ex[j - 1].t}s; the previous move is still running. Start the next key later (jump-back lasts 0.85 s, lunge-shomen 1.0 s; see library/moves.json)`);
       break;

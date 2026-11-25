@@ -69,6 +69,14 @@ npm run preview                                          # live preview in a bro
     Never spawn an Opus or Fable agent for work a haiku agent can do from a clear brief.
 02. **Send heavy text work to the free models** (`tools/ai.py`, rule 00): writing scenes, monologues, routine code, and LOOKING at stills/frames (free vision models) go to Cerebras / NVIDIA / Groq, not to Claude. `python3 tools/ai.py list` shows what is up; `review <png|frames dir>` has a model critique the picture; `write` / `code` / `think` for text. Claude directs, decides and verifies; the free models do the volume. Check `tools/ai.py budget` to see what was saved.
 01. **Fable reviews and plans the detail work.** For movement, camera, ideas, look, fixes and audits, send the work to a Fable agent (model `fable`, currently Fable 5.2) as studio auditor / director, then build what it finds. Every film gets a Fable review of its stills and audit report before the final render.
+0a. **A stated fix is a promise, and an unkept promise is a bug.** Saying "I'll fix that next" creates
+an obligation that does not need re-approval: the owner may be distracted or may forget, and an
+agreement reached once must not quietly expire. Write it into `library/promises.json` the moment it
+is said, with a command that proves it, and run `node tools/promises.mjs` before claiming any work is
+finished. Never ask whether to keep a promise already made - keep it. The failure this rule exists
+for: on 25 Nov the films were rendered with the box character, after that exact problem had been
+written down as item one of docs/FIX-EVERYTHING.md the same morning.
+
 0. **Work autonomously.** When a fix or an improvement is clear, build it, verify it (stills, checker, audit) and report what changed. Do not wait for permission. Ask only for: spending money (rule 1), publishing anything publicly, deleting the owner's work, or a choice that changes the owner's design rules (rule 4).
 1. **Paid GPUs: ask the owner first, with the expected cost.** Default to the cheapest *community* GPU. Every pod gets
    the self-destruct timer (`sleep 3600; runpodctl remove pod $RUNPOD_POD_ID`) and is stopped (`python3 gpu/pod.py stop`)

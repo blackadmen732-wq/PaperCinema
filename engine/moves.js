@@ -17,6 +17,8 @@
 // the fighter keeps the last beat's facing after the move.
 // Pure module: used by the browser engine, the checker and the Node camera resolver.
 
+import { LIMITS, clampCh, NO_EXAGGERATE } from './limits.js';
+
 // Channels that are angles and may be exaggerated. Positions, timing and gait phase must not be:
 // scaling those would move the fighter somewhere the film did not ask for, or break foot contact.
 const ANGLE_CH = ['tx', 'ty', 'tz', 'cx', 'cy', 'cz', 'nx', 'ny', 'hx', 'hy', 'hz',
@@ -52,7 +54,12 @@ function clipKeys(def, k, x, z, ry, clips) {
                   ry: ry + ((c.ry ?? 0) - (c0.ry ?? 0)) };
     for (const [f, v] of Object.entries(c)) {
       if (['t', 'x', 'z', 'ry'].includes(f)) continue;
-      key[f] = (anime !== 1 && mean[f] !== undefined) ? mean[f] + (v - mean[f]) * anime : v;
+      // Exaggerate, then CLAMP. Without the clamp a 1.3 dial put the head 53 degrees back, past
+      // its own limit, and the film still validated because nothing checked expanded keys.
+      // The head and neck are never exaggerated at all: see NO_EXAGGERATE in engine/limits.js.
+      const scaled = (anime !== 1 && mean[f] !== undefined && !NO_EXAGGERATE.has(f))
+        ? mean[f] + (v - mean[f]) * anime : v;
+      key[f] = clampCh(f, scaled);
     }
     for (const [f, v] of Object.entries(k)) {
       if (!['t', 'move', 'speed', 'dist', 'anime', 'note', 'x', 'z', 'ry'].includes(f)) key[f] = v;

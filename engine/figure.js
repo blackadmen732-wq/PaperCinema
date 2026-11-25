@@ -6,6 +6,7 @@
 // neighbour at the joint, and small folded covers hide the gaps, so it never looks broken.
 // Figure faces +z. Its right side is -x.
 import * as THREE from 'three';
+import { clampCh } from './limits.js';
 import { paper } from './paper.js';
 
 function m(geo, mat) {
@@ -624,6 +625,13 @@ export function resolveKeys(keys, poses) {
     const joints = k.pose ? { ...BASE_POSE, ...named } : { ...last };
     const full = { ...joints, x: last.x, z: last.z, ry: last.ry, y: 0, rx: 0, rz: 0 };
     for (const [key, v] of Object.entries(k)) if (key in BASE_POSE) full[key] = v;
+    // Last line of defence: nothing downstream may receive a joint past its limit, whatever made
+    // it - an authored key, a named pose, a retargeted capture or an exaggerated move. Every
+    // renderer reads this function's output, so clamping here is the one place that covers them
+    // all. engine/validate.mjs still WARNS about the source value, because a silent clamp hides a
+    // pose the author meant differently; the clamp stops it looking broken, the warning gets it
+    // fixed properly.
+    for (const key of Object.keys(full)) full[key] = clampCh(key, full[key]);
     last = full;
     return [k.t, full, { ease: k.ease, drag: k.drag, settle: k.settle, arc: k.arc, arcTo: k.arcTo, hang: k.hang }];
   });
