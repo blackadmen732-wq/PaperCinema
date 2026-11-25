@@ -22,6 +22,7 @@ import random
 import bpy
 
 FACET_ATTR = 'facet_rand'
+FOLD_ATTR = 'fold_crease'      # baked curvature; see add_fold_attribute (Pointiness is Cycles-only)
 
 
 # --------------------------------------------------------------------------- small node helpers
@@ -166,9 +167,16 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     speck = T.math('MULTIPLY_ADD', h, -0.10, 1.04)
     k = T.math('MULTIPLY', fv, speck)
     if fold_dark or edge_wear:
-        # Pointiness: 0.5 flat, below = a crease (the valley of a fold), above = a folded edge.
-        crease = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', 0.5, geo.outputs['Pointiness']), 0.0), 4.0)
-        edge = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', geo.outputs['Pointiness'], 0.5), 0.0), 4.0)
+        # 0.5 flat, below = a crease (the valley of a fold), above = a folded edge. Read from the
+        # baked `fold_crease` attribute, NOT from Geometry > Pointiness: that output is Cycles only
+        # (Blender manual, Geometry node) and films render in EEVEE Next, so for every frame ever
+        # rendered this whole block has computed to nothing. add_fold_attribute() bakes the same
+        # number at build time, in both engines, for free.
+        pt = T.node('ShaderNodeAttribute')
+        pt.attribute_type = 'GEOMETRY'
+        pt.attribute_name = FOLD_ATTR
+        crease = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', 0.5, pt.outputs['Fac']), 0.0), 4.0)
+        edge = T.math('MULTIPLY', T.math('MAXIMUM', T.math('SUBTRACT', pt.outputs['Fac'], 0.5), 0.0), 4.0)
         if fold_dark:
             k = T.math('MULTIPLY', k, T.math('SUBTRACT', 1.0, T.math('MULTIPLY', crease, fold_dark), clamp=True))
         if edge_wear:
@@ -385,12 +393,63 @@ def metal_material(name, color=(0.6, 0.6, 0.62), rough=0.16, aniso=0.6):
 
 
 # --------------------------------------------------------------------------- mesh helpers
+def add_fold_attribute(obj_or_mesh, strength=6.0):
+    """Bake curvature to a per-vertex attribute, because Geometry > Pointiness is CYCLES ONLY.
+
+    This is why every fold in every film has been flat. The materials darkened each crease and wore
+    each folded edge with the Pointiness output of the Geometry node; Blender's manual says of it,
+    plainly, "Cycles Only"; and films render in EEVEE Next. So the one thing that was supposed to
+    put a gradient and a dark line at every fold has computed to nothing in every frame ever
+    rendered. Measured, not guessed: docs/WHY-IT-LOOKS-FLAT.md.
+
+    The same number, baked once at build time, works in both engines and costs nothing at render.
+    For each vertex, look at where its neighbours sit relative to its own normal: a neighbour BELOW
+    the tangent plane means the surface is bending away from you there - a ridge, a folded edge. A
+    neighbour above it means a valley, the inside of a fold. Averaged over the incident edges that
+    is a curvature estimate, and it follows Cycles' own convention so the materials need no new
+    logic: 0.5 flat, above 0.5 convex (a folded edge), below 0.5 concave (the valley of a crease).
+
+    It is per-VERTEX on purpose. A per-face value would give each facet one flat tone, which is the
+    problem, not the fix; interpolated across the face it is a gradient, which is what a sheet of
+    folded paper actually does to light.
+    """
+    me = obj_or_mesh.data if hasattr(obj_or_mesh, 'data') else obj_or_mesh
+    n = len(me.vertices)
+    if not n:
+        return me
+    acc = [0.0] * n
+    cnt = [0] * n
+    verts = me.vertices
+    for e in me.edges:
+        a, b = e.vertices
+        d = verts[b].co - verts[a].co
+        L = d.length
+        if L < 1e-9:
+            continue
+        d = d / L
+        acc[a] += d.dot(verts[a].normal)
+        cnt[a] += 1
+        acc[b] += (-d).dot(verts[b].normal)
+        cnt[b] += 1
+    vals = []
+    for i in range(n):
+        c = 0.5 - strength * (acc[i] / cnt[i]) if cnt[i] else 0.5
+        vals.append(0.0 if c < 0.0 else 1.0 if c > 1.0 else c)
+    at = me.attributes.get(FOLD_ATTR) or me.attributes.new(FOLD_ATTR, 'FLOAT', 'POINT')
+    at.data.foreach_set('value', vals)
+    return me
+
+
 def add_facet_attribute(obj_or_mesh, seed=0):
-    """Write a random 0..1 value per face (domain FACE) that paper materials read as facet tone."""
+    """Write a random 0..1 value per face (domain FACE) that paper materials read as facet tone.
+
+    It also bakes the fold curvature, because the two always want to happen together and a part that
+    has one and not the other renders wrong in a way nobody notices for weeks."""
     me = obj_or_mesh.data if hasattr(obj_or_mesh, 'data') else obj_or_mesh
     rnd = random.Random(seed)
     a = me.attributes.get(FACET_ATTR) or me.attributes.new(FACET_ATTR, 'FLOAT', 'FACE')
     a.data.foreach_set('value', [rnd.random() for _ in range(len(me.polygons))])
+    add_fold_attribute(me)
     return me
 
 

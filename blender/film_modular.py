@@ -189,6 +189,27 @@ else:
     MB.studio(sc, arg('light', 'cinematic'))
 setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
              samples=int(arg('samples')) if arg('samples') else None)
+
+# COMPOSITING. blender/sets/build_set.py has built bloom and a vignette as compositor nodes since
+# the sets existed, and no film has ever called it - grep said 0. So the studio audit's standing
+# complaint ("no post FX: no bloom on the eyes and the smear, no grade, no grain") was not a missing
+# feature, it was an unwired one. Bloom is also what makes the inner lantern read as LIGHT rather
+# than as a patch of pale paint, which is the whole style.
+# Values come from the set when there is one (library/sets/*.json "lighting"), since a set's author
+# chose them for that world; otherwise the Lantern Origami default.
+try:
+    sys.path.insert(0, os.path.join(HERE, 'sets'))
+    from build_set import post as _post
+    _bloom, _vig = float(arg('bloom', 0.55)), float(arg('vignette', 0.35))
+    if arg('set'):
+        _sj = os.path.join(REPO, 'library', 'sets', os.path.splitext(os.path.basename(arg('set')))[0] + '.json')
+        if os.path.exists(_sj):
+            _lt = (json.load(open(_sj)).get('lighting') or {})
+            _bloom, _vig = float(_lt.get('bloom', _bloom)), float(_lt.get('vignette', _vig))
+    _post(sc, _bloom, _vig)
+    print(f'[film] post: bloom {_bloom}, vignette {_vig}')
+except Exception as e:                      # a film without bloom is worse, not broken
+    print(f'[film] post FX unavailable ({e}); rendering without them')
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]
 # Absolute frame numbers. tools/film.sh renders ranges in parallel into ONE folder, so f0001 must
 # mean timeline frame 0 in every worker; numbering each range from 1 would have every worker
