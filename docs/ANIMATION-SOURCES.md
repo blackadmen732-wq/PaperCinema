@@ -49,12 +49,38 @@ that path, the one phone call is Meshcapade.
    and the only way the *anime* exaggeration gets in: real swordsmen do not move the way anime
    swordsmen do, which is the whole point of the style.
 
-## The thing actually blocking fights today
+## What is actually blocking fights today
 
-```
-library/moves/   →  0 files
-```
+**Not the move library.** I claimed earlier that it was empty; that was wrong, and wrong because I
+listed a directory `library/moves/` that does not exist instead of reading `library/moves.json`,
+which does. It holds **26 moves**, and all seven cuts are among them:
 
-The move library is designed, documented, and empty. Every fight is hand-built pose by pose instead
-of written as `[kamae, kesa-giri, block, kiri-age, hit]`. Capture source is a second-order problem:
-until those seven moves exist as reusable clips, more motion data has nowhere to go.
+| the cut | the move |
+|---|---|
+| kesa-giri | `kesa-giri` |
+| shōmen-uchi | `lunge-shomen`, `kiri-oroshi` |
+| gyaku-kesa | `spin-cut` |
+| kiri-age | `rising-cut` |
+| yoko-giri | `yoko-giri` |
+| tsuki | `tsuki`, `rapid-thrusts` |
+| iai | `nukitsuke`, `nuki-uchi`, `chiburi`, `noto` |
+
+plus `step-in`, `step-back`, `jump-back`, `dodge-left`, `low-dodge`, `parry-high`, `bind`,
+`stagger-back`, `linear-drive`, `calm-low-stance`, `sword-engage`, `sword-exchange`, `sword-press`,
+`sword-recover`. A fight already can be written as a list of names.
+
+**The gap is that the films barely use them.** Counted across the three real films:
+
+| film | move keys | raw pose keys |
+|---|---|---|
+| `ganryujima` | **0** | 29 |
+| `kuroko-duel` | 9 | 28 |
+| `sword-mocap` | 4 | 4 |
+
+The flagship film uses the move library **zero times** and is built entirely from hand-placed poses.
+So the 26 moves have been written, tested and then bypassed, and every improvement to any of them -
+the anime dial, the exaggeration clamp, the settle - reaches almost nothing anyone watches. It is
+the same shape of failure as the character: a good system built and then not connected.
+
+That is the work: rewrite the fights as move lists. It is not new capability, it is using what is
+there, and it is the only way an improvement to one cut improves every film at once.
