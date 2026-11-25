@@ -1,0 +1,44 @@
+{
+  "note": "Which CMU joint drives which Paper Cinema bone. This is retargeting, not training: a recorded motion is a list of joint rotations per frame, so playing it on our skeleton is a name-to-name copy. No GPU, no model, no learning.",
+  "source": "CMU Graphics Lab, subject 2 (swordplay). assets/mocap/CREDITS.md has the licence.",
+  "units": "CMU AMC is degrees, our rig is radians. The loader converts.",
+  "axes": "CMU is Y-up, Z-forward. figure.js is Y-up, -Z-forward, so Z flips (same as T() in modular_builder.py).",
+  "map": {
+    "root":       { "to": "root",   "channels": ["tx", "ty", "tz", "rx", "ry", "rz"] },
+    "lowerback":  { "to": "torso" },
+    "upperback":  { "to": "upper" },
+    "thorax":     { "to": "upper",  "blend": 0.4, "note": "no separate thorax bone; fold 40% into the upper spine" },
+    "lowerneck":  { "to": "neck" },
+    "upperneck":  { "to": "neck",   "blend": 0.5 },
+    "head":       { "to": "head" },
+    "lclavicle":  { "to": "lC" },
+    "lhumerus":   { "to": "lS" },
+    "lradius":    { "to": "lE" },
+    "lwrist":     { "to": "lT",     "note": "CMU splits wrist twist from the hand; lT is our forearm twist" },
+    "lhand":      { "to": "lH" },
+    "rclavicle":  { "to": "rC" },
+    "rhumerus":   { "to": "rS" },
+    "rradius":    { "to": "rE" },
+    "rwrist":     { "to": "rT" },
+    "rhand":      { "to": "rH" },
+    "lhipjoint":  { "to": "hips",   "blend": 0.5 },
+    "lfemur":     { "to": "lthigh" },
+    "ltibia":     { "to": "lshin" },
+    "lfoot":      { "to": "lfoot" },
+    "rhipjoint":  { "to": "hips",   "blend": 0.5 },
+    "rfemur":     { "to": "rthigh" },
+    "rtibia":     { "to": "rshin" },
+    "rfoot":      { "to": "rfoot" }
+  },
+  "dropped": {
+    "ltoes":    "a folded-paper foot has no toe joint",
+    "rtoes":    "a folded-paper foot has no toe joint",
+    "lfingers": "the hand is one folded piece; the grip is solved by gripHand() in figure.js",
+    "rfingers": "same",
+    "lthumb":   "same",
+    "rthumb":   "same"
+  },
+  "unmapped_ours": {
+    "hakama": "cloth, not a body joint: driven by the hip and thigh motion, not by capture data"
+  }
+}
