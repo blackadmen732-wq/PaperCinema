@@ -200,8 +200,22 @@ export async function exportTimeline(filmPath, o = {}) {
     if (at < 0) throw new Error(`timeline: ${modulePath} has no "window.READY = true" line to hook`);
     await route.fulfill({ contentType: 'text/javascript', body: src.slice(0, at) + hook + src.slice(at) });
   });
+  // A crashed page never sets READY, and a ten-minute wait for that is how `--all` looked hung for
+  // thirteen minutes on the gallery pages. Two minutes is longer than any page here needs to build
+  // its scene, and the failure now says which page and what to do about it.
+  const READY_MS = Number(opt('ready-timeout', 120000));
   await page.goto(`http://localhost:${port}/${pagePath}?render=1&film=/${filmPath}${VERT ? '&aspect=vertical' : ''}`);
-  await page.waitForFunction('window.READY === true', null, { timeout: 600000 });
+  try {
+    await page.waitForFunction('window.READY === true', null, { timeout: READY_MS });
+  } catch {
+    const closed = page.isClosed();
+    await browser.close().catch(() => {});
+    server.close();
+    throw new Error(`timeline: ${pagePath} never set window.READY within ${READY_MS / 1000}s`
+      + (closed ? ' — the browser died, usually memory: render fewer films at once.'
+                : ' — the page loaded but never finished building. Open it with npm run preview and look at the console.')
+      + ' Raise it with --ready-timeout <ms> if the page is genuinely that slow.');
+  }
   const kind = await page.evaluate(() => window.PCX?.kind ?? null);
   if (!kind) { await browser.close(); server.close(); throw new Error(`timeline: ${pagePath} does not publish window.PCX and no hook is known for ${modulePath}`); }
   const EVENTS = await page.evaluate(() => window.EVENTS ?? null);
