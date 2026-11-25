@@ -41,9 +41,11 @@ the frames, which is what step 6 reads.
 
 ## Three rules that cost people time here
 
-1. **Boxes are not the character.** `engine/figure.js` is a preview. The character is built part by
-   part in `blender/character/` and rendered by `blender/film_modular.py`. If what you are looking at
-   has rectangular arms, you are looking at a storyboard.
+1. **Boxes are not the character, and neither is the TRELLIS mesh.** Four things here can stand in
+   for a person and only one is the character: `modular_builder.py` + `part_registry.py`, rendered by
+   `blender/film_modular.py`. `engine/figure.js` is a storyboard, `origami_samurai.py` is the
+   rejected first attempt, and `rig_trellis.py` is one fused shell whose arms cannot bend. The table
+   and the reasons are in `docs/CHARACTER-BLENDER.md` — read it before proposing a fifth.
 2. **Every frame is a pure function of time.** `window.renderAt(t)` must draw the same image for the
    same `t`, asked in any order, on any machine. Nothing may accumulate between frames. This is what
    lets frames render in parallel and a still match frame 77.

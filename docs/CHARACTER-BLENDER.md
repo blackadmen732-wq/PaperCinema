@@ -1,5 +1,29 @@
 # The hero in Blender: rig, film render, motion capture, camera
 
+## WHICH CHARACTER, WHEN — settled 25 Nov
+
+Four things in this repo can stand in for a person. Only one of them is the character.
+
+| | what it is | use it for |
+|---|---|---|
+| `blender/character/modular_builder.py` + `part_registry.py` | **THE CHARACTER.** ~1,800 lines, 100+ separate folded parts snapped to sockets, rigid parts parented to a bone and cloth skinned across bones, 25-bone rig, 433-check validator | **everything that moves, and everything that is seen.** Films, stills, wides, close-ups |
+| `blender/character/origami_samurai.py` | the FIRST attempt at a folded character, 514 lines | nothing. `docs/SETS.md` §7: "still a set of crude boxes and frustums... the weakest element in every still", and rebuilding the hero with it was rejected on its own stills (`output/character/t5.png`) |
+| `blender/character/rig_trellis.py` | a TRELLIS glb: one fused shell, robe and sleeves and arms welded into a single surface with no body underneath | nothing, for a character. Its own header says why: `heat` drapes the robe off the arms as cloth, `panels` cuts it open and the edges look torn, `rigid` opens holes. That is the shell's geometry, not a setting |
+| `engine/figure.js` | boxes and flat cards | **blocking and timing only.** A storyboard. `node engine/render.mjs` |
+
+**Why not a hybrid — TRELLIS for wides, parts for close-ups.** It is a reasonable-sounding split and it
+does not survive contact with a cut. The two have different silhouettes, so a wide cutting to a
+close-up changes the character mid-shot, which an audience reads instantly even when it cannot say
+what changed. It is also backwards about where each one is strong: a wide shot is exactly where
+flat folded facets hold their shape, and where a smooth photographic shell goes soft. And the
+project has already paid for having several characters — three systems existed, two pipelines each
+picked a wrong one, and every improvement to the real character was invisible for weeks.
+
+**Where TRELLIS genuinely earns its place: props.** A lantern, a bridge post, a boat, a rock. No rig,
+no posing, no silhouette continuity to keep. That is why TRELLIS.2 is vendored (`vendor/MANIFEST.json`)
+and why its skill says props only, never the cast.
+
+
 The owner's reference character (TRELLIS model `assets/models/ronin_base.glb`) fights in Blender, driven by the same
 film data as the browser preview. The box figures in `engine/*.js` are the preview; this is the picture.
 
