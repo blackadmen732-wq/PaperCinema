@@ -107,3 +107,31 @@ Blender 4.4 introduced slotted actions and 5.x removed the legacy `Action.fcurve
 every script that walked an action's curves raised `AttributeError: 'Action' object has no attribute
 'fcurves'`. `blender/bl_compat.py` now holds `fcurves_of()` and `object_fcurves()`, which work on
 both versions, and `trellis_shot.py`, `kit.py` and `rig_trellis.py` go through them.
+
+---
+
+## 3D OS by Scenario — nine Blender expert skills, installed 2026-11-25
+
+`scenario-labs/skills` (MIT, ~3.7k stars) is 173 agent skills in six departments. The generation
+skills call a paid service, but **the expert-tool skills drive Blender on this machine and need no
+account** — checked: nothing under `skills/dcc/blender/` references an API key or the hosted server.
+Their test suites pass headless on Blender 5.2.1, which is why 5.2.5 was the version installed here.
+
+Installed into `.claude/skills/` (1.5 MB, 52 files, MIT licence kept beside them):
+
+| Skill | The gap it answers |
+|---|---|
+| `scenario-blender-rigging` | Its description names **"Bone Heat Weighting failed"** and **"clothes that do not follow"** — the two errors that actually blocked us. Rigify fitting, weight fixes, IK/FK, twist bones. Ships `bx_rig.py`, tested on 5.2.1 headless. |
+| `scenario-blender-animation` | Stepped blocking to spline, timing and spacing, arcs, overlap — anime timing by name. Also slotted actions, the 5.x API that broke our scripts. |
+| `scenario-blender-lighting-rendering` | "flat or muddy renders", "subject not standing out", toon/NPR looks, AgX. Our toon render was too dark because the scene was lit for a realistic shader; this is that problem's manual. |
+| `scenario-blender-grease-pencil` | Drawn 2D effects inside a 3D scene. This is how anime actually makes impact frames and speed lines, and it is the right way to build sand and splashes. |
+| `scenario-blender-geometry-nodes` | Procedural scattering and simulation zones: the world builder and ground reactions. |
+| `scenario-blender-previs-storyboard` | Beats to shot list, 180-degree rule, screen direction, shot sizes. Our camera evaluator checks these; this plans them. |
+| `scenario-blender-hard-surface` | Booleans, bevels, weighted normals for set pieces. |
+| `scenario-blender-export` | FBX/glTF scale, rotation, leaf bones, re-import checks. |
+| `scenario-blender-expert` | The lead skill the others expect: execution channel, review loop, 5.x API changes. |
+
+**Why this matters more than the add-ons.** AniBlend and CyclesTooner are buttons. These are written
+for an agent to drive Blender through Python, headless, with their own test suites — which is exactly
+how this project renders. Six skills here cover problems this repo has hit and solved badly or not at
+all, and one of them names our exact error message.
