@@ -164,7 +164,18 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     attr.attribute_name = FACET_ATTR
     fv = T.math('MULTIPLY_ADD', T.math('SUBTRACT', attr.outputs['Fac'], 0.5), 2.0 * facet_var, 1.0)
     h = fibre_height(T, fibre_scale, seed=s, rot=fibre_rot, radial=fibre_radial)
-    speck = T.math('MULTIPLY_ADD', h, -0.10, 1.04)
+    # How much the fibre shows. A close-up (output/character/paper-closeup.png) showed the geometry
+    # saying paper and the surface saying plastic: at a 10% tone swing and a 0.12 bump, a sheet reads
+    # as smooth card. PC_PAPER_FIBRE scales both for a test render without touching any caller.
+    #
+    # What was tried and did NOT work, so nobody repeats it: x4 and x8 make the surface visible but
+    # it reads as STUCCO, not washi - uniform blobs where washi has long strands. Rebalancing the
+    # noise (softer pulp, longer stretched fibres, fibres dominating) did not fix that either and
+    # was reverted rather than kept unproven. Procedural noise is not going to get there.
+    # The answer is a scanned sheet of real washi through _ph_triplanar(), which this file already
+    # has for the world's wood and bark and has never used for the character's paper.
+    _fx = float(os.environ.get('PC_PAPER_FIBRE', '1.0'))
+    speck = T.math('MULTIPLY_ADD', h, -0.10 * _fx, 1.0 + 0.04 * _fx)
     k = T.math('MULTIPLY', fv, speck)
     if fold_dark or edge_wear:
         # 0.5 flat, below = a crease (the valley of a fold), above = a folded edge. Read from the
@@ -185,7 +196,7 @@ def paper_material(name, color, *, translucency=0.35, rough=0.82, sheen=0.25, fi
     base = T.mix_rgb(1.0, col_sock if col_sock else col, kv.outputs[0], blend='MULTIPLY')
 
     # normal: fibre bump on the flat facet normal
-    bump = T.node('ShaderNodeBump', Strength=fibre_strength, Distance=0.02, Height=h)
+    bump = T.node('ShaderNodeBump', Strength=min(1.0, fibre_strength * _fx), Distance=0.02, Height=h)
     if flat:
         T.link(geo.outputs['True Normal'], bump.inputs['Normal'])
     rgh = T.math('MULTIPLY_ADD', h, 0.12, rough - 0.05, clamp=True)
