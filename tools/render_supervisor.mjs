@@ -7,7 +7,15 @@
 //   node tools/render_supervisor.mjs film/<name>.json --plan               # print the plan, render nothing
 //   node tools/render_supervisor.mjs film/<name>.json --resume             # skip the shots already done (default)
 //   node tools/render_supervisor.mjs film/<name>.json --restart            # forget the state and start again
-//   options: --renderer preview|blender · --retries 1 · --out output/shots/<film> · --quiet
+//   node tools/render_supervisor.mjs film/<name>.json --workers 4           # render 4 shots at once
+//   node tools/render_supervisor.mjs film/<name>.json --plan --rate 0.18    # what a rented GPU would cost
+//   options: --renderer preview|blender · --retries 1 · --out output/shots/<film> · --quiet · --spf N
+//
+// WHY WORKERS. A rented GPU is billed by wall-clock hour, not by frame, so an idle one costs the
+// same as a busy one. The way to spend less is to finish more inside the hour you are paying for,
+// which means arriving with the work prepared and running every shot at once. That is possible here
+// only because every effect is a pure function of time, so no frame depends on the frame before it.
+// --plan prices the job first, from seconds-per-frame measured on our own past renders.
 //
 // What it does that a bare render does not:
 //   * SHOT LIST: it renders per shot (from the timeline), so a 36 s film is 6-8 jobs, not one 55-minute gamble.
@@ -15,7 +23,10 @@
 //   * FAILURE HANDLING: a shot that fails is retried, then marked failed; the other shots still finish.
 //   * RESUME: the state of every shot lives in output/<film>.render-state.json, so a killed run picks up where it
 //     stopped, and a changed timeline (its hash) invalidates only the shots whose frames changed.
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFile, execFileSync, spawnSync } from 'node:child_process';
+import { promisify } from 'node:util';
+import os from 'node:os';
+const run = promisify(execFile);
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -81,42 +92,113 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const fresh = done && done.hash === j.hash && done.status === 'done' && done.quality === quality;
     console.log(`  ${j.shot.padEnd(5)} f${String(j.f0).padStart(4)}-${String(j.f1).padEnd(4)} ${String(j.seconds).padStart(5)} s  ${fresh ? 'done (resume: skip)' : done?.status === 'failed' ? 'failed before: retry' : 'to render'}  ${j.name}`);
   }
-  if (flag('plan')) { fs.writeFileSync(`output/${NAME}.render-plan.json`, JSON.stringify({ film: NAME, quality, renderer, outDir, plan }, null, 1)); console.log(`\nplan: output/${NAME}.render-plan.json (nothing was rendered)`); process.exit(0); }
+  // ---- what this job costs, from OUR OWN measured render times ----------------------------------
+  // A rented GPU bills wall-clock hours. What decides the bill is not how many frames there are but
+  // how long the machine is switched on, so the only numbers that matter are seconds-per-frame and
+  // how many shots run at once. Both are measured, not guessed: every finished shot records its own
+  // seconds and frame count in the state file, so this estimate improves every time we render.
+  const past = Object.values(state.shots).filter((d) => d.status === 'done' && d.seconds && d.frames);
+  const measured = past.length ? past.reduce((a, d) => a + d.seconds, 0) / past.reduce((a, d) => a + d.frames, 0) : null;
+  const perFrame = Number(opt('spf', 0)) || measured || (renderer === 'blender' ? 17 : 4);
+  const totalFrames = plan.reduce((a, j) => a + (j.f1 - j.f0 + 1), 0);
+  const cpus = os.cpus().length;
+  const W = Math.max(1, Math.min(Number(opt('workers', 0)) || Math.min(plan.length, Math.max(1, cpus - 1)), plan.length));
+  const serialMin = (totalFrames * perFrame) / 60;
+  const wallMin = serialMin / W;
+  const rate = Number(opt('rate', 0));
+  console.log(`\n  ${totalFrames} frames · ${perFrame.toFixed(2)} s/frame (${measured ? `measured from ${past.length} past shot(s)` : 'estimated, nothing measured yet'})`);
+  console.log(`  one at a time: ${serialMin.toFixed(1)} min · ${W} in parallel: ${wallMin.toFixed(1)} min`);
+  if (rate) {
+    console.log(`  at $${rate.toFixed(2)}/hr: about $${(rate * wallMin / 60).toFixed(2)}, against $${(rate * serialMin / 60).toFixed(2)} one at a time`);
+    console.log('  the workers are the saving, not the GPU: the machine bills the same either way');
+  } else {
+    console.log('  pass --rate 0.18 to price this against a rented GPU');
+  }
+
+  if (flag('plan')) { fs.writeFileSync(`output/${NAME}.render-plan.json`, JSON.stringify({ film: NAME, quality, renderer, outDir, workers: W, totalFrames, perFrame, serialMin: +serialMin.toFixed(1), wallMin: +wallMin.toFixed(1), plan }, null, 1)); console.log(`\nplan: output/${NAME}.render-plan.json (nothing was rendered)`); process.exit(0); }
 
   fs.mkdirSync(outDir, { recursive: true });
   let failed = 0, skipped = 0, made = 0;
+
+  // WORKERS: a rented GPU is billed by the hour, not by the frame, so an idle one costs the same as
+  // a busy one. Shots are independent — every effect in this engine is a pure function of time, so a
+  // frame never depends on the frame before it — which means they can all render at once. That is
+  // the whole reason the "no accumulated simulation" rule was worth keeping.
+  const workers = W;   // decided with the cost estimate above, so the printed plan is what runs
+
+  const queue = [];
   for (const j of plan) {
     const done = state.shots[j.shot];
     if (done && done.hash === j.hash && done.status === 'done' && done.quality === quality && !flag('restart')) { skipped++; continue; }
-    const prefix = `${j.shot}-`;
-    let ok = false, err = null;
-    for (let tryN = 0; tryN <= retries && !ok; tryN++) {
+    queue.push(j);
+  }
+  if (queue.length) console.log(`rendering ${queue.length} shot(s) on ${workers} worker(s)\n`);
+
+  // One writer at a time: several workers finishing together would otherwise interleave writes and
+  // leave the resume file truncated, which costs a whole re-render.
+  let writing = Promise.resolve();
+  const saveState = () => { writing = writing.then(() => fs.promises.writeFile(statePath, JSON.stringify(state, null, 1))); return writing; };
+
+  const cmdFor = (j) => {
+    if (renderer === 'blender') {
+      const B = process.env.BLENDER ?? '/opt/blender-dl/blender-4.5.16-linux-x64/blender';
+      const Q = QUALITY[quality].blender;
+      const a = ['-b', '-t', String(Math.max(1, Math.floor(cpus / workers))), '-P', 'blender/film_blender.py', '--',
+        '--film', filmPath, '--timeline', tlPath, '--out', path.join(outDir, j.shot),
+        '--frames', `${j.f0}-${j.f1}`, '--samples', String(Q.samples), '--res', Q.res];
+      if (!Q.blur) a.push('--no-blur');
+      return ['nice', ['-n', '10', B, ...a]];
+    }
+    // --still auto means "the middle of EVERY shot plus every impact", for the whole film, whatever
+    // --from/--to say. Passing it per shot made each job render the same film-wide still set: two
+    // shots produced byte-identical PNGs. On a GPU billed by the hour that is the worst kind of bug,
+    // because it looks like progress. Each shot gets its own midpoint instead.
+    const mid = ((j.f0 + j.f1) / 2 / TL.film.fps).toFixed(2);
+    const a = ['engine/render.mjs', '--film', filmPath, '--from', String(j.f0 / TL.film.fps), '--to', String((j.f1 + 1) / TL.film.fps),
+      '--prefix', `${j.shot}-`, '--still', mid];
+    if (TL.film.format === 'vertical') a.push('--vertical');
+    return ['nice', ['-n', '10', 'node', ...a]];
+  };
+
+  const renderOne = async (j) => {
+    for (let tryN = 0; tryN <= retries; tryN++) {
       const t0 = Date.now();
       try {
-        if (renderer === 'blender') {
-          const B = process.env.BLENDER ?? '/opt/blender-dl/blender-4.5.16-linux-x64/blender';
-          const Q = QUALITY[quality].blender;
-          const a = ['-b', '-t', '2', '-P', 'blender/film_blender.py', '--', '--film', filmPath, '--timeline', tlPath,
-            '--out', path.join(outDir, j.shot), '--frames', `${j.f0}-${j.f1}`, '--samples', String(Q.samples), '--res', Q.res];
-          if (!Q.blur) a.push('--no-blur');
-          execFileSync('nice', ['-n', '10', B, ...a], { stdio: flag('quiet') ? 'ignore' : 'inherit' });
-        } else {
-          const a = ['engine/render.mjs', '--film', filmPath, '--from', String(j.f0 / TL.film.fps), '--to', String((j.f1 + 1) / TL.film.fps),
-            '--prefix', prefix, '--still', 'auto'];
-          if (TL.film.format === 'vertical') a.push('--vertical');
-          execFileSync('nice', ['-n', '10', 'node', ...a], { stdio: flag('quiet') ? 'ignore' : 'inherit' });
-        }
-        ok = true;
-        state.shots[j.shot] = { status: 'done', hash: j.hash, quality, renderer, out: outDir, seconds: +((Date.now() - t0) / 1000).toFixed(1), at: new Date().toISOString() };
+        const [cmd, a] = cmdFor(j);
+        await run(cmd, a, { maxBuffer: 64 * 1024 * 1024 });
+        const secs = +((Date.now() - t0) / 1000).toFixed(1);
+        // `frames` is recorded ONLY when the job actually rendered a sequence, because the cost
+        // estimate divides seconds by frames. The preview renderer makes one still per shot, so
+        // recording 120 frames for it would claim 0.4 s/frame and under-quote the next GPU job by
+        // a factor of ten. A still records its seconds and no frame count.
+        state.shots[j.shot] = { status: 'done', hash: j.hash, quality, renderer, out: outDir, seconds: secs,
+                                kind: renderer === 'blender' ? 'sequence' : 'still',
+                                ...(renderer === 'blender' ? { frames: j.f1 - j.f0 + 1 } : {}),
+                                at: new Date().toISOString() };
         made++;
+        if (!flag('quiet')) console.log(renderer === 'blender'
+          ? `  ✓ ${j.shot}  ${j.f1 - j.f0 + 1} frames in ${secs}s  (${(secs / (j.f1 - j.f0 + 1)).toFixed(2)}s/frame)`
+          : `  ✓ ${j.shot}  still at ${((j.f0 + j.f1) / 2 / TL.film.fps).toFixed(2)}s in ${secs}s`);
+        await saveState();
+        return;
       } catch (e) {
-        err = e.message.split('\n')[0];
-        console.error(`  ! ${j.shot} failed (try ${tryN + 1}/${retries + 1}): ${err}`);
+        const err = (e.stderr || e.message || '').split('\n').filter(Boolean).pop() || 'unknown error';
+        console.error(`  ! ${j.shot} failed (try ${tryN + 1}/${retries + 1}): ${err.slice(0, 160)}`);
+        if (tryN === retries) {
+          failed++;
+          state.shots[j.shot] = { status: 'failed', hash: j.hash, quality, renderer, error: err.slice(0, 300), at: new Date().toISOString() };
+          await saveState();
+        }
       }
-      fs.writeFileSync(statePath, JSON.stringify(state, null, 1));
     }
-    if (!ok) { failed++; state.shots[j.shot] = { status: 'failed', hash: j.hash, quality, renderer, error: err, at: new Date().toISOString() }; fs.writeFileSync(statePath, JSON.stringify(state, null, 1)); }
-  }
+  };
+
+  let next = 0;
+  await Promise.all(Array.from({ length: workers }, async () => {
+    while (next < queue.length) await renderOne(queue[next++]);
+  }));
+  await writing;
+
   console.log(`\n${NAME}: ${made} shot(s) rendered, ${skipped} skipped (already done), ${failed} failed → ${outDir}`);
   console.log(`state: ${statePath} (run again to resume; --restart to forget)`);
   process.exit(failed ? 1 : 0);
