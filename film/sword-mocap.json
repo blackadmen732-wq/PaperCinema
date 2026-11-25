@@ -1,0 +1,41 @@
+{
+ "title": "Recorded swordplay, called by name",
+ "page": "engine/motion.html",
+ "fps": 24,
+ "width": 720,
+ "height": 1280,
+ "format": "vertical",
+ "duration": 8,
+ "mode": "dawn",
+ "motion": { "overlap": true, "lockFeet": true },
+ "cast": {
+  "hero": { "character": "kojiro", "face": "eyes" },
+  "foe": { "character": "musashi", "face": "eyes" }
+ },
+ "performances": {
+  "hero": {
+   "twoHand": [[0, 8]],
+   "keys": [
+    { "t": 0, "pose": "chudan", "x": 0, "z": -1.3, "ry": 0 },
+    { "t": 0.4, "move": "sword-engage", "anime": 1.3 },
+    { "t": 4.0, "move": "sword-press", "anime": 1.3 },
+    { "t": 7.6, "pose": "zanshin" }
+   ]
+  },
+  "foe": {
+   "twoHand": [[0, 8]],
+   "keys": [
+    { "t": 0, "pose": "chudan", "x": 0, "z": 1.25, "ry": 3.14159 },
+    { "t": 0.4, "move": "sword-recover", "anime": 1.3 },
+    { "t": 4.2, "move": "sword-exchange", "anime": 1.3 },
+    { "t": 7.6, "pose": "chudan" }
+   ]
+  }
+ },
+ "camera": [
+  { "t": 0, "rig": "frame", "subjects": ["hero", "foe"], "size": "full", "angle": 55, "elev": 3, "fov": 34, "feel": "dolly" },
+  { "t": 4.0, "rig": "frame", "subjects": ["hero", "foe"], "size": "medium", "angle": 38, "elev": 2, "fov": 32, "feel": "handheld" }
+ ],
+ "sounds": [{ "id": "wind-bed", "query": "wind ambience", "t": 0, "len": 8, "gain": 0.3, "min": 8, "max": 300, "bed": true }],
+ "autoSounds": { "whoosh": { "sfx": ["whoosh-a", "whoosh-b", "whoosh-c"], "on": 9, "rearm": 6 }, "clash": { "sfx": "clash-steel", "light": "clash-light" } }
+}

@@ -19,13 +19,14 @@ globalThis.document = { createElement: () => ({ width: 1, height: 1, getContext:
 const THREE = await import('three');
 const { makeFigure, applyPose, makeMotion, resolveKeys } = await import('../engine/figure.js');
 const { lockFeet } = await import('../engine/footlock.js');
-const { expandMoves } = await import('../engine/moves.js');
+const { expandMoves, loadClipsSync } = await import('../engine/moves.js');
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d; };
 const film = JSON.parse(fs.readFileSync(args[0], 'utf8'));
 const POSES = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const MOVES = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
+const CLIPS = loadClipsSync(MOVES, (n) => JSON.parse(fs.readFileSync(`library/mocap/${n}.json`, 'utf8')));
 const FPS = Number(opt('fps', film.fps ?? 24)), DUR = film.duration, DT = 1 / FPS;
 const SPEED = 1.0, DIST = 0.4;                         // the audit's thresholds (RULE.slideSpeed / slideDist)
 
@@ -36,7 +37,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   const perf = film.performances[id];
   if (!perf?.keys) continue;
   const fig = makeFigure({});
-  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
+  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
   if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
   const v = new THREE.Vector3();
   const foot = (p, side) => { applyPose(fig, p); fig.root.updateMatrixWorld(true);

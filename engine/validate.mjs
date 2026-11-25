@@ -3,7 +3,7 @@
 // Exit code 0 = OK, 1 = errors found (warnings never fail).
 import fs from 'node:fs';
 import { RIG_TYPES, FEELS, BEHAVIOURS } from './kuroko.js';
-import { expandMoves } from './moves.js';
+import { expandMoves, loadClipsSync } from './moves.js';
 
 const filmPath = process.argv[2] ?? 'film/ganryujima.json';
 const errors = [], warnings = [];
@@ -17,6 +17,7 @@ try { film = JSON.parse(fs.readFileSync(filmPath, 'utf8')); }
 catch (e) { console.log(`✗ ${filmPath}: cannot read or parse JSON (${e.message})`); process.exit(1); }
 const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
+const CLIPS = loadClipsSync(moves, (n) => JSON.parse(fs.readFileSync(`library/mocap/${n}.json`, 'utf8')));
 const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
   'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid',
   'stride', 'phase'];   // stride/phase: walking feet; motion capture keys a left-foot-forward stance with them (docs/MOCAP.md)
@@ -258,9 +259,9 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (k.move && k.pose) err(kw, 'use either "move" or "pose" on a key, not both');
     checkLimits(kw, k);
     if (k.pose && poses[k.pose]) checkLimits(`pose "${k.pose}" (library/poses.json)`, poses[k.pose]);
-    if (k.move && moves[k.move]) moves[k.move].forEach((bt, n) => { checkLimits(`move "${k.move}" beat ${n} (library/moves.json)`, bt); if (poses[bt.pose]) checkLimits(`pose "${bt.pose}" (library/poses.json)`, poses[bt.pose]); else err(`move "${k.move}" beat ${n}`, `unknown pose "${bt.pose}"`); });
+    if (k.move && Array.isArray(moves[k.move])) moves[k.move].forEach((bt, n) => { checkLimits(`move "${k.move}" beat ${n} (library/moves.json)`, bt); if (poses[bt.pose]) checkLimits(`pose "${bt.pose}" (library/poses.json)`, poses[bt.pose]); else err(`move "${k.move}" beat ${n}`, `unknown pose "${bt.pose}"`); });
     if (k.pose && !poses[k.pose]) err(kw, `unknown pose "${k.pose}". Known poses: ${Object.keys(poses).filter((n) => !n.startsWith('_')).join(', ')}`);
-    for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist', ...MOTION_FIELDS].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, note, ${MOTION_FIELDS.join(', ')}, ${JOINTS.join(', ')}`);
+    for (const key of Object.keys(k)) if (!['t', 'pose', 'note', 'move', 'speed', 'dist', 'anime', ...MOTION_FIELDS].includes(key) && !JOINTS.includes(key)) err(kw, `unknown field "${key}". Allowed: t, pose, move, speed, dist, anime, note, ${MOTION_FIELDS.join(', ')}, ${JOINTS.join(', ')}`);
     if (j > 0 && isNum(k.t)) {
       const dt = k.t - keys[j - 1].t;
       const moved = ['x', 'z'].map((a) => (k[a] ?? null)).some((v) => v !== null);
@@ -270,7 +271,7 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     }
   });
   try {
-    const ex = expandMoves(keys, moves);
+    const ex = expandMoves(keys, moves, CLIPS);
     for (let j = 1; j < ex.length; j++) if (ex[j].t <= ex[j - 1].t) {
       err(w, `after moves are expanded, a key at ${ex[j].t}s comes before or at ${ex[j - 1].t}s; the previous move is still running. Start the next key later (jump-back lasts 0.85 s, lunge-shomen 1.0 s; see library/moves.json)`);
       break;

@@ -917,5 +917,33 @@
    "hx": 0,
    "ease": "out"
   }
- ]
+ ],
+ "sword-engage": {
+  "clip": "sword-a",
+  "from": 1.0,
+  "to": 4.0,
+  "anime": 1.3,
+  "note": "recorded swordplay: guard, step and a committed cut"
+ },
+ "sword-exchange": {
+  "clip": "sword-a",
+  "from": 6.0,
+  "to": 9.0,
+  "anime": 1.3,
+  "note": "recorded swordplay: a back-and-forth exchange"
+ },
+ "sword-press": {
+  "clip": "sword-b",
+  "from": 0.5,
+  "to": 4.0,
+  "anime": 1.3,
+  "note": "recorded swordplay: pressing forward"
+ },
+ "sword-recover": {
+  "clip": "sword-c",
+  "from": 0.0,
+  "to": 3.5,
+  "anime": 1.25,
+  "note": "recorded swordplay: giving ground and recovering guard"
+ }
 }

@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { paper } from './paper.js';
 import { buildWorld } from './world.js';
-import { expandMoves } from './moves.js';
+import { expandMoves, loadClips } from './moves.js';
 import { makeKatana } from './props.js';
 import { loadCharacter } from './library.js';
 import { makeFigure, holdInHand, applyPose, makeMotion, resolveKeys, windowWeight, solveArm, gripHand, smooth } from './figure.js';
@@ -55,6 +55,8 @@ if (film.light) world.setLight(film.light);                      // { sun, hemi,
 // ---------- cast ----------
 const POSES = await (await fetch('/library/poses.json')).json();
 const MOVES = await (await fetch('/library/moves.json')).json();
+// Recorded-motion moves need their clips. loadClips fetches only the ones this library names.
+const CLIPS = await loadClips(MOVES, async (n) => (await fetch(`/library/mocap/${n}.json`)).json());
 const cast = {};
 for (const [id, c] of Object.entries(film.cast)) {
   const preset = await loadCharacter(c.character);
@@ -64,7 +66,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   const k = makeKatana();
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
-  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES), POSES), film.motion ?? {});
+  let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
   // film.motion.lockFeet: plant the feet in the world and let the weight fall on them (engine/footlock.js)
   if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
   if (c.hidden) fig.root.visible = false;               // an invisible target (e.g. the tree) the hero looks at

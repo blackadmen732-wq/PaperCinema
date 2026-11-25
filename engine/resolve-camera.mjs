@@ -5,15 +5,16 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { makeMotion, resolveKeys } from './figure.js';
-import { expandMoves } from './moves.js';
+import { expandMoves, loadClipsSync } from './moves.js';
 import { makeKuroko } from './kuroko.js';
 
 const filmPath = process.argv[2] ?? 'film/ganryujima.json';
 const film = JSON.parse(fs.readFileSync(filmPath, 'utf8'));
 const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
+const CLIPS = loadClipsSync(moves, (n) => JSON.parse(fs.readFileSync(`library/mocap/${n}.json`, 'utf8')));
 const motions = {};
-for (const [id, p] of Object.entries(film.performances ?? {})) motions[id] = makeMotion(resolveKeys(expandMoves(p.keys, moves), poses));
+for (const [id, p] of Object.entries(film.performances ?? {})) motions[id] = makeMotion(resolveKeys(expandMoves(p.keys, moves, CLIPS), poses));
 const pair = {};
 for (const d of film.duels ?? []) { pair[d.a] = d.b; pair[d.b] = d.a; }
 const impacts = [...new Set([...(film.shakes ?? []).map((s) => s.t), ...(film.events?.impact !== undefined ? [film.events.impact] : [])])];
