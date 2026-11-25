@@ -141,7 +141,12 @@ for ob in list(rigs.values()) + [cam, cd]:
 
 # ---------------------------------------------------------------- light and render
 # studio() takes 'neutral' or 'cinematic' only. 'dawn' fell through and rendered black.
-MB.studio(sc, arg('light', 'neutral'))
+# CINEMATIC by default. `neutral` is the flat studio the character models are audited under - it
+# hides nothing, which is what an audit wants and the opposite of what a film wants. A film lit that
+# way comes out as two grey figures in a grey void, and that is what every modular render looked
+# like until this line. `cinematic` is the Lantern Origami key: dark, the paper glowing from inside.
+# Pass --light neutral when you are inspecting a model, not shooting it.
+MB.studio(sc, arg('light', 'cinematic'))
 setup_render(sc, engine=arg('engine'), quality=arg('quality', 'check'),
              samples=int(arg('samples')) if arg('samples') else None)
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]

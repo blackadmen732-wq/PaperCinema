@@ -57,20 +57,31 @@ function checkCharacter() {
   // preview is the exact failure this ledger exists for.
   const dir = `${ROOT}output`;
   if (!fs.existsSync(dir)) { console.log('  nothing rendered yet — cannot check'); return true; }
-  const side = fs.readdirSync(dir).filter((f) => f.endsWith('.render.json'));
-  const mp4 = fs.readdirSync(dir).filter((f) => f.endsWith('.mp4') && !f.endsWith('-sound.mp4'));
+  const side = new Set(fs.readdirSync(dir).filter((f) => f.endsWith('.render.json')).map((f) => f.replace(/\.render\.json$/, '')));
   let bad = 0;
-  for (const f of side) {
-    const r = JSON.parse(fs.readFileSync(`${dir}/${f}`, 'utf8'));
-    if (r.character !== 'modular' && !r.preview) { console.log(`  ${f}: rendered with ${r.character}, not marked a preview`); bad++; }
+  for (const base of side) {
+    const r = JSON.parse(fs.readFileSync(`${dir}/${base}.render.json`, 'utf8'));
+    if (r.character !== 'modular' && !r.preview) { console.log(`  ${base}: rendered with ${r.character}, not marked a preview`); bad++; }
   }
-  const unaccounted = mp4.filter((m) => !side.includes(m.replace(/\.mp4$/, '.render.json')));
-  if (unaccounted.length) {
-    // An mp4 with no sidecar predates this check or was made by hand. Say so rather than pass it.
-    console.log(`  ${unaccounted.length} film(s) with no render record: ${unaccounted.join(', ')} — re-render with npm run film`);
-    bad += unaccounted.length;
+  // Only things that are FILMS count: a name in film/. output/ also holds turntables, galleries and
+  // sound experiments, and calling those unrendered films would make this check noise, which is how
+  // a check stops being read. Derived names (-final, -sound, -with-sound, -vertical…) answer to
+  // their film's record, because they are that render with something added.
+  const films = new Set(fs.readdirSync(`${ROOT}film`).filter((f) => f.endsWith('.json')).map((f) => f.replace(/\.json$/, '')));
+  const stale = new Set();
+  for (const m of fs.readdirSync(dir).filter((f) => f.endsWith('.mp4'))) {
+    const name = m.replace(/\.mp4$/, '');
+    const base = [...films].filter((f) => name === f || name.startsWith(f + '-')).sort((a, b) => b.length - a.length)[0];
+    if (!base) continue;                       // not a film: a turntable, a gallery, a sound test
+    if (!side.has(base)) stale.add(base);
   }
-  if (!bad) console.log(`  ${side.length} render record(s): every finished film used the modular paper character`);
+  if (stale.size) {
+    console.log(`  ${stale.size} film(s) on disk with no render record — made before this check, with the box character:`);
+    console.log(`    ${[...stale].sort().join(', ')}`);
+    console.log('    re-render each with: bash tools/film.sh film/<name>.json');
+    bad += stale.size;
+  }
+  if (!bad) console.log(`  ${side.size} render record(s): every finished film used the modular paper character`);
   return bad === 0;
 }
 
