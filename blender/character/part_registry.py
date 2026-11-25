@@ -641,6 +641,23 @@ def kimono_layered(ctx, P, rnd):
     # the glowing core seen through the collar gap and the sleeve mouths
     ctx.add('inner_lantern', box(0, 0.0, 1.20, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
             thickness=0.0, to_camera=False)
+    # Centre back seam (背縫い). A kimono is two panels joined down the spine, and that join is a
+    # real fold that catches light. Without it the whole upper back renders as one smooth slab,
+    # which is exactly what the turnaround test showed (docs/PHASE1-VERDICT.md): the front read as
+    # folded paper and the back read as a pillowcase. CORE_OUTLINE's (0.0, 1.13) is the back centre,
+    # so the ridge sits at x = 0, y = 1.13 x half-depth, standing a few millimetres proud.
+    sz = [1.05, 1.16, 1.27, 1.37, 1.425]
+    halfw, proud = 0.018, 0.0065
+    spts, sfaces = [], []
+    for z in sz:
+        back = 1.13 * pw(z, CORE_HD)
+        spts += [(-halfw, back, z), (0.0, back + proud, z), (halfw, back, z)]
+    for i in range(len(sz) - 1):
+        a, b = i * 3, (i + 1) * 3
+        sfaces += [(a, a + 1, b + 1, b), (a + 1, a + 2, b + 2, b + 1)]
+    ctx.add('kimono_back_seam', shell(spts, sfaces),
+            [ctx.mat(main), ctx.mat('seam_shadow')], thickness=0.004)
+
     # juban: the under-robe showing in the V of the collar, set well back so the neck sits in a real recess
     ctx.add('juban', shell([(0.070, -0.058, 1.458), (-0.070, -0.058, 1.458), (0.0, -0.088, 1.285)],
                            [(0, 1, 2)]),
