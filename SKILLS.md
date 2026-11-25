@@ -17,6 +17,7 @@ says so and stops, and nothing further is worth doing until it passes.
 | 2 | Check the file | `node engine/validate.mjs film/<name>.json` | same |
 | 3 | Block it out, fast and wrong | `node engine/render.mjs --film film/<name>.json` | same — **boxes, a storyboard, never the deliverable** |
 | 4 | **Look at six real frames** | `bash tools/shotsheet.sh film/<name>.json --set <set>` | [`qa-review`](.claude/skills/qa-review/SKILL.md) |
+| 4b | Can the audience see it? | `blender -b -P blender/check_sight.py -- --film <name> --set <set>` | — |
 | 5 | **Make the film** | `bash tools/film.sh film/<name>.json` | [`paper-cinema-film`](.claude/skills/paper-cinema-film/SKILL.md) |
 | 6 | Prove it was the real character | `node tools/promises.mjs --check-character` | — |
 | 7 | Keep every promise | `node tools/promises.mjs` | — |

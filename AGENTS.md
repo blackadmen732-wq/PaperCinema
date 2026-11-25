@@ -57,6 +57,10 @@ bash tools/film.sh film/<name>.json --from 96 --to 191   # one stretch; frames a
 bash tools/film.sh film/<name>.json --full               # 720x1280 / 48 samples instead of the 360x640 preview
 node tools/timeline.mjs film/<name>.json                  # THE canonical timeline for every renderer (docs/TIMELINE-FORMAT.md)
 node tools/camera_check.mjs film/<name>.json             # score every shot; exit 1 on a rejected camera (docs/ARCHITECTURE.md)
+/opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/check_sight.py -- \
+  --film <name> --set output/sets/<set>.blend            # does the audience SEE it? blocked by the set,
+                                                         # off-frame, or too small to read. CRITICAL on a
+                                                         # contact frame: the shot exists for that frame
 node tools/paper_damage.mjs film/<name>.json             # every cut → a SHIMI/KIZU wound contract
 node tools/render_supervisor.mjs film/<name>.json --plan  # shot-by-shot render plan (quality presets, resume)
 python3 tools/build_systems.py                           # refresh systems.json after editing SYSTEMS.md
