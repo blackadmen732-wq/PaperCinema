@@ -481,6 +481,129 @@ def lerp3(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
 
 
+def asset_bmesh(path, *, target_faces=900, scale=1.0, align='socket', socket=None):
+    """Load a bought or generated mesh (GLB/FBX/OBJ) and hand back a bmesh the part pipeline can use.
+
+    This is the bridge between a 3D-generation service and this character factory. A service - Tripo,
+    Meshy, Rodin, a local Hunyuan3D-Part - returns a mesh. What this project needs is a PART: one
+    object, at a socket, on a bone, made of paper. Everything after this call does that, because the
+    mesh goes through exactly the same `ctx.add()` as a hand-folded part and gets the same flat
+    facets, the same per-facet tone, the same cut-paper thickness and the same washi material.
+
+    So the division of labour is: buy the geometry, keep the skeleton. A generated mesh is one fused
+    shell when it is a whole character, which is why rig_trellis.py was abandoned - but one PART is
+    a legitimate fused shell, because a hat does not bend. Buy hats, masks, helmets, armour plates,
+    weapons and props. Fold the kimono, the hakama and the sleeves here, where they have to deform.
+
+    target_faces matters more than it looks. A generated mesh arrives at 30-80k smooth triangles; a
+    folded paper part is a few hundred flat ones. Decimating hard is not a compromise, it is the
+    style: the planes have to be big enough to read as folds.
+    """
+    before = set(bpy.data.objects)
+    ext = os.path.splitext(path)[1].lower()
+    if ext == '.glb' or ext == '.gltf':
+        bpy.ops.import_scene.gltf(filepath=path)
+    elif ext == '.fbx':
+        bpy.ops.import_scene.fbx(filepath=path)
+    elif ext == '.obj':
+        bpy.ops.wm.obj_import(filepath=path)
+    else:
+        raise ValueError(f'asset_bmesh: {path}: want .glb, .gltf, .fbx or .obj')
+    new_objs = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new_objs if o.type == 'MESH']
+    if not meshes:
+        for o in new_objs:
+            bpy.data.objects.remove(o, do_unlink=True)
+        raise ValueError(f'asset_bmesh: {path} contained no mesh')
+
+    # Gather every imported mesh into one object, in world space. The decimation has to happen on an
+    # OBJECT: bmesh has no decimate operator, only the modifier does a collapse properly.
+    work = bpy.data.meshes.new('_asset_work')
+    bm0 = bmesh.new()
+    for o in meshes:
+        me = o.to_mesh()
+        tmp = bmesh.new()
+        tmp.from_mesh(me)
+        bmesh.ops.transform(tmp, matrix=o.matrix_world, verts=tmp.verts[:])
+        tmp.to_mesh(me)
+        bm0.from_mesh(me)
+        tmp.free()
+        o.to_mesh_clear()
+    bm0.to_mesh(work)
+    bm0.free()
+    for o in new_objs:                       # the import is a means, not a result
+        bpy.data.objects.remove(o, do_unlink=True)
+
+    wob = bpy.data.objects.new('_asset_work', work)
+    bpy.context.scene.collection.objects.link(wob)
+    n0 = len(work.polygons)
+    if target_faces and n0 > target_faces:
+        pl = wob.modifiers.new('planar', 'DECIMATE')
+        pl.decimate_type = 'DISSOLVE'        # merge coplanar faces: free, and exactly what paper wants
+        pl.angle_limit = math.radians(5)
+        co = wob.modifiers.new('collapse', 'DECIMATE')
+        co.ratio = max(0.02, target_faces / n0)
+        dg = bpy.context.evaluated_depsgraph_get()
+        ev = wob.evaluated_get(dg)
+        baked = bpy.data.meshes.new_from_object(ev)
+        wob.modifiers.clear()
+        wob.data = baked
+        bpy.data.meshes.remove(work)
+        work = baked
+
+    bm = bmesh.new()
+    bm.from_mesh(work)
+    bpy.data.objects.remove(wob, do_unlink=True)
+    bpy.data.meshes.remove(work)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
+    print(f'[asset] {os.path.basename(path)}: {n0} faces -> {len(bm.faces)}')
+
+    # Normalise: drop it on its own origin, scale to `scale` metres tall, then move to the socket.
+    vs = bm.verts[:]
+    if vs:
+        xs = [v.co for v in vs]
+        lo = Vector((min(c.x for c in xs), min(c.y for c in xs), min(c.z for c in xs)))
+        hi = Vector((max(c.x for c in xs), max(c.y for c in xs), max(c.z for c in xs)))
+        mid = (lo + hi) / 2
+        height = max(1e-6, hi.z - lo.z)
+        k = scale / height if scale else 1.0
+        base = Vector((mid.x, mid.y, lo.z if align == 'socket' else mid.z))
+        for v in vs:
+            v.co = (v.co - base) * k
+        if socket is not None:
+            for v in vs:
+                v.co += Vector(socket)
+    tidy(bm)
+    return bm
+
+
+def asset_part(name, *, slot, socket, file, height, bone=None, bones=None, rigid=True,
+               material='washi_natural', target_faces=900, align='socket', **kw):
+    """Register a file on disk as a PART, with a socket, a bone, a material and a scale range.
+
+    Use it for anything bought or generated that does not have to fold:
+
+        asset_part('kasa_bought', slot='hat', socket='head_top', bone='head',
+                   file='assets/models/kasa_hat.glb', height=0.22, material='washi_hat')
+
+    After this it is a part like any other: a recipe names it, the validator checks it, the rig
+    drives it, and `ctx.add()` makes it paper. No code in blender/ changes when a new one arrives,
+    which is the whole point of the factory.
+    """
+    @part(name, slot=slot, socket=socket, bone=bone, bones=bones, rigid=rigid,
+          material=material, file=file, height=height, target_faces=target_faces,
+          align=align, tags=('asset',), **kw)
+    def _built(ctx, P, rnd):
+        path = P['file']
+        if not os.path.isabs(path):
+            path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), path)
+        bm = asset_bmesh(path, target_faces=P['target_faces'], scale=P['height'],
+                         align=P['align'], socket=ctx.socket)
+        return ctx.add(name, bm, [ctx.mat(P.get('material', material), glow=ctx.lit(0.06)),
+                                  ctx.mat('washi_shade')], thickness=0.008)
+    return _built
+
+
 def tidy(bm):
     """Consistent normals: solidify needs every face of a sheet to agree which side is 'out'."""
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
