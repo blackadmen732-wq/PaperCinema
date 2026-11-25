@@ -26,7 +26,7 @@ import sys
 
 import bmesh
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 from mathutils.bvhtree import BVHTree
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -98,6 +98,11 @@ class Rig:
             self._joint(s + 'E', s + 'S', (0, -0.30, 0))
             self._joint(s + 'T', s + 'E', (0, 0, 0))
             self._joint(s + 'H', s + 'T', (0, -0.29, 0))
+            # SLEEVE BONE. The tamoto is cloth, not part of the arm: it hangs from the forearm but
+            # keeps falling toward the ground when the arm lifts, instead of swinging over the head
+            # with it. It needs a joint of its own for that; _hang_sleeves() aims it every frame.
+            # Same place as engine/figure.js hangs its tamoto group (tamoto.position.y = -0.1).
+            self._joint(s + 'Sleeve', s + 'T', (0, -0.10, 0))
             self._joint(s + 'thigh', 'root', (sgn * 0.1, 0.92, 0))
             self._joint(s + 'shin', s + 'thigh', (0, -0.46, 0))
             self._joint(s + 'foot', s + 'shin', (0, -0.44, 0))
@@ -119,7 +124,10 @@ class Rig:
             eb = arm.edit_bones.new(b)
             eb.head = Vector(head)
             ch = [k for k in kids.get(b, []) if Vector(reg.REST[k]) != Vector(head)]
-            eb.tail = Vector(reg.REST[ch[0]]) if ch else Vector(head) + Vector((0, 0, 0.09))
+            if b in getattr(reg, 'TAIL', {}):
+                eb.tail = Vector(reg.TAIL[b])
+            else:
+                eb.tail = Vector(reg.REST[ch[0]]) if ch else Vector(head) + Vector((0, 0, 0.09))
             if (eb.tail - eb.head).length < 1e-4:
                 eb.tail = eb.head + Vector((0, 0, 0.09))
         for b, p in reg.PARENT.items():
@@ -193,8 +201,36 @@ class Rig:
             self.rot(s + 'shin', -(sh - th), 0, 0)
             self.rot(s + 'foot', sh + (p['rax'] if front else p['lax']), 0, 0)
         bpy.context.view_layer.update()
+        self._hang_sleeves(p)
+        bpy.context.view_layer.update()
         self.sync_bones()
         return p
+
+    def _hang_sleeves(self, p):
+        """Aim each sleeve bone at the ground, pushed outward as the arm rises.
+
+        This is the port of engine/figure.js hangCloth(). A sleeve skinned to the arm alone follows
+        the arm rigidly, so an overhead cut swings the tamoto over the head and the face disappears
+        into its own cloth. Real fabric does not do that: it keeps hanging down, and what the lifted
+        arm does is pull it OUT to the side, away from the head.
+
+        `raise` is how far the forearm points up, read off the forearm's own axis (down-the-limb is
+        the joint's local -Z here, because T() maps three.js (0,-1,0) to Blender (0,0,-1)): 0 with the
+        arm hanging, 1 with it overhead. The outward push scales with it, and the small blend back
+        toward the forearm - which is what tips the hem over the face - fades out as the arm lifts."""
+        sway = p.get('sway', 0.0)
+        rootq = self.J['root'].matrix_world.to_quaternion()
+        down = Vector((0.0, 0.0, -1.0))
+        for s, lat in (('r', -1.0), ('l', 1.0)):
+            e = self.J[s + 'Sleeve']
+            e.rotation_euler = (0.0, 0.0, 0.0)
+            bpy.context.view_layer.update()
+            pq = e.parent.matrix_world.to_quaternion()
+            up = (pq @ down).z                              # +1 forearm overhead, -1 hanging
+            rise = max(0.0, min(1.0, up))
+            d = rootq @ Vector((sway * 0.4 + 2.2 * rise * lat, 0.0, -1.0))
+            q = down.rotation_difference((pq.inverted() @ d).normalized())
+            e.rotation_euler = q.slerp(Quaternion(), 0.2 * (1.0 - rise)).to_euler('YZX')
 
 
 # =========================================================================== binding
@@ -217,7 +253,10 @@ def skin_object(ob, rig, bones, power=3.0, keep=3):
     for b in bones:
         a = Vector(reg.REST[b])
         ch = [k for k in child.get(b, []) if Vector(reg.REST[k]) != a]
-        segs[b] = (a, Vector(reg.REST[ch[0]]) if ch else a + Vector((0, 0, 0.09)))
+        if b in getattr(reg, 'TAIL', {}):              # a childless bone states its own tail
+            segs[b] = (a, Vector(reg.TAIL[b]))
+        else:
+            segs[b] = (a, Vector(reg.REST[ch[0]]) if ch else a + Vector((0, 0, 0.09)))
     groups = {b: ob.vertex_groups.new(name=b) for b in bones}
     M = ob.matrix_world
     for v in ob.data.vertices:
@@ -230,6 +269,32 @@ def skin_object(ob, rig, bones, power=3.0, keep=3):
     mod = ob.modifiers.new('skin', 'ARMATURE')
     mod.object = rig
     ob['pc_bind'] = 'skin:' + ','.join(bones)
+    return ob
+
+
+def skin_hang(ob, rig, sewn, hang):
+    """Weight a HANGING part between the body it is sewn to and its own cloth bone, by height.
+
+    Inverse distance cannot do this job. A kimono sleeve is sewn to the body at the shoulder and
+    hangs free below, so its top must stay with the shoulder and its bottom must obey gravity - but
+    the top of the bag sits right on the shoulder bone, so by distance the shoulder wins everywhere
+    and the whole bag swings over the head on an overhead cut. That is the bug this fixes.
+
+    `sewn` keeps the seam; `hang` is the sleeve bone that engine-side hangCloth() aims at the ground.
+    The blend is smoothstepped over the part's own height, so there is no crease where it changes."""
+    gs = {b: ob.vertex_groups.new(name=b) for b in (sewn, hang)}
+    M = ob.matrix_world
+    zs = [(M @ v.co).z for v in ob.data.vertices]
+    hi, lo = max(zs), min(zs)
+    span = max(hi - lo, 1e-4)
+    for v in ob.data.vertices:
+        t = min(1.0, max(0.0, (hi - (M @ v.co).z) / span))
+        t = t * t * (3.0 - 2.0 * t)                    # smoothstep: no crease at the seam
+        gs[hang].add([v.index], t, 'REPLACE')
+        gs[sewn].add([v.index], 1.0 - t, 'REPLACE')
+    mod = ob.modifiers.new('skin', 'ARMATURE')
+    mod.object = rig
+    ob['pc_bind'] = f'hang:{sewn},{hang}'
     return ob
 
 
@@ -331,14 +396,18 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
                 if scale != 1.0:                       # scale the MESH about the socket: object scale stays 1
                     ob.data.transform(Matrix.Translation(ctx.socket) @ Matrix.Scale(scale, 4)
                                       @ Matrix.Translation(-ctx.socket))
-                bind[ob.name] = ('skin' if not spec['rigid'] else 'rigid', bone, bones)
+                kind = 'rigid' if spec['rigid'] else (spec.get('skin') or 'skin')
+                bind[ob.name] = (kind, bone, bones)
                 built.append(ob)
             report.append(f'{key:<22}{sock:<14}{len(made)} objects  scale {scale:.2f}')
     bpy.context.view_layer.update()
     hidden = hide_internal_faces(built, {k: (v[0], v[1]) for k, v in bind.items()})
     for ob in built:
         kind, bone, bones = bind[ob.name]
-        if kind == 'skin' and len(ob.data.vertices):
+        if kind == 'hang' and len(ob.data.vertices) and len(bones) >= 2:
+            skin_hang(ob, rig.rig, bones[0], bones[1])   # bones = [sewn, cloth]
+            ob.parent = rig.rig
+        elif kind in ('skin', 'hang') and len(ob.data.vertices):
             skin_object(ob, rig.rig, bones)
             ob.parent = rig.rig
         else:

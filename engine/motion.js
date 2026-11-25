@@ -23,7 +23,7 @@ import { loadVoice } from './voice-env.js';
 import * as combat from './combat.js';
 import { clamp, bladeSeg, closestSegSeg, RATE } from './combat.js';
 import { createFX, fxAt } from './fx.js';
-import { analyseGround, groundCues, makeDust, makeContactShadows, makeAfterimages } from './groundfx.js';
+import { analyseGround, groundCues, makeDust, makeGroundMarks, makeContactShadows, makeAfterimages } from './groundfx.js';
 import { installAudit } from './audit-hooks.js';
 
 const params = new URLSearchParams(location.search);
@@ -468,6 +468,9 @@ const RIB = combat.makeRibbons(scene, Object.values(cast), { ribbon: film.effect
 const ribbons = RIB.meshes;
 const SPARKS = combat.makeSparks(scene, camera, contacts, { light: film.effects?.sparkLight ?? 6 });
 const DUST = GROUND_ON ? makeDust(scene, G.events, film.effects?.ground ?? {}) : null;
+// What the fight leaves behind once the dust has gone: dishes where feet landed, streaks where
+// they skidded. The events were already there; nothing was listening for the mark.
+const MARKS = GROUND_ON ? makeGroundMarks(scene, G.events, film.effects?.ground ?? {}) : null;
 const SHADOWS = film.effects?.contactShadow !== false ? makeContactShadows(scene, VISIBLE, film.effects?.contactShadow ?? {}) : null;
 const GHOSTS = film.effects?.afterimage !== false ? makeAfterimages(scene, VISIBLE, film.effects?.afterimage ?? {}) : null;
 const FX = film.fxBase || film.fx ? createFX(renderer, scene, camera, { width: W, height: H, seed: 7, fps: FPS }) : null;
@@ -505,6 +508,7 @@ function stage(t) {
   SHADOWS?.update();
   GHOSTS?.update(tb, G.speedAt, R.rateAt(t));
   DUST?.update(s);
+  MARKS?.update(s);
   const fl = Math.max(SPARKS.update(s), SPARKS2.update(s));  // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
   fadeEl.style.opacity = clamp(Math.max(FADE.in > 0 ? 1 - t / FADE.in : 0, FADE.out > 0 ? (t - (DUR - FADE.out)) / FADE.out : 0), 0, 1);

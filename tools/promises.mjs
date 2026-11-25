@@ -43,33 +43,14 @@ function checkLimits() {
   return bad === 0;
 }
 
-function checkSleeveClearance() {
-  // A raised arm must not bury the head. The sleeve hangs from the forearm, so when the shoulder
-  // goes above horizontal the hem rises with it; this measures how far the arm is raised and
-  // reports the worst frame. The real fix is for the sleeve to shorten or fold past shoulder
-  // height — until then this stays OPEN and names the frame to look at.
-  const files = fs.readdirSync(`${ROOT}output`).filter((f) => f.endsWith('.timeline.json'));
-  if (!files.length) { console.log('  no timelines built yet — cannot check'); return false; }
-  const RAISED = -1.2;                       // shoulder pitch past which the sleeve covers the head
-  let worst = null, n = 0;
-  for (const f of files) {
-    const tl = JSON.parse(fs.readFileSync(`${ROOT}output/${f}`, 'utf8'));
-    for (const fr of tl.frames ?? []) {
-      for (const [aid, a] of Object.entries(fr.actors ?? {})) {
-        for (const ch of ['rsx', 'lsx']) {
-          const v = a.pose?.[ch];
-          if (typeof v === 'number' && v < RAISED) { n++; if (!worst || v < worst.v) worst = { f, frame: fr.f, aid, ch, v }; }
-        }
-      }
-    }
-  }
-  if (n) console.log(`  ${n} frame(s) raise an arm past ${RAISED} rad — worst ${worst.ch}=${worst.v.toFixed(2)} at ${worst.f} frame ${worst.frame}, ${worst.aid}`);
-  else console.log('  no arm raised far enough to bury the head');
-  return n === 0;
-}
+// The sleeve check moved out of here on purpose. It used to read the shoulder angle and ASSUME a
+// raised arm means a buried head — a guess about geometry, and a guess cannot tell you whether a fix
+// worked. It is now two measurements of where the cloth actually ends up, one per character system:
+//   tools/sleeve_check.mjs   the preview engine (engine/figure.js, run headless in node)
+//   blender/check_sleeve.py  the character the films render (the deformed mesh, under Blender)
+// A fix proved on one is not proved on the other, so library/promises.json runs both.
 
 if (args.includes('--check-limits')) process.exit(checkLimits() ? 0 : 1);
-if (args.includes('--check-sleeve-clearance')) process.exit(checkSleeveClearance() ? 0 : 1);
 
 // ---------------------------------------------------------------- the ledger
 const L = JSON.parse(fs.readFileSync(`${ROOT}library/promises.json`, 'utf8'));

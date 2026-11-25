@@ -64,6 +64,18 @@ deform armature follows them, so **rigid parts parent to a bone and flexible par
 A bone's rest orientation has nothing to do with its empty's, so the bones are driven by the empty's *delta*
 from rest (`Rig.sync_bones`), never by a Copy Transforms constraint — a constraint shears every skinned part.
 
+**Cloth bones.** Two of the 25 bones are not body: `lSleeve` / `rSleeve` hang off the forearm and are aimed at
+the ground every frame by `Rig._hang_sleeves()`, the port of `engine/figure.js` `hangCloth()`. Without them a
+wide sleeve follows the arm rigidly and an overhead cut buries the face in its own tamoto. A bone with no
+child states its own tail in `part_registry.TAIL`, otherwise it gets a stub tail pointing up and the skin
+weights — inverse distance to the bone's rest segment — hand its cloth to the arm instead.
+
+A part can also ask for `skin='hang'` (see `tamoto_wide`), which weights it between the body it is **sewn** to
+and its own cloth bone by height, smoothstepped. Inverse distance cannot express that: a kimono sleeve's top
+sits right on the shoulder bone, so by distance the shoulder wins everywhere and the whole bag swings over the
+head. Use it only for cloth that is meant to leave the limb — `tamoto_narrow`, the tight fighting sleeve,
+measured *worse* when hung and stays skinned to the arm. `blender/check_sleeve.py` measures the result.
+
 ## Slots and layer order
 
 A higher layer sits over a lower one. `part_registry.py --slots` prints this table live.

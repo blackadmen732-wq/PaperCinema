@@ -52,15 +52,21 @@ REST = {
     'upper': (0.00, 0.0, 1.18), 'neck': (0.00, 0.0, 1.47), 'head': (0.00, 0.0, 1.53),
     'hakama': (0.00, 0.0, 0.92),
     'lC': (0.07, 0.0, 1.39), 'lS': (0.23, 0.0, 1.39), 'lE': (0.23, 0.0, 1.09),
-    'lT': (0.23, 0.0, 1.09), 'lH': (0.23, 0.0, 0.80),
+    'lT': (0.23, 0.0, 1.09), 'lH': (0.23, 0.0, 0.80), 'lSleeve': (0.23, 0.0, 0.99),
     'rC': (-0.07, 0.0, 1.39), 'rS': (-0.23, 0.0, 1.39), 'rE': (-0.23, 0.0, 1.09),
-    'rT': (-0.23, 0.0, 1.09), 'rH': (-0.23, 0.0, 0.80),
+    'rT': (-0.23, 0.0, 1.09), 'rH': (-0.23, 0.0, 0.80), 'rSleeve': (-0.23, 0.0, 0.99),
     'lthigh': (0.10, 0.0, 0.92), 'lshin': (0.10, 0.0, 0.46), 'lfoot': (0.10, 0.0, 0.02),
     'rthigh': (-0.10, 0.0, 0.92), 'rshin': (-0.10, 0.0, 0.46), 'rfoot': (-0.10, 0.0, 0.02),
 }
+# Bones whose tail cannot be guessed from a child joint, because they have no child. Without this a
+# childless bone gets a stub tail pointing straight up (see modular_builder._build_armature), which
+# both leaves its rest orientation wrong and, since skin weights are inverse distance to the bone's
+# rest SEGMENT, hands its own cloth to the arm bones instead. The sleeve bone runs DOWN the tamoto.
+TAIL = {'lSleeve': (0.23, 0.0, 0.74), 'rSleeve': (-0.23, 0.0, 0.74)}
+
 PARENT = {'hips': 'root', 'torso': 'hips', 'upper': 'torso', 'neck': 'upper', 'head': 'neck', 'hakama': 'hips',
-          'lC': 'upper', 'lS': 'lC', 'lE': 'lS', 'lT': 'lE', 'lH': 'lT',
-          'rC': 'upper', 'rS': 'rC', 'rE': 'rS', 'rT': 'rE', 'rH': 'rT',
+          'lC': 'upper', 'lS': 'lC', 'lE': 'lS', 'lT': 'lE', 'lH': 'lT', 'lSleeve': 'lT',
+          'rC': 'upper', 'rS': 'rC', 'rE': 'rS', 'rT': 'rE', 'rH': 'rT', 'rSleeve': 'rT',
           'lthigh': 'root', 'lshin': 'lthigh', 'lfoot': 'lshin',
           'rthigh': 'root', 'rshin': 'rthigh', 'rfoot': 'rshin'}
 
@@ -120,7 +126,8 @@ PARTS = {}
 
 
 def part(name, *, slot, socket, bone=None, bones=None, rigid=True, size=(0.9, 1.1), layer=None,
-         material='washi_natural', rim='washi_shade', proportions=('standard',), tags=(), **defaults):
+         material='washi_natural', rim='washi_shade', proportions=('standard',), tags=(), skin=None,
+         **defaults):
     """Register a part. `defaults` doubles as its documented parameter list."""
     def deco(fn):
         if slot not in SLOTS:
@@ -131,6 +138,7 @@ def part(name, *, slot, socket, bone=None, bones=None, rigid=True, size=(0.9, 1.
                 raise KeyError(f'{name}: unknown socket {s!r}')
         PARTS[name] = dict(
             name=name, fn=fn, slot=slot, socket=socks, bone=bone, bones=list(bones or []), rigid=rigid,
+            skin=skin,
             size=tuple(size), layer=SLOTS[slot][1] if layer is None else layer, material=material, rim=rim,
             proportions=tuple(proportions), tags=tuple(tags), defaults=defaults,
             doc=(fn.__doc__ or '').strip().split('\n')[0])
@@ -838,7 +846,7 @@ def kote_narrow(ctx, P, rnd):
 
 
 @part('tamoto_wide', slot='sleeve_hanging', socket=['elbow.L', 'elbow.R'], rigid=False,
-      bones=['lE', 'lS', 'lT'], size=(0.85, 1.2), material='washi_bleached',
+      bones=['lC', 'lSleeve'], skin='hang', size=(0.85, 1.2), material='washi_bleached',
       spread=1.0, reach=1.0, cuff=0.07, tags=('reference',), proportions=('slim', 'standard', 'broad'))
 def tamoto_wide(ctx, P, rnd):
     """The wide hanging sleeve as a SEPARATE folded bag: it flares out and down from under the upper sleeve to a big slanted OPEN mouth with a turned-back cuff and a low folded corner behind."""

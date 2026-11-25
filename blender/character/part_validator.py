@@ -49,6 +49,13 @@ NEIGHBOURS = [('neck', 'face'), ('face', 'hat'), ('torso', 'neck'), ('torso', 'c
               ('forearm', 'sleeve_hanging'), ('torso', 'obi'), ('obi', 'thigh'),
               ('thigh', 'shin'), ('shin', 'foot'), ('torso', 'armor')]
 GAP_LIMIT = 0.045        # metres: more than this between two neighbouring sheets and you can see inside
+# Pairs that are allowed to open further, and why. A HANGING sleeve is cloth that is meant to leave
+# the limb: raise an arm in a kimono and the forearm comes out of the tamoto, which is the whole
+# reason the sleeve does not end up over the face. Nothing is exposed when it does - the forearm
+# under it has its own part (the sleeve_upper-forearm join is checked separately, at the tight
+# limit), so the gap shows sleeve, not skin. It is still bounded, so a sleeve that flies off the arm
+# entirely still fails.
+GAP_LIMITS = {('forearm', 'sleeve_hanging'): 0.09}
 
 
 def world_points(ob, depsgraph, tris=False):
@@ -234,7 +241,8 @@ def validate(recipe_path, poses=None, only=None):
             if a not in pts or b not in pts or not pts[a] or not pts[b]:
                 continue
             d = min_distance(pts[b], surf[a])
-            check('joint_gap', f'{a}-{b} @ {pose}', d <= GAP_LIMIT, f'{d * 100:.1f} cm gap (limit {GAP_LIMIT * 100:.0f})')
+            lim = GAP_LIMITS.get((a, b), GAP_LIMIT)
+            check('joint_gap', f'{a}-{b} @ {pose}', d <= lim, f'{d * 100:.1f} cm gap (limit {lim * 100:.0f})')
         tris = [t for ob in ch['objects'] if ob.type == 'MESH' and not ob.get('pc_internal')
                 for t in world_points(ob, dg, tris=True)]
         for axis in ('front', 'side'):

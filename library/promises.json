@@ -29,9 +29,10 @@
    "id": "sleeves-clear-the-head",
    "said": "2026-11-25",
    "promise": "A raised arm must not bury the character's head in its own sleeve.",
-   "why": "At an overhead sword raise the tamoto swallows the head and hat entirely. The pose is correct (rsx -1.63 is a real jodan); the sleeve is simply too large to lift. Needs the sleeve to shorten or fold as the arm passes shoulder height.",
-   "check": "node tools/promises.mjs --check-sleeve-clearance",
-   "status": "OPEN"
+   "why": "At an overhead sword raise the tamoto swallowed the head and hat entirely. The pose was correct (rsx -1.63 is a real jodan); the sleeve followed the arm rigidly because tamoto_wide was skinned to lE/lS/lT and had no bone of its own.",
+   "check": "node tools/sleeve_check.mjs && /opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/check_sleeve.py -- --recipe library/character-recipes/ronin-reference.json && /opt/blender-dl/blender-4.5.16-linux-x64/blender -b -P blender/check_sleeve.py -- --recipe library/character-recipes/armoured-warrior.json",
+   "status": "kept",
+   "evidence": "Two fixes, one per character system, each measured rather than argued. ENGINE (engine/figure.js hangCloth): the sleeve is pushed away from the body's centre line as the arm rises, it gathers up the arm, and the blend back toward the forearm fades out; worst hem clearance in the test poses went 0.4 cm -> 8.5 cm. BLENDER: a real sleeve bone per side (lSleeve/rSleeve, parented to the forearm), aimed at the ground every frame by Rig._hang_sleeves(), plus a new 'hang' skinning mode - a kimono sleeve is SEWN to the body at the shoulder and hangs free below, which inverse-distance weighting cannot express, so the top stays with the clavicle and the bottom obeys the sleeve bone. Worst face clearance over five raised-arm poses went -2.2 cm (cloth inside the face) to +2.9 cm clear; jodan-raise went -2.2 -> +13.4 cm. Bones 23 -> 25; reg.TAIL lets a childless bone state its own tail so the skin weights follow the cloth and not the arm. Only the WIDE sleeve hangs: the measurement showed tamoto_narrow, the tight fighting sleeve, already cleared the face by 0.7 cm and got WORSE when hung, so it stays skinned to the arm, which is what a cut-down sleeve is for. Both recipes validate 433/433 and 862/862."
   },
   {
    "id": "kimono-back-not-a-slab",
@@ -47,8 +48,9 @@
    "said": "2026-11-25",
    "promise": "Landings, skids and dashes mark the ground.",
    "why": "analyseGround already emits land/skid/dash/wake with position, direction and speed. Only dust listens. Cheapest large win in the repo.",
-   "check": "grep -rqE 'groundMark|footprint|scuff' engine/groundfx.js",
-   "status": "OPEN"
+   "check": "grep -q 'makeGroundMarks' engine/groundfx.js && grep -q 'MARKS?.update' engine/motion.js",
+   "status": "kept",
+   "evidence": "makeGroundMarks() listens for land and skid; dash-test makes 2 marks (1 land, 1 skid). Dashes already had a wake line."
   }
  ]
 }

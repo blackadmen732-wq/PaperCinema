@@ -209,3 +209,72 @@ export function makeAfterimages(scene, fighters, o = {}) {
   }
   return { group, update };
 }
+
+/** GROUND MARKS: what a landing or a skid leaves BEHIND, after the dust has blown away.
+ *
+ *  The dust already reacts, but dust vanishes in half a second and the floor it rose from is
+ *  untouched — so a fight leaves no trace of itself and the ground reads as a photograph the
+ *  fighters happen to stand on. analyseGround already knows every landing and skid with its
+ *  position, direction and speed; nothing was listening for the mark.
+ *
+ *  Pure function of time, like everything else here: each mark knows the moment it was made and
+ *  how long it takes to fade, so asking for t = 3.2 s gives the same floor whether you arrived
+ *  frame by frame or jumped straight to it. That is what lets frames render out of order.
+ *
+ *    const marks = makeGroundMarks(scene, G.events, { seed });
+ *    marks.update(worldTime);
+ */
+export function makeGroundMarks(scene, events, o = {}) {
+  const group = new THREE.Group();
+  group.userData.noAudit = true;
+  scene.add(group);
+  const r = rng(o.seed ?? 77);
+  const fade = o.fade ?? 6.0;                       // seconds for a mark to disappear
+  const col = new THREE.Color(o.color ?? '#b9a07a');
+  const marks = [];
+
+  const add = (geo, x, z, rotY, t0, peak) => {
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color: col, transparent: true, opacity: 0, depthWrite: false,
+    }));
+    m.rotation.x = -Math.PI / 2;
+    m.rotation.z = rotY;
+    // 1.2 cm above the floor: enough to beat z-fighting on a low-poly dune, low enough to read
+    // as pressed INTO the sand rather than floating on it.
+    m.position.set(x, 0.012, z);
+    m.visible = false;
+    group.add(m);
+    marks.push({ m, t0, peak });
+  };
+
+  for (const e of events) {
+    if (e.kind === 'land') {
+      // A landing presses a round dish. Height decides how hard, so a drop from a wall marks
+      // deeper than a step down.
+      const rad = 0.26 + Math.min(1.2, e.height ?? 0.2) * 0.45;
+      add(new THREE.CircleGeometry(rad, 14), e.pos[0], e.pos[1], r() * 6.28, e.t, 0.42);
+    } else if (e.kind === 'skid') {
+      // A skid drags a streak the way the foot was already travelling: direction comes from the
+      // event, length from the speed it was carrying when it stopped.
+      const len = 0.5 + Math.min(3.0, e.peak ?? e.speed ?? 2) * 0.28;
+      const g = new THREE.PlaneGeometry(0.17, len);
+      const ang = Math.atan2(e.dir[0], e.dir[1]);
+      add(g, e.pos[0] + e.dir[0] * len * 0.35, e.pos[1] + e.dir[1] * len * 0.35, -ang, e.t, 0.5);
+    }
+  }
+
+  return {
+    group,
+    count: marks.length,
+    update(t) {
+      for (const k of marks) {
+        const age = t - k.t0;
+        if (age < 0 || age > fade) { k.m.visible = false; continue; }
+        k.m.visible = true;
+        // Pressed in fast (0.08 s), then fading as the sand settles back.
+        const inK = Math.min(1, age / 0.08);
+        k.m.material.opacity = k.peak * inK * (1 - age / fade) ** 1.6;
+      }
+    },
+  };
+}

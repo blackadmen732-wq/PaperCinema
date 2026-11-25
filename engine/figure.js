@@ -399,20 +399,38 @@ export function applyPose(f, p, prev = null, dt = 0) {
  *
  *  `drag` arrives in the FIGURE's own space (x = its left, z = its forward), already scaled. */
 const _hq = new THREE.Quaternion(), _hd = new THREE.Vector3(), _hy = new THREE.Vector3(0, -1, 0);
+const _hrq = new THREE.Quaternion(), _hlat = new THREE.Vector3(), _hfwd = new THREE.Vector3(), _hid = new THREE.Quaternion();
 function hangCloth(f, sway = 0, drag = null, side = null) {
   f.root.updateMatrixWorld(true);
+  f.root.getWorldQuaternion(_hrq);
   for (let i = 0; i < f.sleeves.length; i++) {
     const g = f.sleeves[i];
     g.quaternion.identity();
     g.parent.getWorldQuaternion(_hq);
+    // GATHER AND CLEAR. A kimono sleeve does not hang over the face when the arm goes up: the cloth
+    // slides back along the forearm and gathers at the shoulder, and what is left falls OUTSIDE the
+    // arm, not across the head. `raise` is how far the forearm points up (0 = hanging, 1 = overhead),
+    // read off the forearm's own axis: the hand direction is the parent's local -y.
+    _hfwd.set(0, -1, 0).applyQuaternion(_hq);
+    const raise = clamp(_hfwd.y, 0, 1);
+    g.scale.y = 1 - 0.55 * raise;                    // the sleeve gathers up the arm as it rises
     const d = drag ? (side?.[i] ?? drag) : null;
     // Gravity is the -1 on y. Drag pushes the hem the other way from the motion, and the harder the
     // arm swings the further it goes; clamped so a fast cut can never throw the sleeve above level.
     const dx = d ? clamp(-d.x, -1.6, 1.6) : 0;
     const dz = d ? clamp(-d.z, -1.6, 1.6) : 0;
-    _hd.set(sway * 0.4 + dx, -1, dz).normalize().applyQuaternion(_hq.invert());
+    _hd.set(sway * 0.4 + dx, -1, dz);
+    // Push the hem away from the body's own centre line, by the figure's lateral axis, so a raised
+    // sleeve falls beside the head instead of over it. sleeves[0] is the right arm (-x), [1] the left.
+    if (raise > 0) {
+      _hlat.set(i === 0 ? -1 : 1, 0, 0).applyQuaternion(_hrq);
+      _hd.addScaledVector(_hlat, 2.2 * raise);
+    }
+    _hd.normalize().applyQuaternion(_hq.invert());
     g.quaternion.setFromUnitVectors(_hy, _hd);
-    g.quaternion.slerp(new THREE.Quaternion(), 0.2);
+    // The 0.2 blend back toward the forearm keeps a hanging sleeve from looking pinned; with the arm
+    // up that blend is what tips the hem over the face, so it fades out as the arm rises.
+    g.quaternion.slerp(_hid.identity(), 0.2 * (1 - raise));
   }
 }
 
@@ -607,7 +625,7 @@ export function makeMotion(keys, opts = {}) {
           v += settles[k] * settleOffset(vs[k] - vs[k - 1], tc - ts[k], SETTLE[c]);
         }
       }
-      out[c] = v;
+      out[c] = clampCh(c, v);
     }
     return out;
   };
