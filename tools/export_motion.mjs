@@ -84,7 +84,19 @@ const data = await page.evaluate(({ SUB }) => {
         let w = 0;                                                    // two-hand grip weight (same soft window as the engine)
         for (const [a, b] of c.perf.twoHand ?? []) if (st.tb >= a - 0.15 && st.tb <= b + 0.15) w = Math.max(w, Math.min(1, (st.tb - (a - 0.15)) / 0.15, ((b + 0.15) - st.tb) / 0.15));
         F.cast[id].twoHand = r(Math.max(0, w));
-        F.cast[id].pose = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, r(v)]));
+        // Name the channel when a pose carries something that is not a number. `r` used to throw
+        // "v.toFixed is not a function" from inside the page, with no key and no frame, which says
+        // nothing about which channel or which motion put it there.
+        // A pose carries internal working data beside its channels - `_feet` holds where the foot
+        // lock pinned each foot, as two positions and two contact flags. Anything whose name starts
+        // with an underscore is that kind of scratch value and is not a channel, so it is left out
+        // rather than fed to a rounder that expects a number.
+        F.cast[id].pose = Object.fromEntries(Object.entries(p).filter(([k]) => !k.startsWith('_')).map(([k, v]) => {
+          if (typeof v !== 'number' || !Number.isFinite(v)) {
+            throw new Error(`pose channel ${k} of ${id} at t=${t.toFixed(3)} is ${typeof v} ${JSON.stringify(v)}, not a finite number`);
+          }
+          return [k, r(v)];
+        }));
         if (c.fig.eyeMat) F.cast[id].eyes = r(c.fig.eyeMat.emissiveIntensity ?? 0);
       }
     }
