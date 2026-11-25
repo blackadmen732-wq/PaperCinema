@@ -571,17 +571,37 @@ def sleeve_ring(ts, S, sg, spread=1.0, off=0.0, valley=0.020):
 LEG_TOP, LEG_HEM = 0.968, 0.072
 
 
-def leg_outline(pd, pleats=3):
+def leg_outline(pd, pleats=3, back_pleats=2):
     """Cross-section of one hakama leg, u 0→1 inner→outer, v -1→1 front→back. The front is KNIFE PLEATS:
     each panel starts proud at a sharp ridge and slopes back to a valley, then steps forward to the next
-    ridge — stacked sheets with a real step, ridges pointing at the centre split like a real hakama."""
+    ridge — stacked sheets with a real step, ridges pointing at the centre split like a real hakama.
+
+    The BACK is pleated too, which it was not before. A real hakama carries five pleats in front and two
+    behind; this had three in front and a plain four-point sweep behind. The cost was not subtle: a
+    turnaround showed the legs as two smooth tubes from the back, and the side view lost its folds
+    entirely, because at 90 degrees you are looking at the unpleated flank of a front-only pleat. The
+    camera that is on screen longest in this project is `orbit`, which circles the character, so those
+    were the two angles it looked at most (docs/PHASE1-VERDICT.md).
+    """
     n = int(pleats)
     xs = [k / n for k in range(n + 1)]
     pts = []
     for k in range(n):
         pts.append((xs[k] - (0.03 if k else 0.0), -0.90 + 0.10 * xs[k] - pd))      # ridge
         pts.append((xs[k + 1], -0.90 + 0.10 * xs[k + 1]))                           # valley
-    pts += [(1.06, 0.0), (1.0, 0.74), (0.55, 0.98 + pd * 0.4), (0.0, 0.80)]
+    pts.append((1.06, 0.0))                                                         # the outer flank
+
+    # Back pleats, built the same way round: step u from the outer flank back to the centre seam, and
+    # ride the same envelope the four plain points used to describe (1.0→0.74, 0.55→0.98, 0.0→0.80),
+    # lifting each ridge proud of it by the same pleat depth the front uses so both halves read alike.
+    b = max(1, int(back_pleats))
+    env = lambda u: (0.74 + (0.98 - 0.74) * (1.0 - u) / 0.45 if u >= 0.55
+                     else 0.98 - (0.98 - 0.80) * (0.55 - u) / 0.55)
+    for k in range(b):
+        u0 = 1.0 - k / b
+        u1 = 1.0 - (k + 1) / b
+        pts.append((u0, env(u0) + pd * 0.55))                                       # ridge, standing proud
+        pts.append((u1 + (0.03 if k < b - 1 else 0.0), env(u1)))                     # valley, stepped in
     return pts
 
 
