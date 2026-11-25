@@ -171,7 +171,19 @@ else
   mkdir -p "$FR"
   [ "$FRESH" = 0 ] || rm -f "$FR"/f*.png
   CORES=$(nproc)
+  # MEMORY, not cores, caps the worker count when a set is loaded. Each Blender process holds the
+  # whole set: the bamboo forest is 1.2M faces, and four copies of it OOM-killed two workers on a
+  # 15 GB machine mid-render. Budget ~3.5 GB per worker with a set, ~1.5 GB without, and never ask
+  # for more workers than the memory allows. --workers still overrides, for a machine that knows
+  # better than this arithmetic.
+  MEMGB=$(awk '/MemTotal/ {printf "%d", $2/1048576}' /proc/meminfo 2>/dev/null || echo 8)
+  if [ -n "$SET" ]; then PERW=4; else PERW=2; fi
+  MEMW=$((MEMGB / PERW)); [ "$MEMW" -ge 1 ] || MEMW=1
   W=${WORKERS:-$((CORES > 4 ? 4 : CORES))}
+  if [ "$W" -gt "$MEMW" ]; then
+    echo "  ${MEMGB} GB RAM and ${PERW} GB per worker${SET:+ (a set is loaded in each one)}: $W workers -> $MEMW"
+    W=$MEMW
+  fi
   # The work left to do: every frame of the range that has no PNG yet (so a stopped render just carries on),
   # split into contiguous blocks of about the same size — one Blender process per block, one core each.
   # Line 1 of the plan is how many frames are missing; then one line per worker: the ranges it renders.
