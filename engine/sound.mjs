@@ -108,7 +108,20 @@ function earshot(cue) {
     const a = ['sfx', 'render', cue.earshot, '-o', file, '--dur', String(dur)];
     if (apex != null) a.push('--apex', String(apex));
     try { execFileSync('earshot', a, { stdio: 'pipe' }); }
-    catch (e) { console.log(`✗ earshot ${cue.earshot}: ${String(e.stderr ?? e.message).slice(0, 160)}`); return null; }
+    catch (e) {
+      // A MISSING TOOL IS NOT A MISSING SOUND. This used to log a line and return null, so a film
+      // rendered silent in that cue and nothing failed - and `earshot` was installed by hand in one
+      // container and pinned nowhere, so that was one fresh machine away from happening. It is now
+      // in vendor/MANIFEST.json; say how to get it rather than quietly dropping the sound.
+      const msg = String(e.stderr ?? e.message);
+      if (/ENOENT|not found/i.test(msg)) {
+        console.log(`✗ earshot is not installed — every automatic whoosh and clash will be SILENT.\n`
+          + `  node tools/vendor.mjs earshot && pip install ./vendor/earshot`);
+      } else {
+        console.log(`✗ earshot ${cue.earshot}: ${msg.slice(0, 160)}`);
+      }
+      return null;
+    }
   }
   credits[`earshot:${cue.earshot}`] = { title: cue.earshot, creator: 'Earshot sound bank (Leonxlnx/earshot)', license: 'MIT', source: 'https://github.com/Leonxlnx/earshot' };
   console.log(`✓ ${cue.id.padEnd(13)} earshot ${cue.earshot}`);

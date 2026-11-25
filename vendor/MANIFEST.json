@@ -1,7 +1,7 @@
 {
  "_about": "Outside tools this project uses, pinned to an exact commit. `node tools/vendor.mjs` clones every one of them into vendor/<id>/ at the commit named here, so the same bytes come back on any machine, for any agent. The trees themselves are NOT committed: hyperframes alone is 344 MB of docs and test fixtures, and a repository nobody can clone is not a tool anybody can use. The commit is the contract; the clone is a cache.",
  "_rules": "Only licences that are safe to ship commercial work with (AGENTS.md rule 6): MIT, Apache-2.0, BSD, CC0, CC-BY. A tool that needs a paid seat for a company is not vendored here, and `skill` says what to use instead.",
- "_verify": "node tools/vendor.mjs --check  — every tool present, at the right commit, with the licence this file claims.",
+ "_verify": "node tools/vendor.mjs --check  \u2014 every tool present, at the right commit, with the licence this file claims.",
  "tools": [
   {
    "id": "agent-reach",
@@ -60,6 +60,18 @@
    "what": "HTML, CSS and seekable animation rendered to a deterministic MP4. Same input, same frames, every time.",
    "why_here": "Titles, credits, lower thirds and end cards - typography that is painful in three.js and easy in CSS. Deterministic, so it obeys the same rule as the rest of the pipeline.",
    "skill": ".claude/skills/tool-hyperframes/SKILL.md"
+  },
+  {
+   "id": "earshot",
+   "name": "Earshot",
+   "url": "https://github.com/Leonxlnx/earshot.git",
+   "commit": "7a7f7c5c70d4a763a1eca4b3666af7c77e313f97",
+   "licence": "MIT",
+   "size": "small; a Python CLI",
+   "install": "pip install ./vendor/earshot   (provides the `earshot` command)",
+   "what": "Sound effects computed from a request in words - swishes, clashes, foley, ambience - rendered by id at request time. No audio files shipped and no network call.",
+   "why_here": "ALREADY IN USE and not pinned until now. engine/sound.mjs shells out to `earshot sfx render <id>` for every automatic whoosh and clash; assets/sfx/credits.json carries 12 of its sounds. It was installed in one container by hand, and when it is missing the sound step logs a tick-less line and returns null - the film renders SILENT in that cue and nothing fails. That is the worst kind of dependency.",
+   "skill": ".claude/skills/paper-cinema-film/SKILL.md"
   }
  ],
  "rejected": [
