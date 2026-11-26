@@ -1,0 +1,28 @@
+{
+  "label": "Crimson-dyed washi (beni)",
+  "paper_type": "washi-kozo",
+  "color": [
+    0.332,
+    0.023,
+    0.019
+  ],
+  "translucent_color": [
+    0.95,
+    0.16,
+    0.07
+  ],
+  "fibre_density": 1.0,
+  "fibre_direction": "lengthwise",
+  "fibre_strength": 0.15,
+  "roughness": 0.8,
+  "sheen": 0.28,
+  "thickness_mm": 0.5,
+  "fold_darkening": 0.34,
+  "edge_wear": 0.2,
+  "translucency": 0.22,
+  "inner_light": 0.7,
+  "facet_variation": 0.07,
+  "shimi": "amber-soak",
+  "note": "Kojiro's crimson haori (research/ganryujima.md: 'our choice', after the owner's kimono reference). Red is the one saturated colour in a frame (docs/LOOK-TARGET.md); the lantern shows through it as a deep red glow. Colour = library/characters/kojiro.json haori #9c2a25 (linear).",
+  "id": "washi_crimson"
+}

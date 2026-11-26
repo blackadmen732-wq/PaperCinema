@@ -86,7 +86,10 @@ sc.render.fps = FPS
 # ---------------------------------------------------------------- characters
 # One recipe per actor. A film names a character (kojiro, musashi); map it to a recipe, falling
 # back to the reference ronin so a new name never stops a render.
-RECIPES = {'kojiro': 'ronin-reference', 'musashi': 'armoured-warrior'}
+# kojiro / musashi have their own recipes since Nov 26 (the story bible's colours: crimson haori and dark red
+# hakama; slate indigo, grey-brown hakama, white headband). Before that both were stand-ins: Kojiro wore the
+# ronin's straw hat and Musashi the armoured warrior's plates, which neither had at Ganryujima.
+RECIPES = {'kojiro': 'kojiro', 'musashi': 'musashi', 'ronin': 'ronin-reference', 'warrior': 'armoured-warrior'}
 rigs = {}
 char_meshes = []          # every built character mesh, for the look block (ink outline) further down
 for a in TL['actors']:

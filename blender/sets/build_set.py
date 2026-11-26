@@ -12,6 +12,7 @@ Options:
   --cams A,B             camera anchors to render (default: the set's "preview_cams", else its first camera)
   --with-character LIST  role:pose[:demon][:trellis[=model]] separated by commas; role = mark name without MARK_ (hero, foe, ...);
                          :trellis = the rigged TRELLIS character (hero: ronin_base, others: samurai_front) instead of the box origami
+                         :recipe=<id> = THE FILM CHARACTER (library/character-recipes/<id>.json, modular_builder), e.g. foe:hasso:recipe=kojiro
   --res WxH (540x960)    --samples N (set's render.samples or 32)    --quick (270x480, 12 samples)
   --seed N               override the set seed                       --exposure EV  override the grade
   --frame N              frame to render (particles and rain move)   --no-fog     skip fog pieces (fast look check)
@@ -474,7 +475,18 @@ def add_characters(scene, coll, specs, marks, fighter):
         ch = bpy.data.collections.new('CHAR_' + role)
         coll.children.link(ch)
         tre = next((x for x in parts[2:] if x.startswith('trellis')), None)
-        if tre:
+        rec = next((x for x in parts[2:] if x.startswith('recipe=')), None)
+        if rec:
+            # THE FILM CHARACTER: the modular paper character from a recipe (library/character-recipes/), in a
+            # library/poses.json pose - exactly what blender/film_modular.py renders, so a set preview shows what a
+            # film will show. role:pose:recipe=<id>, e.g. foe:hasso:recipe=kojiro. The origami stand-ins below stay
+            # the default for set work that predates the recipes.
+            sys.path.insert(0, os.path.join(REPO, 'blender', 'character'))
+            import modular_builder as MB
+            rp = os.path.join(REPO, 'library', 'character-recipes', rec.split('=', 1)[1] + '.json')
+            res = MB.build(MB.load_recipe(rp), pose=pose, location=tuple(mk.location), yaw=yaw, collection=ch,
+                           name='CHAR_' + role)
+        elif tre:
             # the owner's TRELLIS character, rigged (blender/character/rig_trellis.py, docs/CHARACTER-BLENDER.md):
             # role:pose:trellis  (hero = ronin_base, any other role = samurai_front)  or  role:pose:trellis=<model>
             import rig_trellis as rtr

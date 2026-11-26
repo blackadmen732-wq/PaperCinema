@@ -1929,8 +1929,27 @@ def _bw(ctx, P):
     return bw
 
 
+def _kit_pines(ctx, bw):
+    """The beach's pines as kit `pine` pieces - a leaning, kinked trunk with crooked BRANCHES ending in flat cloud
+    pads of needles - on the spots build_world.build_pines uses. That one stacks cones on a five-sided stick, so
+    every tree read as a plastic Christmas tree with no branch at all (Mark, Nov 26: "the tree, the branch").
+    Same spots and the same seeded lean toward the sea, so cameras and marks keep their sight lines."""
+    r = bw.rng('pines')
+    spots = [(-22, 11), (-15, 15), (-8, 13.5), (-2, 16), (5, 12.5), (11, 16), (17, 13), (24, 10), (-27, 6)]
+    keep = ctx.root, ctx.info
+    for idx, (px, py) in enumerate(spots):
+        px += r.uniform(-1.5, 1.5)
+        py += r.uniform(-1, 1)
+        h = r.uniform(6.5, 11.0)
+        build_piece(ctx, {'kit': 'pine', 'name': f'PINE_{idx}', 'seed': idx,
+                          'pos': (px, py, bw.island_height(px, py) - 0.3),
+                          'params': {'height': h, 'spread': h * 0.55, 'lean': r.uniform(10, 24),
+                                     'lean_dir': -90 + r.uniform(-25, 25), 'pads': r.randint(5, 8)}})
+    ctx.root, ctx.info = keep
+
+
 @piece('ganryujima', seed=1, sea=True, island=True, rocks=True, pines=True, mountains=True, clouds=True, paper_sun=True,
-       realistic=True)
+       realistic=True, foam=0.05)
 def ganryujima(ctx, P, rnd):
     """The Ganryujima island world (blender/world/build_world.py) as one kit piece: Ocean-modifier paper sea,
     faceted island with the duel beach on -Y, rocks, kuromatsu pines, cut-paper mountain rings, paper clouds and
@@ -1951,10 +1970,15 @@ def ganryujima(ctx, P, rnd):
         ob.visible_diffuse = False
     for part, fn in (('sea', bw.build_sea), ('island', bw.build_island), ('rocks', bw.build_rocks), ('pines', bw.build_pines),
                      ('mountains', bw.build_mountains), ('clouds', bw.build_clouds)):
-        if P[part]:
+        if part == 'pines' and P['pines'] == 'kit':
+            _kit_pines(ctx, bw)
+        elif P[part]:
             fn()
     if P['realistic']:
-        calm = pm.sea_material('LO_SeaPaperCalm', haze=(None, 1400.0, 1.0), foam_cells=0.05, foam_gain=2.5, crest_gain=1.5)
+        # `foam` = the share of sea cells allowed a white cap. 0.05 scattered torn white patches over open water that
+        # read as floating paper rubbish in every low shot; the shoreline lace (build_island) is separate and stays.
+        calm = pm.sea_material('LO_SeaPaperCalm', haze=(None, 1400.0, 1.0), foam_cells=float(P['foam']), foam_gain=2.5,
+                               crest_gain=1.5)
         swap = {'LO_PaperSand': ctx.mat('sand'), 'LO_PaperRock': ctx.mat('stone_mossy'), 'LO_PaperBark': ctx.mat('bark'),
                 'LO_SeaPaper': calm}
         for ob in set(bpy.data.objects) - before:

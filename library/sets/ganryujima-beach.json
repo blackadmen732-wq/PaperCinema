@@ -63,7 +63,9 @@
       "name": "island",
       "params": {
         "seed": 1,
-        "realistic": true
+        "realistic": true,
+        "pines": "kit",
+        "foam": 0.0
       }
     }
   ],

@@ -282,10 +282,21 @@ def build_island():
         if y < ISLAND_C.y - 4:   # keep the duel beach clear
             continue
         s = rg.uniform(0.25, 0.6)
-        bmesh.ops.create_cone(bm, cap_ends=False, segments=rg.choice((3, 4, 5)), radius1=s, radius2=0.0,
-                              depth=s * rg.uniform(1.0, 2.2),
-                              matrix=Matrix.Translation((x, y, island_height(x, y) + s * 0.5)) @
-                              Matrix.Rotation(rg.uniform(-0.3, 0.3), 4, 'X'))
+        # A tuft of thin folded blades, not a hollow cone: 140 cones read as little dark pyramids
+        # all over the sand (Mark, Nov 26: "the tree, the branch, the environment"). Each blade is
+        # a narrow paper strip with a crease, leaning out from the root and drooping at the tip.
+        base = Vector((x, y, island_height(x, y) - 0.02))
+        for b in range(rg.randint(5, 8)):
+            a = rg.uniform(0, 2 * math.pi)
+            out = Vector((math.cos(a), math.sin(a), 0))
+            side = Vector((-out.y, out.x, 0)) * s * rg.uniform(0.035, 0.06)
+            h = s * rg.uniform(1.1, 2.3)
+            mid = base + out * h * rg.uniform(0.12, 0.25) + Vector((0, 0, h * 0.62))
+            tip = base + out * h * rg.uniform(0.35, 0.7) + Vector((0, 0, h * rg.uniform(0.75, 1.0)))
+            v = [bm.verts.new(p) for p in (base - side, base + side, mid + side * 0.6 + Vector((0, 0, 0.01)),
+                                           tip, mid - side * 0.6)]
+            bm.faces.new((v[0], v[1], v[2], v[4]))
+            bm.faces.new((v[4], v[2], v[3]))
     obj_from_bm('ISLAND_grass', bm, gm, 'ISLAND', 12)
 
     # shoreline foam: two ragged cut-paper lace strips that follow the waterline

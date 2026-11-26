@@ -1,0 +1,58 @@
+{
+  "id": "kojiro",
+  "name": "Sasaki Kojiro (Ganryujima)",
+  "extends": "ronin-reference.json",
+  "note": "Kojiro as the story bible gives him (library/characters/kojiro.json): a cream kosode (the collar) under a crimson haori #9c2a25, a dark red hakama #5c2220, hair tied up, no kasa - he waits on the beach in the open. Same skeleton and parts as the ronin; only data changes. The crimson is ours, not history (research/ganryujima.md).",
+  "seed": 5,
+  "drop": [
+    "hat"
+  ],
+  "swap": [
+    {
+      "part": "topknot",
+      "scale": 1.0
+    },
+    {
+      "part": "kimono_layered",
+      "scale": 1.0,
+      "params": {
+        "material": "washi_crimson"
+      }
+    },
+    {
+      "part": "sleeve_upper_folded",
+      "scale": 1.0,
+      "params": {
+        "material": "washi_crimson"
+      }
+    },
+    {
+      "part": "tamoto_wide",
+      "scale": 1.0,
+      "params": {
+        "material": "washi_crimson"
+      }
+    },
+    {
+      "part": "hakama_pleated",
+      "scale": 1.0,
+      "params": {
+        "material": "card_oxblood"
+      }
+    },
+    {
+      "part": "hakama_shin_pleated",
+      "scale": 1.0,
+      "params": {
+        "material": "card_oxblood"
+      }
+    },
+    {
+      "part": "hakama_apron",
+      "scale": 1.0,
+      "params": {
+        "material": "card_oxblood"
+      }
+    }
+  ]
+}

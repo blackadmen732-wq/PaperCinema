@@ -1,0 +1,28 @@
+{
+  "label": "Oxblood card",
+  "paper_type": "card-stock",
+  "color": [
+    0.107,
+    0.016,
+    0.014
+  ],
+  "translucent_color": [
+    0.4,
+    0.06,
+    0.04
+  ],
+  "fibre_density": 0.85,
+  "fibre_direction": "vertical",
+  "fibre_strength": 0.1,
+  "roughness": 0.74,
+  "sheen": 0.28,
+  "thickness_mm": 0.9,
+  "fold_darkening": 0.4,
+  "edge_wear": 0.35,
+  "translucency": 0.06,
+  "inner_light": 0.3,
+  "facet_variation": 0.05,
+  "shimi": "ink-bleed",
+  "note": "Heavy dark-red card: Kojiro's hakama (library/characters/kojiro.json hakama #5c2220, linear). Worn pale at every folded edge.",
+  "id": "card_oxblood"
+}

@@ -361,9 +361,11 @@ def kasa_narrow(ctx, P, rnd):
 
 
 @part('hachigane', slot='hat', socket='head_top', bone='head', size=(0.9, 1.1), material='card_charcoal',
-      width=0.115, height=0.055, proportions=('standard', 'broad'), tags=('armour',))
+      width=0.115, height=0.055, spine=True, proportions=('standard', 'broad'), tags=('armour',))
 def hachigane(ctx, P, rnd):
-    """Folded iron-card brow band with a centre spine: the armoured head, no hat."""
+    """Folded iron-card brow band with a centre spine: the armoured head, no hat.
+    `material` colours the band and `spine: false` drops the iron plate, which makes the same part a plain
+    cloth headband (hachimaki) - Musashi's white band at Ganryujima (research/ganryujima.md) - from data."""
     S = ctx.socket
     z = S.z - 0.085
     pts, faces = [], []
@@ -374,11 +376,12 @@ def hachigane(ctx, P, rnd):
         pts += [(x, y, z), (x, y, z + P['height'] * (1.0 if i in (3, 4, 5) else 0.72))]
     for i in range(n - 1):
         faces.append((2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2))
-    band = ctx.add('hachigane', shell(pts, faces), [ctx.mat('card_charcoal'), ctx.mat('seam_shadow')],
+    band = ctx.add('hachigane', shell(pts, faces), [ctx.mat(P['material']), ctx.mat('seam_shadow')],
                    thickness=0.008)
-    ctx.add('hachigane_spine', box(0, -P['width'] * 0.90, z + P['height'] * 0.55, 0.018, 0.03, 0.075,
-                                   rot=(0.3, 0, 0)), [ctx.mat('card_charcoal'), ctx.mat('seam_shadow')],
-            thickness=0.006)
+    if P['spine']:
+        ctx.add('hachigane_spine', box(0, -P['width'] * 0.90, z + P['height'] * 0.55, 0.018, 0.03, 0.075,
+                                       rot=(0.3, 0, 0)), [ctx.mat(P['material']), ctx.mat('seam_shadow')],
+                thickness=0.006)
     return band
 
 
@@ -767,7 +770,11 @@ def kimono_layered(ctx, P, rnd):
     rings = [outline_ring(CORE_OUTLINE, z, hw, pw(z, CORE_HD)) for z, hw in wz]
     rings.append(outline_ring(CORE_OUTLINE, 1.452, 0.062, 0.060))
     skin_rings(bm, rings, cap_last=True)
-    body = ctx.add('kimono_body', tidy(bm), [ctx.mat('washi_shade', glow=ctx.lit(0.15)), ctx.mat('seam_shadow')],
+    # The core shows below the free lower edge of the back yoke. Pale shade under a pale robe is right; under a
+    # COLOURED robe it read as a white panel in the middle of the back, so a coloured robe colours its core
+    # too (`core` overrides either way).
+    core = P.get('core', 'washi_shade' if main == 'washi_natural' else main)
+    body = ctx.add('kimono_body', tidy(bm), [ctx.mat(core, glow=ctx.lit(0.15)), ctx.mat('seam_shadow')],
                    thickness=0.008)
     # the glowing core seen through the collar gap and the sleeve mouths
     ctx.add('inner_lantern', box(0, 0.0, 1.20, 0.09, 0.06, 0.34), [ctx.emit('core', 2.6)],
@@ -814,9 +821,19 @@ def kimono_layered(ctx, P, rnd):
                     ue + Vector((0.045, 0, 0)), ue + Vector((-0.004, 0, 0))]
             ctx.add('kimono_seam', panel([tuple(p) for p in slot]), [ctx.mat('seam_shadow')],
                     thickness=0.0015, rim_mat=False)
-        ctx.add(f'kimono_{tag}', tidy(bm),
-                [ctx.mat(main if over else 'washi_bleached'), ctx.mat('washi_shade')],
-                thickness=0.010)
+        mats = [ctx.mat(main if over else P.get('under', 'washi_bleached')), ctx.mat('washi_shade')]
+        if not over:
+            # The under sheet is the pale under-layer only at the FRONT (the V and below the overlap). Its back
+            # yoke is the other half of the same outer garment, so it takes the outer colour: coloured whole,
+            # every coloured costume read half colour, half white from behind (Kojiro and Musashi turnarounds,
+            # Nov 26). Slots 2-3 repeat the pair so the solidify rim offset (+1) still lands on washi_shade.
+            back = {ix[n] for n in ('Bn', 'Bs', 'Bc', 'Bc2', 'Bs2', 'LB')}
+            bm.verts.index_update()
+            for f in bm.faces:
+                if {v.index for v in f.verts} & back:
+                    f.material_index = 2
+            mats += [ctx.mat(main), ctx.mat('washi_shade')]
+        ctx.add(f'kimono_{tag}', tidy(bm), mats, thickness=0.010)
     return body
 
 

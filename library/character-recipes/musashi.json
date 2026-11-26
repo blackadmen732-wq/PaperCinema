@@ -1,0 +1,64 @@
+{
+  "id": "musashi",
+  "name": "Miyamoto Musashi (Ganryujima)",
+  "extends": "ronin-reference.json",
+  "note": "Musashi as the story bible gives him (library/characters/musashi.json): dark indigo kosode, brown hakama, a white headband, wild hair, no kasa. The headband is the hachigane part with its iron spine off (spine: false) in bleached washi. Data only.",
+  "seed": 7,
+  "glow": [
+    1.0,
+    0.5,
+    0.16
+  ],
+  "swap": [
+    {
+      "part": "hachigane",
+      "scale": 1.0,
+      "params": {
+        "material": "washi_bleached",
+        "spine": false
+      }
+    },
+    {
+      "part": "kimono_layered",
+      "scale": 1.0,
+      "params": {
+        "material": "card_indigo"
+      }
+    },
+    {
+      "part": "sleeve_upper_folded",
+      "scale": 1.0,
+      "params": {
+        "material": "card_indigo"
+      }
+    },
+    {
+      "part": "tamoto_wide",
+      "scale": 1.0,
+      "params": {
+        "material": "card_indigo"
+      }
+    },
+    {
+      "part": "hakama_pleated",
+      "scale": 1.0,
+      "params": {
+        "material": "card_umber"
+      }
+    },
+    {
+      "part": "hakama_shin_pleated",
+      "scale": 1.0,
+      "params": {
+        "material": "card_umber"
+      }
+    },
+    {
+      "part": "hakama_apron",
+      "scale": 1.0,
+      "params": {
+        "material": "card_umber"
+      }
+    }
+  ]
+}
