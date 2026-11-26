@@ -72,6 +72,50 @@
    "what": "Sound effects computed from a request in words - swishes, clashes, foley, ambience - rendered by id at request time. No audio files shipped and no network call.",
    "why_here": "ALREADY IN USE and not pinned until now. engine/sound.mjs shells out to `earshot sfx render <id>` for every automatic whoosh and clash; assets/sfx/credits.json carries 12 of its sounds. It was installed in one container by hand, and when it is missing the sound step logs a tick-less line and returns null - the film renders SILENT in that cue and nothing fails. That is the worst kind of dependency.",
    "skill": ".claude/skills/paper-cinema-film/SKILL.md"
+  },
+  {
+   "id": "reanimate",
+   "name": "reanimate",
+   "url": "https://github.com/NiazMorshed2007/reanimate.git",
+   "commit": "3f7a55a2986a84ca2173e86ee9127eefe31d046d",
+   "licence": "MIT",
+   "size": "71 MB",
+   "what": "Clone an animation from a video, gif, Lottie or live page into code, then RECORD the clone and compare it to the reference frame by frame until timing, easing, sequence and layout match (motion-faithful = every step within 80 ms).",
+   "why_here": "The measurement discipline, applied to movement. It covers three.js, which is this engine, and its deliverable is 'code plus evidence, never it looks about right' - the same rule as .claude/skills/pc-measure. Point it at a sword-fight reference and it tells you the real timing of a cut instead of someone guessing at frame counts.",
+   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+  },
+  {
+   "id": "code-motion",
+   "name": "code-motion",
+   "url": "https://github.com/Mayalev9/code-motion.git",
+   "commit": "043a16db1274cfc8d84eed5e4d4209b8676c8f9b",
+   "licence": "MIT",
+   "size": "1 MB",
+   "what": "Rebuild a motion graphic from a video shot by shot, measured, as code that renders to MP4.",
+   "why_here": "The sibling of reanimate for whole shots rather than one animation. Read for its shot-breakdown method.",
+   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+  },
+  {
+   "id": "chatterbox",
+   "name": "Chatterbox",
+   "url": "https://github.com/resemble-ai/chatterbox.git",
+   "commit": "ab55923c27757c90cfcc407baa57dc25a7d25217",
+   "licence": "MIT",
+   "size": "3.6 MB",
+   "what": "Text to speech, free and local.",
+   "why_here": "Narration and character voice. engine/sound.mjs already has a voice path (tools/voice.py); this is a free local engine for it.",
+   "skill": ".claude/skills/paper-cinema-film/SKILL.md"
+  },
+  {
+   "id": "faster-whisper",
+   "name": "faster-whisper",
+   "url": "https://github.com/SYSTRAN/faster-whisper.git",
+   "commit": "6cb639e70786aea42b9233006ae60eaf07190bdb",
+   "licence": "MIT",
+   "size": "43 MB",
+   "what": "Speech to text, fast, local, no network.",
+   "why_here": "Transcribing reference footage and interviews, and captioning the finished Shorts. Also the way to read a tutorial video this container cannot get subtitles for (YouTube blocks yt-dlp subtitle fetches from a datacentre IP).",
+   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
   }
  ],
  "rejected": [
