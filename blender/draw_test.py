@@ -88,12 +88,36 @@ _skin = next((o.data.materials[0] for o in _open['R'] if o.data.materials), None
 if '--open-hands' not in argv:
     draw.add_hands(_open['R'], _open['L'], _skin, _skin)
 print('[draw] open hand objects:', {k: [o.name for o in v] for k, v in _open.items()})
+# ---------------------------------------------------------------- camera (before the bake: the probe uses it)
+cd = bpy.data.cameras.new('cam')
+cam = bpy.data.objects.new('cam', cd)
+sc.collection.objects.link(cam)
+sc.camera = cam
+cd.lens = float(arg('lens', 38))
+cam.location = Vector([float(v) for v in arg('cam', '1.9,-2.6,1.25').split(',')])
+target = Vector([float(v) for v in arg('look', '-0.25,-0.4,1.0').split(',')])
+cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
+
+def saya_visible(f, n=24):
+    """Share of points along the scabbard that the camera sees directly (first ray hit is the saya)."""
+    dg = bpy.context.evaluated_depsgraph_get()      # the CURRENT state: called during the bake, no frame_set
+    L = BLADE + 0.05
+    seen = 0
+    for i in range(n):
+        p = saya.matrix_world @ Vector((L * (i + 0.5) / n, 0, 0.0))
+        d = p - cam.matrix_world.translation
+        hit, loc, nor, idx, ob, mat = sc.ray_cast(dg, cam.matrix_world.translation, d.normalized(), distance=d.length + 0.05)
+        seen += bool(hit and ob and ob.parent is saya)
+    return seen / n
+
+
 import body_capsules as BC                           # noqa: E402  the character's boundary
 caps = BC.BodyCapsules(rig)
 import cloth_springs as CS                           # noqa: E402  sleeves and hakama with weight
 springs = None if '--stiff-cloth' in argv else CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS)
 if '--no-keep-out' not in argv:
     draw.caps = BC.BodyCapsules(rig)
+MEASURED = {}
 pen = []                                             # (frame, what, depth cm, capsule)
 log = []
 for f in range(1, F + 1):
@@ -101,6 +125,13 @@ for f in range(1, F + 1):
     log.append(draw.step(f, pose_at((f - 1) / FPS)))
     if springs:
         springs.step()
+    if arg('measure') and f in [int(v) for v in arg('measure').split(',')]:
+        bpy.context.view_layer.update()
+        for _opens, _grip in draw.hands.values():
+            _grip.hide_viewport = True
+        MEASURED[f] = saya_visible(f)
+        for _opens, _grip in draw.hands.values():
+            _grip.hide_viewport = False
     if '--debug' in argv and f % 2 == 0 and f >= 28:
         r = lambda v: [round(x, 2) for x in v]
         print('[dbg]', f, log[-1], 'guard', r(sword.matrix_world.translation), 'tip', r(sword.matrix_world @ Vector((BLADE, 0, 0))),
@@ -121,9 +152,20 @@ for f in range(1, F + 1):
                     worst['blade'] = (d, who)
         for i in range(2, 18):
             pt = saya.matrix_world @ Vector(((BLADE + 0.035) * i / 18, 0, 0))
-            d, who = caps.depth(pt, skip=('forearm.L', 'pelvis'))     # the scabbard is tied IN the obi
+            d, who = caps.depth(pt, skip=('forearm.L', 'belly', 'hips'))     # the scabbard is tied IN the obi
             if d > worst.get('saya', (-1, ''))[0]:
                 worst['saya'] = (d, who)
+        # the arms: points along each upper arm and forearm (plus their own thickness) against the body
+        for sd, ar in (('r', 'R'), ('l', 'L')):
+            chain = [rig.J[sd + j].matrix_world.translation for j in ('S', 'E', 'H')]
+            for (a_, b_), rad in zip(zip(chain, chain[1:]), (0.05, 0.04)):
+                for t in (0.5, 0.75, 1.0):
+                    pt = a_.lerp(b_, t)
+                    d, who = caps.depth(pt, skip=('upperarm.' + ar, 'forearm.' + ar))
+                    d += rad
+                    key = 'arm.' + ar
+                    if d > worst.get(key, (-1, ''))[0]:
+                        worst[key] = (d, who)
         for what, (d, who) in worst.items():
             if d > 0:
                 pen.append((f, what, round(d * 100, 1), who))
@@ -131,7 +173,7 @@ if '--collide' in argv:
     by = {}
     for f_, what, d, who in pen:
         by.setdefault(what, []).append((f_, d, who))
-    for what in ('blade', 'saya'):
+    for what in ('blade', 'saya', 'arm.R', 'arm.L'):
         rows = by.get(what, [])
         if rows:
             mx = max(rows, key=lambda r: r[1])
@@ -165,15 +207,7 @@ def _sync(scene, *_):
 
 bpy.app.handlers.frame_change_post.append(_sync)
 
-# ---------------------------------------------------------------- camera, light, render
-cd = bpy.data.cameras.new('cam')
-cam = bpy.data.objects.new('cam', cd)
-sc.collection.objects.link(cam)
-sc.camera = cam
-cd.lens = float(arg('lens', 38))
-cam.location = Vector([float(v) for v in arg('cam', '1.9,-2.6,1.25').split(',')])
-target = Vector([float(v) for v in arg('look', '-0.25,-0.4,1.0').split(',')])
-cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
+# ---------------------------------------------------------------- light, render
 MB.studio(sc, 'cinematic')
 # real metal needs something to reflect: the free Poly Haven dusk sky, low, under the studio lights
 _hdr = os.path.join(REPO, 'assets', 'polyhaven', 'qwantani_dusk_2_puresky', 'qwantani_dusk_2_puresky_2k.hdr')
@@ -198,23 +232,9 @@ sc.frame_start, sc.frame_end = 1, F
 os.makedirs(OUT, exist_ok=True)
 sc.render.filepath = os.path.join(OUT, 'f')
 sc.render.image_settings.file_format = 'PNG'
-def saya_visible(f, n=24):
-    """Share of points along the scabbard that the camera sees directly (first ray hit is the saya)."""
-    sc.frame_set(f)
-    dg = bpy.context.evaluated_depsgraph_get()
-    L = BLADE + 0.05
-    seen = 0
-    for i in range(n):
-        p = saya.matrix_world @ Vector((L * (i + 0.5) / n, 0, 0.0))
-        d = p - cam.matrix_world.translation
-        hit, loc, nor, idx, ob, mat = sc.ray_cast(dg, cam.matrix_world.translation, d.normalized(), distance=d.length + 0.05)
-        seen += bool(hit and ob and ob.parent is saya)
-    return seen / n
-
-
 if arg('measure'):
-    for f in [int(v) for v in arg('measure').split(',')]:
-        print('[measure] frame %d: scabbard visible %.0f%%' % (f, 100 * saya_visible(f)))
+    for f_, v_ in sorted(MEASURED.items()):
+        print('[measure] frame %d: scabbard visible %.0f%%' % (f_, 100 * v_))
 if arg('stills'):
     for f in [int(v) for v in arg('stills').split(',')]:
         sc.frame_set(f)

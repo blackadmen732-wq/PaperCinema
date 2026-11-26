@@ -17,13 +17,17 @@ from mathutils import Vector
 # (name, joint a, joint b, radius m). Radii cover the CLOTHES (kimono, hakama), not the bare body:
 # a blade that touches the hakama is already "in" the character.
 CAPSULES = (
-    ('pelvis', 'hips', 'upper', 0.15),
-    ('chest', 'upper', 'neck', 0.16),
+    # a chest is wide and flat, not round: a spine capsule plus one across the shoulders, so the top of an
+    # arm hanging at the side is outside the body (it was "inside" with one fat round chest)
+    ('belly', 'hips', 'upper', 0.13),
+    ('chest', 'upper', 'neck', 0.12),
+    ('shoulders', 'rC', 'lC', 0.10),
     ('head', 'neck', 'head', 0.11),
-    ('thigh.R', 'rthigh', 'rshin', 0.12), ('shin.R', 'rshin', 'rfoot', 0.10),
-    ('thigh.L', 'lthigh', 'lshin', 0.12), ('shin.L', 'lshin', 'lfoot', 0.10),
-    ('upperarm.R', 'rS', 'rE', 0.055), ('forearm.R', 'rE', 'rH', 0.045),
-    ('upperarm.L', 'lS', 'lE', 0.055), ('forearm.L', 'lE', 'lH', 0.045),
+    ('hips', 'rthigh', 'lthigh', 0.11),
+    ('thigh.R', 'rthigh', 'rshin', 0.10), ('shin.R', 'rshin', 'rfoot', 0.09),
+    ('thigh.L', 'lthigh', 'lshin', 0.10), ('shin.L', 'lshin', 'lfoot', 0.09),
+    ('upperarm.R', 'rS', 'rE', 0.05), ('forearm.R', 'rE', 'rH', 0.04),
+    ('upperarm.L', 'lS', 'lE', 0.05), ('forearm.L', 'lE', 'lH', 0.04),
 )
 
 

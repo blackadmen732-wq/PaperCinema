@@ -27,7 +27,7 @@ DOWN = Vector((0.0, 0.0, -1.0))          # a cloth joint's hanging axis in its o
 SPRINGS = (
     ('rSleeve', 0.24, 55.0, 7.0, 75.0, ('forearm.R', 'upperarm.R')),
     ('lSleeve', 0.24, 55.0, 7.0, 75.0, ('forearm.L', 'upperarm.L')),
-    ('hakama', 0.75, 38.0, 8.0, 22.0, ('pelvis', 'thigh.R', 'thigh.L', 'shin.R', 'shin.L')),
+    ('hakama', 0.75, 38.0, 8.0, 22.0, ('belly', 'hips', 'thigh.R', 'thigh.L', 'shin.R', 'shin.L')),
 )
 
 

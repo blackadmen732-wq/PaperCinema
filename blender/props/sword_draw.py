@@ -124,7 +124,7 @@ TIE = 0.12                                                # mouth -> obi cord, a
 # tools in draw_test.py (--measure) count how much of the scabbard each camera really sees.
 # 26 Nov search over 384 placements x 4 cameras: the old wear (0.185, -0.155, 0.945 / 13 / -14) was 0%
 # visible from a 3/4 front camera in the iai pose (inside the sleeve and hakama); this one is 56-69%.
-WEAR = {'mouth': (0.25, -0.15, 0.96), 'swing': 10.0, 'tilt': -15.0}
+WEAR = {'mouth': (0.25, -0.23, 0.96), 'swing': 10.0, 'tilt': -15.0}
 
 
 def saya_rest_in_torso(wear=None):
@@ -180,6 +180,8 @@ def build_grip_hand(name, coll, joint, H, mat, radius=0.019, x0=-0.100, x1=-0.02
     if thumb_side < 0:
         th = [Vector((v.x, v.y, -v.z)) for v in th]
     bm.faces.new([bm.verts.new(v) for v in th])
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-5, edges=bm.edges[:])
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])               # non-planar quads crashed scene.ray_cast in 4.5
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
@@ -198,10 +200,9 @@ def build_grip_hand(name, coll, joint, H, mat, radius=0.019, x0=-0.100, x1=-0.02
 
 
 def key_visible(ob, f, on):
+    # render visibility only: keying hide_viewport crashed scene.ray_cast (the --measure probe) in 4.5
     ob.hide_render = not on
-    ob.hide_viewport = not on
     ob.keyframe_insert('hide_render', frame=f)
-    ob.keyframe_insert('hide_viewport', frame=f)
 
 
 # --------------------------------------------------------------------------- the right-arm IK
@@ -220,6 +221,19 @@ LIMITS = {'rex': (-2.7, -0.05), 'lex': (-2.7, -0.05)}
 def _euler(rx, ry, rz):
     from mathutils import Euler
     return Euler((rx, -rz, ry), 'YZX').to_matrix().to_4x4()   # Rig.rot: three (x, y, z) -> Blender
+
+
+def _arm_points(rig, p, side='r'):
+    """World positions of shoulder, elbow and wrist for pose p (same chain as _hand_fk)."""
+    J, s = rig.J, side
+    M = J[s + 'C'].matrix_world.copy()
+    pts = []
+    for j, r in ((s + 'S', (p[s + 'sx'], p[s + 'sy'], p[s + 'sz'])), (s + 'E', (p[s + 'ex'], 0, 0)),
+                 (s + 'T', (0, p[s + 'fy'], 0)), (s + 'H', (p[s + 'wx'], 0, p[s + 'wz']))):
+        M = M @ Matrix.Translation(J[j].location) @ _euler(*r)
+        if j[1:] in ('S', 'E', 'H'):
+            pts.append(M.translation.copy())
+    return pts
 
 
 def _hand_fk(rig, p, H, side='r'):
@@ -294,6 +308,59 @@ def ik_arm(rig, pose, target, H, side='r', wr=0.25):
     return p, (target.translation - M.translation).length
 
 
+def arm_keep_out(rig, pose, caps, side, hold=None, H=None, iters=30, lam=0.05, margin=0.008):
+    """Swing the arm (shoulder + elbow + wrist angles) until it is out of the body, keeping the hand where
+    it must be: ON the sword if `hold` (a grip frame) is given, near where it was otherwise. This is the
+    animator's 'elbow out' fix, done on every frame. Returns (pose, deepest cm before, after)."""
+    ar = 'R' if side == 'r' else 'L'
+    skip = ('upperarm.' + ar, 'forearm.' + ar)
+    keys = arm_keys(side)
+
+    def depth_terms(p):
+        sh, el, wr_ = _arm_points(rig, p, side)
+        out, worst = [], 0.0
+        for (a, b), rad in (((sh, el), 0.05), ((el, wr_), 0.04)):
+            for t in (0.5, 0.75, 1.0):
+                pt = a.lerp(b, t)
+                q = caps.push_out(pt, margin + rad, skip=skip)
+                d = (q - pt)
+                out += list(d)
+                worst = max(worst, d.length)
+        return out, worst
+    p = dict(pose)
+    H = H or hand_holder()
+    keep = hold if hold is not None else _hand_fk(rig, p, H, side)
+    wk = 1.0 if hold is not None else 0.25
+    _, before = depth_terms(p)
+    if before <= 0:
+        return p, 0.0, 0.0
+    for _ in range(iters):
+        def resid(pp):
+            M = _hand_fk(rig, pp, H, side)
+            e = [c * wk for c in (keep.translation - M.translation)]
+            col, _w = depth_terms(pp)
+            return e + col
+        e = resid(p)
+        if max(abs(c) for c in e[3:]) < 1e-3:
+            break
+        J = []
+        for k in keys:
+            q = dict(p)
+            q[k] += 1e-3
+            J.append([(b - a) / -1e-3 for a, b in zip(e, resid(q))])   # d(model)/dk = -(d resid)/dk
+        m = len(e)
+        Jm = [[J[k][i] for k in range(len(keys))] for i in range(m)]
+        A = [[sum(Jm[i][k] * Jm[j][k] for k in range(len(keys))) + (lam * lam if i == j else 0) for j in range(m)]
+             for i in range(m)]
+        y = _solve6(A, e)
+        for k, name in enumerate(keys):
+            p[name] += sum(Jm[i][k] * y[i] for i in range(m))
+            lo, hi = LIMITS.get(name, (-3.1, 3.1))
+            p[name] = max(lo, min(hi, p[name]))
+    _, after = depth_terms(p)
+    return p, before, after
+
+
 def _smooth(t):
     t = max(0.0, min(1.0, t))
     return t * t * (3 - 2 * t)
@@ -324,6 +391,7 @@ class Draw:
         self.hands = {}                                     # side -> (open hand objects, grip hand object)
         self.caps = None                                    # body_capsules.BodyCapsules: the body's boundary
         self.pushed = {}                                    # frame -> degrees the blade was turned out
+        self.arm_fix = {}                                   # side -> [(frame, cm before, cm after)]
         self.H = hand_holder()
         self.Mrest = saya_rest_in_torso()
         from part_registry import REST                     # noqa: the rig's rest joints
@@ -406,12 +474,12 @@ class Draw:
                     worst, wpt = 0.0, None
                     for i in range(1, 13):
                         pt = target @ Vector((-0.0 + (s_out) * i / 12 - 0.0, 0, 0))
-                        d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L', 'pelvis'))
+                        d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L', 'belly', 'hips'))
                         if d > worst:
                             worst, wpt = d, pt
                     if worst <= 0:
                         break
-                    away = caps.push_out(wpt, 0.02, skip=('forearm.R', 'forearm.L', 'pelvis')) - wpt
+                    away = caps.push_out(wpt, 0.02, skip=('forearm.R', 'forearm.L', 'belly', 'hips')) - wpt
                     axis = out.cross(away)                  # turns the FORWARD (exposed) part toward `away`
                     if axis.length < 1e-9:
                         break
@@ -449,6 +517,16 @@ class Draw:
             pose = dict(pose)
             for k in arm_keys('l'):
                 pose[k] = pose[k] + (solved[k] - pose[k]) * wl
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+        if self.caps is not None:
+            # both arms out of the body: the elbow swings out, a holding hand stays on what it holds
+            self.caps.update()
+            for side, held in (('r', w > 0.85 or phase == 'drawing'), ('l', wl > 0.85)):
+                hold = (rig.J[side + 'H'].matrix_world @ self.H) if held else None
+                pose, b_, a_ = arm_keep_out(rig, pose, self.caps, side, hold=hold, H=self.H)
+                if b_ > 0:
+                    self.arm_fix.setdefault(side, []).append((f, round(b_ * 100, 1), round(a_ * 100, 1)))
             rig.pose(pose)
             bpy.context.view_layer.update()
         hand = rig.J['rH'].matrix_world @ self.H
