@@ -88,6 +88,11 @@ _skin = next((o.data.materials[0] for o in _open['R'] if o.data.materials), None
 if '--open-hands' not in argv:
     draw.add_hands(_open['R'], _open['L'], _skin, _skin)
 print('[draw] open hand objects:', {k: [o.name for o in v] for k, v in _open.items()})
+import body_capsules as BC                           # noqa: E402  the character's boundary
+caps = BC.BodyCapsules(rig)
+if '--no-keep-out' not in argv:
+    draw.caps = BC.BodyCapsules(rig)
+pen = []                                             # (frame, what, depth cm, capsule)
 log = []
 for f in range(1, F + 1):
     sc.frame_set(f)
@@ -99,6 +104,39 @@ for f in range(1, F + 1):
     for e in rig.J.values():
         e.keyframe_insert('location', frame=f)
         e.keyframe_insert('rotation_euler', frame=f)
+    if '--collide' in argv:
+        bpy.context.view_layer.update()
+        caps.update()
+        # the drawn part of the blade (from the guard to the tip) and the scabbard, sampled every 5 cm
+        worst = {}
+        if log[-1] in ('drawing', 'drawn'):
+            for i in range(1, 19):
+                pt = sword.matrix_world @ Vector((BLADE * i / 18, 0, 0))
+                d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L'))
+                if d > worst.get('blade', (-1, ''))[0]:
+                    worst['blade'] = (d, who)
+        for i in range(2, 18):
+            pt = saya.matrix_world @ Vector(((BLADE + 0.035) * i / 18, 0, 0))
+            d, who = caps.depth(pt, skip=('forearm.L', 'pelvis'))     # the scabbard is tied IN the obi
+            if d > worst.get('saya', (-1, ''))[0]:
+                worst['saya'] = (d, who)
+        for what, (d, who) in worst.items():
+            if d > 0:
+                pen.append((f, what, round(d * 100, 1), who))
+if '--collide' in argv:
+    by = {}
+    for f_, what, d, who in pen:
+        by.setdefault(what, []).append((f_, d, who))
+    for what in ('blade', 'saya'):
+        rows = by.get(what, [])
+        if rows:
+            mx = max(rows, key=lambda r: r[1])
+            print('[collide] %s inside the body on %d of %d frames, deepest %.1f cm (frame %d, %s)'
+                  % (what, len(rows), F, mx[1], mx[0], mx[2]))
+        else:
+            print('[collide] %s never inside the body' % what)
+    if draw.pushed:
+        print('[collide] blade turned out of the body on frames', {k: v for k, v in sorted(draw.pushed.items())})
 print('[draw] phases:', ' '.join(f'{i+1}:{s[:2]}' for i, s in enumerate(log)), '| IK residual m:', draw.residual, '| left:', draw.residual_l)
 
 for ob in [sword, saya] + list(rig.J.values()):

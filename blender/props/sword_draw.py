@@ -322,6 +322,8 @@ class Draw:
         self.biki, self.aim, self.turn, self.level, self.meet = biki, aim, turn, level, meet
         self.meet_q = None
         self.hands = {}                                     # side -> (open hand objects, grip hand object)
+        self.caps = None                                    # body_capsules.BodyCapsules: the body's boundary
+        self.pushed = {}                                    # frame -> degrees the blade was turned out
         self.H = hand_holder()
         self.Mrest = saya_rest_in_torso()
         from part_registry import REST                     # noqa: the rig's rest joints
@@ -394,6 +396,31 @@ class Draw:
             mouth = tie + out * TIE
             Y = frame(mouth, -out)
             target = Y @ arc(e * (self.L + 0.03), self.R)   # the blade slides out ALONG ITS CURVE
+            if self.caps is not None:
+                # the part already out of the mouth must not run into the legs or the body: the left hand
+                # tilts the scabbard about its cord (blade and all) until it is clear, as a real draw does
+                caps = self.caps.update()
+                s_out = e * (self.L + 0.03)
+                turned = 0.0
+                for _ in range(10):
+                    worst, wpt = 0.0, None
+                    for i in range(1, 13):
+                        pt = target @ Vector((-0.0 + (s_out) * i / 12 - 0.0, 0, 0))
+                        d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L', 'pelvis'))
+                        if d > worst:
+                            worst, wpt = d, pt
+                    if worst <= 0:
+                        break
+                    away = caps.push_out(wpt, 0.02, skip=('forearm.R', 'forearm.L', 'pelvis')) - wpt
+                    axis = out.cross(away)                  # turns the FORWARD (exposed) part toward `away`
+                    if axis.length < 1e-9:
+                        break
+                    Rt = Matrix.Translation(tie) @ Matrix.Rotation(math.radians(4), 4, axis.normalized()) @ Matrix.Translation(-tie)
+                    Y, target = Rt @ Y, Rt @ target
+                    out = -Y.to_3x3().col[0].normalized()
+                    turned += 4
+                if turned:
+                    self.pushed[f] = turned
             self.last_saya, self.last_target = Y, target
             w, phase = 1.0, 'drawing'
         else:
@@ -431,6 +458,8 @@ class Draw:
             S = target                                      # on the scabbard's axis, exactly
         else:
             S = hand
+            if self.caps is not None:
+                S, pose = self._keep_out(S, pose)
         for ob, M in ((self.sword, S), (self.saya, Y)):
             loc, rot, _ = M.decompose()
             ob.location = loc
@@ -444,6 +473,46 @@ class Draw:
                 key_visible(ob, f, not holding[side])
             key_visible(grip, f, holding[side])
         return phase
+
+    def _keep_out(self, S, pose, step=4.0, max_turn=40.0):
+        """If the drawn blade would pass INTO the body, turn it about the grip, a few degrees at a time, away
+        from the deepest point until it is clear (or max_turn), then re-grip it with the arm IK so the hand
+        still holds it. Returns (sword frame, pose)."""
+        caps = self.caps.update()
+
+        def deepest(M):
+            best = (0.0, None)
+            for i in range(1, 19):
+                pt = M @ Vector((self.L * i / 18, 0, 0))
+                d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L'))
+                if d > best[0]:
+                    best = (d, pt)
+            return best
+        d, pt = deepest(S)
+        if d <= 0:
+            return S, pose
+        grip = S.translation
+        blade = S.to_3x3().col[0].normalized()
+        turned = 0.0
+        M = S
+        while d > 0 and turned < max_turn:
+            out = caps.push_out(pt, 0.02, skip=('forearm.R', 'forearm.L')) - pt
+            axis = blade.cross(out)
+            if axis.length < 1e-9:
+                break
+            R4 = Matrix.Translation(grip) @ Matrix.Rotation(math.radians(step), 4, axis.normalized()) @ Matrix.Translation(-grip)
+            M = R4 @ M
+            blade = M.to_3x3().col[0].normalized()
+            turned += step
+            d, pt = deepest(M)
+        self.pushed[bpy.context.scene.frame_current] = turned
+        solved, _ = ik_arm(self.rig, pose, M, self.H)
+        pose = dict(pose)
+        for k in ARM:
+            pose[k] = solved[k]
+        self.rig.pose(pose)
+        bpy.context.view_layer.update()
+        return M, pose
 
     def add_hands(self, open_r, open_l, mat_r=None, mat_l=None):
         """Give this swordsman gripping hands (swapped with the open-hand objects open_r / open_l)."""
