@@ -4,6 +4,7 @@
 |---|---|---|
 | `../AGENTS.md` | starting any session | Hub: map, commands, rules |
 | `../SYSTEMS.md` | looking for where something lives | Every system, its files, guide, command and connections (+ `../systems.json`) |
+| `ASSET-PLAN.md` | planning how a video starts, or what an AI 3D-generation API should make | The first 3 seconds (hook first, brand second), Mark's three reference images as three cold-open props, what is generated vs built, the 8-step analysis before any credit is spent, every asset by section, the first batch, how to connect a service |
 | `EPISODE-1.md` | making the first finished film, or asking "what is next" | Episode 1 (Ganryūjima): done-when, the three blockers found on 26 Nov and the way round each, the look knobs, the beats, the parts to build, the order |
 | `ARCHITECTURE.md` | wanting the shape of the project, or adding a renderer / a module | The six modules around one canonical timeline (Timeline Exporter, Fight Director, Camera Director, Paper Damage Bridge, Render Supervisor, Visual Critic), the code that implements each, the gaps, and where a change goes |
 | `TIMELINE-FORMAT.md` | writing or reading `output/<film>.timeline.json` | The one interchange format: coordinates (three.js ↔ Blender, defined once), the 24 fps clock, bones and root motion, the camera with focal length and focus distance, shots and cuts, events with stable ids, lights, assets, the backward-scrub check, coverage per film kind |
