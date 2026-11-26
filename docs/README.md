@@ -27,6 +27,7 @@
 | `COST.md` | keeping usage low | The four tiers and the free-worker commands |
 | `AI-ROUTER.md` | sending work to free models | Which model does which job, speeds, rules |
 | `FIX-LIST.md` | fixing stiff motion, silent clashes, framing | The review of what was wrong and the fixes, with status |
+| `FIX-ORDER.md` | what to fix next, in order (Mark, 26 Nov) | The six problems before any paid 3D: real sword + scabbard, fight feel, effects, camera, paper motion, characters; root cause and status each |
 | `VOICE.md` | giving characters spoken lines | The `"voice"` schema, voices and licences (Kokoro-82M), directing delivery, the voice chain, ducking, eyes pulsing with the voice |
 | `EFFECTS-PLAN.md` | adding effects | The face-touch scene, slash v2, anime effects (flash-step, shadow-vanish…) |
 | `EFFECTS-CATALOG.md` | choosing or wiring screen effects | The FX module (`engine/fx.js`): bloom, grade moods, vignette, grain, letterbox, CA flash, speed lines, ink impact, light shafts, particles, glint; film `fx` events; 42-effect catalogue (`library/effects.json`) by story beat |
