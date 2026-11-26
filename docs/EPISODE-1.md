@@ -51,12 +51,20 @@ Tuned on Episode 1's first shot against `docs/LOOK-TARGET.md` (luma 1% < 10, med
 | 7 | 55–60 | the signature end card | channel name, "Next: …" | the sound logo | — |
 
 ## Parts to build (data first, code only where nothing exists)
-1. Recipes `library/character-recipes/kojiro.json` (cream kosode, crimson haori) and `musashi.json` (dark indigo kosode,
-   brown hakama, white headband), each `extends` the ronin; point `RECIPES` in `film_modular.py` at them.
-2. Musashi's oar sword: a wooden blade chosen by the film's weapon data instead of steel in `build_katana`.
-3. In the beach set: the boat at `MARK_boat` (static is fine for v1) and the thrown scabbard.
-4. Captions and the hook text burned in after the render (ffmpeg), inside the safe box.
-5. One music track, credited.
+1. ✅ (Nov 26) Recipes `kojiro.json` (crimson haori #9c2a25, dark red hakama #5c2220, topknot) and `musashi.json` (slate
+   indigo, grey-brown hakama #4b3e34, white headband = `hachigane` with `spine: false`); new sheets `washi_crimson`,
+   `card_oxblood`, `card_umber`; `RECIPES` in `film_modular.py` points at them. `part_validator`: 407/407 and 420/420.
+2. ✅ (Nov 26) Musashi's oar sword: `build_bokken` in `film_modular.py`, chosen when the timeline's weapon `kind` is
+   `bokken` (a film's cast `"weapon": "bokken"`); ~15% longer than the katana, one piece of wood, no guard.
+3. ✅ boat (Nov 26): kit piece `boat` (kobune: flat bottom, flared sides, rising bow, thwarts, stern oar) at `MARK_boat`,
+   static (landed); camera `CAM_boat` frames it from the shoreline. ⬜ the thrown scabbard.
+4. ⬜ Captions and the hook text burned in after the render (ffmpeg), inside the safe box.
+5. ⬜ One music track, credited.
+
+Also done Nov 26 for the world: the beach pines are kit `pine` pieces with real branches (`pines: "kit"`), the beach
+grass is tufts of thin folded blades, open-sea foam patches are off (`foam: 0`), and the set is graded for a low red
+sun (`lighting.note` in the set file has the measured luma before and after). Set previews can show the film
+characters: `build_set.py --with-character foe:hasso:recipe=kojiro`.
 
 ## Order
 1. Shot 2 as one still (Kojirō waiting, vertical, dawn): tune the look knobs to the numbers → Mark sees it.

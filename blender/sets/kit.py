@@ -1929,6 +1929,45 @@ def _bw(ctx, P):
     return bw
 
 
+@piece('boat', length=5.2, beam=1.25, depth=0.5, sheer=0.35, key='wood_aged', trim='wood_dark', thwarts=3, oar=True)
+def boat(ctx, P, rnd):
+    """A small wooden rowing boat (kobune) along +X, bow at +X: a flat bottom, two flared side planks folded up
+    from it, a sheer that rises to a pointed bow, a flat transom, gunwale strips, thwarts and the stern oar (ro).
+    The boat that brings Musashi to the island (research/ganryujima.md: tradition) - nothing in the kit was one.
+    Waterline z = 0 at the origin; built from flat planes, so it reads as folded card like the rest of the set."""
+    mb = MB(ctx, ctx.info['name'], rnd)
+    L, B, D = P['length'], P['beam'], P['depth']
+    n = 10
+    rows = []
+    for i in range(n + 1):
+        t = i / n                                      # 0 = stern, 1 = bow
+        x = -L / 2 + L * t
+        nose = max(0.0, (t - 0.72) / 0.28)             # the last quarter narrows to the stem
+        half_top = B / 2 * (0.86 + 0.14 * math.sin(math.pi * min(t, 0.8) / 0.8)) * (1 - nose ** 1.4) + 0.015
+        half_bot = half_top * 0.62 * (1 - nose)
+        z_bot = -D * 0.55 + nose * D * 0.45            # the bottom sweeps up into the bow
+        z_top = D * 0.45 + P['sheer'] * nose ** 2 + 0.05 * (1 - t)
+        rows.append(((x, -half_bot, z_bot), (x, half_bot, z_bot), (x, -half_top, z_top), (x, half_top, z_top)))
+    for a, b in zip(rows, rows[1:]):
+        mb.poly(P['key'], [a[0], b[0], b[1], a[1]])              # bottom
+        mb.poly(P['key'], [a[0], a[2], b[2], b[0]])              # port side
+        mb.poly(P['key'], [a[1], b[1], b[3], a[3]])              # starboard side
+    s = rows[0]
+    mb.poly(P['key'], [s[0], s[1], s[3], s[2]])                  # transom
+    for side in (2, 3):                                          # gunwale strips along both top edges
+        for a, b in zip(rows, rows[1:]):
+            beam_between(mb, P['trim'], a[side], b[side], 0.05, 0.05)
+    for k in range(P['thwarts']):
+        r = rows[int((0.25 + 0.5 * k / max(1, P['thwarts'] - 1)) * n)]
+        mb.box(P['trim'], (0.18, abs(r[3][1] - r[2][1]) * 0.96, 0.04), loc=(r[2][0], 0, r[2][2] - 0.12))
+    if P['oar']:                                                 # the ro: a long sweep over the stern into the sea
+        st = Vector(s[2]).lerp(Vector(s[3]), 0.5) + Vector((0.15, 0, 0.1))
+        tip = st + Vector((-2.6, 0.4, -0.9))
+        beam_between(mb, P['key'], st + Vector((0.6, -0.1, 0.35)), tip, 0.05, 0.05)
+        mb.box(P['key'], (0.6, 0.02, 0.16), loc=tip + Vector((0.25, -0.04, 0.09)), rot=(0, -19, 9))
+    mb.finish()
+
+
 def _kit_pines(ctx, bw):
     """The beach's pines as kit `pine` pieces - a leaning, kinked trunk with crooked BRANCHES ending in flat cloud
     pads of needles - on the spots build_world.build_pines uses. That one stacks cones on a five-sided stick, so

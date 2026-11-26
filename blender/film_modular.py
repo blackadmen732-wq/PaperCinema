@@ -162,15 +162,58 @@ def build_katana(name, blade_len=0.91, handle=0.33):
     return root
 
 
+def build_bokken(name, blade_len=1.05, handle=0.30):
+    """Musashi's oar sword (research/ganryujima.md, tradition: carved from a spare oar, ~110 cm, longer than
+    Kojiro's blade): one piece of wood, no guard, a blade that thickens toward the grip and bends slightly
+    toward the back, in the same weapon frame as the katana (blade +x from the grip line, edge -y, handle -x).
+    Chosen by the timeline's weapon `kind` - the film's cast says `"weapon": "bokken"` - so it is data."""
+    import bmesh as _bm
+    wood = _flat_mat(name + '_wood', (0.30, 0.18, 0.09, 1), 0.82)
+    root = bpy.data.objects.new(name, None)
+    root.rotation_mode = 'QUATERNION'
+    sc.collection.objects.link(root)
+    n = 5
+    pts = []                                   # the spine: straight handle, then a slight sweep toward +y
+    for i in range(n + 1):
+        t = i / n
+        pts.append((-handle + (handle + blade_len) * t, 0.035 * max(0.0, t - 0.3) ** 2, 0.0))
+    for i in range(n):
+        (x0, y0, _), (x1, y1, _) = pts[i], pts[i + 1]
+        t = (i + 0.5) / n
+        w = 0.036 - 0.014 * max(0.0, t - 0.35)  # edge depth tapers toward the tip
+        me = bpy.data.meshes.new(name + '_m%d' % i)
+        b = _bm.new()
+        _bm.ops.create_cube(b, size=1.0)
+        L = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+        _bm.ops.scale(b, vec=(L * 1.02, 0.028, w), verts=b.verts[:])
+        _bm.ops.rotate(b, cent=(0, 0, 0), matrix=Quaternion((0, 0, 1), math.atan2(y1 - y0, x1 - x0)).to_matrix(),
+                       verts=b.verts[:])
+        _bm.ops.translate(b, vec=((x0 + x1) / 2, (y0 + y1) / 2, 0), verts=b.verts[:])
+        b.to_mesh(me)
+        b.free()
+        o = bpy.data.objects.new(name + '_part', me)
+        me.materials.append(wood)
+        for pg in me.polygons:
+            pg.use_smooth = False
+        sc.collection.objects.link(o)
+        o.parent = root
+    return root
+
+
 swords = {}
 if not flag('no-sword'):
     for _a in TL['actors']:
         if _a.get('hidden'):
             continue
         _w = _a.get('weapon') or {}
+        if _w.get('kind') == 'bokken':
+            swords[_a['id']] = build_bokken('BOKKEN_' + _a['id'], blade_len=_w.get('bladeLen', 0.91) * 1.15,
+                                            handle=_w.get('handle', 0.33))
+            continue
         swords[_a['id']] = build_katana('KATANA_' + _a['id'],
                                         blade_len=_w.get('bladeLen', 0.91), handle=_w.get('handle', 0.33))
-    print('[film] %d katana built from the timeline weapon frame' % len(swords))
+    print('[film] %d blade(s) built from the timeline weapon frame: %s' % (
+        len(swords), ', '.join(f"{k} {v.name.split('_')[0].lower()}" for k, v in swords.items())))
 
 # ---------------------------------------------------------------- camera
 cd = bpy.data.cameras.new('cam')
@@ -368,7 +411,7 @@ for _ob in sc.objects:
         _ob.data.energy *= _key
 if _outline > 0:
     import toon
-    _blades = [o for o in sc.objects if o.type == 'MESH' and o.parent and o.parent.name.startswith('KATANA_')]
+    _blades = [o for o in sc.objects if o.type == 'MESH' and o.parent and o.parent.name.startswith(('KATANA_', 'BOKKEN_'))]
     for _o in char_meshes + _blades:
         toon.ink_outline(_o, width=_outline * (0.5 if _o in _blades else 1.0))   # a blade takes a finer line
 if arg('look') or _film_look.get('look'):
