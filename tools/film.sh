@@ -121,8 +121,16 @@ if [ "$REUSE" = 1 ]; then
   touch "output/$NAME.motion.json"            # so Blender does not re-export it behind our back
 else
   step "2/9 export motion"
-  node tools/export_motion.mjs "$FILM" || die "step 2 export motion: the engine could not play this film (see the error above). If the engine is mid-change and you only want to re-render what is already exported, add --reuse-motion."
-  [ -s "output/$NAME.motion.json" ] || die "step 2 export motion: output/$NAME.motion.json was not written."
+  # export_motion.mjs only handles films on engine/motion.html. The two best films in this repo -
+  # ganryujima and kuroko-duel - are on engine/index.html, so this step hard-failed on both and the
+  # ONE COMMAND could render neither of them. It is not a required step: motion.json is read only by
+  # rig_trellis.py and export_unreal.py, neither of which is in this pipeline. What the render needs
+  # is the canonical timeline below, and tools/timeline.mjs handles BOTH engines.
+  if node tools/export_motion.mjs "$FILM" 2>&1; then
+    [ -s "output/$NAME.motion.json" ] || die "step 2 export motion: output/$NAME.motion.json was not written."
+  else
+    echo "  motion.json skipped — this film is not on engine/motion.html; the canonical timeline covers the render"
+  fi
   # THE canonical timeline (docs/TIMELINE-FORMAT.md). blender/film_modular.py reads this and nothing
   # else: 46 pose channels per actor per frame, the same channel names Rig.pose() takes, because both
   # sides descend from engine/figure.js. Without it the render step has no character to pose.

@@ -102,6 +102,71 @@ for a in TL['actors']:
     rigs[a['id']] = ch['rig']
     print(f"[film] {a['id']} -> {os.path.basename(path)}")
 
+# ---------------------------------------------------------------- the sword
+# NOBODY WAS HOLDING ONE. The only katana in part_registry.py is `katana_sheathed`, which sits on the
+# hip; there is no drawn blade part at all. Every rendered fight so far has been two figures swinging
+# EMPTY HANDS, with a glowing crescent appearing out of nothing beside them.
+#
+# The data was never missing. The canonical timeline exports each actor weapon transform every frame
+# AND at 4x sub-frame resolution, with the frame written in its own metadata: blade along +x from the
+# guard at x = 0, edge toward -y, handle along -x. So the blade is built once in that frame and keyed
+# from the timeline, exactly like the camera.
+def _flat_mat(nm, rgba, rough, metal=0.0):
+    m = bpy.data.materials.new(nm)
+    m.use_nodes = True
+    b = m.node_tree.nodes.get('Principled BSDF')
+    if b:
+        b.inputs['Base Color'].default_value = rgba
+        b.inputs['Roughness'].default_value = rough
+        if 'Metallic' in b.inputs:
+            b.inputs['Metallic'].default_value = metal
+    return m
+
+
+def build_katana(name, blade_len=0.91, handle=0.33):
+    """A folded-paper katana in the weapon frame: blade +x from the guard, edge -y, handle -x."""
+    import bmesh as _bm
+
+    def slab(cx, lx, ly, lz, mat):
+        me = bpy.data.meshes.new(name + '_m')
+        b = _bm.new()
+        _bm.ops.create_cube(b, size=1.0)
+        _bm.ops.scale(b, vec=(lx, ly, lz), verts=b.verts[:])
+        _bm.ops.translate(b, vec=(cx, 0, 0), verts=b.verts[:])
+        b.to_mesh(me)
+        b.free()
+        o = bpy.data.objects.new(name + '_part', me)
+        me.materials.append(mat)
+        for pg in me.polygons:
+            pg.use_smooth = False
+        sc.collection.objects.link(o)
+        return o
+
+    steel = _flat_mat(name + '_steel', (0.80, 0.82, 0.86, 1), 0.18, 0.9)
+    dark = _flat_mat(name + '_dark', (0.045, 0.045, 0.055, 1), 0.55)
+    wrap = _flat_mat(name + '_wrap', (0.10, 0.09, 0.12, 1), 0.72)
+    root = bpy.data.objects.new(name, None)
+    root.rotation_mode = 'QUATERNION'
+    sc.collection.objects.link(root)
+    # blade long in x, thin in y (the flat of the sheet), deeper in z (the edge): a katana reads from
+    # its silhouette, so it is a touch deeper than it is thick.
+    for ob in (slab(blade_len / 2, blade_len, 0.0075, 0.029, steel),
+               slab(0.0, 0.012, 0.088, 0.088, dark),
+               slab(-handle / 2, handle, 0.030, 0.038, wrap)):
+        ob.parent = root
+    return root
+
+
+swords = {}
+if not flag('no-sword'):
+    for _a in TL['actors']:
+        if _a.get('hidden'):
+            continue
+        _w = _a.get('weapon') or {}
+        swords[_a['id']] = build_katana('KATANA_' + _a['id'],
+                                        blade_len=_w.get('bladeLen', 0.91), handle=_w.get('handle', 0.33))
+    print('[film] %d katana built from the timeline weapon frame' % len(swords))
+
 # ---------------------------------------------------------------- camera
 cd = bpy.data.cameras.new('cam')
 cam = bpy.data.objects.new('cam', cd)
@@ -123,6 +188,14 @@ for i in range(f0, f1 + 1):
         for e in rig.J.values():
             e.keyframe_insert('location')
             e.keyframe_insert('rotation_euler')
+    for _aid, _sw in swords.items():
+        _act = fr['actors'].get(_aid)
+        if _act and _act.get('weapon'):
+            _w = _act['weapon']
+            _sw.location = v3(_w[:3])
+            _sw.rotation_quaternion = q3(_w[3:7])
+            _sw.keyframe_insert('location')
+            _sw.keyframe_insert('rotation_quaternion')
     c = fr.get('camera')
     if c and not arg('lookat'):
         cam.location = v3(c['pos'])
@@ -134,7 +207,7 @@ for i in range(f0, f1 + 1):
 
 # The engine's poses are already eased; Blender re-easing them would double the smoothing and the
 # snap of a cut would soften into a drift. Hold every curve linear between the baked frames.
-for ob in list(rigs.values()) + [cam, cd]:
+for ob in list(rigs.values()) + list(swords.values()) + [cam, cd]:
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     if not act:
