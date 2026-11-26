@@ -209,6 +209,12 @@ else
   # The work left to do: every frame of the range that has no PNG yet (so a stopped render just carries on),
   # split into contiguous blocks of about the same size — one Blender process per block, one core each.
   # Line 1 of the plan is how many frames are missing; then one line per worker: the ranges it renders.
+  # THE BAKE FIRST, once, in this process: the draw, grips, boundary and cloth are solved over the whole
+  # timeline and saved (output/$NAME.bake.json, written atomically). The parallel workers below only READ it;
+  # without this step each worker would solve it again at the same time.
+  "$B" -b -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --bake-only "${SETARG[@]+"${SETARG[@]}"}" \
+    > "output/$NAME-bake.log" 2>&1 || { tail -25 "output/$NAME-bake.log"; die "step 5 bake: the production bake failed (output/$NAME-bake.log)."; }
+  grep -E "^\[(bake|check)\]" "output/$NAME-bake.log" | sed 's/^/  /'
   PLAN=$(python3 "$R/tools/render_plan.py" "$FR" "$FA" "$FB" "$W") \
     || die "step 5 render: could not work out which frames are missing from $FR."
   TODO=$(echo "$PLAN" | head -1)

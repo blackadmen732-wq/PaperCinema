@@ -183,7 +183,7 @@ for aid, rig in rigs.items():
                  for s_ in ('R', 'L')}
         skin = next((o.data.materials[0] for o in opens['R'] if o.data.materials), None)
         draw.add_hands(opens['R'], opens['L'], skin, skin)
-        draw.caps = BC.BodyCapsules(rig)
+        draw.caps = None if flag('no-keep-out') else BC.BodyCapsules(rig)   # --no-keep-out: the comparison run
         char_meshes += [o for o in K['sword'].children_recursive + K['saya'].children_recursive if o.type == 'MESH']
     springs = None
     if not flag('stiff-cloth'):
@@ -193,8 +193,11 @@ for aid, rig in rigs.items():
     PACT.append(PB.Actor(aid, rig, ch['objects'], draw=draw, springs=springs,
                          caps=None if (draw or flag('no-keep-out')) else BC.BodyCapsules(rig)))
 
-BAKE_PATH = os.path.join(REPO, 'output', FILM + '.bake.json')
-_stamp = PB.bake_stamp(REPO, FILM) + ('-stiff' if flag('stiff-cloth') else '')
+# every switch that changes the solved motion is part of the cache key, so a comparison run can never load
+# motion baked under other settings (and its own bake file, so the two never overwrite each other)
+_variant = ''.join(s_ for s_, on in (('-stiff', flag('stiff-cloth')), ('-nokeep', flag('no-keep-out'))) if on)
+_stamp = PB.bake_stamp(REPO, FILM) + _variant
+BAKE_PATH = os.path.join(REPO, 'output', FILM + '.bake' + _variant + '.json')
 BAKE = PB.load(BAKE_PATH, _stamp)
 if BAKE is None:
     print(f'[bake] solving {len(FRAMES)} frames once (draw: {sorted(DRAWS) or "none"}, springs: {not flag("stiff-cloth")})')

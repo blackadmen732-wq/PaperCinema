@@ -241,9 +241,11 @@ def report(bake, F):
             b_l, b_r = Vector(held[0][2]), Quaternion(held[0][3])
             dl = max(((Vector(g[2]) - b_l).length * 100, g[0]) for g in held)
             dr = max((math.degrees(Quaternion(g[3]).rotation_difference(b_r).angle), g[0]) for g in held)
-            st = max((math.degrees(Quaternion(held[k][3]).rotation_difference(Quaternion(held[k - 1][3])).angle), held[k][0])
-                     for k in range(1, len(held)))
-            sl = max(((Vector(held[k][2]) - Vector(held[k - 1][2])).length * 100, held[k][0]) for k in range(1, len(held)))
+            # one held frame has no frame-to-frame change (max() of nothing used to crash the report)
+            st = max(((math.degrees(Quaternion(held[k][3]).rotation_difference(Quaternion(held[k - 1][3])).angle), held[k][0])
+                      for k in range(1, len(held))), default=(0.0, held[0][0]))
+            sl = max((((Vector(held[k][2]) - Vector(held[k - 1][2])).length * 100, held[k][0]) for k in range(1, len(held))),
+                     default=(0.0, held[0][0]))
             lines.append('[check] %s grip vs hilt (slide to end): drift %.1f cm (f%d), %.1f deg (f%d); one-frame %.1f cm (f%d), %.1f deg (f%d)'
                          % (aid, dl[0], dl[1], dr[0], dr[1], sl[0], sl[1], st[0], st[1]))
     return lines
@@ -251,9 +253,14 @@ def report(bake, F):
 
 # --------------------------------------------------------------------------- save / load / apply
 def save(bake, path, stamp_):
+    """Write atomically: a render worker reading the bake must never see a half-written file."""
     bake = dict(bake, stamp=stamp_)
-    with open(path, 'w') as fh:
+    tmp = '%s.%d.tmp' % (path, os.getpid())
+    with open(tmp, 'w') as fh:
         json.dump(bake, fh, separators=(',', ':'))
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
 
 
 def load(path, stamp_):
