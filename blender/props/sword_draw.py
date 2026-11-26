@@ -380,19 +380,21 @@ class Draw:
     """
 
     def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=6, release=9, settle=14,
-                 biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0):
+                 biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0, min_elev=-15.0):
         self.rig, self.sword, self.saya = rig, sword, saya
         self.L = blade_len
         self.R = R                                          # the blade's curve (katana_real build()['R'])
         self.grab, self.slide, self.clear = grab, slide, clear
         self.reach, self.release, self.settle = reach, release, settle
         self.biki, self.aim, self.turn, self.level, self.meet = biki, aim, turn, level, meet
+        self.min_elev = min_elev
         self.meet_q = None
         self.hands = {}                                     # side -> (open hand objects, grip hand object)
         self.caps = None                                    # body_capsules.BodyCapsules: the body's boundary
         self.pushed = {}                                    # frame -> degrees the blade was turned out
         self.arm_fix = {}                                   # side -> [(frame, cm before, cm after)]
         self._rel_prev = None
+        self._arm_at_clear = None
         self._roll_off = None                               # the sword's turn in the hand at the clear
         self.release_l = 16                                 # the left hand lets go of the scabbard slowly
         self.unroll = 10                                    # frames to ease it out
@@ -452,6 +454,18 @@ class Draw:
                 R3 = self.meet_q.to_matrix()
                 hip = Matrix.Translation(pivot) @ R3.to_4x4() @ Matrix.Translation(-(worn @ Vector((TIE, 0, 0)))) @ worn
                 hip = blend(worn, hip, hold)
+            # ...but never steeper than `min_elev` (the meet turn plus the coil pointed it -33 deg at the floor):
+            # a held scabbard stays readable, near level, the tip a little below the mouth
+            d = hip.to_3x3().col[0].normalized()
+            el = math.degrees(math.asin(max(-1.0, min(1.0, d.z))))
+            lo, hi = self.min_elev, 0.0
+            if el < lo or el > hi:
+                want = math.radians(max(lo, min(hi, el)))
+                flat = Vector((d.x, d.y, 0)).normalized()
+                lv = flat * math.cos(want) + Vector((0, 0, 1)) * math.sin(want)
+                pivot = hip @ Vector((TIE, 0, 0))
+                q = d.rotation_difference(lv)
+                hip = Matrix.Translation(pivot) @ q.to_matrix().to_4x4() @ Matrix.Translation(-pivot) @ hip
         back = hip.to_3x3().col[0].normalized()
         tie0 = hip.translation + back * TIE
         target, w, phase = None, 0.0, 'sheathed'
@@ -502,7 +516,16 @@ class Draw:
             w = 1.0 - _smooth((f - self.clear) / self.release)
             Y = blend(self.last_saya or worn, worn, (f - self.clear) / self.settle)
             phase = 'drawn'
-        if w > 0 and target is not None:
+        if phase == 'drawn' and w > 0 and self._arm_at_clear is not None:
+            # RELEASE: blend the arm's ANGLES from where they were when the blade cleared to the pose's own.
+            # (It used to keep an IK pull toward the last target - the sword lying back along the scabbard -
+            # for `release` frames, which tipped the blade 54 deg down right at the cut's contact.)
+            pose = dict(pose)
+            for k in ARM:
+                pose[k] = pose[k] + (self._arm_at_clear[k] - pose[k]) * w
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+        elif w > 0 and target is not None:
             solved, res = ik_arm(rig, pose, target, self.H)
             self.residual[f] = (round(res, 3), ik_arm.last_angle)
             pose = dict(pose)
@@ -598,6 +621,7 @@ class Draw:
                 S = (rig.J['rH'].matrix_world @ self.H) @ self._roll_off.to_matrix().to_4x4()
         if phase == 'drawing':
             self._rel_prev = (hand.to_3x3().inverted() @ S.to_3x3()).to_quaternion()
+            self._arm_at_clear = {k: pose[k] for k in ARM}  # the last drawing frame's arm, for the release
         for ob, M in ((self.sword, S), (self.saya, Y)):
             loc, rot, _ = M.decompose()
             ob.location = loc

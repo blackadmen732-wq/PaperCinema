@@ -74,6 +74,11 @@ FPS = TL['clock']['fps'] if isinstance(TL.get('clock'), dict) else 24
 FRAMES = TL['frames']
 f0, f1 = (int(x) for x in arg('frames', f'0-{len(FRAMES) - 1}').split('-'))
 f1 = min(f1, len(FRAMES) - 1)
+import production_bake as PB                                    # noqa: E402  the ONE solve of body, props, paper
+PB.check_pose_channels(TL, f0, f1, FILM)                        # before Blender builds anything
+_FP = os.path.join(REPO, 'film', FILM + '.json')
+FILMJ = json.load(open(_FP)) if os.path.exists(_FP) else {}
+DRAWS = {aid: p['draw'] for aid, p in (FILMJ.get('performances') or {}).items() if isinstance(p, dict) and p.get('draw')}
 
 if arg('set'):
     # A built set (docs/SETS.md). The timeline's world coordinates are kept as they are; the set is
@@ -92,6 +97,7 @@ sc.render.fps = FPS
 # ronin's straw hat and Musashi the armoured warrior's plates, which neither had at Ganryujima.
 RECIPES = {'kojiro': 'kojiro', 'musashi': 'musashi', 'ronin': 'ronin-reference', 'warrior': 'armoured-warrior'}
 rigs = {}
+chars = {}
 char_meshes = []          # every built character mesh, for the look block (ink outline) further down
 for a in TL['actors']:
     if a.get('hidden'):
@@ -104,7 +110,14 @@ for a in TL['actors']:
     # and the armoured warrior is defined as a diff against the ronin.
     recipe = MB.load_recipe(path)
     ch = MB.build(recipe, name='PC_' + a['id'])
+    if a['id'] in DRAWS:
+        # the recipe's old hip sword (a box scabbard + handle glued to the torso) would be a second sword
+        _old = [o for o in ch['objects'] if o.get('pc_recipe') == 'katana_sheathed']
+        ch['objects'] = [o for o in ch['objects'] if o.get('pc_recipe') != 'katana_sheathed']
+        for _o in _old:
+            bpy.data.objects.remove(_o, do_unlink=True)
     rigs[a['id']] = ch['rig']
+    chars[a['id']] = ch
     char_meshes += [o for o in ch['objects'] if o.type == 'MESH']
     print(f"[film] {a['id']} -> {os.path.basename(path)}")
 
@@ -127,6 +140,8 @@ if not flag('no-sword'):
         if _a.get('hidden'):
             continue
         _w = _a.get('weapon') or {}
+        if _a['id'] in DRAWS:
+            continue                                            # the real katana + scabbard (below)
         if _w.get('kind') == 'bokken':
             swords[_a['id']] = build_bokken('BOKKEN_' + _a['id'], blade_len=_w.get('bladeLen', 0.91) * 1.15,
                                             handle=_w.get('handle', 0.33))
@@ -146,18 +161,59 @@ cam.rotation_mode = 'QUATERNION'
 # ---------------------------------------------------------------- bake the timeline
 # Keyframe every joint empty and the camera on every frame. The rig is empties driving a deform
 # armature (modular_builder.Rig), so keying the empties is what moves the mesh.
+# The real sword draw, the grips, the body boundary and the cloth springs for every actor: built here, SOLVED
+# ONCE over the whole timeline (production_bake.py) and keyed from that bake, so every render process shows the
+# same motion. --stiff-cloth turns the springs off; --bake-only writes the bake and stops (tools/film.sh runs
+# it once before the render workers).
+import sword_draw as SD                                         # noqa: E402
+import katana_real as KR                                        # noqa: E402
+import body_capsules as BC                                      # noqa: E402
+import cloth_springs as CS                                      # noqa: E402
+PACT = []
+for aid, rig in rigs.items():
+    ch = chars[aid]
+    draw = None
+    if aid in DRAWS:
+        dd = DRAWS[aid]
+        K = KR.build('KATANA_' + aid, sc.collection, blade_len=float(dd.get('blade', 0.91)))
+        fr_ = lambda t: int(round(float(t) * FPS)) + 1
+        draw = SD.Draw(rig, K['sword'], K['saya'], float(dd.get('blade', 0.91)), grab=fr_(dd['grab']),
+                       slide=fr_(dd['slide']), clear=fr_(dd['clear']), R=K['R'])
+        opens = {s_: [o for o in ch['objects'] if o.get('pc_recipe') == 'hand_folded' and o.get('pc_socket') == 'hand.' + s_]
+                 for s_ in ('R', 'L')}
+        skin = next((o.data.materials[0] for o in opens['R'] if o.data.materials), None)
+        draw.add_hands(opens['R'], opens['L'], skin, skin)
+        draw.caps = BC.BodyCapsules(rig)
+        char_meshes += [o for o in K['sword'].children_recursive + K['saya'].children_recursive if o.type == 'MESH']
+    springs = None
+    if not flag('stiff-cloth'):
+        tam = {'rSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.R')],
+               'lSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.L')]}
+        springs = CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS, panels=tam, body=BC.BodyCapsules(rig, shrink=0.035))
+    PACT.append(PB.Actor(aid, rig, ch['objects'], draw=draw, springs=springs))
+
+BAKE_PATH = os.path.join(REPO, 'output', FILM + '.bake.json')
+_stamp = PB.bake_stamp(REPO, FILM) + ('-stiff' if flag('stiff-cloth') else '')
+BAKE = PB.load(BAKE_PATH, _stamp)
+if BAKE is None:
+    print(f'[bake] solving {len(FRAMES)} frames once (draw: {sorted(DRAWS) or "none"}, springs: {not flag("stiff-cloth")})')
+    BAKE = PB.solve(TL, PACT, FPS, checks=True)
+    PB.save(BAKE, BAKE_PATH, _stamp)
+    for line in PB.report(BAKE, len(FRAMES)):
+        print(line)
+    print('[bake] ->', BAKE_PATH)
+else:
+    print('[bake] using', BAKE_PATH, '(stamp', _stamp + ')')
+if flag('bake-only'):
+    raise SystemExit(0)
+if flag('report'):
+    for line in PB.report(BAKE, len(FRAMES)):
+        print(line)
+
 for i in range(f0, f1 + 1):
     fr = FRAMES[i]
     bpy.context.scene.frame_set(i + 1)      # ABSOLUTE timeline frame, 1-based
-    for aid, rig in rigs.items():
-        act = fr['actors'].get(aid)
-        if not act:
-            continue
-        rig.pose(act['pose'])                                   # 46 channels, same names both sides
-        for e in rig.J.values():
-            e.keyframe_insert('location')
-            e.keyframe_insert('rotation_euler')
-        rig.key_bones(i + 1)                                    # the deform bones too (see Rig.key_bones)
+    PB.apply(BAKE, i, PACT)                 # joints, deform bones, real sword + scabbard, hands: from the bake
     for _aid, _sw in swords.items():
         _act = fr['actors'].get(_aid)
         if _act and _act.get('weapon'):
@@ -175,11 +231,16 @@ for i in range(f0, f1 + 1):
         cam.keyframe_insert('rotation_quaternion')
         cd.keyframe_insert('lens')
 
+if flag('mannequin'):
+    import swords as _SWm                                       # noqa: E402
+    PB.build_mannequin(BAKE, PACT, None, sc, _SWm._flat_mat)
+
 # The engine's poses are already eased; Blender re-easing them would double the smoothing and the
 # snap of a cut would soften into a drift. Hold every curve linear between the baked frames.
 # (Review, 26 Nov: this loop used to visit the Rig WRAPPERS, which carry no animation, so the joint empties
 # that are actually keyed kept Blender's Bezier easing and every cut was softened. Visit the joints.)
-for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rigs.values()] + list(swords.values()) + [cam, cd]:
+for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rigs.values()] + list(swords.values()) + \
+        [x for a_ in PACT if a_.draw for x in (a_.draw.sword, a_.draw.saya)] + [cam, cd]:
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     if not act:
