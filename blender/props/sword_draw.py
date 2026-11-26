@@ -56,6 +56,16 @@ def frame(origin, x_dir, up=Vector((0, 0, 1))):
     return M
 
 
+def arc(s, R):
+    """The sword's frame relative to its scabbard after sliding s metres out of the mouth. Blade and scabbard
+    share one circle of radius R (centre at +y, the back), so the slide is a turn about that centre: every
+    point of the blade stays on the scabbard's curve. R = 0: a straight slide."""
+    if not R:
+        return Matrix.Translation((-s, 0, 0))
+    C = Vector((0, R, 0))
+    return Matrix.Translation(C) @ Matrix.Rotation(-s / R, 4, 'Z') @ Matrix.Translation(-C)
+
+
 def blend(A, B, t):
     """Blend two rigid frames (t = 0 -> A, 1 -> B)."""
     t = max(0.0, min(1.0, t))
@@ -154,11 +164,14 @@ def _hand_fk(rig, p, H, side='r'):
 
 
 def _err(M, T, wr):
+    """Position error, plus the turn that lines the hand's handle axis up with the target's. The twist ABOUT
+    the handle is left free: a hand wraps round a handle at any roll, and the wrist cannot match a forced
+    roll (that conflict alone left the hand 5-7 cm off the handle)."""
     e = list(T.translation - M.translation)
-    q = (T.to_3x3() @ M.to_3x3().transposed()).to_quaternion()
-    ax, ang = q.to_axis_angle()
-    if ang > math.pi:
-        ang -= 2 * math.pi
+    a, b = M.to_3x3().col[0].normalized(), T.to_3x3().col[0].normalized()
+    ax = a.cross(b)
+    ang = math.atan2(ax.length, a.dot(b))
+    ax = ax.normalized() if ax.length > 1e-9 else Vector((0, 0, 0))
     return e + [c * ang * wr for c in ax]
 
 
@@ -175,8 +188,7 @@ def _solve6(A, b):
     return [M[i][n] / M[i][i] if M[i][i] else 0.0 for i in range(n)]
 
 
-def ik_arm(rig, pose, target, H, iters=40, wr=0.2, lam=0.06, side='r'):
-    """Return (pose with the right arm turned so hand_grip = target, residual metres)."""
+def _ik(rig, pose, target, H, iters, wr, lam, side):
     p = dict(pose)
     keys = arm_keys(side)
     for _ in range(iters):
@@ -199,7 +211,18 @@ def ik_arm(rig, pose, target, H, iters=40, wr=0.2, lam=0.06, side='r'):
             p[name] += sum(Jm[i][k] * y[i] for i in range(6))
             lo, hi = LIMITS.get(name, (-3.1, 3.1))
             p[name] = max(lo, min(hi, p[name]))
+    return p
+
+
+def ik_arm(rig, pose, target, H, side='r', wr=0.25):
+    """Return (pose with that arm turned so the hand grips `target`, gap in metres). Two passes: first the
+    hand goes TO the handle (position only, always reachable here), then it turns along the handle without
+    leaving it. One weighted pass got stuck 5-7 cm off."""
+    p = _ik(rig, pose, target, H, 40, 0.0, 0.06, side)
+    p = _ik(rig, p, target, H, 40, wr, 0.06, side)
     M = _hand_fk(rig, p, H, side)
+    ik_arm.last_angle = round(math.degrees(M.to_3x3().col[0].normalized().angle(
+        target.to_3x3().col[0].normalized(), 0.0)), 1)
     return p, (target.translation - M.translation).length
 
 
@@ -222,12 +245,14 @@ class Draw:
     """
 
     def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=6, release=4, settle=8,
-                 biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75):
+                 biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0):
         self.rig, self.sword, self.saya = rig, sword, saya
         self.L = blade_len
+        self.R = R                                          # the blade's curve (katana_real build()['R'])
         self.grab, self.slide, self.clear = grab, slide, clear
         self.reach, self.release, self.settle = reach, release, settle
-        self.biki, self.aim, self.turn = biki, aim, turn
+        self.biki, self.aim, self.turn, self.level, self.meet = biki, aim, turn, level, meet
+        self.meet_q = None
         self.H = hand_holder()
         self.Mrest = saya_rest_in_torso()
         from part_registry import REST                     # noqa: the rig's rest joints
@@ -247,7 +272,41 @@ class Draw:
         rig.pose(pose)
         bpy.context.view_layer.update()
         D = self._D()
-        hip = D @ self.Mrest                               # mouth frame, x toward the tip (back)
+        worn = D @ self.Mrest                              # mouth frame, x toward the tip (back)
+        # Once the left hand holds the scabbard it LEVELS it (the tip just below the mouth, `level` degrees)
+        # about the obi cord, whatever the hips do: a crouched iai pose no longer points the handle at the floor.
+        hold = _smooth((f - (self.grab - self.reach)) / self.reach)
+        if f >= self.clear:
+            hold *= 1.0 - _smooth((f - self.clear) / self.settle)
+        hip = worn
+        if hold > 0:
+            d = worn.to_3x3().col[0]
+            flat = Vector((d.x, d.y, 0)).normalized()
+            lv = (flat * math.cos(math.radians(self.level)) - Vector((0, 0, 1)) * math.sin(math.radians(self.level)))
+            pivot = worn @ Vector((TIE, 0, 0))
+            q = d.rotation_difference(lv)
+            Mq = Matrix.Translation(pivot) @ q.to_matrix().to_4x4() @ Matrix.Translation(-pivot)
+            hip = blend(worn, Mq @ worn, hold)
+            # ...and TURNS it to meet the right hand: the hand goes onto the handle (position only), the
+            # scabbard swings about its cord (at most `meet` degrees) so its line runs along the hand's grip.
+            # During the slide the last turn is kept, so nothing jumps when the blade starts to move.
+            pivot = hip @ Vector((TIE, 0, 0))
+            if f < self.slide:
+                for _ in range(2):
+                    pp = _ik(rig, pose, hip, self.H, 40, 0.0, 0.06, 'r')
+                    a_h = _hand_fk(rig, pp, self.H, 'r').to_3x3().col[0].normalized()
+                    d = hip.to_3x3().col[0].normalized()
+                    q = d.rotation_difference(a_h)
+                    ax, ang = q.to_axis_angle()
+                    ang = min(ang, math.radians(self.meet)) * hold
+                    from mathutils import Quaternion as _Q
+                    Mq = Matrix.Translation(pivot) @ _Q(ax, ang).to_matrix().to_4x4() @ Matrix.Translation(-pivot)
+                    hip = Mq @ hip
+                    self.meet_q = (hip.to_3x3() @ worn.to_3x3().inverted()).to_quaternion()
+            elif getattr(self, 'meet_q', None) is not None:
+                R3 = self.meet_q.to_matrix()
+                hip = Matrix.Translation(pivot) @ R3.to_4x4() @ Matrix.Translation(-(worn @ Vector((TIE, 0, 0)))) @ worn
+                hip = blend(worn, hip, hold)
         back = hip.to_3x3().col[0].normalized()
         tie0 = hip.translation + back * TIE
         target, w, phase = None, 0.0, 'sheathed'
@@ -263,20 +322,19 @@ class Draw:
             fwd, right = -D.to_3x3().col[1].normalized(), -D.to_3x3().col[0].normalized()
             a = (fwd * self.aim[0] + right * self.aim[1] + Vector((0, 0, 1)) * self.aim[2]).normalized()
             out = (-back).slerp(a, self.turn * e) if (-back).angle(a) > 1e-4 else a
-            G = tie + out * (TIE + e * (self.L + 0.02))
-            target = frame(G, -out)                         # blade points back through the mouth
             mouth = tie + out * TIE
             Y = frame(mouth, -out)
+            target = Y @ arc(e * (self.L + 0.03), self.R)   # the blade slides out ALONG ITS CURVE
             self.last_saya, self.last_target = Y, target
             w, phase = 1.0, 'drawing'
         else:
             target = self.last_target
             w = 1.0 - _smooth((f - self.clear) / self.release)
-            Y = blend(self.last_saya or hip, hip, (f - self.clear) / self.settle)
+            Y = blend(self.last_saya or worn, worn, (f - self.clear) / self.settle)
             phase = 'drawn'
         if w > 0 and target is not None:
             solved, res = ik_arm(rig, pose, target, self.H)
-            self.residual[f] = round(res, 3)
+            self.residual[f] = (round(res, 3), ik_arm.last_angle)
             pose = dict(pose)
             for k in ARM:
                 pose[k] = pose[k] + (solved[k] - pose[k]) * w

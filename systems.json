@@ -561,11 +561,11 @@
   },
   {
    "id": "SWORDDRAW",
-   "name": "Sword draw (blade out of the scabbard)",
-   "does": "One sword and one scabbard per swordsman. Before the draw the sword sits in the saya at the left hip; a right-arm IK (damped least squares on the pose's 7 arm angles) puts the hand ON the handle; during the slide the saya turns about its obi cord and is pulled back (saya-biki) while the guard travels out along its axis, slow then fast, so the blade cannot pass through the scabbard; when the tip clears, the arm hands back to the pose and the saya settles at the hip. Test clip: `output/draw-test/`",
+   "name": "Sword draw with the real katana",
+   "does": "One REAL sword and scabbard per swordsman (`katana_real.py`: full curved steel blade with ridge, temper line and point; wrapped handle; gold-motif iron guard; curved lacquer scabbard with horn mouth, cord knob and vermilion cord). The scabbard is worn outside the clothes (position searched for camera visibility); the left hand holds it, levels it and turns it to meet the right hand; the right hand grips the handle (two-pass arm IK, 0 mm / 0 deg from the grab on); the blade slides out ALONG ITS OWN CURVE (blade and scabbard share one circle), the scabbard pulled back (saya-biki); when the tip clears, the scabbard settles at the hip. Test clips: `output/draw-hip/`, `output/draw-test/` (30 fps)",
    "files": [
+    "blender/props/katana_real.py",
     "blender/props/sword_draw.py",
-    "blender/props/swords.py",
     "blender/draw_test.py"
    ],
    "guide": [

@@ -44,10 +44,10 @@ ch = MB.build(recipe, name='PC_' + RECIPE)
 rig = ch['rig']
 
 SW.use(sc.collection)
-sword = SW.build_katana('KATANA', blade_len=BLADE, handle=0.33)
-paper = SW._flat_mat('saya_paper', (0.012, 0.012, 0.014, 1), 0.28)   # black lacquer: catches a highlight
-horn = SW._flat_mat('saya_horn', (0.86, 0.80, 0.66, 1), 0.5)          # bone mouth + cap mark both ends
-saya = SD.build_saya('SAYA', sc.collection, length=BLADE + 0.05, mat_body=paper, mat_mouth=horn)
+import katana_real as KR                             # noqa: E402  the real sword + scabbard (one base)
+K = KR.build('KATANA', sc.collection, blade_len=BLADE)
+sword, saya = K['sword'], K['saya']
+saya.name = 'SAYA'
 
 # ---------------------------------------------------------------- the move, in seconds
 POSES = json.load(open(os.path.join(REPO, 'library', 'poses.json')))
@@ -81,7 +81,7 @@ def pose_at(t):
 
 
 F = int(KEYS[-1][0] * FPS) + 1
-draw = SD.Draw(rig, sword, saya, BLADE, grab=GRAB, slide=SLIDE, clear=CLEAR)
+draw = SD.Draw(rig, sword, saya, BLADE, grab=GRAB, slide=SLIDE, clear=CLEAR, R=K['R'])
 log = []
 for f in range(1, F + 1):
     sc.frame_set(f)
@@ -119,6 +119,16 @@ cam.location = Vector([float(v) for v in arg('cam', '1.9,-2.6,1.25').split(',')]
 target = Vector([float(v) for v in arg('look', '-0.25,-0.4,1.0').split(',')])
 cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
 MB.studio(sc, 'cinematic')
+# real metal needs something to reflect: the free Poly Haven dusk sky, low, under the studio lights
+_hdr = os.path.join(REPO, 'assets', 'polyhaven', 'qwantani_dusk_2_puresky', 'qwantani_dusk_2_puresky_2k.hdr')
+if os.path.exists(_hdr) and sc.world and sc.world.use_nodes:
+    _nt = sc.world.node_tree
+    _bg = next((n for n in _nt.nodes if n.type == 'BACKGROUND'), None)
+    if _bg:
+        _env = _nt.nodes.new('ShaderNodeTexEnvironment')
+        _env.image = bpy.data.images.load(_hdr)
+        _nt.links.new(_env.outputs['Color'], _bg.inputs['Color'])
+        _bg.inputs['Strength'].default_value = 0.35
 # a paper floor and a dim warm backdrop, so the blade and the scabbard read against something
 bpy.ops.mesh.primitive_plane_add(size=12, location=(0, 0, 0))
 floor = bpy.context.active_object
@@ -142,7 +152,7 @@ def saya_visible(f, n=24):
         p = saya.matrix_world @ Vector((L * (i + 0.5) / n, 0, 0.0))
         d = p - cam.matrix_world.translation
         hit, loc, nor, idx, ob, mat = sc.ray_cast(dg, cam.matrix_world.translation, d.normalized(), distance=d.length + 0.05)
-        seen += bool(hit and ob and ob.name.startswith('SAYA'))
+        seen += bool(hit and ob and ob.parent is saya)
     return seen / n
 
 
