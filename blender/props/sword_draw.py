@@ -356,8 +356,8 @@ class Draw:
             rig.pose(pose)
             bpy.context.view_layer.update()
         hand = rig.J['rH'].matrix_world @ self.H
-        if phase == 'sheathed':
-            S = hip
+        if phase in ('sheathed', 'grab'):
+            S = hip                                         # in the scabbard until the slide: the hand comes TO it
         elif phase == 'drawing':
             S = target                                      # on the scabbard's axis, exactly
         else:
