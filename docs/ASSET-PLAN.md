@@ -104,3 +104,14 @@ Then the oni mask set (B) when the cursed-sword arc starts.
 - **Check that the plan allows commercial use** before a model goes into a posted video; some tiers do not, or
   require a credit line.
 - A monthly credit budget; the cost of the first model is measured and shown before more are made.
+
+## 8. Built on 26 Nov: the cover, all ours
+Mark: "make it ours, literally ours ... the full screen white ... the letters in the back, bold ... orange and white ... the red thing at the bottom where the white is". `blender/props/katana_hero.py` models our katana (no downloaded picture) and renders it on transparency in ~45 s at 1080x1920 on CPU; `tools/cover.py` lays out the page: washi, a rising sun with kasumi bands and seigaiha waves in orange (the guard carries the same wave-and-sun motif), the name in huge bold kanji behind the sword, the glint, and the red seal with PAPER CINEMA in the white band. Both spellings:
+
+    B=/opt/blender-dl/blender-4.5.16-linux-x64/blender
+    $B -b -t 4 -P blender/props/katana_hero.py -- --out output/covers/katana.png
+    python3 tools/cover.py --prop output/covers/katana.png --jp 紙の剣 --seal 紙剣 --out output/covers/cover-kami-no-tsurugi.jpg
+    python3 tools/cover.py --prop output/covers/katana.png --jp 紙の映画 --seal 映画 --out output/covers/cover-kami-no-eiga.jpg
+
+In a 3:4 profile grid the platforms crop the top and bottom ~240 px of a 9:16 cover: the seal and the name sit at 1600-1800 px, so on the grid they can be cut; on the full cover and in the feed they show.
+Next with the same principle: opening B (our own folded-paper oni mask on cords, the 鬼神 tag) and opening C (a blade through a paper cherry blossom).

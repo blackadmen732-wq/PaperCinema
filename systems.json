@@ -393,6 +393,21 @@
    "status_note": "✅ (motion page and main engine)"
   },
   {
+   "id": "COVER",
+   "name": "Covers and thumbnails (ours only)",
+   "does": "A 1080x1920 cover from our own parts: washi paper, an orange-and-white pattern (rising sun, kasumi mist bands, seigaiha waves), the channel name in huge bold kanji BEHIND the prop, the prop render with a cast shadow and a glint, and a white band with the red seal and PAPER CINEMA. The first prop is `blender/props/katana_hero.py`: our own close-up katana (diamond-wrapped handle, a four-lobed guard inlaid with our wave-and-sun motif, brass fittings, a hand's width of blade with a hamon, lacquer scabbard, vermilion cord), rendered on transparency",
+   "files": [
+    "tools/cover.py",
+    "blender/props/katana_hero.py"
+   ],
+   "guide": [
+    "docs/ASSET-PLAN.md"
+   ],
+   "command": "python3 tools/cover.py --prop output/covers/katana.png --jp 紙の剣 --seal 紙剣 --out output/covers/cover.jpg",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "EPCHECK",
    "name": "Episode check (is it postable?)",
    "does": "Measures a finished episode file: 1080x1920, length inside the asked range (45–60 s by default), H.264 + AAC, integrated loudness −14 ± 1.5 LUFS; one PASS/FAIL line per measurement, exit 0 only when all pass. The `episode-1-ganryujima` promise runs it",
