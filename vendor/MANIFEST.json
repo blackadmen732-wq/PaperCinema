@@ -116,12 +116,42 @@
    "what": "Speech to text, fast, local, no network.",
    "why_here": "Transcribing reference footage and interviews, and captioning the finished Shorts. Also the way to read a tutorial video this container cannot get subtitles for (YouTube blocks yt-dlp subtitle fetches from a datacentre IP).",
    "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+  },
+  {
+   "id": "anyshot",
+   "name": "AnyShot",
+   "url": "https://github.com/apekshik/anyshot.git",
+   "commit": "21e844ce5960f3c8b0f8f8a1dbfa71b27d3b6ebb",
+   "licence": "MIT",
+   "size": "680 KB",
+   "what": "A Claude agent that directs shots in a Blender scene: reads the set, plans camera moves from words, checks clearance, blocks with cheap frames, looks at them, corrects, then renders finals.",
+   "why_here": "The closest published prior art to KUROKO, and the source of the speed and lens numbers in docs/cinematography/CAMERA_GRAMMAR.md. Read agent/SHOTS.md and camera/camrig.py. DO NOT transplant it: Blender 5.0.1 and a GPU farm, against this pipeline's 4.5.16 on CPU. It independently reached the same conclusion as blender/check_sight.py - clearance is about solids, because a real camera moves through dust.",
+   "skill": ".claude/skills/pc-camera/SKILL.md"
+  },
+  {
+   "id": "anyscene",
+   "name": "AnyScene",
+   "url": "https://github.com/apekshik/anyscene.git",
+   "commit": "88c1daf0b47b122359c357eb502cfc1b960609a5",
+   "licence": "MIT",
+   "size": "82 MB",
+   "what": "Photoreal Blender scenes from a one-paragraph brief, built by AI agents: image-to-3D props, scripted layout, lighting, camera and grade.",
+   "why_here": "The set-building sibling of AnyShot. Read for how it scripts layout and lighting from a brief; this project's sets are recipes in library/sets/ and should stay that way.",
+   "skill": ".claude/skills/pc-camera/SKILL.md"
   }
  ],
  "rejected": [
   {
    "name": "Remotion",
    "why": "Not vendored on purpose. Remotion is free for individuals and teams up to three people, then needs a paid seat per developer for a company. AGENTS.md rule 6 is that nothing in this project may put a licence condition on work that gets sold. HyperFrames (Apache-2.0) and Revideo (MIT) do the same job with no such condition, so HyperFrames is vendored instead."
+  },
+  {
+   "name": "CineTechBench",
+   "why": "CC BY-NC-ND 4.0 on the dataset. Expert annotations of shot scale, angle, composition, movement, lighting and focal length across 600+ images and 120 clips - excellent research, and non-commercial AND no-derivatives, so it may be read and cited and must never be bundled, adapted or used to build anything this project sells. Rule 6."
+  },
+  {
+   "name": "Add Camera Rigs (Blender add-on)",
+   "why": "GPL-3.0-or-later. Dolly, crane and 2D rigs with animator controls, and a good model for rig hierarchy and aim controls - but copying its code into this repository would put this repository under GPL. Study it, install it in Blender if useful, never paste from it."
   }
  ]
 }
