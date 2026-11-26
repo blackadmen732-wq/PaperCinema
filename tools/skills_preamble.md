@@ -39,6 +39,7 @@ the frames, which is what step 6 reads.
 | Outside tools, pinned to a commit | `vendor/MANIFEST.json` · `node tools/vendor.mjs --list` |
 | Which guide for which task | `docs/README.md` |
 | This page | `python3 tools/build_skills.py` |
+| What to watch to learn this craft, in order | `docs/WATCH-LIST.md` |
 
 ## Four rules that cost people time here
 
