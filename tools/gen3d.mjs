@@ -36,8 +36,9 @@ const OUT = opt('out');
 const BACKENDS = {
   tripo: {
     host: 'openapi.tripo3d.ai',
-    // $20/mo Pro is the cheapest plan whose output may be sold; the free tier is non-commercial,
-    // which AGENTS.md rule 6 rules out for anything in this project.
+    // The API is pay-as-you-go and billed apart from the Tripo Studio website plans (Studio credits do
+    // not work here): 1 credit = $0.01, image-to-3D with texture 30 credits (developers.tripo3d.ai/en/pricing,
+    // read 26 Nov 2026). Docs: developers.tripo3d.ai/en/docs/quick-start.
     create: (kind, body) => ({
       url: `https://openapi.tripo3d.ai/v3/generation/${kind === 'image' ? 'image-to-model' : 'text-to-model'}`,
       body: { model: 'v3.1-20260211', texture: true, pbr: true, texture_quality: QUALITY, ...body },
@@ -47,11 +48,11 @@ const BACKENDS = {
       body: { model_url: fileUrl, mode: 'semantic' },
     }),
     taskId: (j) => j?.data?.task_id ?? j?.task_id,
-    status: (id) => `https://openapi.tripo3d.ai/v3/task/${id}`,
+    status: (id) => `https://openapi.tripo3d.ai/v3/tasks/${id}`,
     read: (j) => {
       const d = j?.data ?? j;
       return { state: d?.status, progress: d?.progress ?? 0,
-               files: [d?.output?.pbr_model, d?.output?.model, ...(d?.output?.parts ?? [])].filter(Boolean) };
+               files: [d?.output?.model_url, d?.output?.pbr_model, d?.output?.model, ...(d?.output?.parts ?? [])].filter(Boolean) };
     },
   },
   meshy: {
