@@ -82,6 +82,12 @@ def pose_at(t):
 
 F = int(KEYS[-1][0] * FPS) + 1
 draw = SD.Draw(rig, sword, saya, BLADE, grab=GRAB, slide=SLIDE, clear=CLEAR, R=K['R'])
+_open = {s_: [o for o in ch['objects'] if o.get('pc_recipe') == 'hand_folded' and o.get('pc_socket') == 'hand.' + s_]
+         for s_ in ('R', 'L')}
+_skin = next((o.data.materials[0] for o in _open['R'] if o.data.materials), None)
+if '--open-hands' not in argv:
+    draw.add_hands(_open['R'], _open['L'], _skin, _skin)
+print('[draw] open hand objects:', {k: [o.name for o in v] for k, v in _open.items()})
 log = []
 for f in range(1, F + 1):
     sc.frame_set(f)

@@ -116,7 +116,7 @@ def build_saya(name, coll, length=0.95, mat_body=None, mat_mouth=None):
 
 
 # the left-hip tie point in the rest pose (part_registry SOCKETS['hip_side.L']) and the worn angle
-LEFT_AT = 0.07                                            # the left hand's grip behind the mouth
+LEFT_AT = 0.11                                            # the left hand's grip behind the mouth
 TIE = 0.12                                                # mouth -> obi cord, along the saya
 
 
@@ -134,6 +134,74 @@ def saya_rest_in_torso(wear=None):
     tilt = Matrix.Rotation(math.radians(w['tilt']), 3, 'X') @ Matrix.Rotation(math.radians(w['swing']), 3, 'Z')
     d = tilt @ Vector((0, 1, 0))
     return frame(Vector(w['mouth']), d)
+
+
+# --------------------------------------------------------------------------- the gripping hands
+# Mark, 26 Nov: "does the hand hold?" It did not: the hand part is one flat folded sheet with four straight
+# fingers (part_registry.hand_folded), so even with the hand exactly on the handle it read as a paddle
+# touching the sword. A holding hand is a different SHAPE, not more joints: four fingers folded round the
+# handle like C-shaped paper bands, the back of the hand over them, the thumb across the top, a wrist block
+# back to the forearm (the same design as the browser engine's grip hand, engine/figure.js). It is built in
+# the SWORD's frame and rides the hand joint through the grip frame, so when the IK puts the hand on the
+# handle the fingers wrap the real handle. It swaps with the open hand while the hand holds.
+def build_grip_hand(name, coll, joint, H, mat, radius=0.019, x0=-0.100, x1=-0.022, thumb_side=1.0):
+    bm = bmesh.new()
+    n_f = 4
+    w = (x1 - x0) / n_f
+    gap = math.radians(70)                                # the open side of each C, where the thumb lies
+    segs = 6
+    for i in range(n_f):
+        xa, xb = x0 + i * w + 0.0015, x0 + (i + 1) * w - 0.0015
+        r = radius * (1.0 - 0.04 * i) + 0.004            # little finger slightly smaller
+        ring_a, ring_b = [], []
+        for k in range(segs + 1):
+            a = gap / 2 + (2 * math.pi - gap) * k / segs + (math.pi / 2 if thumb_side > 0 else -math.pi / 2)
+            ring_a.append(bm.verts.new((xa, r * math.cos(a), r * math.sin(a))))
+            ring_b.append(bm.verts.new((xb, r * math.cos(a), r * math.sin(a))))
+        for k in range(segs):
+            bm.faces.new((ring_a[k], ring_b[k], ring_b[k + 1], ring_a[k + 1]))
+    # the back of the hand: a plate over the fingers' knuckle side, running back toward the wrist
+    wrist = H.inverted() @ Vector((0, 0, 0))              # the hand joint, in the sword frame
+    out = Vector((0, -1, 0)) if thumb_side > 0 else Vector((0, 1, 0))
+    kn = radius + 0.006
+    plate = [Vector((x0, 0, 0)) + out * kn + Vector((0, 0, 0.018)), Vector((x1, 0, 0)) + out * kn + Vector((0, 0, 0.018)),
+             Vector((x1, 0, 0)) + out * kn + Vector((0, 0, -0.018)), Vector((x0, 0, 0)) + out * kn + Vector((0, 0, -0.018))]
+    pv = [bm.verts.new(v) for v in plate]
+    bm.faces.new(pv)
+    # palm/wrist: from the plate's middle to the joint
+    mid = (plate[0] + plate[1] + plate[2] + plate[3]) / 4
+    a0, a1 = mid + Vector((0, 0, 0.02)), mid + Vector((0, 0, -0.02))
+    wv = [bm.verts.new(v) for v in (a0, a1, wrist + Vector((0, 0, -0.018)), wrist + Vector((0, 0, 0.018)))]
+    bm.faces.new(wv)
+    # the thumb across the top of the handle, toward the guard
+    tz = radius + 0.004
+    th = [Vector((x0 + 0.02, 0.006, tz)), Vector((x1 + 0.004, 0.004, tz)), Vector((x1 + 0.004, -0.010, tz)),
+          Vector((x0 + 0.02, -0.012, tz))]
+    if thumb_side < 0:
+        th = [Vector((v.x, v.y, -v.z)) for v in th]
+    bm.faces.new([bm.verts.new(v) for v in th])
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    for poly in me.polygons:
+        poly.use_smooth = False
+    ob = bpy.data.objects.new(name, me)
+    if mat:
+        me.materials.append(mat)
+    coll.objects.link(ob)
+    sol = ob.modifiers.new('fold', 'SOLIDIFY')            # paper with a thickness, like every other part
+    sol.thickness = 0.004
+    ob.parent = joint
+    ob.matrix_parent_inverse = Matrix.Identity(4)
+    ob.matrix_basis = H
+    return ob
+
+
+def key_visible(ob, f, on):
+    ob.hide_render = not on
+    ob.hide_viewport = not on
+    ob.keyframe_insert('hide_render', frame=f)
+    ob.keyframe_insert('hide_viewport', frame=f)
 
 
 # --------------------------------------------------------------------------- the right-arm IK
@@ -253,6 +321,7 @@ class Draw:
         self.reach, self.release, self.settle = reach, release, settle
         self.biki, self.aim, self.turn, self.level, self.meet = biki, aim, turn, level, meet
         self.meet_q = None
+        self.hands = {}                                     # side -> (open hand objects, grip hand object)
         self.H = hand_holder()
         self.Mrest = saya_rest_in_torso()
         from part_registry import REST                     # noqa: the rig's rest joints
@@ -368,4 +437,18 @@ class Draw:
             ob.rotation_quaternion = rot
             ob.keyframe_insert('location', frame=f)
             ob.keyframe_insert('rotation_quaternion', frame=f)
+        # the hands: the gripping shape while the hand is ON the sword / scabbard, the open one otherwise
+        holding = {'r': w > 0.85 or phase == 'drawn', 'l': wl > 0.85}
+        for side, (opens, grip) in self.hands.items():
+            for ob in opens:
+                key_visible(ob, f, not holding[side])
+            key_visible(grip, f, holding[side])
         return phase
+
+    def add_hands(self, open_r, open_l, mat_r=None, mat_l=None):
+        """Give this swordsman gripping hands (swapped with the open-hand objects open_r / open_l)."""
+        coll = self.sword.users_collection[0]
+        gr = build_grip_hand('GRIP_R', coll, self.rig.J['rH'], self.H, mat_r, radius=0.017)
+        gl = build_grip_hand('GRIP_L', coll, self.rig.J['lH'], self.H, mat_l, radius=0.023, thumb_side=-1.0)
+        self.hands = {'r': (open_r, gr), 'l': (open_l, gl)}
+        return gr, gl
