@@ -190,7 +190,8 @@ for aid, rig in rigs.items():
         tam = {'rSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.R')],
                'lSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.L')]}
         springs = CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS, panels=tam, body=BC.BodyCapsules(rig, shrink=0.035))
-    PACT.append(PB.Actor(aid, rig, ch['objects'], draw=draw, springs=springs))
+    PACT.append(PB.Actor(aid, rig, ch['objects'], draw=draw, springs=springs,
+                         caps=None if (draw or flag('no-keep-out')) else BC.BodyCapsules(rig)))
 
 BAKE_PATH = os.path.join(REPO, 'output', FILM + '.bake.json')
 _stamp = PB.bake_stamp(REPO, FILM) + ('-stiff' if flag('stiff-cloth') else '')
@@ -255,6 +256,27 @@ for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rig
 # weapon transform is exported every frame and at 4x sub-frame resolution precisely so this is
 # possible - so a kesa-giri comes out diagonal because the cut was diagonal, not because someone
 # typed a tilt. --no-slash turns it off.
+# The slash (and anything else read off the timeline's weapon path) must follow the sword that is RENDERED.
+# For an actor that draws the real katana, the baked sword differs from the engine's path by up to ~1 m during
+# the cut (measured on kojiro-draw: frames 39-48), so its weapon path is rewritten from the bake, in three.js
+# axes: position (X, Y, Z)_blender -> (X, Z, -Y); quaternion (w, a, b, c)_blender -> (a, c, -b, w)
+# (the inverse of q3), and its engine sub-samples are dropped.
+for _a in PACT:
+    if not _a.draw:
+        continue
+    _rec = BAKE['actors'][_a.aid]
+    _k = -1
+    for _i, _fr in enumerate(FRAMES):
+        _act = _fr['actors'].get(_a.aid)
+        if _rec['J'][_i] is None or not _act:
+            continue
+        _k += 1
+        _sx, _sy, _sz, _w, _qa, _qb, _qc = _rec['sword'][_k]
+        _act['weapon'] = [_sx, _sz, -_sy, _qa, _qc, -_qb, _w]
+    for _sf in TL.get('subframes') or []:
+        if _a.aid in (_sf.get('actors') or {}):
+            _sf['actors'][_a.aid].pop('weapon', None)
+
 if not flag('no-slash'):
     try:
         sys.path.insert(0, os.path.join(HERE, 'world'))

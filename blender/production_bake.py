@@ -70,8 +70,9 @@ def check_pose_channels(TL, f0, f1, film):
 
 # --------------------------------------------------------------------------- solve (once, in order)
 class Actor:
-    def __init__(self, aid, rig, ch_objects, draw=None, springs=None):
+    def __init__(self, aid, rig, ch_objects, draw=None, springs=None, caps=None):
         self.aid, self.rig, self.objects, self.draw, self.springs = aid, rig, ch_objects, draw, springs
+        self.caps, self.corr = caps, {}
 
 
 def solve(TL, actors, fps, checks=True, body_shrink=0.035):
@@ -84,9 +85,10 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
     body = {a.aid: BC.BodyCapsules(a.rig, shrink=body_shrink) for a in actors}
     garment = {a.aid: BC.BodyCapsules(a.rig) for a in actors}
     sleeves = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'tamoto_wide'] for a in actors}
+    aprons = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'hakama_apron'] for a in actors}
     rec = {a.aid: {'J': [], 'sword': [], 'saya': [], 'grip': [], 'segs': []} for a in actors}
     chk = {a.aid: {'blade/body': [], 'blade/garment': [], 'arm.R/body': [], 'arm.L/body': [],
-                   'sleeve-paper.R/body': [], 'sleeve-paper.L/body': [], 'grip_rel': [], 'phase': []}
+                   'sleeve-paper.R/body': [], 'sleeve-paper.L/body': [], 'hakama-apron/legs': [], 'grip_rel': [], 'phase': []}
            for a in actors}
     for i, fr in enumerate(frames):
         f = i + 1
@@ -101,6 +103,24 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
             else:
                 a.rig.pose(act['pose'])
                 phase = None
+                if a.caps is not None:
+                    # every actor's arms keep out of the body: each hand stays exactly where the animation put
+                    # it (on the sword), only the shoulder/elbow/wrist angles change, rate-limited per frame
+                    pose = dict(act['pose'])
+                    bpy.context.view_layer.update()
+                    a.caps.update()
+                    for side in ('r', 'l'):
+                        hold = a.rig.J[side + 'H'].matrix_world @ SD.hand_holder()
+                        fixed, b_, _a = SD.arm_keep_out(a.rig, pose, a.caps, side, hold=hold)
+                        prev = a.corr.get(side, {})
+                        corr = {}
+                        for k in SD.arm_keys(side):
+                            want, was = fixed[k] - pose[k], prev.get(k, 0.0)
+                            corr[k] = was + max(-0.25, min(0.25, want - was))
+                        a.corr[side] = corr
+                        for k, v in corr.items():
+                            pose[k] += v
+                    a.rig.pose(pose)
             if a.springs:
                 a.springs.step()
             bpy.context.view_layer.update()
@@ -119,17 +139,19 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                 rec[a.aid]['grip'].append(vis)
                 chk[a.aid]['phase'].append(phase)
             if checks:
-                _check_frame(a, f, phase, body[a.aid], garment[a.aid], sleeves[a.aid], chk[a.aid])
+                _check_frame(a, f, phase, body[a.aid], garment[a.aid], sleeves[a.aid], chk[a.aid], aprons[a.aid])
     for a in actors:
         out['actors'][a.aid] = rec[a.aid]
         out['checks'][a.aid] = chk[a.aid]
+        if a.springs is not None:
+            chk[a.aid]['cloth_lag'] = {j: [r[0] for r in rows] for j, rows in a.springs.log.items()}
         if a.draw is not None:
             chk[a.aid]['blade_turned_out'] = {str(k): v for k, v in sorted(a.draw.pushed.items())}
             print('[bake] %s blade turned out of the body on frames %s' % (a.aid, chk[a.aid]['blade_turned_out']))
     return out
 
 
-def _check_frame(a, f, phase, body, garment, sleeves, chk):
+def _check_frame(a, f, phase, body, garment, sleeves, chk, aprons=()):
     rig, d = a.rig, a.draw
     garment.update()
     if d is not None and phase in ('drawing', 'drawn'):
@@ -174,6 +196,23 @@ def _check_frame(a, f, phase, body, garment, sleeves, chk):
             ob.evaluated_get(dg).to_mesh_clear()
             if worst[0] > 0:
                 chk['sleeve-paper.' + ar + '/body'].append((f, round(worst[0] * 100, 1), worst[1]))
+    if aprons:
+        # the hakama's front/back apron panels (moved by the hakama spring) against the LEGS of the person
+        rig.sync_bones()
+        dg = bpy.context.evaluated_depsgraph_get()
+        legs = ('thigh.R', 'thigh.L', 'shin.R', 'shin.L')
+        skip = tuple(n for n, *_ in body.segs if n not in legs)
+        worst = (0.0, '')
+        for ob in aprons:
+            me = ob.evaluated_get(dg).to_mesh()
+            mw = ob.matrix_world
+            for v in me.vertices:
+                dd, who = body.depth(mw @ v.co, skip=skip)
+                if dd > worst[0]:
+                    worst = (dd, who)
+            ob.evaluated_get(dg).to_mesh_clear()
+        if worst[0] > 0:
+            chk['hakama-apron/legs'].append((f, round(worst[0] * 100, 1), worst[1]))
     if d is not None and phase in ('grab', 'drawing', 'drawn'):
         rel = d.sword.matrix_world.inverted() @ (rig.J['rH'].matrix_world @ d.H)
         loc, rot, _ = rel.decompose()
@@ -183,7 +222,8 @@ def _check_frame(a, f, phase, body, garment, sleeves, chk):
 def report(bake, F):
     lines = []
     for aid, c in bake['checks'].items():
-        for key in ('blade/body', 'blade/garment', 'arm.R/body', 'arm.L/body', 'sleeve-paper.R/body', 'sleeve-paper.L/body'):
+        for key in ('blade/body', 'blade/garment', 'arm.R/body', 'arm.L/body', 'sleeve-paper.R/body', 'sleeve-paper.L/body',
+                    'hakama-apron/legs'):
             rows = c.get(key, [])
             if rows:
                 fr = sorted({r[0] for r in rows})
@@ -192,6 +232,10 @@ def report(bake, F):
                     aid, key, len(fr), F, mx[1], mx[0], mx[2]))
             else:
                 lines.append('[check] %s %-20s never' % (aid, key))
+        for j, lag in sorted(c.get('cloth_lag', {}).items()):
+            if lag:
+                lines.append('[check] %s cloth %-8s swings from its rest aim: median %.0f, max %.0f deg' % (
+                    aid, j, sorted(lag)[len(lag) // 2], max(lag)))
         held = [g for g in c.get('grip_rel', []) if g[1] in ('drawing', 'drawn')]
         if held:
             b_l, b_r = Vector(held[0][2]), Quaternion(held[0][3])
