@@ -176,7 +176,9 @@ for i in range(f0, f1 + 1):
 
 # The engine's poses are already eased; Blender re-easing them would double the smoothing and the
 # snap of a cut would soften into a drift. Hold every curve linear between the baked frames.
-for ob in list(rigs.values()) + list(swords.values()) + [cam, cd]:
+# (Review, 26 Nov: this loop used to visit the Rig WRAPPERS, which carry no animation, so the joint empties
+# that are actually keyed kept Blender's Bezier easing and every cut was softened. Visit the joints.)
+for ob in [e for r in rigs.values() for e in r.J.values()] + list(swords.values()) + [cam, cd]:
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     if not act:

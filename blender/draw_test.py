@@ -65,13 +65,13 @@ POSES = json.load(open(os.path.join(REPO, 'library', 'poses.json')))
 KEYS = [  # (time s, pose, overrides)
     (0.00, 'standing', {}),
     (0.45, 'iai-ready', {'ty': 0.0, 'cy': 0.0}),                                   # hands to sword + scabbard
-    (0.85, 'iai-ready', {'crouch': 0.30, 'weight': 0.22, 'tx': 0.32, 'ty': -0.25, 'cy': -0.10}),   # the coil
-    (1.05, 'iai-ready', {'crouch': 0.31, 'weight': 0.22, 'tx': 0.33, 'ty': -0.28, 'cy': -0.12}),   # koiguchi held
-    (1.30, 'nuki-draw-mid', {'crouch': 0.25, 'weight': 0.48, 'z': 0.14, 'ty': 0.05, 'cy': -0.15}), # hips lead
-    (1.45, 'nukitsuke-contact', {'crouch': 0.20, 'weight': 0.66, 'z': 0.27, 'stance': 0.85, 'ty': 0.40, 'cy': 0.05}),
-    (1.58, 'nukitsuke-finish', {'crouch': 0.19, 'weight': 0.73, 'z': 0.30, 'stance': 0.85, 'ty': 0.55, 'cy': 0.25}),  # overshoot
-    (1.90, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.30, 'stance': 0.85, 'ty': 0.45, 'cy': 0.15}),  # settle
-    (3.00, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.30, 'stance': 0.85, 'ty': 0.45, 'cy': 0.15}),  # zanshin
+    (0.85, 'iai-ready', {'crouch': 0.28, 'weight': 0.20, 'tx': 0.18, 'ty': -0.42, 'cy': -0.22}),   # the coil
+    (1.05, 'iai-ready', {'crouch': 0.29, 'weight': 0.20, 'tx': 0.19, 'ty': -0.46, 'cy': -0.26}),   # koiguchi held
+    (1.30, 'nuki-draw-mid', {'crouch': 0.25, 'weight': 0.50, 'z': 0.14, 'ty': 0.15, 'cy': -0.20}),  # hips lead
+    (1.45, 'nukitsuke-contact', {'crouch': 0.20, 'weight': 0.68, 'z': 0.27, 'stance': 0.85, 'ty': 0.70, 'cy': 0.20}),  # chest follows
+    (1.58, 'nukitsuke-finish', {'crouch': 0.19, 'weight': 0.75, 'z': 0.31, 'stance': 0.85, 'ty': 0.85, 'cy': 0.45}),  # overshoot
+    (1.95, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.31, 'stance': 0.85, 'ty': 0.72, 'cy': 0.32}),  # settle
+    (3.00, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.31, 'stance': 0.85, 'ty': 0.72, 'cy': 0.32}),  # zanshin
 ]
 GRAB, SLIDE, CLEAR = int(0.45 * FPS), int(1.05 * FPS), int(1.30 * FPS)
 
@@ -135,8 +135,9 @@ springs = None if '--stiff-cloth' in argv else CS.ClothSprings(
 if '--no-keep-out' not in argv:
     draw.caps = BC.BodyCapsules(rig)
 MEASURED = {}
+MANNEQ = {}
 body = BC.BodyCapsules(rig, shrink=0.035)            # the PERSON under the clothes
-elbow_track, frame_out, grip_roll = {}, [], []
+elbow_track, frame_out, grip_roll, grip_rel = {}, [], [], []
 sleeve_objs = [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide']
 pen = []                                             # (frame, what, depth cm, capsule)
 log = []
@@ -145,6 +146,12 @@ for f in range(1, F + 1):
     log.append(draw.step(f, pose_at((f - 1) / FPS)))
     if springs:
         springs.step()
+    if '--mannequin' in argv:
+        bpy.context.view_layer.update()
+        body.update()
+        MANNEQ[f] = [(n, a.copy(), b.copy(), r) for n, a, b, r in body.segs] + \
+            [('hand.' + sd, rig.J[sd + 'H'].matrix_world.translation.copy(),
+              (rig.J[sd + 'H'].matrix_world @ draw.H).translation.copy(), 0.035) for sd in ('r', 'l')]
     if arg('measure') and f in [int(v) for v in arg('measure').split(',')]:
         bpy.context.view_layer.update()
         for _opens, _grip in draw.hands.values():
@@ -208,7 +215,12 @@ for f in range(1, F + 1):
                                                           and 0.0 <= _w2c(sc, cam, sword.matrix_world @ Vector((BLADE * i / 18, 0, 0))).y <= 1.0))
             if outside:
                 frame_out.append((f, outside))
-        # 5) grip slide: how far the hand turns ABOUT the handle from one frame to the next
+        # 5) grip slip: the right hand's pose RELATIVE TO THE HILT (position in cm, turn in deg), every frame
+        if log[-1] in ('grab', 'drawing', 'drawn'):
+            rel = sword.matrix_world.inverted() @ (rig.J['rH'].matrix_world @ draw.H)
+            loc_, rot_, _sc = rel.decompose()
+            grip_rel.append((f, log[-1], loc_.copy(), rot_.copy()))
+        # (old) how far the hand turns ABOUT the handle from one frame to the next
         if log[-1] in ('drawing', 'drawn'):
             hm = (rig.J['rH'].matrix_world @ draw.H).to_3x3()
             sm = sword.matrix_world.to_3x3()
@@ -239,6 +251,18 @@ if '--collide' in argv:
     print('[frame] whole blade in the picture on %d of %d drawn frames%s' % (
         len([1 for k in log if k in ('drawing', 'drawn')]) - len(frame_out), len([1 for k in log if k in ('drawing', 'drawn')]),
         (' (out: ' + ', '.join('f%d' % a for a, _ in frame_out[:12]) + ')') if frame_out else ''))
+    if grip_rel:
+        import math as _m
+        held = [g for g in grip_rel if g[1] in ('drawing', 'drawn')]
+        if held:
+            base_l, base_r = held[0][2], held[0][3]
+            dl = [((g[2] - base_l).length * 100, g[0]) for g in held]
+            dr = [(_m.degrees(g[3].rotation_difference(base_r).angle), g[0]) for g in held]
+            steps = [(abs(_m.degrees(held[i][3].rotation_difference(held[i - 1][3]).angle)), held[i][0]) for i in range(1, len(held))]
+            stepl = [((held[i][2] - held[i - 1][2]).length * 100, held[i][0]) for i in range(1, len(held))]
+            print('[grip] hand vs hilt from the slide to the end: drifts at most %.1f cm (f%d) and %.1f deg (f%d); '
+                  'biggest one-frame change %.1f cm (f%d), %.1f deg (f%d)' % (max(dl)[0], max(dl)[1], max(dr)[0], max(dr)[1],
+                                                                          max(stepl)[0], max(stepl)[1], max(steps)[0], max(steps)[1]))
     if grip_roll:
         steps = [abs((grip_roll[i][1] - grip_roll[i - 1][1] + 180) % 360 - 180) for i in range(1, len(grip_roll))]
         k = max(range(len(steps)), key=lambda j: steps[j])
@@ -260,6 +284,63 @@ for ob in [sword, saya] + list(rig.J.values()):
         for fc in ad.action.fcurves:
             for kp in fc.keyframe_points:
                 kp.interpolation = 'LINEAR'
+
+if '--mannequin' in argv:
+    # DIAGNOSTIC MANNEQUIN (review, 26 Nov): the same baked motion with the paper clothes hidden, so you can
+    # see whether the hips start, the chest carries the arm and the body settles. Simple shapes on the joints.
+    for o in ch['objects']:
+        if o.type == 'MESH':
+            o.hide_render = True
+            for fc_ob in [o]:
+                ad = fc_ob.animation_data
+                if ad and ad.action:
+                    for fc in list(ad.action.fcurves):
+                        if fc.data_path == 'hide_render':
+                            ad.action.fcurves.remove(fc)
+    for _opens, _grip in draw.hands.values():
+        _grip.hide_render = True
+        ad = _grip.animation_data
+        if ad and ad.action:
+            for fc in list(ad.action.fcurves):
+                if fc.data_path == 'hide_render':
+                    ad.action.fcurves.remove(fc)
+    clay = SW._flat_mat('mannequin_clay', (0.62, 0.60, 0.57, 1), 0.6)
+    joint_mat = SW._flat_mat('mannequin_joint', (0.85, 0.35, 0.15, 1), 0.5)
+    hand_mat = SW._flat_mat('mannequin_hand', (0.95, 0.85, 0.30, 1), 0.5)
+    import bmesh as _bm
+    first = MANNEQ[min(MANNEQ)]
+    for name, a, b, r in first:
+        me = bpy.data.meshes.new('MQ_' + name)
+        bm = _bm.new()
+        _bm.ops.create_cone(bm, cap_ends=True, segments=12, radius1=r, radius2=r, depth=1.0)
+        bm.to_mesh(me); bm.free()
+        cyl = bpy.data.objects.new('MQ_' + name, me)
+        me.materials.append(hand_mat if name.startswith('hand') else clay)
+        sc.collection.objects.link(cyl)
+        cyl.rotation_mode = 'QUATERNION'
+        sph = []
+        for end in (0, 1):
+            ms = bpy.data.meshes.new('MQJ_%s_%d' % (name, end))
+            bm = _bm.new()
+            _bm.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=r)
+            bm.to_mesh(ms); bm.free()
+            so = bpy.data.objects.new('MQJ_%s_%d' % (name, end), ms)
+            ms.materials.append(hand_mat if name.startswith('hand') else (joint_mat if end == 0 else clay))
+            sc.collection.objects.link(so)
+            sph.append(so)
+        for f_, segs in MANNEQ.items():
+            _, a_, b_, r_ = next(x for x in segs if x[0] == name)
+            d = b_ - a_
+            L = max(d.length, 1e-4)
+            cyl.location = (a_ + b_) / 2
+            cyl.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(d.normalized() if d.length > 1e-6 else Vector((0, 0, 1)))
+            cyl.scale = (1, 1, L)
+            for k in ('location', 'rotation_quaternion', 'scale'):
+                cyl.keyframe_insert(k, frame=f_)
+            for so, pt in zip(sph, (a_, b_)):
+                so.location = pt
+                so.keyframe_insert('location', frame=f_)
+    print('[mannequin] %d shapes keyed over %d frames' % (len(first), len(MANNEQ)))
 
 # armature follows the empties every frame (same as the films)
 def _sync(scene, *_):

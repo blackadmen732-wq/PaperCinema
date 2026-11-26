@@ -213,8 +213,8 @@ for (const id of ids) {
     });
     for (const r of runs(F, (d, i) => sp[i] / DT > RULE.slideSpeed)) {
       const m = r.frames.reduce((s, d, k) => s + sp[r.a + k], 0);
-      if (m > RULE.slideDist && foot === 'rFoot') add('foot-slide', 'animation', META.effects?.ground ? 'minor' : 'major', r.frames[0].t, r.frames[r.frames.length - 1].t,
-        `${id}: a planted foot slides ${m.toFixed(1)} m (${(Math.max(...r.frames.map((d, k) => sp[r.a + k])) / DT).toFixed(0)} m/s)` + (META.effects?.ground ? '; dust covers it' : ''),
+      if (m > RULE.slideDist) add('foot-slide', 'animation', META.effects?.ground ? 'minor' : 'major', r.frames[0].t, r.frames[r.frames.length - 1].t,
+        `${id}: the planted ${foot === 'rFoot' ? 'right' : 'left'} foot slides ${m.toFixed(1)} m (${(Math.max(...r.frames.map((d, k) => sp[r.a + k])) / DT).toFixed(0)} m/s)` + (META.effects?.ground ? '; dust covers it' : ''),
         'a dash or skid must read as one: dust wake, afterimages, a leaning pose; a walk needs steps (stride) or world-locked feet');
     }
   }

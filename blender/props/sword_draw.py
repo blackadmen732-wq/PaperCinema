@@ -116,7 +116,7 @@ def build_saya(name, coll, length=0.95, mat_body=None, mat_mouth=None):
 
 
 # the left-hip tie point in the rest pose (part_registry SOCKETS['hip_side.L']) and the worn angle
-LEFT_AT = 0.11                                            # the left hand's grip behind the mouth
+LEFT_AT = 0.25                                            # the left hand's grip behind the mouth
 TIE = 0.12                                                # mouth -> obi cord, along the saya
 
 
@@ -392,6 +392,7 @@ class Draw:
         self.caps = None                                    # body_capsules.BodyCapsules: the body's boundary
         self.pushed = {}                                    # frame -> degrees the blade was turned out
         self.arm_fix = {}                                   # side -> [(frame, cm before, cm after)]
+        self._rel_prev = None
         self._roll_off = None                               # the sword's turn in the hand at the clear
         self.release_l = 16                                 # the left hand lets go of the scabbard slowly
         self.unroll = 10                                    # frames to ease it out
@@ -545,6 +546,36 @@ class Draw:
                     self.arm_fix.setdefault(side, []).append((f, round(b_ * 100, 1), round(a_ * 100, 1)))
             rig.pose(pose)
             bpy.context.view_layer.update()
+            # SAYA-GAESHI: while the blade is still in the scabbard, the left hand turns the scabbard (and the blade in
+            # it) about its own axis to follow how the right hand holds the handle, so the hand never turns ON the
+            # handle. The handle lies on that axis, so both grips stay where they are.
+            if phase == 'drawing':
+                hm = (rig.J['rH'].matrix_world @ self.H).to_3x3()
+                sm = target.to_3x3()
+                ax = sm.col[0].normalized()
+                hy = (hm.col[1] - ax * hm.col[1].dot(ax)).normalized()
+                sy = (sm.col[1] - ax * sm.col[1].dot(ax)).normalized()
+                ang = math.atan2(ax.dot(sy.cross(hy)), sy.dot(hy))
+                piv = target.translation                       # about the HANDLE's line: the hilt stays put
+                Rr = Matrix.Translation(piv) @ Matrix.Rotation(ang, 4, ax) @ Matrix.Translation(-piv)
+                Y, target = Rr @ Y, Rr @ target
+                self.last_saya, self.last_target = Y, target
+            # GRIP LAST: the elbow-out pass may have moved a holding hand; put it back on what it holds so the
+            # final pose has the grip exact (the elbow keeps what it gained where it can)
+            final = []
+            if phase in ('grab', 'drawing') and w > 0.85:
+                final.append(('r', target))
+            if wl > 0.85:
+                final.append(('l', frame(Y @ Vector((LEFT_AT, 0, 0)), Y.to_3x3().col[0])))
+            for side, tg in final:
+                solved, res = ik_arm(rig, pose, tg, self.H, side=side)
+                pose = dict(pose)
+                for k in arm_keys(side):
+                    pose[k] = solved[k]
+                self._corr[side] = {}
+            if final:
+                rig.pose(pose)
+                bpy.context.view_layer.update()
         hand = rig.J['rH'].matrix_world @ self.H
         if phase in ('sheathed', 'grab'):
             S = hip                                         # in the scabbard until the slide: the hand comes TO it
@@ -554,13 +585,19 @@ class Draw:
             # At the clear the blade leaves the scabbard's roll (edge up) for the hand's. Jumping straight to the
             # hand's frame twisted the sword 65 deg in ONE frame; keep the offset it had and ease it out.
             if self._roll_off is None:
-                prev = self.last_target if self.last_target is not None else hand
-                self._roll_off = (hand.to_3x3().inverted() @ prev.to_3x3()).to_quaternion()
-            from mathutils import Quaternion as _Q
-            q = _Q().slerp(self._roll_off, 1.0 - _smooth((f - self.clear) / self.unroll))
-            S = hand @ q.to_matrix().to_4x4()
+                # keep EXACTLY the hand-to-sword turn of the last drawing frame: no change at the clear
+                self._roll_off = self._rel_prev if self._rel_prev is not None else \
+                    (hand.to_3x3().inverted() @ (self.last_target or hand).to_3x3()).to_quaternion()
+            # The sword keeps the turn it had in the hand at the clear: the hand-to-hilt pose stays FIXED, so the
+            # wrist and the sword turn together (easing it out was the sword twisting inside the hand).
+            S = hand @ self._roll_off.to_matrix().to_4x4()
             if self.caps is not None:
                 S, pose = self._keep_out(S, pose)
+                # the sword rides the FINAL hand: if the arm could not reach the turned-out frame exactly, the
+                # blade follows the hand (a few mm) instead of the hand slipping on the hilt
+                S = (rig.J['rH'].matrix_world @ self.H) @ self._roll_off.to_matrix().to_4x4()
+        if phase == 'drawing':
+            self._rel_prev = (hand.to_3x3().inverted() @ S.to_3x3()).to_quaternion()
         for ob, M in ((self.sword, S), (self.saya, Y)):
             loc, rot, _ = M.decompose()
             ob.location = loc
