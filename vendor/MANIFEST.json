@@ -1,157 +1,168 @@
 {
- "_about": "Outside tools this project uses, pinned to an exact commit. `node tools/vendor.mjs` clones every one of them into vendor/<id>/ at the commit named here, so the same bytes come back on any machine, for any agent. The trees themselves are NOT committed: hyperframes alone is 344 MB of docs and test fixtures, and a repository nobody can clone is not a tool anybody can use. The commit is the contract; the clone is a cache.",
- "_rules": "Only licences that are safe to ship commercial work with (AGENTS.md rule 6): MIT, Apache-2.0, BSD, CC0, CC-BY. A tool that needs a paid seat for a company is not vendored here, and `skill` says what to use instead.",
- "_verify": "node tools/vendor.mjs --check  \u2014 every tool present, at the right commit, with the licence this file claims.",
- "tools": [
-  {
-   "id": "agent-reach",
-   "name": "Agent Reach",
-   "url": "https://github.com/Panniantong/Agent-Reach.git",
-   "commit": "8d9ecc1f5521fe7d223cde782aaa4005695e2671",
-   "licence": "MIT",
-   "size": "2.3 MB",
-   "what": "Gives an agent eyes on the open web: read and search X/Twitter, Reddit, YouTube, GitHub, Bilibili and XiaoHongShu from one CLI, with no per-platform API keys.",
-   "why_here": "Reference hunting. Every fight beat, camera move and costume detail in this project came from watching real footage; this is how an agent finds and reads that footage itself instead of asking for links.",
-   "skill": ".claude/skills/tool-agent-reach/SKILL.md"
-  },
-  {
-   "id": "trellis2",
-   "name": "TRELLIS.2",
-   "url": "https://github.com/microsoft/TRELLIS.2.git",
-   "commit": "75fbf0183001ed9876c8dbb35de6b68552ee08bd",
-   "licence": "MIT",
-   "size": "39 MB (weights are a separate 4B download from Hugging Face)",
-   "what": "Microsoft's image-to-3D model: one picture in, a textured GLB out, up to 1536 cubed.",
-   "why_here": "Props and set dressing. A drawing of a lantern, a bridge post or a boat becomes a mesh without anyone modelling it. NOT for the characters - see the warning in its skill.",
-   "needs_gpu": true,
-   "skill": ".claude/skills/tool-trellis2/SKILL.md"
-  },
-  {
-   "id": "mcp-for-blender",
-   "name": "Blender MCP",
-   "url": "https://github.com/ahujasid/mcp-for-blender.git",
-   "commit": "a5a8acf2c6ae44a73670e0caf34663f16456d645",
-   "licence": "MIT",
-   "size": "4.8 MB",
-   "what": "An MCP server plus a Blender add-on, so an agent can drive a RUNNING Blender: move objects, set materials, look through the camera, run Python.",
-   "why_here": "Hands inside Blender for look development, where the loop is change-something-and-look. The films themselves stay scripted (blender/film_modular.py), because a film has to render the same way twice.",
-   "needs_gui": true,
-   "skill": ".claude/skills/tool-blender-mcp/SKILL.md"
-  },
-  {
-   "id": "cinecode",
-   "name": "cinecode",
-   "url": "https://github.com/sarpstar/cinecode.git",
-   "commit": "c8a3e7552699360a2b0142c9620882af2069eedb",
-   "licence": "MIT",
-   "size": "30 MB",
-   "what": "Films made with code: an agent writes the script, builds every frame in code (Canvas, three.js, WebGL) and hands back an MP4.",
-   "why_here": "The same bet this project already made - every frame is a pure function of time - built by someone else. Read it for its structure and its titling and sound work, not to replace the engine.",
-   "skill": ".claude/skills/tool-cinecode/SKILL.md"
-  },
-  {
-   "id": "hyperframes",
-   "name": "HyperFrames",
-   "url": "https://github.com/heygen-com/hyperframes.git",
-   "commit": "8f28ec16d2d540db6345ee397f00c9612c347c9d",
-   "licence": "Apache-2.0",
-   "size": "344 MB checked out",
-   "lfs": "clone with GIT_LFS_SKIP_SMUDGE=1",
-   "what": "HTML, CSS and seekable animation rendered to a deterministic MP4. Same input, same frames, every time.",
-   "why_here": "Titles, credits, lower thirds and end cards - typography that is painful in three.js and easy in CSS. Deterministic, so it obeys the same rule as the rest of the pipeline.",
-   "skill": ".claude/skills/tool-hyperframes/SKILL.md"
-  },
-  {
-   "id": "earshot",
-   "name": "Earshot",
-   "url": "https://github.com/Leonxlnx/earshot.git",
-   "commit": "7a7f7c5c70d4a763a1eca4b3666af7c77e313f97",
-   "licence": "MIT",
-   "size": "small; a Python CLI",
-   "install": "pip install ./vendor/earshot   (provides the `earshot` command)",
-   "what": "Sound effects computed from a request in words - swishes, clashes, foley, ambience - rendered by id at request time. No audio files shipped and no network call.",
-   "why_here": "ALREADY IN USE and not pinned until now. engine/sound.mjs shells out to `earshot sfx render <id>` for every automatic whoosh and clash; assets/sfx/credits.json carries 12 of its sounds. It was installed in one container by hand, and when it is missing the sound step logs a tick-less line and returns null - the film renders SILENT in that cue and nothing fails. That is the worst kind of dependency.",
-   "skill": ".claude/skills/paper-cinema-film/SKILL.md"
-  },
-  {
-   "id": "reanimate",
-   "name": "reanimate",
-   "url": "https://github.com/NiazMorshed2007/reanimate.git",
-   "commit": "3f7a55a2986a84ca2173e86ee9127eefe31d046d",
-   "licence": "MIT",
-   "size": "71 MB",
-   "what": "Clone an animation from a video, gif, Lottie or live page into code, then RECORD the clone and compare it to the reference frame by frame until timing, easing, sequence and layout match (motion-faithful = every step within 80 ms).",
-   "why_here": "The measurement discipline, applied to movement. It covers three.js, which is this engine, and its deliverable is 'code plus evidence, never it looks about right' - the same rule as .claude/skills/pc-measure. Point it at a sword-fight reference and it tells you the real timing of a cut instead of someone guessing at frame counts.",
-   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
-  },
-  {
-   "id": "code-motion",
-   "name": "code-motion",
-   "url": "https://github.com/Mayalev9/code-motion.git",
-   "commit": "043a16db1274cfc8d84eed5e4d4209b8676c8f9b",
-   "licence": "MIT",
-   "size": "1 MB",
-   "what": "Rebuild a motion graphic from a video shot by shot, measured, as code that renders to MP4.",
-   "why_here": "The sibling of reanimate for whole shots rather than one animation. Read for its shot-breakdown method.",
-   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
-  },
-  {
-   "id": "chatterbox",
-   "name": "Chatterbox",
-   "url": "https://github.com/resemble-ai/chatterbox.git",
-   "commit": "ab55923c27757c90cfcc407baa57dc25a7d25217",
-   "licence": "MIT",
-   "size": "3.6 MB",
-   "what": "Text to speech, free and local.",
-   "why_here": "Narration and character voice. engine/sound.mjs already has a voice path (tools/voice.py); this is a free local engine for it.",
-   "skill": ".claude/skills/paper-cinema-film/SKILL.md"
-  },
-  {
-   "id": "faster-whisper",
-   "name": "faster-whisper",
-   "url": "https://github.com/SYSTRAN/faster-whisper.git",
-   "commit": "6cb639e70786aea42b9233006ae60eaf07190bdb",
-   "licence": "MIT",
-   "size": "43 MB",
-   "what": "Speech to text, fast, local, no network.",
-   "why_here": "Transcribing reference footage and interviews, and captioning the finished Shorts. Also the way to read a tutorial video this container cannot get subtitles for (YouTube blocks yt-dlp subtitle fetches from a datacentre IP).",
-   "skill": ".claude/skills/pc-reference-motion/SKILL.md"
-  },
-  {
-   "id": "anyshot",
-   "name": "AnyShot",
-   "url": "https://github.com/apekshik/anyshot.git",
-   "commit": "21e844ce5960f3c8b0f8f8a1dbfa71b27d3b6ebb",
-   "licence": "MIT",
-   "size": "680 KB",
-   "what": "A Claude agent that directs shots in a Blender scene: reads the set, plans camera moves from words, checks clearance, blocks with cheap frames, looks at them, corrects, then renders finals.",
-   "why_here": "The closest published prior art to KUROKO, and the source of the speed and lens numbers in docs/cinematography/CAMERA_GRAMMAR.md. Read agent/SHOTS.md and camera/camrig.py. DO NOT transplant it: Blender 5.0.1 and a GPU farm, against this pipeline's 4.5.16 on CPU. It independently reached the same conclusion as blender/check_sight.py - clearance is about solids, because a real camera moves through dust.",
-   "skill": ".claude/skills/pc-camera/SKILL.md"
-  },
-  {
-   "id": "anyscene",
-   "name": "AnyScene",
-   "url": "https://github.com/apekshik/anyscene.git",
-   "commit": "88c1daf0b47b122359c357eb502cfc1b960609a5",
-   "licence": "MIT",
-   "size": "82 MB",
-   "what": "Photoreal Blender scenes from a one-paragraph brief, built by AI agents: image-to-3D props, scripted layout, lighting, camera and grade.",
-   "why_here": "The set-building sibling of AnyShot. Read for how it scripts layout and lighting from a brief; this project's sets are recipes in library/sets/ and should stay that way.",
-   "skill": ".claude/skills/pc-camera/SKILL.md"
-  }
- ],
- "rejected": [
-  {
-   "name": "Remotion",
-   "why": "Not vendored on purpose. Remotion is free for individuals and teams up to three people, then needs a paid seat per developer for a company. AGENTS.md rule 6 is that nothing in this project may put a licence condition on work that gets sold. HyperFrames (Apache-2.0) and Revideo (MIT) do the same job with no such condition, so HyperFrames is vendored instead."
-  },
-  {
-   "name": "CineTechBench",
-   "why": "CC BY-NC-ND 4.0 on the dataset. Expert annotations of shot scale, angle, composition, movement, lighting and focal length across 600+ images and 120 clips - excellent research, and non-commercial AND no-derivatives, so it may be read and cited and must never be bundled, adapted or used to build anything this project sells. Rule 6."
-  },
-  {
-   "name": "Add Camera Rigs (Blender add-on)",
-   "why": "GPL-3.0-or-later. Dolly, crane and 2D rigs with animator controls, and a good model for rig hierarchy and aim controls - but copying its code into this repository would put this repository under GPL. Study it, install it in Blender if useful, never paste from it."
-  }
- ]
+  "_about": "Outside tools this project uses, pinned to an exact commit. `node tools/vendor.mjs` clones every one of them into vendor/<id>/ at the commit named here, so the same bytes come back on any machine, for any agent. The trees themselves are NOT committed: hyperframes alone is 344 MB of docs and test fixtures, and a repository nobody can clone is not a tool anybody can use. The commit is the contract; the clone is a cache.",
+  "_rules": "Only licences that are safe to ship commercial work with (AGENTS.md rule 6): MIT, Apache-2.0, BSD, CC0, CC-BY. A tool that needs a paid seat for a company is not vendored here, and `skill` says what to use instead.",
+  "_verify": "node tools/vendor.mjs --check  — every tool present, at the right commit, with the licence this file claims.",
+  "tools": [
+    {
+      "id": "agent-reach",
+      "name": "Agent Reach",
+      "url": "https://github.com/Panniantong/Agent-Reach.git",
+      "commit": "8d9ecc1f5521fe7d223cde782aaa4005695e2671",
+      "licence": "MIT",
+      "size": "2.3 MB",
+      "what": "Gives an agent eyes on the open web: read and search X/Twitter, Reddit, YouTube, GitHub, Bilibili and XiaoHongShu from one CLI, with no per-platform API keys.",
+      "why_here": "Reference hunting. Every fight beat, camera move and costume detail in this project came from watching real footage; this is how an agent finds and reads that footage itself instead of asking for links.",
+      "skill": ".claude/skills/tool-agent-reach/SKILL.md"
+    },
+    {
+      "id": "trellis2",
+      "name": "TRELLIS.2",
+      "url": "https://github.com/microsoft/TRELLIS.2.git",
+      "commit": "75fbf0183001ed9876c8dbb35de6b68552ee08bd",
+      "licence": "MIT",
+      "size": "39 MB (weights are a separate 4B download from Hugging Face)",
+      "what": "Microsoft's image-to-3D model: one picture in, a textured GLB out, up to 1536 cubed.",
+      "why_here": "Props and set dressing. A drawing of a lantern, a bridge post or a boat becomes a mesh without anyone modelling it. NOT for the characters - see the warning in its skill.",
+      "needs_gpu": true,
+      "skill": ".claude/skills/tool-trellis2/SKILL.md"
+    },
+    {
+      "id": "mcp-for-blender",
+      "name": "Blender MCP",
+      "url": "https://github.com/ahujasid/mcp-for-blender.git",
+      "commit": "a5a8acf2c6ae44a73670e0caf34663f16456d645",
+      "licence": "MIT",
+      "size": "4.8 MB",
+      "what": "An MCP server plus a Blender add-on, so an agent can drive a RUNNING Blender: move objects, set materials, look through the camera, run Python.",
+      "why_here": "Hands inside Blender for look development, where the loop is change-something-and-look. The films themselves stay scripted (blender/film_modular.py), because a film has to render the same way twice.",
+      "needs_gui": true,
+      "skill": ".claude/skills/tool-blender-mcp/SKILL.md"
+    },
+    {
+      "id": "cinecode",
+      "name": "cinecode",
+      "url": "https://github.com/sarpstar/cinecode.git",
+      "commit": "c8a3e7552699360a2b0142c9620882af2069eedb",
+      "licence": "MIT",
+      "size": "30 MB",
+      "what": "Films made with code: an agent writes the script, builds every frame in code (Canvas, three.js, WebGL) and hands back an MP4.",
+      "why_here": "The same bet this project already made - every frame is a pure function of time - built by someone else. Read it for its structure and its titling and sound work, not to replace the engine.",
+      "skill": ".claude/skills/tool-cinecode/SKILL.md"
+    },
+    {
+      "id": "hyperframes",
+      "name": "HyperFrames",
+      "url": "https://github.com/heygen-com/hyperframes.git",
+      "commit": "8f28ec16d2d540db6345ee397f00c9612c347c9d",
+      "licence": "Apache-2.0",
+      "size": "344 MB checked out",
+      "lfs": "clone with GIT_LFS_SKIP_SMUDGE=1",
+      "what": "HTML, CSS and seekable animation rendered to a deterministic MP4. Same input, same frames, every time.",
+      "why_here": "Titles, credits, lower thirds and end cards - typography that is painful in three.js and easy in CSS. Deterministic, so it obeys the same rule as the rest of the pipeline.",
+      "skill": ".claude/skills/tool-hyperframes/SKILL.md"
+    },
+    {
+      "id": "earshot",
+      "name": "Earshot",
+      "url": "https://github.com/Leonxlnx/earshot.git",
+      "commit": "7a7f7c5c70d4a763a1eca4b3666af7c77e313f97",
+      "licence": "MIT",
+      "size": "small; a Python CLI",
+      "install": "pip install ./vendor/earshot   (provides the `earshot` command)",
+      "what": "Sound effects computed from a request in words - swishes, clashes, foley, ambience - rendered by id at request time. No audio files shipped and no network call.",
+      "why_here": "ALREADY IN USE and not pinned until now. engine/sound.mjs shells out to `earshot sfx render <id>` for every automatic whoosh and clash; assets/sfx/credits.json carries 12 of its sounds. It was installed in one container by hand, and when it is missing the sound step logs a tick-less line and returns null - the film renders SILENT in that cue and nothing fails. That is the worst kind of dependency.",
+      "skill": ".claude/skills/paper-cinema-film/SKILL.md"
+    },
+    {
+      "id": "reanimate",
+      "name": "reanimate",
+      "url": "https://github.com/NiazMorshed2007/reanimate.git",
+      "commit": "3f7a55a2986a84ca2173e86ee9127eefe31d046d",
+      "licence": "MIT",
+      "size": "71 MB",
+      "what": "Clone an animation from a video, gif, Lottie or live page into code, then RECORD the clone and compare it to the reference frame by frame until timing, easing, sequence and layout match (motion-faithful = every step within 80 ms).",
+      "why_here": "The measurement discipline, applied to movement. It covers three.js, which is this engine, and its deliverable is 'code plus evidence, never it looks about right' - the same rule as .claude/skills/pc-measure. Point it at a sword-fight reference and it tells you the real timing of a cut instead of someone guessing at frame counts.",
+      "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+    },
+    {
+      "id": "code-motion",
+      "name": "code-motion",
+      "url": "https://github.com/Mayalev9/code-motion.git",
+      "commit": "043a16db1274cfc8d84eed5e4d4209b8676c8f9b",
+      "licence": "MIT",
+      "size": "1 MB",
+      "what": "Rebuild a motion graphic from a video shot by shot, measured, as code that renders to MP4.",
+      "why_here": "The sibling of reanimate for whole shots rather than one animation. Read for its shot-breakdown method.",
+      "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+    },
+    {
+      "id": "chatterbox",
+      "name": "Chatterbox",
+      "url": "https://github.com/resemble-ai/chatterbox.git",
+      "commit": "ab55923c27757c90cfcc407baa57dc25a7d25217",
+      "licence": "MIT",
+      "size": "3.6 MB",
+      "what": "Text to speech, free and local.",
+      "why_here": "Narration and character voice. engine/sound.mjs already has a voice path (tools/voice.py); this is a free local engine for it.",
+      "skill": ".claude/skills/paper-cinema-film/SKILL.md"
+    },
+    {
+      "id": "faster-whisper",
+      "name": "faster-whisper",
+      "url": "https://github.com/SYSTRAN/faster-whisper.git",
+      "commit": "6cb639e70786aea42b9233006ae60eaf07190bdb",
+      "licence": "MIT",
+      "size": "43 MB",
+      "what": "Speech to text, fast, local, no network.",
+      "why_here": "Transcribing reference footage and interviews, and captioning the finished Shorts. Also the way to read a tutorial video this container cannot get subtitles for (YouTube blocks yt-dlp subtitle fetches from a datacentre IP).",
+      "skill": ".claude/skills/pc-reference-motion/SKILL.md"
+    },
+    {
+      "id": "anyshot",
+      "name": "AnyShot",
+      "url": "https://github.com/apekshik/anyshot.git",
+      "commit": "21e844ce5960f3c8b0f8f8a1dbfa71b27d3b6ebb",
+      "licence": "MIT",
+      "size": "680 KB",
+      "what": "A Claude agent that directs shots in a Blender scene: reads the set, plans camera moves from words, checks clearance, blocks with cheap frames, looks at them, corrects, then renders finals.",
+      "why_here": "The closest published prior art to KUROKO, and the source of the speed and lens numbers in docs/cinematography/CAMERA_GRAMMAR.md. Read agent/SHOTS.md and camera/camrig.py. DO NOT transplant it: Blender 5.0.1 and a GPU farm, against this pipeline's 4.5.16 on CPU. It independently reached the same conclusion as blender/check_sight.py - clearance is about solids, because a real camera moves through dust.",
+      "skill": ".claude/skills/pc-camera/SKILL.md"
+    },
+    {
+      "id": "anyscene",
+      "name": "AnyScene",
+      "url": "https://github.com/apekshik/anyscene.git",
+      "commit": "88c1daf0b47b122359c357eb502cfc1b960609a5",
+      "licence": "MIT",
+      "size": "82 MB",
+      "what": "Photoreal Blender scenes from a one-paragraph brief, built by AI agents: image-to-3D props, scripted layout, lighting, camera and grade.",
+      "why_here": "The set-building sibling of AnyShot. Read for how it scripts layout and lighting from a brief; this project's sets are recipes in library/sets/ and should stay that way.",
+      "skill": ".claude/skills/pc-camera/SKILL.md"
+    },
+    {
+      "id": "hermes-agent",
+      "name": "Hermes Agent",
+      "url": "https://github.com/NousResearch/hermes-agent.git",
+      "commit": "04be1bc06ba9fb3a7326679b0036bb65daaeda85",
+      "licence": "MIT",
+      "size": "439 MB",
+      "what": "Nous Research's open-source AI agent: a command-line assistant with persistent memory in Markdown files, 185 skills in the same SKILL.md format Claude Code reads, MCP integrations and gateways to chat apps. It is a separate assistant and needs its own model key to run.",
+      "why_here": "Mark, Nov 26: wanted Hermes in every session and every account. Pinned so any session fetches the same version with `node tools/vendor.mjs hermes-agent`. The useful part for this project is its skills (media/youtube-content, creative/comfyui, creative/unreal-mcp, creative/auteur, creative/kanban-video-orchestrator, creative/manim-video): copy one into .claude/skills only after reading it. It adds no Blender or 3D-modelling ability; the 3D tools are trellis2, mcp-for-blender, anyshot, anyscene and tools/gen3d.mjs.",
+      "skill": "none yet: its own README.md and skills/ after fetching"
+    }
+  ],
+  "rejected": [
+    {
+      "name": "Remotion",
+      "why": "Not vendored on purpose. Remotion is free for individuals and teams up to three people, then needs a paid seat per developer for a company. AGENTS.md rule 6 is that nothing in this project may put a licence condition on work that gets sold. HyperFrames (Apache-2.0) and Revideo (MIT) do the same job with no such condition, so HyperFrames is vendored instead."
+    },
+    {
+      "name": "CineTechBench",
+      "why": "CC BY-NC-ND 4.0 on the dataset. Expert annotations of shot scale, angle, composition, movement, lighting and focal length across 600+ images and 120 clips - excellent research, and non-commercial AND no-derivatives, so it may be read and cited and must never be bundled, adapted or used to build anything this project sells. Rule 6."
+    },
+    {
+      "name": "Add Camera Rigs (Blender add-on)",
+      "why": "GPL-3.0-or-later. Dolly, crane and 2D rigs with animator controls, and a good model for rig hierarchy and aim controls - but copying its code into this repository would put this repository under GPL. Study it, install it in Blender if useful, never paste from it."
+    }
+  ]
 }
