@@ -52,6 +52,15 @@
    "check": "grep -q 'makeGroundMarks' engine/groundfx.js && grep -q 'MARKS?.update' engine/motion.js",
    "status": "kept",
    "evidence": "makeGroundMarks() listens for land and skid; dash-test makes 2 marks (1 land, 1 skid). Dashes already had a wake line."
+  },
+  {
+   "id": "episode-1-ganryujima",
+   "said": "2026-11-26",
+   "promise": "Episode 1 (Ganryujima) exists as a finished, postable vertical film: 1080x1920, 45-60 s, H.264 + AAC at -14 LUFS, the modular paper characters on the ganryujima-beach set, with music, sound and captions.",
+   "why": "Mark paid for a studio that makes videos and on 26 Nov it had produced none: all 16 film files are 6-47 s tests, the story films cannot drive the paper character, and nothing was postable. Nothing new is built before this film exists. Plan, blockers and order: docs/EPISODE-1.md.",
+   "check": "python3 tools/episode_check.py output/ganryujima-ep1-final.mp4",
+   "status": "OPEN",
+   "evidence": ""
   }
  ]
 }

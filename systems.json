@@ -393,6 +393,20 @@
    "status_note": "✅ (motion page and main engine)"
   },
   {
+   "id": "EPCHECK",
+   "name": "Episode check (is it postable?)",
+   "does": "Measures a finished episode file: 1080x1920, length inside the asked range (45–60 s by default), H.264 + AAC, integrated loudness −14 ± 1.5 LUFS; one PASS/FAIL line per measurement, exit 0 only when all pass. The `episode-1-ganryujima` promise runs it",
+   "files": [
+    "tools/episode_check.py"
+   ],
+   "guide": [
+    "docs/EPISODE-1.md"
+   ],
+   "command": "python3 tools/episode_check.py output/<name>-final.mp4",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "STANDARD",
    "name": "Studio standard",
    "does": "The rules every video must pass, taste + numbers; effects are light, characters are paper; beat → camera table; timing tables; the gate before a render",

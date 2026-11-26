@@ -142,6 +142,9 @@ written down as item one of docs/FIX-EVERYTHING.md the same morning.
   - the face-touch scene; SHIMI on the 3D body
   - the anime effects pack; a 3-second Shorts opening; Blender slash v2
   - rigging the TRELLIS models
-- **Next first:** re-render the duel (`film/kuroko-duel.json` now uses the shared combat layer `engine/combat.js`: clashes, hit-stop, eyes, auto sounds, FX); then the items marked next in `docs/FIX-LIST.md`.
+- **Next first (Nov 26, Mark):** finish **Episode 1** — `docs/EPISODE-1.md` (done-when, the three blockers and the way round
+  each, the beats, the order). Nothing new is built until it exists; its promise is `episode-1-ganryujima` in
+  `library/promises.json`. (Was: re-render `film/kuroko-duel.json`, which runs on `engine/index.html` and therefore cannot
+  drive the paper character — blocker 1 in that file.)
 - **Blender hero:** `docs/CHARACTER-BLENDER.md` (the TRELLIS character rigged, film and BVH drivers, `blender/film_blender.py`).
 - **Limits:** the browser preview's set is still code in `engine/world.js`; Blender sets (`blender/sets/build_set.py`) place posed characters on marks but do not yet play a film timeline.

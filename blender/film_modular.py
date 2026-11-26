@@ -88,6 +88,7 @@ sc.render.fps = FPS
 # back to the reference ronin so a new name never stops a render.
 RECIPES = {'kojiro': 'ronin-reference', 'musashi': 'armoured-warrior'}
 rigs = {}
+char_meshes = []          # every built character mesh, for the look block (ink outline) further down
 for a in TL['actors']:
     if a.get('hidden'):
         continue
@@ -100,6 +101,7 @@ for a in TL['actors']:
     recipe = MB.load_recipe(path)
     ch = MB.build(recipe, name='PC_' + a['id'])
     rigs[a['id']] = ch['rig']
+    char_meshes += [o for o in ch['objects'] if o.type == 'MESH']
     print(f"[film] {a['id']} -> {os.path.basename(path)}")
 
 # ---------------------------------------------------------------- the sword
@@ -262,6 +264,7 @@ if arg('set'):
     for aid, rig in rigs.items():
         for role, spec in fighter.items():
             L = bpy.data.lights.new(f'{role}_{aid}', 'AREA')
+            L['pc_fighter'] = role               # the look block's `key` factor finds these by this tag
             L.energy = spec.get('energy', 20)
             L.size = spec.get('size', 1.5)
             L.color = tuple(spec.get('color', (1, 1, 1)))[:3]
@@ -307,6 +310,70 @@ try:
     print(f'[film] post: bloom {_bloom}, vignette {_vig}')
 except Exception as e:                      # a film without bloom is worse, not broken
     print(f'[film] post FX unavailable ({e}); rendering without them')
+
+# ---------------------------------------------------------------- look
+# docs/LOOK-TARGET.md measured the gap: the target is a dark frame with bright accents (luma 1% < 10,
+# median ~50, 95% > 195); ours had no black anywhere and the character sat at the same value as the
+# world around it ("all almost equally bright", docs/WHY-IT-LOOKS-FLAT.md). These are the knobs that
+# move those numbers. DATA FIRST: a set's `lighting.film` block holds them (library/sets/*.json), so a
+# location carries its own mood; a flag of the same name overrides it for one render. Every default
+# is "no change", so a set without the block renders exactly as before.
+#   ambient  multiplies the sky's LIGHT on the scene but not the sky the camera sees: darker fill,
+#            so the key and the inner lantern separate from it, without greying out the dawn
+#   sun      multiplies the set's sun lamp(s)
+#   key      multiplies each performer's key / fill / rim (the set's `lighting.fighter` rig)
+#   outline  ink line width in metres round every character part and blade (blender/world/toon.py,
+#            an inverted hull: no compositor pass, survives motion blur); 0 = none
+#   look / exposure   the AgX look and the EV the film is graded at
+_film_look = {}
+if arg('set'):
+    _lj = os.path.join(REPO, 'library', 'sets', os.path.splitext(os.path.basename(arg('set')))[0] + '.json')
+    if os.path.exists(_lj):
+        _film_look = (json.load(open(_lj)).get('lighting') or {}).get('film') or {}
+
+
+def knob(name, default):
+    v = arg(name)
+    return float(v) if v is not None else float(_film_look.get(name, default))
+
+
+_ambient, _sun, _key, _outline = knob('ambient', 1.0), knob('sun', 1.0), knob('key', 1.0), knob('outline', 0.0)
+if _ambient != 1.0 and sc.world and sc.world.use_nodes:
+    wnt = sc.world.node_tree
+    wout = next((n for n in wnt.nodes if n.type == 'OUTPUT_WORLD' and n.is_active_output), None) \
+        or next((n for n in wnt.nodes if n.type == 'OUTPUT_WORLD'), None)
+    if wout and wout.inputs['Surface'].is_linked:
+        orig = wout.inputs['Surface'].links[0].from_socket
+        black = wnt.nodes.new('ShaderNodeBackground')
+        black.inputs['Strength'].default_value = 0.0
+        dim = wnt.nodes.new('ShaderNodeMixShader')                # orig * ambient
+        dim.inputs['Fac'].default_value = max(0.0, min(1.0, 1.0 - _ambient))
+        wnt.links.new(orig, dim.inputs[1])
+        wnt.links.new(black.outputs[0], dim.inputs[2])
+        lp = wnt.nodes.new('ShaderNodeLightPath')
+        cam_mix = wnt.nodes.new('ShaderNodeMixShader')            # the camera still sees the full sky
+        wnt.links.new(lp.outputs['Is Camera Ray'], cam_mix.inputs['Fac'])
+        wnt.links.new(dim.outputs[0], cam_mix.inputs[1])
+        wnt.links.new(orig, cam_mix.inputs[2])
+        wnt.links.new(cam_mix.outputs[0], wout.inputs['Surface'])
+for _ob in sc.objects:
+    if _ob.type != 'LIGHT':
+        continue
+    if _sun != 1.0 and _ob.data.type == 'SUN':
+        _ob.data.energy *= _sun
+    if _key != 1.0 and _ob.data.get('pc_fighter'):
+        _ob.data.energy *= _key
+if _outline > 0:
+    import toon
+    _blades = [o for o in sc.objects if o.type == 'MESH' and o.parent and o.parent.name.startswith('KATANA_')]
+    for _o in char_meshes + _blades:
+        toon.ink_outline(_o, width=_outline * (0.5 if _o in _blades else 1.0))   # a blade takes a finer line
+if arg('look') or _film_look.get('look'):
+    sc.view_settings.look = arg('look') or _film_look['look']
+if arg('exposure') is not None or 'exposure' in _film_look:
+    sc.view_settings.exposure = float(arg('exposure') if arg('exposure') is not None else _film_look['exposure'])
+print(f'[film] look: ambient {_ambient}, sun {_sun}, key {_key}, outline {_outline} m, '
+      f'{sc.view_settings.look}, exposure {sc.view_settings.exposure:+.2f}')
 sc.render.resolution_x, sc.render.resolution_y = [int(v) for v in arg('res', '540x960').split('x')]
 # Absolute frame numbers. tools/film.sh renders ranges in parallel into ONE folder, so f0001 must
 # mean timeline frame 0 in every worker; numbering each range from 1 would have every worker
