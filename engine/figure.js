@@ -609,7 +609,13 @@ export function makeMotion(keys, opts = {}) {
     if (t <= ts[0]) return drags[0];
     if (t >= ts[n - 1]) return drags[n - 1];
     const i = seg(t), u = (t - ts[i]) / (ts[i + 1] - ts[i]);
-    return drags[i] + (drags[i + 1] - drags[i]) * u;
+    // Smoothstep, not linear. This value time-shifts every channel (the follow-through lag), so a
+    // kink in it is a kink in the clock, and a kinked clock puts an acceleration jump into every
+    // joint at every key. Linear interpolation has exactly that kink at each end. Smoothstep has
+    // zero slope at both ends, so the warp joins up cleanly. Measured: the overlap layer cost 4
+    // points of tremble on kuroko-duel (19% -> 23%) before this.
+    const w = u * u * (3 - 2 * u);
+    return drags[i] + (drags[i + 1] - drags[i]) * w;
   };
   const settles = meta.map((mt, i) => (mt.settle && i > 0 ? (mt.settle === true ? 1 : mt.settle) : 0));
   return (t) => {
