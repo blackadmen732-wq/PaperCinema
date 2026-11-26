@@ -90,6 +90,8 @@ if '--open-hands' not in argv:
 print('[draw] open hand objects:', {k: [o.name for o in v] for k, v in _open.items()})
 import body_capsules as BC                           # noqa: E402  the character's boundary
 caps = BC.BodyCapsules(rig)
+import cloth_springs as CS                           # noqa: E402  sleeves and hakama with weight
+springs = None if '--stiff-cloth' in argv else CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS)
 if '--no-keep-out' not in argv:
     draw.caps = BC.BodyCapsules(rig)
 pen = []                                             # (frame, what, depth cm, capsule)
@@ -97,6 +99,8 @@ log = []
 for f in range(1, F + 1):
     sc.frame_set(f)
     log.append(draw.step(f, pose_at((f - 1) / FPS)))
+    if springs:
+        springs.step()
     if '--debug' in argv and f % 2 == 0 and f >= 28:
         r = lambda v: [round(x, 2) for x in v]
         print('[dbg]', f, log[-1], 'guard', r(sword.matrix_world.translation), 'tip', r(sword.matrix_world @ Vector((BLADE, 0, 0))),
@@ -137,6 +141,14 @@ if '--collide' in argv:
             print('[collide] %s never inside the body' % what)
     if draw.pushed:
         print('[collide] blade turned out of the body on frames', {k: v for k, v in sorted(draw.pushed.items())})
+if springs:
+    for j, rows in springs.depths.items():
+        b = [r[0] for r in rows]
+        a = [r[1] for r in rows]
+        lag = [r[0] for r in springs.log[j]]
+        print('[cloth] %-8s inside the body: before %d frames (deepest %.1f cm) -> after %d frames (deepest %.1f cm);'
+              ' trails its old aim: median %.0f, max %.0f deg' % (j, sum(x > 0.005 for x in b), 100 * max(b), sum(x > 0.005 for x in a),
+                                                         100 * max(a), sorted(lag)[len(lag) // 2], max(lag)))
 print('[draw] phases:', ' '.join(f'{i+1}:{s[:2]}' for i, s in enumerate(log)), '| IK residual m:', draw.residual, '| left:', draw.residual_l)
 
 for ob in [sword, saya] + list(rig.J.values()):
