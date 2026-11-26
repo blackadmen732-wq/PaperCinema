@@ -213,6 +213,14 @@ def _check_frame(a, f, phase, body, garment, sleeves, chk, aprons=()):
             ob.evaluated_get(dg).to_mesh_clear()
         if worst[0] > 0:
             chk['hakama-apron/legs'].append((f, round(worst[0] * 100, 1), worst[1]))
+    # the LEFT hand on the scabbard while it holds it (final pose), and both elbows for pops
+    J = rig.J
+    chk.setdefault('elbows', []).append((f, [*J['rE'].matrix_world.translation], [*J['lE'].matrix_world.translation]))
+    if d is not None and d.hands and not d.hands['l'][1].hide_render:
+        import sword_draw as SD
+        want = (d.saya.matrix_world @ Vector((SD.LEFT_AT, 0, 0)))
+        got = (J['lH'].matrix_world @ d.H).translation
+        chk.setdefault('left_on_saya', []).append((f, round((want - got).length * 100, 2)))
     if d is not None and phase in ('grab', 'drawing', 'drawn'):
         rel = d.sword.matrix_world.inverted() @ (rig.J['rH'].matrix_world @ d.H)
         loc, rot, _ = rel.decompose()
@@ -232,6 +240,19 @@ def report(bake, F):
                     aid, key, len(fr), F, mx[1], mx[0], mx[2]))
             else:
                 lines.append('[check] %s %-20s never' % (aid, key))
+        ls = c.get('left_on_saya', [])
+        if ls:
+            mx = max(ls, key=lambda r: r[1])
+            lines.append('[check] %s left hand on the scabbard while holding: %d frames, off by at most %.1f cm (frame %d)'
+                         % (aid, len(ls), mx[1], mx[0]))
+        el = c.get('elbows', [])
+        for k, side in ((1, 'R'), (2, 'L')):
+            if len(el) > 2:
+                acc = [((Vector(el[i + 1][k]) - Vector(el[i][k])) - (Vector(el[i][k]) - Vector(el[i - 1][k]))).length * 100
+                       for i in range(1, len(el) - 1)]
+                top = sorted(((v, el[i + 1][0]) for i, v in enumerate(acc)), reverse=True)[:3]
+                lines.append('[check] %s elbow.%s jolt (cm/frame^2): median %.1f, top %s' % (
+                    aid, side, sorted(acc)[len(acc) // 2], ', '.join('f%d %.1f' % (fr_, v) for v, fr_ in top)))
         for j, lag in sorted(c.get('cloth_lag', {}).items()):
             if lag:
                 lines.append('[check] %s cloth %-8s swings from its rest aim: median %.0f, max %.0f deg' % (

@@ -49,7 +49,7 @@ class ClothSprings:
         local = (pq.inverted() @ world_dir).normalized()
         e.rotation_euler = DOWN.rotation_difference(local).to_euler('YZX')
 
-    def _clear_panel(self, name, e, root, L, skip, step_deg=8.0, iters=10):
+    def _clear_panel(self, name, e, root, L, skip, step_deg=8.0, iters=16):
         from mathutils import Matrix
         body = self.body.update()
         for _ in range(iters):

@@ -379,8 +379,8 @@ class Draw:
     opponent. The blade is ALWAYS on the scabbard's axis until it clears: it cannot cut through it.
     """
 
-    def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=6, release=9, settle=14,
-                 biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0, min_elev=-15.0):
+    def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=10, release=9, settle=14,
+                 biki=0.25, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0, min_elev=-15.0):
         self.rig, self.sword, self.saya = rig, sword, saya
         self.L = blade_len
         self.R = R                                          # the blade's curve (katana_real build()['R'])
@@ -396,6 +396,9 @@ class Draw:
         self._rel_prev = None
         self._arm_at_clear = None
         self._roll_off = None                               # the sword's turn in the hand at the clear
+        self.let_go = 0                                     # frames after the clear the left hand lets go
+        self.recover = 14                                    # frames to reach the recovery fist
+        self.recover_at = Vector((0.33, -0.06, 0.93))       # torso rest space: left of the hip, a little forward
         self.release_l = 16                                 # the left hand lets go of the scabbard slowly
         self.unroll = 10                                    # frames to ease it out
         self._corr = {}                                     # side -> last frame's elbow-out correction
@@ -538,7 +541,10 @@ class Draw:
         # it hung idle by the hakama while the blade came out of nowhere.
         wl = _smooth((f - (self.grab - self.reach)) / self.reach)
         if phase == 'drawn':
-            wl = 1.0 - _smooth((f - self.clear - self.settle) / self.release_l)
+            # A DELIBERATE RELEASE: holding the scabbard while it settled dragged the left forearm through the
+            # belly (5 cm, frames 50-58). The scabbard is tied in the obi and settles by itself; the left hand
+            # lets go `let_go` frames after the clear and RECOVERS to a planted fist at the left hip, elbow out.
+            wl = 1.0 - _smooth((f - self.clear - self.let_go) / self.recover)
         if wl > 0:
             lt = frame(Y @ Vector((LEFT_AT, 0, 0)), Y.to_3x3().col[0])
             solved, res = ik_arm(rig, pose, lt, self.H, side='l')
@@ -546,6 +552,17 @@ class Draw:
             pose = dict(pose)
             for k in arm_keys('l'):
                 pose[k] = pose[k] + (solved[k] - pose[k]) * wl
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+        if phase == 'drawn' and wl < 1.0:
+            # the recovery contact: a fist on the side of the left hip, a hand's width out from the obi
+            D = self._D()
+            spot = D @ self.recover_at
+            fist = Matrix.Translation(spot) @ D.to_3x3().to_4x4()
+            solved, _r = ik_arm(rig, pose, fist, self.H, side='l', wr=0.0)
+            pose = dict(pose)
+            for k in arm_keys('l'):
+                pose[k] = pose[k] + (solved[k] - pose[k]) * (1.0 - wl)
             rig.pose(pose)
             bpy.context.view_layer.update()
         if self.caps is not None:
@@ -595,6 +612,10 @@ class Draw:
                 pose = dict(pose)
                 for k in arm_keys(side):
                     pose[k] = solved[k]
+                if side == 'l':
+                    # planted contact: the hand stays ON the scabbard, the elbow swings out of the belly in the
+                    # SAME solve (re-gripping after the elbow pass used to drop the elbow back in)
+                    pose, _b, _a = arm_keep_out(rig, pose, self.caps.update(), 'l', hold=tg, H=self.H)
                 self._corr[side] = {}
             if final:
                 rig.pose(pose)
@@ -629,7 +650,8 @@ class Draw:
             ob.keyframe_insert('location', frame=f)
             ob.keyframe_insert('rotation_quaternion', frame=f)
         # the hands: the gripping shape while the hand is ON the sword / scabbard, the open one otherwise
-        holding = {'r': w > 0.85 or phase == 'drawn', 'l': wl > 0.85}
+        holding = {'r': w > 0.85 or phase == 'drawn',
+                   'l': wl > 0.85 and not (phase == 'drawn' and f >= self.clear + self.let_go)}   # opens as it lets go
         for side, (opens, grip) in self.hands.items():
             for ob in opens:
                 key_visible(ob, f, not holding[side])
