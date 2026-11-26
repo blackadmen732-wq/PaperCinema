@@ -204,10 +204,36 @@ def convert(asf, amc, fps_out=24, start=0.0, end=None, src_fps=120, mirror=False
     if len(picked) < 2:
         raise SystemExit(f'only {len(picked)} frames in that range')
 
-    P = np.zeros((len(picked), 33, 3))
-    for k, fi in enumerate(picked):
+    # ANTI-ALIAS BEFORE DECIMATING. This used to take every `step`th frame (every 5th, for 120 Hz
+    # CMU into a 24 fps film) and throw the other four away. That is textbook aliasing: anything in
+    # the source above the output's Nyquist - 12 Hz here - folds down and comes back as
+    # frame-to-frame jitter. It is why clean 120 Hz laboratory capture arrived in this project
+    # trembling, with channels reversing direction 53-63% of frames (tools/jitter.mjs).
+    #
+    # So every source frame in the range is solved, the result is low-passed with a Hann window
+    # about two output frames wide, and only then is it sampled. Timing is untouched - the samples
+    # land on exactly the same instants as before - and the cost is solving 5x more frames, which
+    # for an 18-second clip is 2250 instead of 451.
+    full = list(range(i0, i1))
+    Pf = np.zeros((len(full), 33, 3))
+    for k, fi in enumerate(full):
         pos, rots = forward(bones, frames[fi])
-        P[k] = landmarks(pos, rots)
+        Pf[k] = landmarks(pos, rots)
+
+    if step > 1 and len(full) > 2 * step + 1:
+        n = 2 * step + 1                                   # ~2 output frames wide
+        w = np.hanning(n + 2)[1:-1]
+        w /= w.sum()
+        pad = n // 2
+        # Edge-replicated padding: a zero pad would drag the first and last frames toward the origin.
+        Pp = np.concatenate([np.repeat(Pf[:1], pad, axis=0), Pf, np.repeat(Pf[-1:], pad, axis=0)], axis=0)
+        Ps = np.empty_like(Pf)
+        for j in range(33):
+            for ax in range(3):
+                Ps[:, j, ax] = np.convolve(Pp[:, j, ax], w, mode='valid')
+        Pf = Ps
+
+    P = Pf[[fi - i0 for fi in picked]]
 
     # CMU ASF is Y-up with the subject's forward along +Z; ours is Y-up with forward along -Z,
     # so Z flips. Flipping one axis mirrors handedness, so X flips too and left stays left.
@@ -234,6 +260,9 @@ def main():
     ap.add_argument('--start', type=float, default=0.0)
     ap.add_argument('--end', type=float)
     ap.add_argument('--mirror', action='store_true', help='left-handed performer -> right-handed')
+    ap.add_argument('--smooth', type=float, default=0.15,
+                    help='Savitzky-Golay window in seconds on the solved channels (0.15 = the video '
+                         'path default). Raise it for a calmer clip, lower it to keep a sharper hit.')
     ap.add_argument('--inspect', action='store_true', help='print measurements and write nothing')
     a = ap.parse_args()
 
@@ -252,6 +281,12 @@ def main():
         return
 
     ch, contacts, scale = mocap.solve(t, P, pelvis, {})
+    # The SAME finishing pass the video capture path runs: a small-window Savitzky-Golay that keeps
+    # the peaks and kills the jitter, then the joint limits. mocap.py has always called it and this
+    # file never did, so every CMU clip in library/mocap/ skipped it. It matters most on the twist
+    # and yaw channels - rsy, ny, rwx - which come from small differences between landmarks, so a
+    # millimetre of position noise becomes degrees of angle noise.
+    ch = mocap.post(ch, t, window_s=float(a.smooth))
     keys = [{'t': round(float(t[i]), 3), **{k: round(float(v[i]), 3) for k, v in ch.items()}}
             for i in range(len(t))]
     out = a.out or os.path.join(REPO, 'library', 'mocap', os.path.basename(a.amc).replace('.amc', '') + '.json')
