@@ -43,6 +43,12 @@ recipe = MB.load_recipe(os.path.join(REPO, 'library', 'character-recipes', RECIP
 ch = MB.build(recipe, name='PC_' + RECIPE)
 rig = ch['rig']
 
+# the recipe's OLD hip sword (part_registry.katana_sheathed: a box scabbard + handle + guard glued to the
+# torso) would be a second sword next to the real one: it goes
+_old = [o for o in ch['objects'] if o.get('pc_recipe') == 'katana_sheathed']
+ch['objects'] = [o for o in ch['objects'] if o.get('pc_recipe') != 'katana_sheathed']
+for _o in _old:
+    bpy.data.objects.remove(_o, do_unlink=True)
 SW.use(sc.collection)
 import katana_real as KR                             # noqa: E402  the real sword + scabbard (one base)
 K = KR.build('KATANA', sc.collection, blade_len=BLADE)
@@ -51,21 +57,28 @@ saya.name = 'SAYA'
 
 # ---------------------------------------------------------------- the move, in seconds
 POSES = json.load(open(os.path.join(REPO, 'library', 'poses.json')))
-KEYS = [  # (time s, pose, overrides): the library's nukitsuke, slowed so the draw reads
+# The body DRIVES the cut (review, 26 Nov: "the sword moves but the character barely moves with it"):
+# coil back (weight back, hips and chest turned away), the slide, then the hips turn first, the chest
+# follows a beat later, the arm last (overlap), with a step and a weight shift into the cut, an overshoot,
+# and a settled hold (zanshin). ty = hips/torso turn, cy = chest turn (+ = right shoulder forward),
+# z = step forward, weight = hips forward. The arms come from the library's nukitsuke poses.
+KEYS = [  # (time s, pose, overrides)
     (0.00, 'standing', {}),
-    (0.55, 'iai-ready', {}),                                   # right hand to the handle
-    (0.95, 'iai-ready', {'crouch': 0.27, 'tx': 0.36, 'weight': 0.4}),   # the coil (koiguchi held)
-    (1.30, 'nuki-draw-mid', {'fwd': 0.3}),                     # the tip leaves the mouth here
-    (1.42, 'nukitsuke-contact', {'fwd': 0.5}),
-    (1.54, 'nukitsuke-finish', {'fwd': 0.55}),
-    (2.60, 'nukitsuke-finish', {'fwd': 0.55}),
+    (0.45, 'iai-ready', {'ty': 0.0, 'cy': 0.0}),                                   # hands to sword + scabbard
+    (0.85, 'iai-ready', {'crouch': 0.30, 'weight': 0.22, 'tx': 0.32, 'ty': -0.25, 'cy': -0.10}),   # the coil
+    (1.05, 'iai-ready', {'crouch': 0.31, 'weight': 0.22, 'tx': 0.33, 'ty': -0.28, 'cy': -0.12}),   # koiguchi held
+    (1.30, 'nuki-draw-mid', {'crouch': 0.25, 'weight': 0.48, 'z': 0.14, 'ty': 0.05, 'cy': -0.15}), # hips lead
+    (1.45, 'nukitsuke-contact', {'crouch': 0.20, 'weight': 0.66, 'z': 0.27, 'stance': 0.85, 'ty': 0.40, 'cy': 0.05}),
+    (1.58, 'nukitsuke-finish', {'crouch': 0.19, 'weight': 0.73, 'z': 0.30, 'stance': 0.85, 'ty': 0.55, 'cy': 0.25}),  # overshoot
+    (1.90, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.30, 'stance': 0.85, 'ty': 0.45, 'cy': 0.15}),  # settle
+    (3.00, 'nukitsuke-finish', {'crouch': 0.23, 'weight': 0.66, 'z': 0.30, 'stance': 0.85, 'ty': 0.45, 'cy': 0.15}),  # zanshin
 ]
-GRAB, SLIDE, CLEAR = int(0.55 * FPS), int(0.95 * FPS), int(1.30 * FPS)
+GRAB, SLIDE, CLEAR = int(0.45 * FPS), int(1.05 * FPS), int(1.30 * FPS)
 
 
 def full(name, over):
     p = dict(MB.BASE)
-    p.update(POSES.get(name, {}))
+    p.update(POSES.get(name) or MB.POSES.get(name, {}))
     p.update({k: v for k, v in over.items() if k in MB.BASE})
     return p
 
@@ -114,10 +127,17 @@ def saya_visible(f, n=24):
 import body_capsules as BC                           # noqa: E402  the character's boundary
 caps = BC.BodyCapsules(rig)
 import cloth_springs as CS                           # noqa: E402  sleeves and hakama with weight
-springs = None if '--stiff-cloth' in argv else CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS)
+_tam = {'rSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.R')],
+        'lSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.L')]}
+springs = None if '--stiff-cloth' in argv else CS.ClothSprings(
+    rig, BC.BodyCapsules(rig), fps=FPS, panels=None if '--no-panel-check' in argv else _tam,
+    body=BC.BodyCapsules(rig, shrink=0.035))
 if '--no-keep-out' not in argv:
     draw.caps = BC.BodyCapsules(rig)
 MEASURED = {}
+body = BC.BodyCapsules(rig, shrink=0.035)            # the PERSON under the clothes
+elbow_track, frame_out, grip_roll = {}, [], []
+sleeve_objs = [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide']
 pen = []                                             # (frame, what, depth cm, capsule)
 log = []
 for f in range(1, F + 1):
@@ -142,47 +162,88 @@ for f in range(1, F + 1):
     if '--collide' in argv:
         bpy.context.view_layer.update()
         caps.update()
-        # the drawn part of the blade (from the guard to the tip) and the scabbard, sampled every 5 cm
-        worst = {}
+        body.update()
+        rig.sync_bones()                                   # the skinned paper must be where the bones are
+        # 1) the blade against the PERSON (body capsules) and against the GARMENT (capsules with the clothes)
         if log[-1] in ('drawing', 'drawn'):
             for i in range(1, 19):
                 pt = sword.matrix_world @ Vector((BLADE * i / 18, 0, 0))
-                d, who = caps.depth(pt, skip=('forearm.R', 'forearm.L'))
-                if d > worst.get('blade', (-1, ''))[0]:
-                    worst['blade'] = (d, who)
+                for key, cc in (('blade/body', body), ('blade/garment', caps)):
+                    d, who = cc.depth(pt, skip=('forearm.R', 'forearm.L'))
+                    if d > 0:
+                        pen.append((f, key, round(d * 100, 1), who))
         for i in range(2, 18):
             pt = saya.matrix_world @ Vector(((BLADE + 0.035) * i / 18, 0, 0))
-            d, who = caps.depth(pt, skip=('forearm.L', 'belly', 'hips'))     # the scabbard is tied IN the obi
-            if d > worst.get('saya', (-1, ''))[0]:
-                worst['saya'] = (d, who)
-        # the arms: points along each upper arm and forearm (plus their own thickness) against the body
+            d, who = body.depth(pt, skip=('forearm.L', 'belly', 'hips'))     # the scabbard is tied IN the obi
+            if d > 0:
+                pen.append((f, 'saya/body', round(d * 100, 1), who))
+        # 2) the arms against the PERSON
         for sd, ar in (('r', 'R'), ('l', 'L')):
             chain = [rig.J[sd + j].matrix_world.translation for j in ('S', 'E', 'H')]
-            for (a_, b_), rad in zip(zip(chain, chain[1:]), (0.05, 0.04)):
+            elbow_track.setdefault(ar, []).append(chain[1].copy())
+            for (a_, b_), rad in zip(zip(chain, chain[1:]), (0.035, 0.03)):
                 for t in (0.5, 0.75, 1.0):
-                    pt = a_.lerp(b_, t)
-                    d, who = caps.depth(pt, skip=('upperarm.' + ar, 'forearm.' + ar))
-                    d += rad
-                    key = 'arm.' + ar
-                    if d > worst.get(key, (-1, ''))[0]:
-                        worst[key] = (d, who)
-        for what, (d, who) in worst.items():
-            if d > 0:
-                pen.append((f, what, round(d * 100, 1), who))
+                    d, who = body.depth(a_.lerp(b_, t), skip=('upperarm.' + ar, 'forearm.' + ar))
+                    if d + rad > 0:
+                        pen.append((f, 'arm.' + ar + '/body', round((d + rad) * 100, 1), who))
+        # 3) the sleeve PAPER itself (every vertex of the deformed tamoto) against the person: a cloth bone
+        #    can clear a capsule while a corner of the panel still cuts into the body
+        dg = bpy.context.evaluated_depsgraph_get()
+        for ob in sleeve_objs:
+            ar = 'R' if ob.get('pc_socket', '').endswith('.R') else 'L'
+            me = ob.evaluated_get(dg).to_mesh()
+            mw = ob.matrix_world
+            worst = (0.0, '')
+            for v in me.vertices:
+                d, who = body.depth(mw @ v.co, skip=('upperarm.' + ar, 'forearm.' + ar))
+                if d > worst[0]:
+                    worst = (d, who)
+            ob.evaluated_get(dg).to_mesh_clear()
+            if worst[0] > 0:
+                pen.append((f, 'sleeve-paper.' + ar + '/body', round(worst[0] * 100, 1), worst[1]))
+        # 4) framing: is the WHOLE blade in the picture?
+        from bpy_extras.object_utils import world_to_camera_view as _w2c
+        if log[-1] in ('drawing', 'drawn'):
+            outside = sum(1 for i in range(0, 19) if not (0.0 <= _w2c(sc, cam, sword.matrix_world @ Vector((BLADE * i / 18, 0, 0))).x <= 1.0
+                                                          and 0.0 <= _w2c(sc, cam, sword.matrix_world @ Vector((BLADE * i / 18, 0, 0))).y <= 1.0))
+            if outside:
+                frame_out.append((f, outside))
+        # 5) grip slide: how far the hand turns ABOUT the handle from one frame to the next
+        if log[-1] in ('drawing', 'drawn'):
+            hm = (rig.J['rH'].matrix_world @ draw.H).to_3x3()
+            sm = sword.matrix_world.to_3x3()
+            ax = sm.col[0].normalized()
+            hy = (hm.col[1] - ax * hm.col[1].dot(ax)).normalized()
+            sy = (sm.col[1] - ax * sm.col[1].dot(ax)).normalized()
+            import math as _m
+            roll = _m.degrees(_m.atan2(ax.dot(sy.cross(hy)), sy.dot(hy)))
+            grip_roll.append((f, roll))
 if '--collide' in argv:
     by = {}
     for f_, what, d, who in pen:
         by.setdefault(what, []).append((f_, d, who))
-    for what in ('blade', 'saya', 'arm.R', 'arm.L'):
+    for what in ('blade/body', 'blade/garment', 'saya/body', 'arm.R/body', 'arm.L/body',
+                 'sleeve-paper.R/body', 'sleeve-paper.L/body'):
         rows = by.get(what, [])
         if rows:
+            fr = sorted({r[0] for r in rows})
             mx = max(rows, key=lambda r: r[1])
-            print('[collide] %s inside the body on %d of %d frames, deepest %.1f cm (frame %d, %s)'
-                  % (what, len(rows), F, mx[1], mx[0], mx[2]))
+            print('[collide] %-20s on %2d of %d frames, deepest %.1f cm (frame %d, %s)' % (what, len(fr), F, mx[1], mx[0], mx[2]))
         else:
-            print('[collide] %s never inside the body' % what)
-    if draw.pushed:
-        print('[collide] blade turned out of the body on frames', {k: v for k, v in sorted(draw.pushed.items())})
+            print('[collide] %-20s never' % what)
+    for ar, pts in elbow_track.items():                    # elbow pop: the biggest frame-to-frame acceleration
+        acc = [((pts[i + 1] - pts[i]) - (pts[i] - pts[i - 1])).length * 100 for i in range(1, len(pts) - 1)]
+        i = max(range(len(acc)), key=lambda k: acc[k])
+        print('[motion] elbow.%s: biggest jolt %.1f cm/frame^2 at frame %d (median %.1f); frames over 3: %s' % (
+            ar, acc[i], i + 2, sorted(acc)[len(acc) // 2], [(k + 2, round(v, 1)) for k, v in enumerate(acc) if v > 3]))
+    print('[frame] whole blade in the picture on %d of %d drawn frames%s' % (
+        len([1 for k in log if k in ('drawing', 'drawn')]) - len(frame_out), len([1 for k in log if k in ('drawing', 'drawn')]),
+        (' (out: ' + ', '.join('f%d' % a for a, _ in frame_out[:12]) + ')') if frame_out else ''))
+    if grip_roll:
+        steps = [abs((grip_roll[i][1] - grip_roll[i - 1][1] + 180) % 360 - 180) for i in range(1, len(grip_roll))]
+        k = max(range(len(steps)), key=lambda j: steps[j])
+        print('[grip] the hand turns about the handle by at most %.1f deg in one frame (frame %d); total range %.0f deg'
+              % (steps[k], grip_roll[k + 1][0], max(r for _, r in grip_roll) - min(r for _, r in grip_roll)))
 if springs:
     for j, rows in springs.depths.items():
         b = [r[0] for r in rows]

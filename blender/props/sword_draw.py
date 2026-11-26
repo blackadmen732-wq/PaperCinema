@@ -379,7 +379,7 @@ class Draw:
     opponent. The blade is ALWAYS on the scabbard's axis until it clears: it cannot cut through it.
     """
 
-    def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=6, release=4, settle=8,
+    def __init__(self, rig, sword, saya, blade_len, grab, slide, clear, reach=6, release=9, settle=14,
                  biki=0.30, aim=(0.6, 0.9, 0.3), turn=0.75, R=0.0, level=8.0, meet=30.0):
         self.rig, self.sword, self.saya = rig, sword, saya
         self.L = blade_len
@@ -392,6 +392,11 @@ class Draw:
         self.caps = None                                    # body_capsules.BodyCapsules: the body's boundary
         self.pushed = {}                                    # frame -> degrees the blade was turned out
         self.arm_fix = {}                                   # side -> [(frame, cm before, cm after)]
+        self._roll_off = None                               # the sword's turn in the hand at the clear
+        self.release_l = 16                                 # the left hand lets go of the scabbard slowly
+        self.unroll = 10                                    # frames to ease it out
+        self._corr = {}                                     # side -> last frame's elbow-out correction
+        self.max_corr_step = 0.25                           # rad per frame: the correction can't pop
         self.H = hand_holder()
         self.Mrest = saya_rest_in_torso()
         from part_registry import REST                     # noqa: the rig's rest joints
@@ -509,7 +514,7 @@ class Draw:
         # it hung idle by the hakama while the blade came out of nowhere.
         wl = _smooth((f - (self.grab - self.reach)) / self.reach)
         if phase == 'drawn':
-            wl = 1.0 - _smooth((f - self.clear - self.settle) / self.release)
+            wl = 1.0 - _smooth((f - self.clear - self.settle) / self.release_l)
         if wl > 0:
             lt = frame(Y @ Vector((LEFT_AT, 0, 0)), Y.to_3x3().col[0])
             solved, res = ik_arm(rig, pose, lt, self.H, side='l')
@@ -524,7 +529,18 @@ class Draw:
             self.caps.update()
             for side, held in (('r', w > 0.85 or phase == 'drawing'), ('l', wl > 0.85)):
                 hold = (rig.J[side + 'H'].matrix_world @ self.H) if held else None
-                pose, b_, a_ = arm_keep_out(rig, pose, self.caps, side, hold=hold, H=self.H)
+                fixed, b_, a_ = arm_keep_out(rig, pose, self.caps, side, hold=hold, H=self.H)
+                # rate-limit the correction so the elbow eases out instead of snapping on the frame it starts
+                prev = self._corr.get(side, {})
+                corr = {}
+                for k in arm_keys(side):
+                    want = fixed[k] - pose[k]
+                    was = prev.get(k, 0.0)
+                    corr[k] = was + max(-self.max_corr_step, min(self.max_corr_step, want - was))
+                self._corr[side] = corr
+                pose = dict(pose)
+                for k, v in corr.items():
+                    pose[k] += v
                 if b_ > 0:
                     self.arm_fix.setdefault(side, []).append((f, round(b_ * 100, 1), round(a_ * 100, 1)))
             rig.pose(pose)
@@ -535,7 +551,14 @@ class Draw:
         elif phase == 'drawing':
             S = target                                      # on the scabbard's axis, exactly
         else:
-            S = hand
+            # At the clear the blade leaves the scabbard's roll (edge up) for the hand's. Jumping straight to the
+            # hand's frame twisted the sword 65 deg in ONE frame; keep the offset it had and ease it out.
+            if self._roll_off is None:
+                prev = self.last_target if self.last_target is not None else hand
+                self._roll_off = (hand.to_3x3().inverted() @ prev.to_3x3()).to_quaternion()
+            from mathutils import Quaternion as _Q
+            q = _Q().slerp(self._roll_off, 1.0 - _smooth((f - self.clear) / self.unroll))
+            S = hand @ q.to_matrix().to_4x4()
             if self.caps is not None:
                 S, pose = self._keep_out(S, pose)
         for ob, M in ((self.sword, S), (self.saya, Y)):

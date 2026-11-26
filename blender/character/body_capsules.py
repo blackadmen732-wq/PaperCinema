@@ -38,8 +38,12 @@ def _closest(p, a, b):
 
 
 class BodyCapsules:
-    def __init__(self, rig, capsules=CAPSULES, head_up=0.12):
-        self.rig, self.spec, self.head_up = rig, capsules, head_up
+    def __init__(self, rig, capsules=CAPSULES, head_up=0.12, shrink=0.0):
+        """shrink: metres taken off every radius. 0 = the GARMENT boundary (clothes included); about 0.035 = the
+        BODY under the clothes, so a report can tell 'touches the kimono' from 'goes into the person'."""
+        self.rig, self.head_up = rig, head_up
+        self.spec = [(n, a, b, max(0.025, r - shrink * (0.4 if n.startswith(('upperarm', 'forearm')) else 1.0)))
+                     for n, a, b, r in capsules]
         self.segs = []
 
     def update(self):

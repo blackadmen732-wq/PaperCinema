@@ -32,7 +32,11 @@ SPRINGS = (
 
 
 class ClothSprings:
-    def __init__(self, rig, caps=None, fps=30, springs=SPRINGS, gravity=9.8, margin=0.015):
+    def __init__(self, rig, caps=None, fps=30, springs=SPRINGS, gravity=9.8, margin=0.015, panels=None, body=None):
+        """panels: {joint: [mesh objects]} - the actual paper of that cloth bone. body: the PERSON's capsules.
+        With both, every frame the deformed paper itself is checked, and the cloth bone swings away until no
+        corner of the panel is inside the body (a bone tip can be clear while a panel corner still cuts in)."""
+        self.panels, self.body = panels or {}, body
         self.rig, self.caps, self.dt = rig, caps, 1.0 / fps
         self.spec = [s for s in springs if s[0] in rig.J]
         self.g, self.margin = gravity, margin
@@ -44,6 +48,36 @@ class ClothSprings:
         pq = e.parent.matrix_world.to_quaternion()
         local = (pq.inverted() @ world_dir).normalized()
         e.rotation_euler = DOWN.rotation_difference(local).to_euler('YZX')
+
+    def _clear_panel(self, name, e, root, L, skip, step_deg=8.0, iters=10):
+        from mathutils import Matrix
+        body = self.body.update()
+        for _ in range(iters):
+            bpy.context.view_layer.update()
+            self.rig.sync_bones()
+            dg = bpy.context.evaluated_depsgraph_get()
+            worst, wpt = 0.0, None
+            for ob in self.panels[name]:
+                me = ob.evaluated_get(dg).to_mesh()
+                mw = ob.matrix_world
+                for v in me.vertices:
+                    w = mw @ v.co
+                    d, _who = body.depth(w, skip=skip)
+                    if d > worst:
+                        worst, wpt = d, w
+                ob.evaluated_get(dg).to_mesh_clear()
+            if worst <= 0:
+                break
+            away = body.push_out(wpt, 0.01, skip=skip) - wpt
+            arm = wpt - root
+            axis = arm.cross(away)
+            if axis.length < 1e-9:
+                break
+            d = (e.matrix_world.to_quaternion() @ DOWN).normalized()
+            d = (Matrix.Rotation(math.radians(step_deg), 3, axis.normalized()) @ d).normalized()
+            self._aim(e, d)
+        bpy.context.view_layer.update()
+        return root + (e.matrix_world.to_quaternion() @ DOWN).normalized() * L
 
     def step(self):
         bpy.context.view_layer.update()
@@ -91,6 +125,9 @@ class ClothSprings:
                 self.depths.setdefault(name, []).append((max(0.0, before), max(0.0, after)))
             self.state[name] = (p, v)
             self._aim(e, (p - root).normalized())
+            if name in self.panels and self.body is not None:
+                p = self._clear_panel(name, e, root, L, skip)
+                self.state[name] = (p, self.state[name][1])
             self.log.setdefault(name, []).append((round(math.degrees((p - root).normalized().angle(want, 0.0)), 1),
                                                   pushed))
         bpy.context.view_layer.update()
