@@ -106,18 +106,24 @@ def build_saya(name, coll, length=0.95, mat_body=None, mat_mouth=None):
 
 
 # the left-hip tie point in the rest pose (part_registry SOCKETS['hip_side.L']) and the worn angle
-HIP_L = Vector((0.185, -0.055, 0.945))
-TILT_X, SWING_Z = -14.0, 13.0
+LEFT_AT = 0.07                                            # the left hand's grip behind the mouth
 TIE = 0.12                                                # mouth -> obi cord, along the saya
 
 
-def saya_rest_in_torso():
-    """Where the saya sits at the left hip in the torso's REST space: mouth just in front of the obi,
-    running back and a little down, edge up."""
-    tilt = Matrix.Rotation(math.radians(TILT_X), 3, 'X') @ Matrix.Rotation(math.radians(SWING_Z), 3, 'Z')
-    d = tilt @ Vector((0, 1, 0))                          # mouth -> tip, toward the back
-    mouth = HIP_L + Vector((0, -0.10, 0.0))               # the mouth sits forward of the tie
-    return frame(mouth, d)
+# Where the saya is worn, in the torso's REST space (metres, degrees). Chosen by measurement, not by eye:
+# tools in draw_test.py (--measure) count how much of the scabbard each camera really sees.
+# 26 Nov search over 384 placements x 4 cameras: the old wear (0.185, -0.155, 0.945 / 13 / -14) was 0%
+# visible from a 3/4 front camera in the iai pose (inside the sleeve and hakama); this one is 56-69%.
+WEAR = {'mouth': (0.25, -0.15, 0.96), 'swing': 10.0, 'tilt': -15.0}
+
+
+def saya_rest_in_torso(wear=None):
+    """The saya at the left hip: mouth at the obi in front, body running back (+Y), swung out (+X) by
+    `swing` and down by `tilt`, edge up."""
+    w = dict(WEAR, **(wear or {}))
+    tilt = Matrix.Rotation(math.radians(w['tilt']), 3, 'X') @ Matrix.Rotation(math.radians(w['swing']), 3, 'Z')
+    d = tilt @ Vector((0, 1, 0))
+    return frame(Vector(w['mouth']), d)
 
 
 # --------------------------------------------------------------------------- the right-arm IK
@@ -125,8 +131,12 @@ def saya_rest_in_torso():
 # showed the hand swinging one way while the blade, glued to the hand, cut through its own scabbard.
 # This small solver turns the right arm's pose angles until the hand's grip frame sits on a target
 # sword frame. Damped least squares on 7 angles, numeric Jacobian, plain Python (no scipy in Blender).
-ARM = ('rsx', 'rsy', 'rsz', 'rex', 'rfy', 'rwx', 'rwz')
-LIMITS = {'rex': (-2.7, -0.05)}
+def arm_keys(side='r'):
+    return tuple(side + k for k in ('sx', 'sy', 'sz', 'ex', 'fy', 'wx', 'wz'))
+
+
+ARM = arm_keys('r')
+LIMITS = {'rex': (-2.7, -0.05), 'lex': (-2.7, -0.05)}
 
 
 def _euler(rx, ry, rz):
@@ -134,11 +144,11 @@ def _euler(rx, ry, rz):
     return Euler((rx, -rz, ry), 'YZX').to_matrix().to_4x4()   # Rig.rot: three (x, y, z) -> Blender
 
 
-def _hand_fk(rig, p, H):
-    J = rig.J
-    M = J['rC'].matrix_world.copy()
-    for j, r in (('rS', (p['rsx'], p['rsy'], p['rsz'])), ('rE', (p['rex'], 0, 0)),
-                 ('rT', (0, p['rfy'], 0)), ('rH', (p['rwx'], 0, p['rwz']))):
+def _hand_fk(rig, p, H, side='r'):
+    J, s = rig.J, side
+    M = J[s + 'C'].matrix_world.copy()
+    for j, r in ((s + 'S', (p[s + 'sx'], p[s + 'sy'], p[s + 'sz'])), (s + 'E', (p[s + 'ex'], 0, 0)),
+                 (s + 'T', (0, p[s + 'fy'], 0)), (s + 'H', (p[s + 'wx'], 0, p[s + 'wz']))):
         M = M @ Matrix.Translation(J[j].location) @ _euler(*r)
     return M @ H
 
@@ -165,30 +175,31 @@ def _solve6(A, b):
     return [M[i][n] / M[i][i] if M[i][i] else 0.0 for i in range(n)]
 
 
-def ik_arm(rig, pose, target, H, iters=40, wr=0.2, lam=0.06):
+def ik_arm(rig, pose, target, H, iters=40, wr=0.2, lam=0.06, side='r'):
     """Return (pose with the right arm turned so hand_grip = target, residual metres)."""
     p = dict(pose)
+    keys = arm_keys(side)
     for _ in range(iters):
-        M = _hand_fk(rig, p, H)
+        M = _hand_fk(rig, p, H, side)
         e = _err(M, target, wr)
         if sum(c * c for c in e) ** 0.5 < 1e-3:
             break
         Jc = []
-        for k in ARM:
+        for k in keys:
             q = dict(p)
             q[k] += 1e-3
-            ek = _err(_hand_fk(rig, q, H), target, wr)
+            ek = _err(_hand_fk(rig, q, H, side), target, wr)
             Jc.append([(a - b) / 1e-3 for a, b in zip(e, ek)])   # -(d error)/dk = (d hand)/dk
         # J (6 x 7) = d hand / d angles ; dp = J^T (J J^T + lam^2 I)^-1 e
-        Jm = [[Jc[k][i] for k in range(len(ARM))] for i in range(6)]
-        A = [[sum(Jm[i][k] * Jm[j][k] for k in range(len(ARM))) + (lam * lam if i == j else 0)
+        Jm = [[Jc[k][i] for k in range(len(keys))] for i in range(6)]
+        A = [[sum(Jm[i][k] * Jm[j][k] for k in range(len(keys))) + (lam * lam if i == j else 0)
               for j in range(6)] for i in range(6)]
         y = _solve6(A, e)
-        for k, name in enumerate(ARM):
+        for k, name in enumerate(keys):
             p[name] += sum(Jm[i][k] * y[i] for i in range(6))
             lo, hi = LIMITS.get(name, (-3.1, 3.1))
             p[name] = max(lo, min(hi, p[name]))
-    M = _hand_fk(rig, p, H)
+    M = _hand_fk(rig, p, H, side)
     return p, (target.translation - M.translation).length
 
 
@@ -224,6 +235,7 @@ class Draw:
         self.last_saya = None
         self.last_target = None
         self.residual = {}
+        self.residual_l = {}
 
     def _D(self):
         return self.rig.J['torso'].matrix_world @ Matrix.Translation(-self.torso_rest)
@@ -268,6 +280,21 @@ class Draw:
             pose = dict(pose)
             for k in ARM:
                 pose[k] = pose[k] + (solved[k] - pose[k]) * w
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+        # THE LEFT HAND holds the scabbard just behind its mouth from the grab until the scabbard has
+        # settled after the tip clears: it is what pulls the saya back (saya-biki) and turns it. Before,
+        # it hung idle by the hakama while the blade came out of nowhere.
+        wl = _smooth((f - (self.grab - self.reach)) / self.reach)
+        if phase == 'drawn':
+            wl = 1.0 - _smooth((f - self.clear - self.settle) / self.release)
+        if wl > 0:
+            lt = frame(Y @ Vector((LEFT_AT, 0, 0)), Y.to_3x3().col[0])
+            solved, res = ik_arm(rig, pose, lt, self.H, side='l')
+            self.residual_l[f] = round(res, 3)
+            pose = dict(pose)
+            for k in arm_keys('l'):
+                pose[k] = pose[k] + (solved[k] - pose[k]) * wl
             rig.pose(pose)
             bpy.context.view_layer.update()
         hand = rig.J['rH'].matrix_world @ self.H

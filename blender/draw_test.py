@@ -30,7 +30,7 @@ def arg(k, d=None):
     return argv[argv.index('--' + k) + 1] if '--' + k in argv else d
 
 
-FPS = 24
+FPS = int(arg('fps', 30))                          # the delivery rate (1080x1920, 30 fps)
 RECIPE = arg('recipe', 'kojiro')
 BLADE = float(arg('blade', 0.91))
 OUT = os.path.join(REPO, arg('out', 'output/draw-test'))
@@ -45,8 +45,8 @@ rig = ch['rig']
 
 SW.use(sc.collection)
 sword = SW.build_katana('KATANA', blade_len=BLADE, handle=0.33)
-paper = SW._flat_mat('saya_paper', (0.035, 0.05, 0.11, 1), 0.7)       # lacquered indigo card
-horn = SW._flat_mat('saya_horn', (0.02, 0.02, 0.025, 1), 0.5)
+paper = SW._flat_mat('saya_paper', (0.012, 0.012, 0.014, 1), 0.28)   # black lacquer: catches a highlight
+horn = SW._flat_mat('saya_horn', (0.86, 0.80, 0.66, 1), 0.5)          # bone mouth + cap mark both ends
 saya = SD.build_saya('SAYA', sc.collection, length=BLADE + 0.05, mat_body=paper, mat_mouth=horn)
 
 # ---------------------------------------------------------------- the move, in seconds
@@ -93,7 +93,7 @@ for f in range(1, F + 1):
     for e in rig.J.values():
         e.keyframe_insert('location', frame=f)
         e.keyframe_insert('rotation_euler', frame=f)
-print('[draw] phases:', ' '.join(f'{i+1}:{s[:2]}' for i, s in enumerate(log)), '| IK residual m:', draw.residual)
+print('[draw] phases:', ' '.join(f'{i+1}:{s[:2]}' for i, s in enumerate(log)), '| IK residual m:', draw.residual, '| left:', draw.residual_l)
 
 for ob in [sword, saya] + list(rig.J.values()):
     ad = ob.animation_data
@@ -132,6 +132,23 @@ sc.frame_start, sc.frame_end = 1, F
 os.makedirs(OUT, exist_ok=True)
 sc.render.filepath = os.path.join(OUT, 'f')
 sc.render.image_settings.file_format = 'PNG'
+def saya_visible(f, n=24):
+    """Share of points along the scabbard that the camera sees directly (first ray hit is the saya)."""
+    sc.frame_set(f)
+    dg = bpy.context.evaluated_depsgraph_get()
+    L = BLADE + 0.05
+    seen = 0
+    for i in range(n):
+        p = saya.matrix_world @ Vector((L * (i + 0.5) / n, 0, 0.0))
+        d = p - cam.matrix_world.translation
+        hit, loc, nor, idx, ob, mat = sc.ray_cast(dg, cam.matrix_world.translation, d.normalized(), distance=d.length + 0.05)
+        seen += bool(hit and ob and ob.name.startswith('SAYA'))
+    return seen / n
+
+
+if arg('measure'):
+    for f in [int(v) for v in arg('measure').split(',')]:
+        print('[measure] frame %d: scabbard visible %.0f%%' % (f, 100 * saya_visible(f)))
 if arg('stills'):
     for f in [int(v) for v in arg('stills').split(',')]:
         sc.frame_set(f)
