@@ -18,7 +18,9 @@ def main(argv):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     fr, a, b, w = argv[1], int(argv[2]), int(argv[3]), max(1, int(argv[4]))
-    todo = [f for f in range(a, b + 1) if not os.path.exists(os.path.join(fr, 'f%04d.png' % f))]
+    # film_modular.py --frames a-b writes Blender frames a+1..b+1 (1-based): timeline frame f is f%04d.png of f+1.
+    # This looked for f itself, so a resumed render never found what it had already made.
+    todo = [f for f in range(a, b + 1) if not os.path.exists(os.path.join(fr, 'f%04d.png' % (f + 1)))]
     print(len(todo))
     if not todo:
         return 0

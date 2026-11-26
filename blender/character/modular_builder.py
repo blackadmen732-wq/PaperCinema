@@ -157,6 +157,20 @@ class Rig:
             self.rig.pose.bones[b].matrix = D @ self.rest_bone[b]
             bpy.context.view_layer.update()
 
+    def key_bones(self, frame):
+        """BAKE the deform bones on this frame (call after pose()/sync_bones()).
+
+        sync_bones() writes the bones directly; nothing keys them and nothing ties them to the control
+        empties, so on any later frame change the skinned paper (kimono, hakama, sleeves) stayed in the LAST
+        synced pose while the rigid parts moved with the keyed empties (proved 26 Nov: dash-test frames 10
+        and 150, rigid parts 5.3 m apart, skinned parts identical). Keying every bone makes the evaluated
+        armature the source of truth: any frame, any order, any fresh render process."""
+        for pb in self.rig.pose.bones:
+            pb.rotation_mode = 'QUATERNION'
+            pb.keyframe_insert('location', frame=frame, group=pb.name)
+            pb.keyframe_insert('rotation_quaternion', frame=frame, group=pb.name)
+            pb.keyframe_insert('scale', frame=frame, group=pb.name)
+
     # ---- the pose solver, ported from engine/figure.js applyPose + solveLegs
     def rot(self, j, rx, ry, rz):
         self.J[j].rotation_euler = (rx, -rz, ry)

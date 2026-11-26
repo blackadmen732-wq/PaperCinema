@@ -157,6 +157,7 @@ for i in range(f0, f1 + 1):
         for e in rig.J.values():
             e.keyframe_insert('location')
             e.keyframe_insert('rotation_euler')
+        rig.key_bones(i + 1)                                    # the deform bones too (see Rig.key_bones)
     for _aid, _sw in swords.items():
         _act = fr['actors'].get(_aid)
         if _act and _act.get('weapon'):
@@ -178,7 +179,7 @@ for i in range(f0, f1 + 1):
 # snap of a cut would soften into a drift. Hold every curve linear between the baked frames.
 # (Review, 26 Nov: this loop used to visit the Rig WRAPPERS, which carry no animation, so the joint empties
 # that are actually keyed kept Blender's Bezier easing and every cut was softened. Visit the joints.)
-for ob in [e for r in rigs.values() for e in r.J.values()] + list(swords.values()) + [cam, cd]:
+for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rigs.values()] + list(swords.values()) + [cam, cd]:
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     if not act:
@@ -368,4 +369,28 @@ bpy.context.scene.frame_set(f0 + 1)
 print('[film] camera at', [round(v,2) for v in cam.location])
 for aid, rig in rigs.items():
     print('[film]', aid, 'root at', [round(v,2) for v in rig.J['root'].location])
+if arg('probe'):
+    # Diagnostic (no render): where are a SKINNED part (kimono/hakama, deformed by the armature) and a RIGID
+    # part (parented to a control empty) on the asked frames, visited in the asked order? If the skinned
+    # centroid does not move while the rigid one does, the deform bones are not following the controls.
+    dg = None
+    for f in [int(v) for v in arg('probe').split(',')]:
+        bpy.context.scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        for aid in rigs:
+            row = []
+            for kind in ('skin', 'rigid'):
+                obs = [o for o in char_meshes if o.get('pc_bind', 'skin' if o.parent and o.parent.type == 'ARMATURE' else '') == kind
+                       or (kind == 'skin' and o.parent is not None and o.parent.type == 'ARMATURE')]
+                obs = [o for o in obs if aid in o.name.lower() or True][:40]
+                tot, n = Vector((0, 0, 0)), 0
+                for o in obs:
+                    me = o.evaluated_get(dg).to_mesh()
+                    for v in me.vertices[:200] if len(me.vertices) < 400 else list(me.vertices)[::4]:
+                        tot += o.matrix_world @ v.co
+                        n += 1
+                    o.evaluated_get(dg).to_mesh_clear()
+                row.append('%s centroid %s' % (kind, [round(c, 3) for c in (tot / max(n, 1))]))
+            print('[probe] frame %d %s: %s' % (f, aid, ' | '.join(row)))
+    raise SystemExit(0)
 bpy.ops.render.render(animation=True)

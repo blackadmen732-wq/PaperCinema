@@ -178,6 +178,20 @@ if [ "$GPU" = 1 ]; then
 else
   mkdir -p "$FR"
   [ "$FRESH" = 0 ] || rm -f "$FR"/f*.png
+  # Frames on disk are only REUSED when they were rendered from the same inputs: the timeline, the Blender
+  # code, the set and the render settings. A changed pose, light or resolution used to leave stale PNGs that
+  # the resume plan counted as done (review, 26 Nov). The stamp is a hash of all of them.
+  mkdir -p "$FR"
+  STAMP=$( { sha256sum "output/$NAME.timeline.json" blender/*.py blender/*/*.py library/sets/*.json 2>/dev/null \
+             | awk '{print $1}'; echo "res=$RES samples=$SAMPLES set=$SET engine=${PC_ENGINE:-}"; } | sha256sum | cut -c1-16)
+  if [ -f "$FR/.render-inputs" ] && [ "$(cat "$FR/.render-inputs")" != "$STAMP" ]; then
+    echo "  the render inputs changed since the frames in $FR were made: dropping $(ls "$FR"/f*.png 2>/dev/null | wc -l) stale frame(s)"
+    rm -f "$FR"/f*.png
+  elif [ ! -f "$FR/.render-inputs" ] && ls "$FR"/f*.png >/dev/null 2>&1; then
+    echo "  frames in $FR have no input stamp (made before stamps): dropping them"
+    rm -f "$FR"/f*.png
+  fi
+  echo "$STAMP" > "$FR/.render-inputs"
   CORES=$(nproc)
   # MEMORY, not cores, caps the worker count when a set is loaded. Each Blender process holds the
   # whole set: the bamboo forest is 1.2M faces, and four copies of it OOM-killed two workers on a
@@ -227,7 +241,14 @@ fi
 N=$(ls "$FR"/f*.png 2>/dev/null | wc -l)
 [ "$N" -gt 0 ] || die "step 5 render: no frames in $FR."
 WANT=$(python3 -c "a,b='$FRAMES'.split('-');print(int(b)-int(a)+1)")
-[ "$N" = "$WANT" ] && echo "$N/$WANT frames" || echo "WARNING: $N of $WANT frames rendered — the film will be short"
+# every frame of the asked range must be there before anything is encoded (a short or gappy film is a failure,
+# not a warning)
+MISSING=$(python3 -c "
+import os,sys
+a,b='$FRAMES'.split('-'); m=[f for f in range(int(a)+1,int(b)+2) if not os.path.exists('$FR/f%04d.png'%f)]
+print(len(m), ' '.join(map(str,m[:10])))")
+[ "${MISSING%% *}" = 0 ] || die "step 5 render: $MISSING (frames missing from $FR; first ones listed)"
+echo "$WANT/$WANT frames"
 
 step "6/9 encode"
 FIRST=$(basename "$(ls "$FR"/f*.png | head -1)" .png); FIRST=${FIRST#f}
