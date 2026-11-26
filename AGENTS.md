@@ -14,6 +14,10 @@ swords, paint instead of blood. **Everything in a film is data**; the engine ren
 5. **`docs/README.md`**: which guide to read for which task.
 6. **`SKILLS.md`**: every skill in this repo, grouped by the job it does, with the one command that
    proves each one works. That file is the map; nothing here is meant to be found by browsing.
+7. **The four `pc-*` skills**, at the top of that map and readable by any agent, not only Claude Code:
+   `pc-measure` (read it first - every claim has a command that proves it), `pc-character`,
+   `pc-animation`, `pc-effects`. They are the project's hard-won knowledge compressed: the numbers
+   that define good, the traps that cost days, and the dead ends not worth re-running.
 
 ## 2. Folder map
 | Folder | Contains |

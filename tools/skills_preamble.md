@@ -6,6 +6,19 @@ then read the one file it points at. Nothing here needs a particular product to 
 
 Read `AGENTS.md` first — it has the rules. This page is where you find the procedure.
 
+## The four skills that carry this project
+
+Read these before anything else. They are the whole of 25-26 Nov compressed, written command-first
+for any agent, with the numbers that make each claim checkable and the dead ends that are not worth
+re-running.
+
+| skill | when |
+|---|---|
+| **[`pc-measure`](.claude/skills/pc-measure/SKILL.md)** | **first, and before and after every change.** If the number did not move, the fix did nothing |
+| [`pc-character`](.claude/skills/pc-character/SKILL.md) | how the cast is made and why the paper reads as plastic |
+| [`pc-animation`](.claude/skills/pc-animation/SKILL.md) | how it moves, captures, and fights |
+| [`pc-effects`](.claude/skills/pc-effects/SKILL.md) | how a finished frame looks |
+
 ## The order of work
 
 A film goes through these, in this order. Each line is a command you can run now; if a step fails it

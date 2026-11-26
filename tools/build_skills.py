@@ -23,7 +23,11 @@ MARK = '<!-- generated below this line by tools/build_skills.py -->'
 
 # (heading, note, matcher). First match wins, so order matters.
 GROUPS = [
-    ('The film pipeline', 'The project itself. Start here; the rest is support.',
+    ('START HERE — the four that carry this project',
+     'Everything learned on 25-26 Nov, compressed. Written for ANY agent: command-first, with the '
+     'measured numbers and the dead ends, so nothing has to be re-derived. Read `pc-measure` first.',
+     lambda n: n.startswith('pc-')),
+    ('The film pipeline', 'The project itself. The rest is support.',
      lambda n: n in ('paper-cinema-film', 'qa-review', 'graphify', 'scene-direction', 'scene-writing',
                      'camera-cinematography', 'vfx-fx')),
     ('Outside tools (vendor/)', 'Fetched and pinned by `node tools/vendor.mjs`. Each skill says what it is for HERE and what it must not be used for.',
