@@ -436,9 +436,22 @@ if flag('camera-report'):
         _s = _cam_sea(_o.x, _o.y) if _cam_sea else None
         _fl = max([v for v in (_g, _s) if v is not None], default=None)
         _n = sum(_cnt.values())
+        # each fighter on the screen: head and lowest foot through the render camera (x, y from the bottom-left, 0-1)
+        from bpy_extras.object_utils import world_to_camera_view as _w2c
+        _who = {}
+        for _aid, _rig in rigs.items():
+            _pa = (FRAMES[i]['actors'].get(_aid) or {})
+            if _pa.get('hidden') or not isinstance(_pa.get('pose'), dict):
+                continue
+            _hd = _w2c(sc, cam, _rig.J['head'].matrix_world.translation)
+            _ft = min((_rig.J[k].matrix_world.translation for k in ('lfoot', 'rfoot')), key=lambda v: v.z)
+            _fp = _w2c(sc, cam, _ft)
+            _who[_aid] = {'head': [round(_hd.x, 3), round(_hd.y, 3)], 'feet': [round(_fp.x, 3), round(_fp.y, 3)],
+                          'in': bool(0 <= _hd.x <= 1 and 0 <= _hd.y <= 1 and _hd.z > 0)}
         _row = {'frame': i + 1, 'cam': [round(v, 3) for v in _o], 'clearance': None if _fl is None else round(_o.z - _fl, 3),
                 'over': None if _fl is None else ('sea' if _s is not None and _fl == _s else 'ground'),
-                'centre': _centre, 'grid': {k: round(v / _n, 3) for k, v in _cnt.items()}, 'set_within_1m': round(_near / _n, 3)}
+                'centre': _centre, 'grid': {k: round(v / _n, 3) for k, v in _cnt.items()}, 'set_within_1m': round(_near / _n, 3),
+                'shot': FRAMES[i].get('shot'), 'fighters': _who}
         _rows.append(_row)
         print('[camera-report] f%d cam %s clearance %s over %s · centre %s · cast %.0f%% set %.0f%% sea %.0f%% sky %.0f%%'
               ' · set within 1 m %.0f%%' % (_row['frame'], _row['cam'], _row['clearance'], _row['over'], _centre,

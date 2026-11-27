@@ -235,7 +235,8 @@ const vids = new Set();
 for (const [k, v] of Object.entries(film.events ?? {})) if (!isNum(v) || v < -60 || v > D) err(`events.${k}`, `must be a time up to ${D}s; use a negative time for "already happened before the film starts" (got ${v})`);
 (film.titles ?? []).forEach((t, i) => {
   if (!isNum(t.start) || !isNum(t.end) || t.end <= t.start) err(`titles[${i}]`, 'start/end must be numbers with end > start');
-  if (!['hero', 'left', 'bottom', 'endcard'].includes(t.style)) err(`titles[${i}]`, `style must be "hero", "left", "bottom" or "endcard" (got ${JSON.stringify(t.style)})`);
+  // "quote": a spoken line, italic in quotation marks (tools/titles.py burns motion-page titles into the frames)
+  if (!['hero', 'left', 'bottom', 'quote', 'endcard'].includes(t.style)) err(`titles[${i}]`, `style must be "hero", "left", "bottom", "quote" or "endcard" (got ${JSON.stringify(t.style)})`);
   if (!t.jp && !t.en) err(`titles[${i}]`, 'needs "jp" and/or "en" text');
 });
 

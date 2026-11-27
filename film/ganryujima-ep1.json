@@ -1,0 +1,1092 @@
+{
+ "title": "Ganryujima: one strike (Episode 1)",
+ "page": "engine/motion.html",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "format": "vertical",
+ "duration": 60.0,
+ "mode": "dawn",
+ "motion": {
+  "overlap": true,
+  "lockFeet": true
+ },
+ "stage": {
+  "mark": "MARK_center",
+  "origin": true,
+  "turn": 0
+ },
+ "cast": {
+  "hero": {
+   "character": "kojiro",
+   "face": "eyes",
+   "recipe": "kojiro-ai2"
+  },
+  "target": {
+   "character": "musashi",
+   "face": "eyes",
+   "weapon": "bokken",
+   "recipe": "musashi-ai",
+   "weaponPart": "bokken_oar_t1"
+  }
+ },
+ "performances": {
+  "hero": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": 0.0,
+     "note": "S1 hook: the hand on the hilt, facing the sea"
+    },
+    {
+     "t": 3.0,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": 0.0
+    },
+    {
+     "t": 5.5,
+     "pose": "neutral",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": 0.05,
+     "hy": 0.15,
+     "note": "S2 waiting: weight shifts, the wind"
+    },
+    {
+     "t": 8.0,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": 0.0,
+     "hy": -0.1
+    },
+    {
+     "t": 10.0,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.35,
+     "hy": -0.35,
+     "note": "he sees the boat"
+    },
+    {
+     "t": 20.0,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.45
+    },
+    {
+     "t": 22.5,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "note": "S4 turns to face Musashi"
+    },
+    {
+     "t": 23.6,
+     "pose": "iai-ready",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "note": "the draw (draw block)"
+    },
+    {
+     "t": 24.6,
+     "pose": "iai-ready",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "crouch": 0.25
+    },
+    {
+     "t": 25.1,
+     "pose": "blade-out-recover",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838
+    },
+    {
+     "t": 25.6,
+     "pose": "blade-out-hand-on-saya",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "note": "the left hand takes the scabbard"
+    },
+    {
+     "t": 26.0,
+     "pose": "blade-out-hand-on-saya",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -1.338,
+     "lsz": -0.6,
+     "note": "wind-up"
+    },
+    {
+     "t": 26.25,
+     "pose": "throw-scabbard",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -1.738,
+     "note": "release toward the sea"
+    },
+    {
+     "t": 26.9,
+     "pose": "blade-out-recover",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -1.138
+    },
+    {
+     "t": 27.6,
+     "pose": "stand-blade-low",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "note": "hears the line"
+    },
+    {
+     "t": 30.4,
+     "pose": "stand-blade-low",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838
+    },
+    {
+     "t": 31.2,
+     "pose": "hasso",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "note": "anger: hasso"
+    },
+    {
+     "t": 32.4,
+     "pose": "hasso",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838
+    },
+    {
+     "t": 32.95,
+     "pose": "kesa-windup",
+     "x": -0.08,
+     "z": 0.312,
+     "ry": -0.838,
+     "note": "S5 the charge"
+    },
+    {
+     "t": 33.3,
+     "pose": "kesa-contact",
+     "x": -0.08,
+     "z": 0.312,
+     "ry": -0.838,
+     "note": "the cut passes the headband"
+    },
+    {
+     "t": 33.45,
+     "pose": "struck-reel",
+     "x": -0.08,
+     "z": 0.312,
+     "ry": -0.838,
+     "note": "the bokken lands (impact)"
+    },
+    {
+     "t": 34.4,
+     "pose": "stagger",
+     "x": 0.12,
+     "z": 0.162,
+     "ry": -0.838
+    },
+    {
+     "t": 37.5,
+     "pose": "stagger",
+     "x": 0.14,
+     "z": 0.152,
+     "ry": -0.838
+    },
+    {
+     "t": 38.6,
+     "pose": "kneel-collapse",
+     "x": 0.14,
+     "z": 0.152,
+     "ry": -0.838,
+     "note": "falls to his knees"
+    },
+    {
+     "t": 60.0,
+     "pose": "kneel-collapse",
+     "x": 0.14,
+     "z": 0.152,
+     "ry": -0.838
+    }
+   ],
+   "draw": {
+    "grab": 23.9,
+    "slide": 24.45,
+    "clear": 24.85,
+    "blade": 0.91,
+    "sword": "shiokaze"
+   },
+   "throwSaya": {
+    "grab": 25.55,
+    "release": 26.2,
+    "to": [
+     -3.6,
+     9.5
+    ],
+    "apex": 2.2
+   }
+  },
+  "target": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319,
+     "note": "in the boat, far off"
+    },
+    {
+     "t": 11.0,
+     "pose": "stand-blade-low",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319
+    },
+    {
+     "t": 12.6,
+     "pose": "chudan",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319,
+     "note": "S3 looks along the oar sword"
+    },
+    {
+     "t": 14.6,
+     "pose": "chudan",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319
+    },
+    {
+     "t": 15.2,
+     "pose": "stand-blade-low",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319
+    },
+    {
+     "t": 15.667,
+     "pose": "stand-blade-low",
+     "x": -7.517,
+     "z": 7.15,
+     "ry": 2.481
+    },
+    {
+     "t": 16.133,
+     "pose": "stand-blade-low",
+     "x": -7.283,
+     "z": 6.85,
+     "ry": 2.481
+    },
+    {
+     "t": 16.6,
+     "pose": "stand-blade-low",
+     "x": -7.05,
+     "z": 6.55,
+     "ry": 2.481
+    },
+    {
+     "t": 17.0,
+     "pose": "stand-blade-low",
+     "x": -6.8,
+     "z": 6.15,
+     "ry": 2.583
+    },
+    {
+     "t": 17.4,
+     "pose": "stand-blade-low",
+     "x": -6.55,
+     "z": 5.75,
+     "ry": 2.583
+    },
+    {
+     "t": 17.9,
+     "pose": "stand-blade-low",
+     "x": -6.374,
+     "z": 5.593,
+     "ry": 2.302
+    },
+    {
+     "t": 18.4,
+     "pose": "stand-blade-low",
+     "x": -6.199,
+     "z": 5.435,
+     "ry": 2.302
+    },
+    {
+     "t": 18.9,
+     "pose": "stand-blade-low",
+     "x": -6.023,
+     "z": 5.277,
+     "ry": 2.302
+    },
+    {
+     "t": 19.4,
+     "pose": "stand-blade-low",
+     "x": -5.848,
+     "z": 5.12,
+     "ry": 2.302
+    },
+    {
+     "t": 19.9,
+     "pose": "stand-blade-low",
+     "x": -5.672,
+     "z": 4.963,
+     "ry": 2.302
+    },
+    {
+     "t": 20.0,
+     "pose": "stand-blade-low",
+     "x": -4.6,
+     "z": 4.0,
+     "ry": 2.234,
+     "note": "the cut into S4 compresses the walk up the beach"
+    },
+    {
+     "t": 20.486,
+     "pose": "stand-blade-low",
+     "x": -4.143,
+     "z": 3.643,
+     "ry": 2.234
+    },
+    {
+     "t": 20.971,
+     "pose": "stand-blade-low",
+     "x": -3.686,
+     "z": 3.286,
+     "ry": 2.234
+    },
+    {
+     "t": 21.457,
+     "pose": "stand-blade-low",
+     "x": -3.229,
+     "z": 2.929,
+     "ry": 2.234
+    },
+    {
+     "t": 21.943,
+     "pose": "stand-blade-low",
+     "x": -2.771,
+     "z": 2.571,
+     "ry": 2.234
+    },
+    {
+     "t": 22.429,
+     "pose": "stand-blade-low",
+     "x": -2.314,
+     "z": 2.214,
+     "ry": 2.234
+    },
+    {
+     "t": 22.914,
+     "pose": "stand-blade-low",
+     "x": -1.857,
+     "z": 1.857,
+     "ry": 2.234
+    },
+    {
+     "t": 23.4,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.234
+    },
+    {
+     "t": 24.0,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304
+    },
+    {
+     "t": 27.6,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "note": "\"You have already lost.\""
+    },
+    {
+     "t": 30.8,
+     "pose": "waki-right",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "note": "hides the bokken behind him"
+    },
+    {
+     "t": 32.4,
+     "pose": "waki-right",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304
+    },
+    {
+     "t": 32.95,
+     "pose": "jodan-high-wind-up",
+     "x": -0.8,
+     "z": 0.96,
+     "ry": 2.304,
+     "crouch": 0.12,
+     "note": "S5 steps in, raises the oar"
+    },
+    {
+     "t": 33.32,
+     "pose": "jodan-high-wind-up",
+     "x": -0.8,
+     "z": 0.96,
+     "ry": 2.304,
+     "crouch": 0.2,
+     "note": "ducks under the cut: the headband is cut"
+    },
+    {
+     "t": 33.45,
+     "pose": "shomen-strike",
+     "x": -0.7,
+     "z": 0.86,
+     "ry": 2.304,
+     "note": "one strike: the head"
+    },
+    {
+     "t": 33.7,
+     "pose": "kiri-oroshi-finish",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304
+    },
+    {
+     "t": 36.0,
+     "pose": "kiri-oroshi-finish",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304
+    },
+    {
+     "t": 37.5,
+     "pose": "zanshin",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304,
+     "note": "zanshin"
+    },
+    {
+     "t": 43.0,
+     "pose": "zanshin",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304
+    },
+    {
+     "t": 44.5,
+     "pose": "stand-blade-low",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304,
+     "tx": 0.3,
+     "note": "a small bow"
+    },
+    {
+     "t": 46.0,
+     "pose": "stand-blade-low",
+     "x": -0.68,
+     "z": 0.84,
+     "ry": 2.304
+    },
+    {
+     "t": 47.091,
+     "pose": "stand-blade-low",
+     "x": -1.091,
+     "z": 1.209,
+     "ry": -0.839
+    },
+    {
+     "t": 47.582,
+     "pose": "stand-blade-low",
+     "x": -1.502,
+     "z": 1.578,
+     "ry": -0.839
+    },
+    {
+     "t": 48.073,
+     "pose": "stand-blade-low",
+     "x": -1.913,
+     "z": 1.947,
+     "ry": -0.839
+    },
+    {
+     "t": 48.564,
+     "pose": "stand-blade-low",
+     "x": -2.324,
+     "z": 2.316,
+     "ry": -0.839
+    },
+    {
+     "t": 49.055,
+     "pose": "stand-blade-low",
+     "x": -2.735,
+     "z": 2.685,
+     "ry": -0.839
+    },
+    {
+     "t": 49.545,
+     "pose": "stand-blade-low",
+     "x": -3.145,
+     "z": 3.055,
+     "ry": -0.839
+    },
+    {
+     "t": 50.036,
+     "pose": "stand-blade-low",
+     "x": -3.556,
+     "z": 3.424,
+     "ry": -0.839
+    },
+    {
+     "t": 50.527,
+     "pose": "stand-blade-low",
+     "x": -3.967,
+     "z": 3.793,
+     "ry": -0.839
+    },
+    {
+     "t": 51.018,
+     "pose": "stand-blade-low",
+     "x": -4.378,
+     "z": 4.162,
+     "ry": -0.839
+    },
+    {
+     "t": 51.509,
+     "pose": "stand-blade-low",
+     "x": -4.789,
+     "z": 4.531,
+     "ry": -0.839
+    },
+    {
+     "t": 52.0,
+     "pose": "stand-blade-low",
+     "x": -5.2,
+     "z": 4.9,
+     "ry": -0.839
+    },
+    {
+     "t": 60.0,
+     "pose": "stand-blade-low",
+     "x": -5.2,
+     "z": 4.9,
+     "ry": -0.839
+    }
+   ],
+   "drop": [
+    {
+     "part": "hachigane",
+     "t": 33.3,
+     "v": [
+      0.4,
+      1.6,
+      -0.6
+     ],
+     "spin": 7.0,
+     "drag": 2.2
+    }
+   ]
+  }
+ },
+ "fade": {
+  "in": 0,
+  "out": 0.0
+ },
+ "cameraOpts": {
+  "solver": 2,
+  "aperture": 4.0
+ },
+ "camera": [
+  {
+   "t": 0.0,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "aim": "tsuba",
+   "span": 0.4,
+   "az0": 112,
+   "az1": 122,
+   "elev": 2,
+   "size0": 0.8,
+   "size1": 1.05,
+   "screen": [
+    0.5,
+    0.46
+   ],
+   "fov": 28,
+   "feel": "dolly",
+   "guard": false,
+   "note": "S1 HOOK: the guard of the long sword in the hand, the low sun beyond (slow push)"
+  },
+  {
+   "t": 3.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "az0": 196,
+   "az1": 184,
+   "elev0": 12,
+   "elev1": 8,
+   "size": 0.26,
+   "screen": [
+    0.5,
+    0.66
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S2 WIDE: Kojiro alone on the island at dawn, from behind, toward the sun"
+  },
+  {
+   "t": 6.8,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 78,
+   "az1": 70,
+   "elev": 3,
+   "size": 1.05,
+   "aim": "chest",
+   "screen": [
+    0.42,
+    0.5
+   ],
+   "fov": 34,
+   "feel": "handheld",
+   "note": "S2 MEDIUM: waiting, the wind; he turns to the boat"
+  },
+  {
+   "t": 11.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "az0": 22,
+   "az1": 30,
+   "elev": -2,
+   "size0": 0.36,
+   "size1": 0.48,
+   "screen": [
+    0.5,
+    0.58
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "guard": false,
+   "note": "S3 LOW OVER THE WATER: the boat, Musashi, the island ahead"
+  },
+  {
+   "t": 14.8,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az0": 8,
+   "az1": -6,
+   "elev": -6,
+   "size": 0.7,
+   "screen": [
+    0.5,
+    0.52
+   ],
+   "fov": 32,
+   "feel": "dolly",
+   "note": "S3 FRONT: Musashi against the sun, steps out of the boat"
+  },
+  {
+   "t": 20.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "target"
+   ],
+   "az0": 136,
+   "az1": 144,
+   "elev": 6,
+   "size": 0.42,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 34,
+   "feel": "dolly",
+   "note": "S4 WIDE: over Kojiro, Musashi walks up from the sea with the sun behind him"
+  },
+  {
+   "t": 23.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 32,
+   "az1": 26,
+   "elev": 0,
+   "size": 1.3,
+   "aim": "chest",
+   "screen": [
+    0.5,
+    0.5
+   ],
+   "fov": 32,
+   "feel": "locked",
+   "note": "S4 THE DRAW: the long blade leaves the scabbard"
+  },
+  {
+   "t": 25.3,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "az0": 112,
+   "az1": 104,
+   "elev": 4,
+   "size": 0.42,
+   "screen": [
+    0.64,
+    0.64
+   ],
+   "fov": 36,
+   "feel": "dolly",
+   "note": "S4 THE THROW: the scabbard arcs out over the sea"
+  },
+  {
+   "t": 27.6,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az": 14,
+   "elev": 2,
+   "aim": "head",
+   "span": 0.55,
+   "size0": 0.9,
+   "size1": 1.1,
+   "screen": [
+    0.5,
+    0.45
+   ],
+   "fov": 30,
+   "feel": "locked",
+   "note": "S4 THE LINE: \"Kojiro, you have already lost.\""
+  },
+  {
+   "t": 30.5,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az": -12,
+   "elev": -3,
+   "aim": "head",
+   "span": 0.6,
+   "size0": 0.9,
+   "size1": 1.2,
+   "screen": [
+    0.5,
+    0.45
+   ],
+   "fov": 30,
+   "feel": "handheld",
+   "note": "S4 ANGER: hasso"
+  },
+  {
+   "t": 32.2,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "target"
+   ],
+   "az0": 214,
+   "az1": 220,
+   "elev": -5,
+   "size": 0.46,
+   "screen": [
+    0.5,
+    0.58
+   ],
+   "fov": 36,
+   "feel": "torpedo",
+   "note": "S5 THE CHARGE: low, toward the sun"
+  },
+  {
+   "t": 33.25,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "target"
+   ],
+   "az": 42,
+   "elev": 0,
+   "size": 0.72,
+   "screen": [
+    0.5,
+    0.5
+   ],
+   "fov": 34,
+   "feel": "locked",
+   "note": "S5 IMPACT: profile, the oar lands on the head (slow motion, hit-stop)"
+  },
+  {
+   "t": 34.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az": 158,
+   "elev": 2,
+   "size": 0.8,
+   "screen": [
+    0.4,
+    0.55
+   ],
+   "fov": 34,
+   "feel": "dolly",
+   "note": "S5 AFTER: Musashi in zanshin, the cut headband falling"
+  },
+  {
+   "t": 37.2,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az": 22,
+   "elev": -8,
+   "size": 0.55,
+   "screen": [
+    0.5,
+    0.55
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S5 THE FALL: Kojiro goes to his knees"
+  },
+  {
+   "t": 42.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target",
+    "hero"
+   ],
+   "az": 300,
+   "elev0": 10,
+   "elev1": 24,
+   "size": 0.44,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S6 ABOVE: Musashi over the fallen Kojiro, the crane rises"
+  },
+  {
+   "t": 46.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az": 180,
+   "elev": 4,
+   "size0": 0.42,
+   "size1": 0.3,
+   "screen": [
+    0.5,
+    0.6
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S6 AWAY: Musashi walks back to the sea and the sun"
+  },
+  {
+   "t": 53.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "az0": 206,
+   "az1": 198,
+   "elev": 7,
+   "size": 0.2,
+   "screen": [
+    0.5,
+    0.64
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S7 THE LAST SHOT LIVES: the boat, the sun; the end card over it"
+  }
+ ],
+ "cameraMoves": [
+  {
+   "move": "rack",
+   "t": 7.6,
+   "dur": 0.6,
+   "from": "hero",
+   "to": "hero",
+   "note": "placeholder focus hold"
+  },
+  {
+   "move": "crash",
+   "zoom": 1.3,
+   "in": 0.05,
+   "hold": 0.2,
+   "out": 0.35,
+   "t": 33.45,
+   "note": "on the strike (re-timed to the bake contact)"
+  },
+  {
+   "move": "dutch",
+   "deg": 6,
+   "in": 0.08,
+   "hold": 0.4,
+   "out": 0.3,
+   "t": 33.47
+  },
+  {
+   "move": "breath",
+   "t": 42.0,
+   "until": 60.0,
+   "amp": 0.3
+  }
+ ],
+ "ramps": [
+  {
+   "t": 33.2,
+   "rate": 0.25,
+   "in": 0.05,
+   "hold": 0.7,
+   "out": 0.25
+  }
+ ],
+ "effects": {
+  "dof": 4.0,
+  "motionBlur": 0.5,
+  "vignette": 0.3,
+  "postFx": true,
+  "hitStop": {
+   "min": 3,
+   "max": 4
+  }
+ },
+ "impacts": [
+  {
+   "t": 33.45,
+   "at": "hero.head",
+   "intensity": 1.0,
+   "ink": true,
+   "shards": 14,
+   "colors": [
+    "#b8322a",
+    "#f3ead8"
+   ],
+   "note": "the oar on the head: paper shards and red"
+  }
+ ],
+ "titles": [
+  {
+   "start": 0.15,
+   "end": 2.9,
+   "style": "hero",
+   "jp": "一撃",
+   "en": "1612. One strike."
+  },
+  {
+   "start": 3.4,
+   "end": 6.6,
+   "style": "left",
+   "en": "Funashima, the Kanmon Strait",
+   "sub": "April 1612 (traditional date)"
+  },
+  {
+   "start": 7.0,
+   "end": 10.8,
+   "style": "bottom",
+   "en": "Sasaki Kojirō waited.\nMusashi was late."
+  },
+  {
+   "start": 11.6,
+   "end": 17.6,
+   "style": "bottom",
+   "en": "He came by boat,\nwith a sword cut from an oar.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 27.8,
+   "end": 30.4,
+   "style": "quote",
+   "en": "Kojirō, you have already lost.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 43.0,
+   "end": 47.6,
+   "style": "bottom",
+   "en": "Kojirō died."
+  },
+  {
+   "start": 48.2,
+   "end": 53.4,
+   "style": "bottom",
+   "en": "The island still bears\nthe name of his school."
+  },
+  {
+   "start": 55.0,
+   "end": 59.85,
+   "style": "endcard",
+   "jp": "紙の剣",
+   "en": "PAPER CINEMA",
+   "sub": "true duels, retold in paper"
+  }
+ ]
+}
