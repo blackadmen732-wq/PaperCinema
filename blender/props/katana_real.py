@@ -113,7 +113,7 @@ def hex_lin(h):
     return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
 
 
-def ai_fitting(part_id):
+def ai_fitting(part_id, metallic=0.85, rough=0.38):
     """A generated sword fitting (tools/ai_part.py with fit 'box' in the sword's frame: guard at x 0, blade +x) as
     (bmesh, material). Metal shows its own paint, so the baked texture is the colour (the waves and the gold on a
     tsuba are far finer than any facet), on a metallic, semi-polished surface."""
@@ -132,7 +132,7 @@ def ai_fitting(part_id):
     ai_fitting.depth = max(xs) - min(xs)
     for o in new:
         bpy.data.objects.remove(o, do_unlink=True)
-    name = 'kr_ai_' + part_id
+    name = 'kr_ai_%s_%.2f' % (part_id, metallic)
     m = bpy.data.materials.get(name)
     if m is None:
         m = bpy.data.materials.new(name)
@@ -141,8 +141,8 @@ def ai_fitting(part_id):
         tex = m.node_tree.nodes.new('ShaderNodeTexImage')
         tex.image = bpy.data.images.load(os.path.join(d, 'color.png'), check_existing=True)
         m.node_tree.links.new(tex.outputs['Color'], b.inputs['Base Color'])
-        b.inputs['Metallic'].default_value = 0.85
-        b.inputs['Roughness'].default_value = 0.38
+        b.inputs['Metallic'].default_value = metallic
+        b.inputs['Roughness'].default_value = rough
     return bm, m
 
 

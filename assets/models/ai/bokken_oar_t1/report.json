@@ -1,0 +1,52 @@
+{
+ "id": "bokken_oar_t1",
+ "raw": "output/tripo/board/model-bokken.pbr.glb",
+ "faces_raw": 98100,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 2509,
+ "open_edges_after_weld": 0,
+ "cut_z_model": null,
+ "faces_cut": 98100,
+ "fit": {
+  "mode": "box",
+  "scale": 1.380543257390576,
+  "size_m": [
+   1.38,
+   0.055,
+   0.035
+  ],
+  "eyes": null
+ },
+ "facets_turned_to_surface": 0,
+ "faces_part": 1500,
+ "bake_s": 1.9,
+ "bake_missed_pct": 90.32,
+ "bake_black_pct": 0.16,
+ "source_black_pct": 0.13,
+ "despeckled_faces": 0,
+ "classes_pct": {
+  "wood": 100.0
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 5.82,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.3299683928489685,
+   -0.027720263227820396,
+   -0.017590850591659546
+  ],
+  "max": [
+   1.0499136447906494,
+   0.027650151401758194,
+   0.01754998043179512
+  ]
+ },
+ "total_s": 6.0
+}

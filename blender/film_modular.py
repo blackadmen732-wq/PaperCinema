@@ -170,6 +170,29 @@ import swords as _SW                                             # noqa: E402  b
 _SW.use(sc.collection)
 build_katana, build_bokken = _SW.build_katana, _SW.build_bokken
 
+def _ai_weapon(name, part_id, blade_len, handle, canon=(0.33, 1.38)):
+    """A generated weapon prepared in the weapon frame at its canonical size (handle end at -canon[0], length
+    canon[1]) scaled to this film's handle + blade, its baked paint as matte wood; same root as build_bokken."""
+    import katana_real as _KR
+    bm_, mat_ = _KR.ai_fitting(part_id, metallic=0.0, rough=0.78)
+    s_ = (handle + blade_len) / canon[1]
+    for v_ in bm_.verts:
+        v_.co.x = (v_.co.x + canon[0]) * s_ - handle
+        v_.co.y *= s_
+        v_.co.z *= s_
+    me_ = bpy.data.meshes.new(name + '_m')
+    bm_.to_mesh(me_)
+    bm_.free()
+    me_.materials.append(mat_)
+    root_ = bpy.data.objects.new(name, None)
+    root_.rotation_mode = 'QUATERNION'
+    sc.collection.objects.link(root_)
+    o_ = bpy.data.objects.new(name + '_part', me_)
+    sc.collection.objects.link(o_)
+    o_.parent = root_
+    return root_
+
+
 swords = {}
 if not flag('no-sword'):
     for _a in TL['actors']:
@@ -179,8 +202,13 @@ if not flag('no-sword'):
         if _a['id'] in DRAWS:
             continue                                            # the real katana + scabbard (below)
         if _w.get('kind') == 'bokken':
-            swords[_a['id']] = build_bokken('BOKKEN_' + _a['id'], blade_len=_w.get('bladeLen', 0.91) * 1.15,
-                                            handle=_w.get('handle', 0.33))
+            _wp = ((FILMJ.get('cast') or {}).get(_a['id']) or {}).get('weaponPart')
+            if _wp:                                             # a generated weapon (library/ai-parts.json), real wood
+                swords[_a['id']] = _ai_weapon('BOKKEN_' + _a['id'], _wp, blade_len=_w.get('bladeLen', 0.91) * 1.15,
+                                              handle=_w.get('handle', 0.33))
+            else:
+                swords[_a['id']] = build_bokken('BOKKEN_' + _a['id'], blade_len=_w.get('bladeLen', 0.91) * 1.15,
+                                                handle=_w.get('handle', 0.33))
             continue
         swords[_a['id']] = build_katana('KATANA_' + _a['id'],
                                         blade_len=_w.get('bladeLen', 0.91), handle=_w.get('handle', 0.33))

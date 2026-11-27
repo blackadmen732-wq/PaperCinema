@@ -1855,5 +1855,78 @@
       "void": "void",
       "gold": "gold"
     }
+  },
+  "bokken_oar_t1": {
+    "label": "Musashi's oar bokken: one rough-hewn piece of dark oak (research/ganryujima.md, tradition)",
+    "slot": "accessory",
+    "socket": "hip_side.R",
+    "bone": "torso",
+    "kind_of": "weapon (blender/film_modular.py builds it for an actor whose cast says \"weaponPart\"; not worn)",
+    "raw": "output/tripo/board/model-bokken.pbr.glb",
+    "prepared": "assets/models/ai/bokken_oar_t1",
+    "source": {
+      "service": "Tripo API",
+      "concepts": "output/tripo/board/concept-bokken{,2,3}.image.png (3 x 5 credits: the first two had guards)",
+      "model": "output/tripo/board/model-bokken.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "rotate": [
+        -90,
+        0,
+        0
+      ],
+      "size": {
+        "x": 1.38
+      },
+      "anchor": {
+        "x": [
+          "min",
+          -0.33
+        ],
+        "y": [
+          "mid",
+          0.0
+        ],
+        "z": [
+          "mid",
+          0.0
+        ]
+      },
+      "why": "the weapon frame of swords.build_bokken: 1.38 m (handle 0.33 + blade 0.91 x 1.15), the handle end at -0.33; the facing turn lays the length on +x (the tip), the -90 deg turn about x puts the bow (+z in the concept) toward +y, the back. film_modular scales it to each film's handle + blade; the model was a 10 cm-thick club (7% of its length), so y (the edge-back axis, which also holds the bow) is squashed to 5.5 cm and z to 3.5 cm: an oar-carved grip a hand closes on",
+      "squash": {
+        "y": 0.055,
+        "z": 0.035
+      }
+    },
+    "faces": 1500,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "wood",
+        "rgb": [
+          [
+            0.376,
+            0.259,
+            0.173
+          ],
+          [
+            0.275,
+            0.188,
+            0.125
+          ],
+          [
+            0.51,
+            0.373,
+            0.255
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "wood": "card_umber"
+    }
   }
 }
