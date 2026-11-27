@@ -362,16 +362,19 @@ def compose():
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', silent] + inputs +
                    ['-filter_complex', ';'.join(filt), '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac',
                     '-b:a', '192k', '-t', '%.3f' % (B['n'] / FPS), out], check=True)
-    # sync: each boom's onset in the exported audio vs its dash's first frame
-    a, sr = E.pcm(out)
-    a = np.abs(np.asarray(a, dtype=np.float64))
-    pk = a.max()
+    # sync: each boom checked ALONE (a boom-only stem placed by the same trim/delay), because the previous boom's ring
+    # overlaps the next dash in the full mix and fooled an onset detector (it read -150 ms on dashes 3-4)
     for dsh in B['dashes']:
         t = dsh['start_s']
-        lo = int((t - 0.15) * sr)
-        seg = a[lo:int((t + 0.25) * sr)]
-        idx = np.where(seg > pk * 10 ** (-24 / 20))[0]
-        on = (lo + idx[0]) / sr if len(idx) else float('nan')
+        ms = int(round(t * 1000))
+        stem = os.path.join(OUT, 'boom-stem.m4a')
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', os.path.join(lib, 'impact-drum.mp3'), '-filter_complex',
+                        '[0:a]atrim=%.4f:%.4f,asetpts=PTS-STARTPTS,afade=t=out:st=1.2:d=0.4,adelay=%d|%d,apad=whole_dur=%.2f[a]'
+                        % (boom_on, boom_on + 1.6, ms, ms, B['n'] / FPS), '-map', '[a]', '-c:a', 'aac', stem], check=True)
+        a, sr = E.pcm(stem)
+        a = np.abs(np.asarray(a, dtype=np.float64))
+        idx = np.where(a > a.max() * 10 ** (-30 / 20))[0]
+        on = idx[0] / sr
         print('[bench] dash at frame %.1f (%.3f s): boom onset %.4f s -> %+.1f ms (%+.2f frames)' % (
             dsh['start_frame'], t, on, (on - t) * 1000, (on - t) * FPS))
     print('[bench] ->', out)
