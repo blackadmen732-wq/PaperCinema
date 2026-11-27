@@ -83,3 +83,17 @@ model came out facing +X, three-quarter concepts included. Concept first (5 cred
 Not made: the kasa (the procedural `kasa_wide`/`kasa_narrow` already match the reference; 35 credits for nothing).
 All in the catalogue: `$B -b -P blender/character/parts_catalog.py -- --tiles output/character/catalog-new [--only prefix]`,
 then `python3 blender/character/parts_catalog.py --sheet output/character/catalog-new` (64 parts, 32 generated).
+
+## Sword fittings (metal, not paper)
+A sword is real metal and lacquer (blender/props/katana_real.py), so a generated fitting keeps its **baked paint as
+the colour of a metal surface** (`katana_real.ai_fitting`: the colour texture on a metallic 0.85 / roughness 0.38
+shader) instead of paper sheets per facet: a tsuba's wave openwork is far finer than any facet.
+- `tsuba_shiokaze_t1` (round iron, openwork waves, gold crests; 35 credits): fitted in the SWORD's frame (guard at
+  x 0, blade +x), 82 mm across. Tripo made the guard a 42%-deep puck, so the box fit **squashes** one axis
+  (`fit.squash: {x: 0.007}`) to 7 mm after the uniform scale. The UV gaps of the bake are filled from their
+  neighbours (16 rings) so no magenta bleeds into tiny islands. Used by `library/swords/shiokaze.json`
+  (`tsuba.part`), shown by `blender/bench/sword_designs.py --guards 1`.
+- Musashi's oar bokken (`output/tripo/board/model-bokken.pbr.glb`, 3 concepts + 1 model = 45 credits): the image
+  model put a guard on every "sword" (two concepts); described as "a long curved stick carved from a boat oar, one
+  continuous piece" it came out right. Next: fitted in the weapon frame (1.38 m, handle end at -0.33 m) and swapped
+  in for the procedural bokken (queue item 10).
