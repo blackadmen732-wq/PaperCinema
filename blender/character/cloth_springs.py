@@ -43,6 +43,22 @@ class ClothSprings:
         self.state = {}                              # joint -> (tip position, velocity)
         self.log = {}                                # joint -> list of (lag deg, pushed out?)
         self.depths = {}                             # joint -> list of (rule tip inside m, spring tip inside m)
+        self.wind = None                             # film.wind: {to: [x, y] world, strength m/s^2, gust 0-1, seed}
+        self.frame = 0
+
+    def wind_at(self, t):
+        """The wind's push on a cloth tip at time t (world m/s^2): a steady part plus slow gusts and a flutter, the
+        same for every run (a pure function of t). The sleeves' stiffness turns 4 m/s^2 into ~15 degrees of lean."""
+        W = self.wind
+        if not W:
+            return Vector((0, 0, 0))
+        d = Vector((float(W['to'][0]), float(W['to'][1]), 0.0)).normalized()
+        g = float(W.get('gust', 0.5))
+        ph = float(W.get('seed', 0)) * 1.7
+        gust = 0.55 + 0.45 * math.sin(2 * math.pi * t / 4.3 + ph) * math.sin(2 * math.pi * t / 1.7 + 0.6 * ph)
+        flutter = 0.12 * math.sin(2 * math.pi * t * 5.3 + ph) + 0.08 * math.sin(2 * math.pi * t * 8.9 + 2 * ph)
+        side = Vector((-d.y, d.x, 0.0)) * (0.25 * math.sin(2 * math.pi * t / 2.9 + ph))
+        return (d * ((1 - g) + g * gust + flutter) + side) * float(W.get('strength', 3.0))
 
     def _aim(self, e, world_dir):
         pq = e.parent.matrix_world.to_quaternion()
@@ -80,6 +96,8 @@ class ClothSprings:
         return root + (e.matrix_world.to_quaternion() @ DOWN).normalized() * L
 
     def step(self):
+        self.frame += 1
+        wind = self.wind_at(self.frame * self.dt)
         bpy.context.view_layer.update()
         if self.caps is not None:
             self.caps.update()
@@ -95,7 +113,7 @@ class ClothSprings:
             n = 4
             h = self.dt / n
             for _ in range(n):
-                a = (goal - p) * k - v * c + Vector((0, 0, -self.g)) * 0.15
+                a = (goal - p) * k - v * c + Vector((0, 0, -self.g)) * 0.15 + wind
                 v = v + a * h
                 p = p + v * h
                 # the tip stays at the cloth's length from its root

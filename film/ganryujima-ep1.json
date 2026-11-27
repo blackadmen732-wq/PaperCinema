@@ -75,14 +75,14 @@
      "note": "he sees the boat"
     },
     {
-     "t": 20.0,
+     "t": 18.5,
      "pose": "rest-hand-on-hilt",
      "x": 0.6,
      "z": -0.3,
      "ry": -0.45
     },
     {
-     "t": 22.5,
+     "t": 21.6,
      "pose": "rest-hand-on-hilt",
      "x": 0.6,
      "z": -0.3,
@@ -278,138 +278,98 @@
      "ry": 2.319
     },
     {
-     "t": 15.2,
+     "t": 15.4,
+     "pose": "stand-blade-low",
+     "x": -7.75,
+     "z": 7.45,
+     "ry": 2.319,
+     "hx": -0.12,
+     "note": "lowers it, looks up at the island (the step out happens on the cut: inside the boat the path crosses a thwart)"
+    },
+    {
+     "t": 18.45,
      "pose": "stand-blade-low",
      "x": -7.75,
      "z": 7.45,
      "ry": 2.319
     },
     {
-     "t": 15.667,
-     "pose": "stand-blade-low",
-     "x": -7.517,
-     "z": 7.15,
-     "ry": 2.481
-    },
-    {
-     "t": 16.133,
-     "pose": "stand-blade-low",
-     "x": -7.283,
-     "z": 6.85,
-     "ry": 2.481
-    },
-    {
-     "t": 16.6,
-     "pose": "stand-blade-low",
-     "x": -7.05,
-     "z": 6.55,
-     "ry": 2.481
-    },
-    {
-     "t": 17.0,
-     "pose": "stand-blade-low",
-     "x": -6.575,
-     "z": 5.925,
-     "ry": 2.492
-    },
-    {
-     "t": 17.4,
+     "t": 18.5,
      "pose": "stand-blade-low",
      "x": -6.1,
      "z": 5.3,
-     "ry": 2.492
+     "ry": 2.251,
+     "note": "the cut into S4: already wading out of the shallows"
     },
     {
-     "t": 17.9,
+     "t": 18.99,
      "pose": "stand-blade-low",
-     "x": -5.965,
-     "z": 5.183,
-     "ry": 2.285
+     "x": -5.63,
+     "z": 4.92,
+     "ry": 2.251
     },
     {
-     "t": 18.4,
+     "t": 19.48,
      "pose": "stand-blade-low",
-     "x": -5.83,
-     "z": 5.066,
-     "ry": 2.285
+     "x": -5.16,
+     "z": 4.54,
+     "ry": 2.251
     },
     {
-     "t": 18.9,
+     "t": 19.97,
      "pose": "stand-blade-low",
-     "x": -5.695,
-     "z": 4.949,
-     "ry": 2.285
+     "x": -4.69,
+     "z": 4.16,
+     "ry": 2.251
     },
     {
-     "t": 19.4,
+     "t": 20.46,
      "pose": "stand-blade-low",
-     "x": -5.56,
-     "z": 4.832,
-     "ry": 2.285
+     "x": -4.22,
+     "z": 3.78,
+     "ry": 2.251
     },
     {
-     "t": 19.9,
+     "t": 20.95,
      "pose": "stand-blade-low",
-     "x": -5.425,
-     "z": 4.715,
-     "ry": 2.285
+     "x": -3.75,
+     "z": 3.4,
+     "ry": 2.251
     },
     {
-     "t": 20.0,
+     "t": 21.44,
      "pose": "stand-blade-low",
-     "x": -4.6,
-     "z": 4.0,
-     "ry": 2.234,
-     "note": "the cut into S4 compresses the walk up the beach"
+     "x": -3.28,
+     "z": 3.02,
+     "ry": 2.251
     },
     {
-     "t": 20.486,
+     "t": 21.93,
      "pose": "stand-blade-low",
-     "x": -4.143,
-     "z": 3.643,
-     "ry": 2.234
+     "x": -2.81,
+     "z": 2.64,
+     "ry": 2.251
     },
     {
-     "t": 20.971,
+     "t": 22.42,
      "pose": "stand-blade-low",
-     "x": -3.686,
-     "z": 3.286,
-     "ry": 2.234
+     "x": -2.34,
+     "z": 2.26,
+     "ry": 2.251
     },
     {
-     "t": 21.457,
+     "t": 22.91,
      "pose": "stand-blade-low",
-     "x": -3.229,
-     "z": 2.929,
-     "ry": 2.234
-    },
-    {
-     "t": 21.943,
-     "pose": "stand-blade-low",
-     "x": -2.771,
-     "z": 2.571,
-     "ry": 2.234
-    },
-    {
-     "t": 22.429,
-     "pose": "stand-blade-low",
-     "x": -2.314,
-     "z": 2.214,
-     "ry": 2.234
-    },
-    {
-     "t": 22.914,
-     "pose": "stand-blade-low",
-     "x": -1.857,
-     "z": 1.857,
-     "ry": 2.234
+     "x": -1.87,
+     "z": 1.88,
+     "ry": 2.251
     },
     {
      "t": 23.4,
      "pose": "stand-blade-low",
      "x": -1.4,
      "z": 1.5,
-     "ry": 2.234
+     "ry": 2.251
     },
     {
      "t": 24.0,
@@ -601,6 +561,8 @@
     {
      "part": "musashi_head_t1",
      "t": 33.3,
+     "slot": "band",
+     "becomes": "hair",
      "v": [
       0.5,
       1.4,
@@ -608,16 +570,7 @@
      ],
      "spin": 6.0,
      "drag": 2.4,
-     "paint": {
-      "sat_max": 0.16,
-      "val_min": 0.55,
-      "to": [
-       0.07,
-       0.065,
-       0.07
-      ]
-     },
-     "note": "the headband cut (tradition): the band baked into the generated head leaves it"
+     "note": "the headband cut (tradition): the band slot of the generated head leaves it"
     }
    ]
   }
@@ -625,6 +578,16 @@
  "fade": {
   "in": 0,
   "out": 0.0
+ },
+ "wind": {
+  "to": [
+   0.15,
+   -1.0
+  ],
+  "strength": 3.2,
+  "gust": 0.6,
+  "seed": 2,
+  "note": "the sea wind blows inland (film -z): the cloth springs breathe in it (blender/character/cloth_springs.py)"
  },
  "cameraOpts": {
   "solver": 2,
@@ -638,22 +601,21 @@
     "hero"
    ],
    "basis": "facing",
-   "aim": "tsuba",
-   "span": 0.4,
-   "az0": 112,
-   "az1": 120,
+   "aim": "head",
+   "span": 0.5,
+   "az0": 14,
+   "az1": 6,
    "elev": 2,
-   "size0": 0.72,
+   "size0": 0.85,
    "size1": 1.15,
    "ease": "out",
    "screen": [
     0.5,
-    0.46
+    0.42
    ],
-   "fov": 28,
+   "fov": 30,
    "feel": "dolly",
-   "guard": false,
-   "note": "S1 HOOK: the guard of the long sword, a fast push in toward the low sun"
+   "note": "S1 HOOK: Kojiro's face, the dawn glow and the pines behind him (the sun is over the island, north), a fast push"
   },
   {
    "t": 1.3,
@@ -663,18 +625,18 @@
     "hero"
    ],
    "basis": "facing",
-   "az0": 150,
-   "az1": 158,
-   "elev0": -12,
-   "elev1": -4,
-   "size": 0.62,
+   "az0": -12,
+   "az1": -4,
+   "elev0": -14,
+   "elev1": -6,
+   "size": 0.6,
    "screen": [
     0.5,
     0.56
    ],
    "fov": 30,
    "feel": "crane",
-   "note": "S1: Kojiro dark against the red sun, the camera rising"
+   "note": "S1: low in front of him, dark against the glow, the camera rising"
   },
   {
    "t": 3.0,
@@ -683,18 +645,17 @@
    "subjects": [
     "hero"
    ],
-   "az0": 196,
-   "az1": 186,
-   "elev0": 12,
-   "elev1": 8,
-   "size": 0.26,
+   "az0": 8,
+   "az1": 0,
+   "elev": 7,
+   "size": 0.24,
    "screen": [
     0.5,
-    0.66
+    0.64
    ],
    "fov": 34,
    "feel": "crane",
-   "note": "S2 WIDE: Kojiro alone on the island at dawn, from behind, toward the sun"
+   "note": "S2 WIDE: from the beach below, Kojiro alone on the duel ground, the pines and the glow"
   },
   {
    "t": 6.8,
@@ -704,14 +665,14 @@
     "hero"
    ],
    "basis": "facing",
-   "az0": 78,
-   "az1": 70,
+   "az0": 38,
+   "az1": 30,
    "elev": 3,
-   "size": 1.05,
+   "size": 0.72,
    "aim": "chest",
    "screen": [
-    0.42,
-    0.5
+    0.46,
+    0.52
    ],
    "fov": 34,
    "feel": "handheld",
@@ -746,29 +707,29 @@
     "target"
    ],
    "basis": "facing",
-   "az0": -6,
-   "az1": -14,
-   "elev": -6,
-   "size": 0.7,
+   "az0": 150,
+   "az1": 140,
+   "elev": -4,
+   "size": 0.62,
    "screen": [
     0.5,
     0.52
    ],
    "fov": 32,
    "feel": "dolly",
-   "note": "S3 FRONT: Musashi against the sun, steps out of the boat"
+   "note": "S3 BEHIND: over the water behind Musashi, the island and the glow ahead of him"
   },
   {
-   "t": 20.0,
+   "t": 18.5,
    "cut": true,
    "rig": "compose",
    "subjects": [
     "hero",
     "target"
    ],
-   "az0": 96,
-   "az1": 104,
-   "elev": 10,
+   "az0": -40,
+   "az1": -32,
+   "elev": 6,
    "size": 0.34,
    "screen": [
     0.5,
@@ -776,7 +737,7 @@
    ],
    "fov": 34,
    "feel": "dolly",
-   "note": "S4 WIDE: behind Kojiro, Musashi walks up from the sea, the sun behind him"
+   "note": "S4 WIDE: behind Musashi wading up from the sea, Kojiro ahead on the duel ground against the glow"
   },
   {
    "t": 23.4,
@@ -809,17 +770,17 @@
    "az0": 112,
    "az1": 104,
    "elev": 4,
-   "size": 0.42,
+   "size": 0.52,
    "screen": [
     0.64,
-    0.64
+    0.6
    ],
    "fov": 36,
    "feel": "dolly",
    "note": "S4 THE THROW: the scabbard arcs out over the sea"
   },
   {
-   "t": 27.6,
+   "t": 27.95,
    "cut": true,
    "rig": "compose",
    "subjects": [
@@ -848,12 +809,12 @@
     "hero"
    ],
    "basis": "facing",
-   "az": 12,
+   "az": 45,
    "elev": -3,
    "aim": "head",
-   "span": 0.6,
-   "size0": 0.9,
-   "size1": 1.2,
+   "span": 0.8,
+   "size0": 0.85,
+   "size1": 1.0,
    "screen": [
     0.5,
     0.45
@@ -967,18 +928,17 @@
    "subjects": [
     "target"
    ],
-   "basis": "facing",
-   "az": 180,
-   "elev": 4,
-   "size0": 0.42,
-   "size1": 0.3,
+   "az0": 44,
+   "az1": 52,
+   "elev": 9,
+   "size": 0.34,
    "screen": [
     0.5,
     0.6
    ],
    "fov": 34,
    "feel": "crane",
-   "note": "S6 AWAY: Musashi walks back to the sea and the sun"
+   "note": "S6 AWAY: Musashi walks back toward the sea, the fallen Kojiro behind him, the glow"
   },
   {
    "t": 53.4,
@@ -987,17 +947,18 @@
    "subjects": [
     "target"
    ],
-   "az0": 128,
-   "az1": 120,
-   "elev": 7,
-   "size": 0.2,
+   "az0": 8,
+   "az1": 2,
+   "elev": 4,
+   "size0": 0.3,
+   "size1": 0.26,
    "screen": [
     0.5,
-    0.64
+    0.62
    ],
    "fov": 34,
    "feel": "crane",
-   "note": "S7 THE LAST SHOT LIVES: the sea, the sun; the end card over it"
+   "note": "S7 THE LAST SHOT LIVES: from the water's edge, Musashi walks out of the dawn; the end card"
   }
  ],
  "cameraMoves": [
@@ -1458,8 +1419,8 @@
    "sub": "as tradition tells it"
   },
   {
-   "start": 27.8,
-   "end": 30.4,
+   "start": 28.05,
+   "end": 30.45,
    "style": "quote",
    "en": "Kojirō, you have already lost.",
    "sub": "as tradition tells it"

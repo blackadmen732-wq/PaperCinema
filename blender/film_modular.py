@@ -285,6 +285,9 @@ for aid, rig in rigs.items():
         tam = {'rSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.R')],
                'lSleeve': [o for o in ch['objects'] if o.get('pc_recipe') == 'tamoto_wide' and o.get('pc_socket', '').endswith('.L')]}
         springs = CS.ClothSprings(rig, BC.BodyCapsules(rig), fps=FPS, panels=tam, body=BC.BodyCapsules(rig, shrink=0.035))
+        if FILMJ.get('wind'):                           # film.wind {to: [x, z] film, strength, gust}: the cloth breathes
+            _wd = FILMJ['wind']
+            springs.wind = dict(_wd, to=[float(_wd['to'][0]), -float(_wd['to'][1])])
     PACT.append(PB.Actor(aid, rig, ch['objects'], draw=draw, springs=springs,
                          caps=None if (draw or flag('no-keep-out')) else BC.BodyCapsules(rig)))
 
@@ -420,111 +423,50 @@ for i in range(f0, f1 + 1):
 # ---------------------------------------------------------------- a part leaves the body (performances.<id>.drop)
 # {"part": "<recipe part id>", "t": s, "v": [x, y, z] film m/s, "spin": rad/s, "drag": 1/s, "paint": {...}}: from that frame
 # a free copy falls from where the part was (gravity with air drag: cloth falls slowly), turning, until it lies on the
-# ground; world time follows the speed ramps. Without "paint" the worn part is hidden. With "paint" {"sat_max", "val_min",
-# "to": [r, g, b]} only the faces painted like that leave (Musashi's headband is baked into his generated head): they are
-# copied out, and from that frame the head's own paint shows `to` where they were (a keyed mix to a repainted texture).
-def _tex_node(mat):
-    for n in (mat.node_tree.nodes if mat and mat.use_nodes else []):
-        if n.type == 'TEX_IMAGE' and n.image is not None and n.outputs['Color'].links:
-            return n
-    return None
-
-
-def _paint_piece(o, spec, f_d):
-    import numpy as np                                  # (Blender's own Python has numpy, not PIL)
-    mat = o.active_material
-    tn = _tex_node(mat)
-    if tn is None:
-        print('[drop] %s has no painted texture: no paint piece' % o.name)
-        return None
-    img = tn.image
-    W, H = img.size
-    px = np.array(img.pixels[:], dtype=np.float32).reshape(H, W, 4)
-    mx = px[..., :3].max(-1)
-    mn = px[..., :3].min(-1)
-    sat = np.where(mx > 1e-4, (mx - mn) / np.maximum(mx, 1e-4), 0)
-    match = (sat <= float(spec.get('sat_max', 0.18))) & (mx >= float(spec.get('val_min', 0.55)))
-    me = o.data
-    uv = me.uv_layers.active.data
-    keep = []
-    for p in me.polygons:
-        us = [uv[li].uv for li in p.loop_indices]
-        cu = sum(u.x for u in us) / len(us)
-        cv = sum(u.y for u in us) / len(us)
-        x_, y_ = min(W - 1, max(0, int(cu * W))), min(H - 1, max(0, int(cv * H)))
-        if match[y_, x_]:
-            keep.append(p.index)
-    if not keep:
-        print('[drop] %s: no faces painted like %s' % (o.name, spec))
-        return None
-    # the piece: those faces, their own copy of the material (the original paint)
+# ground; world time follows the speed ramps. Without "slot" the worn part is hidden. With "slot": "<material slot>"
+# (and "becomes": "<slot>") only that slot's faces leave (Musashi's headband is the 'band' slot of his generated head)
+# and the part left behind wears `becomes` there.
+def _slot_piece(o, spec, f_d):
+    """The faces of one material slot of a worn part leave it (Musashi's headband is the 'band' slot of his generated
+    head): they are copied out as a piece whose origin is their centre, and from frame f_d a copy of the part takes
+    over in which those faces wear the `becomes` slot (hair), so no hole and no band are left on the head."""
     import bmesh as _bm
+    names = [(s_.material.name.lower() if s_.material else '') for s_ in o.material_slots]
+    si = next((i for i, n in enumerate(names) if spec['slot'] in n), None)
+    bi = next((i for i, n in enumerate(names) if spec.get('becomes') and spec['becomes'] in n), None)
+    if si is None:
+        print('[drop] %s has no material slot like %r (slots %s): skipped' % (o.name, spec['slot'], names))
+        return None
+    keep = {p.index for p in o.data.polygons if p.material_index == si}
     bm = _bm.new()
-    bm.from_mesh(me)
-    ks = set(keep)
-    _bm.ops.delete(bm, geom=[f for f in bm.faces if f.index not in ks], context='FACES')
+    bm.from_mesh(o.data)
+    _bm.ops.delete(bm, geom=[f for f in bm.faces if f.index not in keep], context='FACES')
     cen = sum((v.co for v in bm.verts), Vector()) / max(1, len(bm.verts))
     for v in bm.verts:
-        v.co = cen + (v.co - cen) * 1.015                   # just outside the head: no flicker on the first frames
+        v.co = (v.co - cen) * 1.02                      # its origin at its centre; a hair outside the head
     pm_ = bpy.data.meshes.new(o.name + '_piece')
     bm.to_mesh(pm_)
     bm.free()
-    pm_.materials.clear()
-    pm_.materials.append(mat.copy())
+    for s_ in o.material_slots:
+        pm_.materials.append(s_.material)
     piece = bpy.data.objects.new(o.name + '_piece', pm_)
     sc.collection.objects.link(piece)
-    # the head's paint without the piece: the matched pixels inside the piece's UV islands -> `to`
-    mk = np.zeros((H, W), dtype=bool)                   # the piece's UV islands, rasterized (fan triangles)
-    for pi in keep:
-        pts = [(uv[li].uv.x * W, uv[li].uv.y * H) for li in me.polygons[pi].loop_indices]
-        for k in range(1, len(pts) - 1):
-            (ax, ay), (bx, by), (cx, cy) = pts[0], pts[k], pts[k + 1]
-            x0, x1 = max(0, int(min(ax, bx, cx))), min(W - 1, int(max(ax, bx, cx)) + 1)
-            y0, y1 = max(0, int(min(ay, by, cy))), min(H - 1, int(max(ay, by, cy)) + 1)
-            if x1 < x0 or y1 < y0:
-                continue
-            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
-            if abs(den) < 1e-12:
-                continue
-            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
-            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
-            inside = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
-            mk[y0:y1 + 1, x0:x1 + 1] |= inside
-    grown = mk.copy()                                   # grow 2 texels (the bake's edge bleed)
-    for dy in (-2, -1, 0, 1, 2):
-        for dx in (-2, -1, 0, 1, 2):
-            grown |= np.roll(np.roll(mk, dy, 0), dx, 1)
-    sel = grown & match
-    to = spec.get('to', [0.06, 0.06, 0.07])
-    rp = px.copy()
-    rp[sel, 0], rp[sel, 1], rp[sel, 2] = to[0], to[1], to[2]
-    img2 = bpy.data.images.new(img.name + '_without', W, H, alpha=True)
-    img2.pixels[:] = rp.ravel()
-    img2.pack()
-    nt = mat.node_tree
-    t2 = nt.nodes.new('ShaderNodeTexImage')
-    t2.image = img2
-    t2.interpolation = tn.interpolation
-    if tn.inputs['Vector'].links:
-        nt.links.new(tn.inputs['Vector'].links[0].from_socket, t2.inputs['Vector'])
-    mix = nt.nodes.new('ShaderNodeMix')
-    mix.data_type = 'RGBA'
-    outs = [l_.to_socket for l_ in tn.outputs['Color'].links]
-    nt.links.new(tn.outputs['Color'], mix.inputs[6])
-    nt.links.new(t2.outputs['Color'], mix.inputs[7])
-    for s_ in outs:
-        nt.links.new(mix.outputs[2], s_)
-    fac = mix.inputs[0]
-    fac.default_value = 0.0
-    fac.keyframe_insert('default_value', frame=f_d - 1)
-    fac.default_value = 1.0
-    fac.keyframe_insert('default_value', frame=f_d)
-    for fc in (nt.animation_data.action.fcurves if nt.animation_data and nt.animation_data.action else []):
-        for k in fc.keyframe_points:
-            k.interpolation = 'CONSTANT'
-    print('[drop] %s: %d of %d faces painted like the band leave it; %d texels repainted' % (
-        o.name, len(keep), len(me.polygons), int(sel.sum())))
+    piece.matrix_world = o.matrix_world @ Matrix.Translation(cen)
+    if bi is not None:                                  # the part after the cut: those faces become `becomes`
+        o2 = o.copy()
+        o2.data = o.data.copy()
+        sc.collection.objects.link(o2)
+        for p in o2.data.polygons:
+            if p.material_index == si:
+                p.material_index = bi
+        char_meshes.append(o2)
+        for ob_, before in ((o, True), (o2, False)):
+            for fi in sorted({f0 + 1, f_d - 1, f_d}):
+                ob_.hide_render = ob_.hide_viewport = not ((fi < f_d) == before)
+                ob_.keyframe_insert('hide_render', frame=fi)
+                ob_.keyframe_insert('hide_viewport', frame=fi)
+    print('[drop] %s: %d of %d faces (slot %r) leave it%s' % (o.name, len(keep), len(o.data.polygons), spec['slot'],
+          (', the rest wears %r there from frame %d' % (spec['becomes'], f_d)) if bi is not None else ''))
     return piece
 
 
@@ -550,10 +492,11 @@ def _drops():
             spin, drag = float(_d.get('spin', 6.0)), float(_d.get('drag', 2.0))
             for o in _obs:
                 M0 = o.matrix_world.copy()
-                if _d.get('paint'):
-                    cp = _paint_piece(o, _d['paint'], f_d)
+                if _d.get('slot'):
+                    cp = _slot_piece(o, _d, f_d)
                     if cp is None:
                         continue
+                    M0 = cp.matrix_world.copy()                 # it falls from its own centre
                     for fi in sorted({f0 + 1, f_d - 1, f_d}):
                         cp.hide_render = cp.hide_viewport = fi < f_d
                         cp.keyframe_insert('hide_render', frame=fi)
