@@ -76,15 +76,68 @@ for (const [id, c] of Object.entries(film.cast)) {
 }
 const ids = Object.keys(cast);
 const other = (id) => cast[ids.find((x) => x !== id)];
+// the FULL pose (keys + the life layer + eyes + the head turned to the opponent) for the timeline export: it used to
+// read c.motion (the keys alone), so the breath, the head tracking and the eyes never reached a Blender render
+for (const c of Object.values(cast)) c.pose = (tb) => poseOf(c, tb);
 
 // ---------- posing at a body time ----------
 const _v = new THREE.Vector3(), _w = new THREE.Vector3();
+// THE LIFE LAYER (27 Nov, Mark: "AI animation looks robotic... one element finishes, then the next starts"). Measured on
+// Episode 1: 22 s of 60 with neither body moving, 19 s with one actor a statue while the other acts. A living
+// person is never still: they breathe (chest and shoulders), shift their weight every few seconds, their head and
+// hands drift. All of it is a pure function of body time (renders and stills agree), it fades out while the keyed
+// motion itself is moving (it never fights an action) and in when the body holds, and performances.<id>.life
+// [[t, amount], ...] scales it (0 = no life: a dead body does not breathe).
+const _sn = (t, f, ph) => Math.sin(2 * Math.PI * f * t + ph);
+function lifeAmount(c, tb) {
+  const L = c.perf.life;
+  if (!Array.isArray(L) || !L.length) return 1;
+  if (tb <= L[0][0]) return L[0][1];
+  for (let i = 1; i < L.length; i++) {
+    if (tb <= L[i][0]) { const u = (tb - L[i - 1][0]) / Math.max(1e-6, L[i][0] - L[i - 1][0]); return L[i - 1][1] + (L[i][1] - L[i - 1][1]) * u; }
+  }
+  return L[L.length - 1][1];
+}
+const LIFE_KEYS = ['rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'tx', 'ty', 'cy', 'crouch', 'weight', 'ry'];
+function stillness(c, tb) {
+  // how still the KEYED motion is around tb: 1 holding, 0 in an action. Summed joint travel over +-0.4 s, eased:
+  // the life fades out over a third of a second BEFORE an action starts (a held breath, a moment of focus) and back
+  // after it. Over +-0.1 s it switched off within two frames: a 2-frame pop at every action (Episode 1, 32.3 s).
+  // The window never looks across a cut (c.motion.side keeps each sample on this side of it): a teleport is not body
+  // motion, and seen through the window it switched the life off in one frame (Episode 1, 18.07 s).
+  const at = (dt) => { const tt = Math.max(0, tb + dt); return c.motion.side ? c.motion.side(tb, tt) : tt; };
+  let d = 0, prev = c.motion(at(-0.4));
+  for (const dt of [-0.2, 0, 0.2, 0.4]) {
+    const cur = c.motion(at(dt));
+    for (const k of LIFE_KEYS) d += Math.abs((cur[k] ?? 0) - (prev[k] ?? 0));
+    d += 4 * Math.hypot((cur.x ?? 0) - (prev.x ?? 0), (cur.z ?? 0) - (prev.z ?? 0));     // travel is action
+    prev = cur;
+  }
+  const u = Math.max(0, Math.min(1, 1 - d / 0.6));
+  return u * u * (3 - 2 * u);
+}
+function addLife(c, p, tb) {
+  const life = lifeAmount(c, tb);
+  if (life <= 0) return;
+  const s = stillness(c, tb) * life, ph = c.phase;
+  // breathing: about 15 breaths a minute, the chest lifts and the shoulders rise a little on the in-breath
+  const br = _sn(tb, 0.24, ph);
+  p.cx += (0.012 + 0.03 * s) * br;
+  p.rcz += 0.025 * s * Math.max(0, br);
+  p.lcz += 0.025 * s * Math.max(0, br);
+  // weight: drifts between the feet every few seconds (two slow waves, never periodic-looking)
+  p.weight += 0.14 * s * (0.6 * _sn(tb, 0.11, ph * 1.7) + 0.4 * _sn(tb, 0.047, ph * 0.6 + 1));
+  p.tz += 0.03 * s * _sn(tb, 0.083, ph * 1.3 + 2);
+  // the head and hands drift: small nods and turns, the grip adjusting
+  p.hx += 0.035 * s * _sn(tb, 0.19, ph * 2.1 + 0.4);
+  p.hz += 0.02 * s * _sn(tb, 0.13, ph * 0.9 + 3);
+  p.rwz += (0.006 + 0.02 * s) * _sn(tb, 0.7, ph);
+  p.rwx += (0.006 + 0.02 * s) * Math.cos(2 * Math.PI * 0.7 * tb + ph);
+  p.lex += 0.03 * s * _sn(tb, 0.31, ph * 1.4 + 1.2);
+}
 function poseOf(c, tb) {
   const p = c.motion(tb);
-  // moving hold: slow breath in the chest, a 4 mm circle at the tip — nothing is ever perfectly still
-  p.cx += 0.012 * Math.sin(tb * 2 * Math.PI * 0.3 + c.phase);
-  p.rwz += 0.006 * Math.sin(tb * 2 * Math.PI * 0.7 + c.phase);
-  p.rwx += 0.006 * Math.cos(tb * 2 * Math.PI * 0.7 + c.phase);
+  addLife(c, p, tb);
   combat.applyEyes(c, p, tb, FILM_TIME, { fps: FPS, voice: VOICE, contacts: CONTACTS });
   // eyes on the opponent: neck takes 40% of the turn, head 60%
   const o = other(c.id).motion(tb);

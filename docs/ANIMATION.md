@@ -158,6 +158,14 @@ amber-glowing eye slits with lids and a brow (default stays faceless, the owner'
 | `"drag": 0` | Contact key: every joint arrives together on this frame (the far joints whip to catch up) |
 | `"ease": "snap"` / `"antic"` / `"out"` / `"in"` or `[x1,y1,x2,y2]` | Shape of the segment arriving at this key. End slopes are finite (no infinite speed) |
 | `"settle": true` (or a strength) | Each joint overshoots the pose a little and settles (closed-form damped spring) |
+| `"cut": true` | A new piece of continuity starts at this key. A key pair under 2 frames apart that moves the root 0.5 m or more (a teleport hidden by a cut) counts as one by itself. No follow-through lead or lag, tangent or settle reaches across it, and the jump lands exactly on the second key (27 Nov: the root, read 1/24 s ahead, had teleported Musashi into the surf one frame before the cut). The foot-lock smoothing, the life layer's window and the Blender cloth springs (a reset when a root moves more than 0.5 m in a frame) stop at it too |
+
+**The life layer** (engine/motion.js `addLife`, always on, in the exported timeline and so in every Blender render):
+breathing (0.24 Hz: chest and shoulders), weight shifts (two slow waves), head and hand drift. It fades out while the
+keyed motion moves (summed joint travel over +-0.4 s, eased, so it fades a third of a second before an action instead
+of popping off in two frames) and in when the body holds. `performances.<id>.life: [[t, amount], ...]` scales it
+(0 = a dead body does not breathe). Measure it with `python3 tools/motion_check.py <film>` (statues, frozen actors,
+one-at-a-time, hard starts and stops; exit 1 on FAIL), after `node tools/timeline.mjs film/<film>.json`.
 
 **Clash** (`film.clashes`): `{ t, until, attacker, defender, s }` turns the defender's blade (up to `maxDeg`) so it lies
 across the attacker's blade at fraction `s`; the blades meet on frame `t` and stay crossed through a bind. Contact is then

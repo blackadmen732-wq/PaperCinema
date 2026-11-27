@@ -82,12 +82,22 @@
      "ry": -0.45
     },
     {
+     "t": 20.9,
+     "pose": "rest-hand-on-hilt",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.5,
+     "hy": -0.35,
+     "note": "his eyes find Musashi first (the head leads the turn)"
+    },
+    {
      "t": 21.6,
      "pose": "rest-hand-on-hilt",
      "x": 0.6,
      "z": -0.3,
      "ry": -0.838,
-     "note": "S4 turns to face Musashi"
+     "settle": 0.6,
+     "note": "S4 the body follows: turns to face Musashi"
     },
     {
      "t": 23.6,
@@ -110,7 +120,8 @@
      "pose": "blade-out-recover",
      "x": 0.6,
      "z": -0.3,
-     "ry": -0.838
+     "ry": -0.838,
+     "settle": 0.8
     },
     {
      "t": 25.6,
@@ -142,7 +153,8 @@
      "pose": "blade-out-recover",
      "x": 0.6,
      "z": -0.3,
-     "ry": -1.138
+     "ry": -1.138,
+     "settle": 0.8
     },
     {
      "t": 27.6,
@@ -153,11 +165,25 @@
      "note": "hears the line"
     },
     {
-     "t": 30.4,
+     "t": 28.9,
      "pose": "stand-blade-low",
      "x": 0.6,
      "z": -0.3,
-     "ry": -0.838
+     "ry": -0.838,
+     "tx": -0.12,
+     "rsx": -0.55,
+     "hx": 0.12,
+     "note": "the words land: he draws back, the grip tightens, the blade lifts a little"
+    },
+    {
+     "t": 30.1,
+     "pose": "stand-blade-low",
+     "x": 0.6,
+     "z": -0.3,
+     "ry": -0.838,
+     "tx": -0.06,
+     "rsx": -0.7,
+     "crouch": 0.05
     },
     {
      "t": 31.2,
@@ -165,6 +191,7 @@
      "x": 0.6,
      "z": -0.3,
      "ry": -0.838,
+     "settle": 0.7,
      "note": "anger: hasso"
     },
     {
@@ -218,7 +245,18 @@
      "x": 0.14,
      "z": 0.152,
      "ry": -0.838,
+     "settle": 0.5,
      "note": "falls to his knees"
+    },
+    {
+     "t": 40.2,
+     "pose": "kneel-collapse",
+     "x": 0.14,
+     "z": 0.152,
+     "ry": -0.838,
+     "tx": 0.6,
+     "hx": 0.4,
+     "note": "the last breath: his head sinks"
     },
     {
      "t": 60.0,
@@ -227,6 +265,20 @@
      "z": 0.152,
      "ry": -0.838
     }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ],
+    [
+     39.6,
+     1.0
+    ],
+    [
+     40.4,
+     0.0
+    ]
    ],
    "draw": {
     "grab": 23.9,
@@ -287,7 +339,7 @@
      "note": "lowers it, looks up at the island (the step out happens on the cut: inside the boat the path crosses a thwart)"
     },
     {
-     "t": 18.45,
+     "t": 18.49,
      "pose": "stand-blade-low",
      "x": -7.75,
      "z": 7.45,
@@ -376,23 +428,55 @@
      "pose": "stand-blade-low",
      "x": -1.4,
      "z": 1.5,
-     "ry": 2.304
+     "ry": 2.304,
+     "settle": 0.5
     },
     {
-     "t": 27.6,
+     "t": 24.9,
      "pose": "stand-blade-low",
      "x": -1.4,
      "z": 1.5,
      "ry": 2.304,
+     "crouch": 0.05,
+     "rsx": -0.4,
+     "note": "the blade comes out: his weight sinks a little, the oar comes up an inch"
+    },
+    {
+     "t": 26.4,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "hy": 0.45,
+     "crouch": 0.05,
+     "note": "his eyes follow the scabbard out over the sea"
+    },
+    {
+     "t": 27.4,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "hy": 0.0,
+     "note": "back to Kojiro"
+    },
+    {
+     "t": 27.9,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "hx": -0.06,
      "note": "\"You have already lost.\""
     },
     {
-     "t": 30.8,
+     "t": 30.2,
      "pose": "waki-right",
      "x": -1.4,
      "z": 1.5,
      "ry": 2.304,
-     "note": "hides the bokken behind him"
+     "settle": 0.6,
+     "note": "hides the bokken behind him, starting before Kojiro has finished rising into hasso (overlap)"
     },
     {
      "t": 32.4,
@@ -400,6 +484,16 @@
      "x": -1.4,
      "z": 1.5,
      "ry": 2.304
+    },
+    {
+     "t": 32.62,
+     "pose": "waki-right",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.304,
+     "crouch": 0.24,
+     "tx": 0.14,
+     "note": "anticipation: he gathers, sinking, before the big rise of the oar"
     },
     {
      "t": 32.95,
@@ -432,7 +526,8 @@
      "pose": "kiri-oroshi-finish",
      "x": -0.68,
      "z": 0.84,
-     "ry": 2.304
+     "ry": 2.304,
+     "settle": 1.0
     },
     {
      "t": 36.0,
@@ -473,89 +568,143 @@
      "ry": 2.304
     },
     {
-     "t": 47.091,
+     "t": 47.0,
      "pose": "stand-blade-low",
-     "x": -1.091,
-     "z": 1.209,
+     "x": -0.68,
+     "z": 0.84,
+     "ry": -0.839,
+     "tx": 0.08,
+     "note": "turns to the sea over a second, a small lean before the first step (anticipation)"
+    },
+    {
+     "t": 47.893,
+     "pose": "stand-blade-low",
+     "x": -1.003,
+     "z": 1.13,
      "ry": -0.839
     },
     {
-     "t": 47.582,
+     "t": 48.486,
      "pose": "stand-blade-low",
-     "x": -1.502,
-     "z": 1.578,
+     "x": -1.326,
+     "z": 1.42,
      "ry": -0.839
     },
     {
-     "t": 48.073,
+     "t": 49.079,
      "pose": "stand-blade-low",
-     "x": -1.913,
-     "z": 1.947,
+     "x": -1.649,
+     "z": 1.71,
      "ry": -0.839
     },
     {
-     "t": 48.564,
+     "t": 49.671,
      "pose": "stand-blade-low",
-     "x": -2.324,
-     "z": 2.316,
+     "x": -1.971,
+     "z": 2.0,
      "ry": -0.839
     },
     {
-     "t": 49.055,
+     "t": 50.264,
      "pose": "stand-blade-low",
-     "x": -2.735,
-     "z": 2.685,
+     "x": -2.294,
+     "z": 2.29,
      "ry": -0.839
     },
     {
-     "t": 49.545,
+     "t": 50.857,
      "pose": "stand-blade-low",
-     "x": -3.145,
-     "z": 3.055,
+     "x": -2.617,
+     "z": 2.58,
      "ry": -0.839
     },
     {
-     "t": 50.036,
+     "t": 51.45,
      "pose": "stand-blade-low",
-     "x": -3.556,
-     "z": 3.424,
+     "x": -2.94,
+     "z": 2.87,
      "ry": -0.839
     },
     {
-     "t": 50.527,
+     "t": 52.043,
      "pose": "stand-blade-low",
-     "x": -3.967,
-     "z": 3.793,
+     "x": -3.263,
+     "z": 3.16,
      "ry": -0.839
     },
     {
-     "t": 51.018,
+     "t": 52.636,
      "pose": "stand-blade-low",
-     "x": -4.378,
-     "z": 4.162,
+     "x": -3.586,
+     "z": 3.45,
      "ry": -0.839
     },
     {
-     "t": 51.509,
+     "t": 53.229,
      "pose": "stand-blade-low",
-     "x": -4.789,
-     "z": 4.531,
+     "x": -3.909,
+     "z": 3.74,
      "ry": -0.839
     },
     {
-     "t": 52.0,
+     "t": 53.821,
+     "pose": "stand-blade-low",
+     "x": -4.231,
+     "z": 4.03,
+     "ry": -0.839
+    },
+    {
+     "t": 54.414,
+     "pose": "stand-blade-low",
+     "x": -4.554,
+     "z": 4.32,
+     "ry": -0.839
+    },
+    {
+     "t": 55.007,
+     "pose": "stand-blade-low",
+     "x": -4.877,
+     "z": 4.61,
+     "ry": -0.839
+    },
+    {
+     "t": 55.6,
      "pose": "stand-blade-low",
      "x": -5.2,
      "z": 4.9,
      "ry": -0.839
+    },
+    {
+     "t": 56.4,
+     "pose": "stand-blade-low",
+     "x": -5.2,
+     "z": 4.9,
+     "ry": -0.839,
+     "settle": 0.4
+    },
+    {
+     "t": 57.6,
+     "pose": "stand-blade-low",
+     "x": -5.2,
+     "z": 4.9,
+     "ry": -0.489,
+     "hy": 0.55,
+     "note": "one last look back at the island and the man on it"
     },
     {
      "t": 60.0,
      "pose": "stand-blade-low",
      "x": -5.2,
      "z": 4.9,
-     "ry": -0.839
+     "ry": -0.5389999999999999,
+     "hy": 0.5
     }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ]
    ],
    "drop": [
     {
@@ -578,6 +727,16 @@
  "fade": {
   "in": 0,
   "out": 0.0
+ },
+ "paperSurface": {
+  "angle": 36.0,
+  "ink": 0.85,
+  "width": 0.003,
+  "light": 0.55,
+  "mottle": 0.12,
+  "mottle_scale": 7.0,
+  "ao": 0.35,
+  "note": "Mark, 27 Nov: turn on the paper upgrade (tested on Kojiro's arm, docs/AUTOPILOT.md)"
  },
  "wind": {
   "to": [

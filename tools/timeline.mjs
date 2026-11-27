@@ -96,7 +96,7 @@ function PAGE_SAMPLE({ frames, sub, bones, wantSub }) {
       const A = { hidden: !!c.hidden, root: xf(fig.root), ry: r(fig.root.rotation.y),
         bones: bones.map((n) => (J[n] ? xf(J[n](fig)) : null)), weapon: xf(c.sword) };
       if (c.motion) {
-        const p = c.motion(F.tb);
+        const p = c.pose ? c.pose(F.tb) : c.motion(F.tb);   // the full pose: keys + life layer + eyes + head tracking
         A.pose = Object.fromEntries(Object.entries(p).map(([k, v]) => [k, typeof v === 'number' ? r(v) : v]));
       }
       if (fig.eyeMat) A.eyes = r(fig.eyeMat.emissiveIntensity ?? 0);

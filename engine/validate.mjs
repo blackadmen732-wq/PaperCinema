@@ -22,7 +22,7 @@ const CLIPS = loadClipsSync(moves, (n) => JSON.parse(fs.readFileSync(`library/mo
 const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
   'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid',
   'stride', 'phase'];   // stride/phase: walking feet; motion capture keys a left-foot-forward stance with them (docs/MOCAP.md)
-const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang'];   // anime motion layer (docs/ANIMATION.md §10)
+const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang', 'cut'];   // anime motion layer (docs/ANIMATION.md §10); cut: true = a new piece of continuity starts at this key (engine/figure.js makeMotion)
 const D = film.duration;
 // Joint limits (radians / metres): what the paper body can do without looking broken. Outside = a warning.
 // Same limits the poses in library/cuts.json were solved with (docs/ANIMATION.md §11).

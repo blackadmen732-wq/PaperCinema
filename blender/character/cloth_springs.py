@@ -45,6 +45,8 @@ class ClothSprings:
         self.depths = {}                             # joint -> list of (rule tip inside m, spring tip inside m)
         self.wind = None                             # film.wind: {to: [x, y] world, strength m/s^2, gust 0-1, seed}
         self.frame = 0
+        self.roots = {}                              # joint -> its root last frame (to see a teleport at a cut)
+        self.resets = []                             # (frame, joint) where a teleport restarted the cloth
 
     def wind_at(self, t):
         """The wind's push on a cloth tip at time t (world m/s^2): a steady part plus slow gusts and a flutter, the
@@ -106,8 +108,14 @@ class ClothSprings:
             root = e.matrix_world.translation.copy()
             want = (e.matrix_world.to_quaternion() @ DOWN).normalized()   # where the rule aims it now
             goal = root + want * L
-            if name not in self.state:
+            # a teleport at a cut (the root moved more than 15 m/s in one frame): the cloth starts again at rest where
+            # the body now is, instead of swinging toward the place it left (a flick on the new shot's first frame)
+            last = self.roots.get(name)
+            self.roots[name] = root.copy()
+            if name not in self.state or (last is not None and (root - last).length > 0.5):
                 self.state[name] = (goal.copy(), Vector((0, 0, 0)))
+                if last is not None:
+                    self.resets.append((self.frame, name))
             p, v = self.state[name]
             # sub-steps keep a stiff spring stable at 30 fps
             n = 4

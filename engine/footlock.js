@@ -188,10 +188,17 @@ export function lockFeet(motion, dur, opts = {}) {
   }
   // smooth the hip/lean pass (a box filter) so a new contact never pops
   const win = Math.max(1, Math.round(O.smooth * RATE));
+  // ...within one piece of continuity: the box never averages the hips of two places across a cut
+  const cuts = motion.cuts || [];
+  const piece = P.map((_, i) => cuts.reduce((k, [, b]) => k + (i * DT >= b - 1e-6 ? 1 : 0), 0));
   const blur = (A) => A.map((_, i) => {
     let s = 0, n = 0;
-    for (let k = i - win; k <= i + win; k++) { s += A[clamp(k, 0, N - 1)]; n++; }
-    return s / n;
+    for (let k = i - win; k <= i + win; k++) {
+      const kk = clamp(k, 0, N - 1);
+      if (piece[kk] !== piece[i]) continue;
+      s += A[kk]; n++;
+    }
+    return s / Math.max(1, n);
   });
   const sC = blur(addC), sRx = blur(addRx), sRz = blur(addRz);
 
@@ -207,5 +214,7 @@ export function lockFeet(motion, dur, opts = {}) {
     return p;
   };
   out.plan = { contactsR: cR, contactsL: cL, rate: RATE, opts: O };
+  out.cuts = motion.cuts;
+  out.side = motion.side;
   return out;
 }

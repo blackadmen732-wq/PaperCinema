@@ -572,11 +572,37 @@ export function makeMotion(keys, opts = {}) {
     if (i1 <= i) throw new Error(`arcTo ${mt.arcTo}: no key at that time after ${ts[i]}`);
     jumps.push({ t0: ts[i], t1: ts[i1], i0: i, i1, h: mt.arc, hang: Math.min(0.8, mt.hang ?? 0) });
   });
+  // CUTS. A key pair under 2 frames apart that moves the root half a metre or more is a teleport hidden by a cut (and a
+  // key with "cut": true starts a new piece of continuity). The curve is split there: no tangent, follow-through warp
+  // or settle reaches across it, and the jump happens exactly on the second key. Measured on Episode 1: the root, read
+  // 1/24 s ahead for follow-through, teleported Musashi into the surf one frame BEFORE the cut, on the last frame of
+  // the boat shot, and the 165 m/s teleport slope tripled the tangent of the walk after it.
+  const cutAt = [];                                   // i: a cut between key i and key i + 1
+  for (let i = 0; i + 1 < ts.length; i++) {
+    const a = keys[i][1], b = keys[i + 1][1];
+    const tele = ts[i + 1] - ts[i] < 0.05 && Math.hypot((b.x ?? 0) - (a.x ?? 0), (b.z ?? 0) - (a.z ?? 0)) >= 0.5;
+    if (tele || meta[i + 1].cut) cutAt.push(i);
+  }
+  const cutT = cutAt.map((i) => [ts[i], ts[i + 1]]);
+  // keep a (warped) read time on the same side of every cut as the frame's own time
+  const side = (t, tc) => {
+    for (const [a, b] of cutT) {
+      if (t < b - 1e-6) { if (tc > a) tc = a; } else if (tc < b) tc = b;
+    }
+    return tc;
+  };
+  const pieceOf = (t) => cutT.reduce((k, [, b]) => k + (t >= b - 1e-6 ? 1 : 0), 0);
   const curves = {};
   for (const c of CHANNELS) {
     const vs = keys.map((k) => k[1][c] ?? BASE_POSE[c]);
-    curves[c] = { vs, m: monotoneTangents(ts, vs) };
+    const m = monotoneTangents(ts, vs);
+    for (const i of cutAt) {                          // one-sided at a cut: the body runs into it and out of it at the
+      m[i] = i > 0 ? (vs[i] - vs[i - 1]) / (ts[i] - ts[i - 1]) : 0;              // speed of the segment beside it
+      m[i + 1] = i + 2 < ts.length ? (vs[i + 2] - vs[i + 1]) / (ts[i + 2] - ts[i + 1]) : 0;
+    }
+    curves[c] = { vs, m };
   }
+  const keyPiece = ts.map((t) => pieceOf(t));
   const n = ts.length;
   const seg = (t) => { let i = 0; while (i < n - 2 && t >= ts[i + 1]) i++; return i; };
   const evalC = (c, t) => {
@@ -618,15 +644,17 @@ export function makeMotion(keys, opts = {}) {
     return drags[i] + (drags[i + 1] - drags[i]) * w;
   };
   const settles = meta.map((mt, i) => (mt.settle && i > 0 ? (mt.settle === true ? 1 : mt.settle) : 0));
-  return (t) => {
+  const fn = (t) => {
     const out = {};
     const d = overlap ? drag(t) : 0;
+    const pc = cutT.length ? pieceOf(t) : 0;
     for (const c of CHANNELS) {
-      const tc = overlap ? t - ((LAG[c] ?? 0) / FPS_LAG) * d : t;
+      let tc = overlap ? t - ((LAG[c] ?? 0) / FPS_LAG) * d : t;
+      if (cutT.length) tc = side(t, tc);
       let v = evalC(c, tc);
       if (SETTLE[c]) {
         for (let k = 1; k < n; k++) {
-          if (!settles[k] || tc <= ts[k]) continue;
+          if (!settles[k] || tc <= ts[k] || keyPiece[k] !== pc) continue;     // a settle never rings past a cut
           const { vs } = curves[c];
           v += settles[k] * settleOffset(vs[k] - vs[k - 1], tc - ts[k], SETTLE[c]);
         }
@@ -635,6 +663,9 @@ export function makeMotion(keys, opts = {}) {
     }
     return out;
   };
+  fn.cuts = cutT;                                     // [[last key before, first key after], ...]
+  fn.side = side;
+  return fn;
 }
 
 /** Resolve data keys ({ t, pose, ...overrides }) against the pose library. */
@@ -657,7 +688,7 @@ export function resolveKeys(keys, poses) {
     // fixed properly.
     for (const key of Object.keys(full)) full[key] = clampCh(key, full[key]);
     last = full;
-    return [k.t, full, { ease: k.ease, drag: k.drag, settle: k.settle, arc: k.arc, arcTo: k.arcTo, hang: k.hang }];
+    return [k.t, full, { ease: k.ease, drag: k.drag, settle: k.settle, arc: k.arc, arcTo: k.arcTo, hang: k.hang, cut: k.cut }];
   });
 }
 

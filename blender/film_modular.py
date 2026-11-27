@@ -166,6 +166,10 @@ for a in TL['actors']:
     # load_recipe resolves `extends` / swap / add / drop; a bare json.load does not,
     # and the armoured warrior is defined as a diff against the ronin.
     recipe = MB.load_recipe(path)
+    if FILMJ.get('paperSurface') and not recipe.get('surface'):
+        # film.paperSurface: the paper surface upgrade (ink in the fold valleys, light fold edges, printed mottle) on
+        # every member of this film's cast (paper_materials.paper_surface; Mark, 27 Nov: "turn on the paper upgrade")
+        recipe = dict(recipe, surface=dict(FILMJ['paperSurface']))
     ch = MB.build(recipe, name='PC_' + a['id'])
     if a['id'] in DRAWS:
         # the recipe's old hip sword (a box scabbard + handle glued to the torso) would be a second sword
