@@ -224,10 +224,21 @@ def foley_cues(ground, sfx, lib):
         steps.append(f)
     cut(os.path.join(lib, 'skid-dust.mp3'), os.path.join(sfx, 'skid.wav'), onset(os.path.join(lib, 'skid-dust.mp3')), 0.5)
     cut(os.path.join(lib, 'land-thud.mp3'), os.path.join(sfx, 'land.wav'), onset(os.path.join(lib, 'land-thud.mp3')), 0.6)
-    cues, n = [], 0
+    # one actor's two feet doing the same thing in the same frame is ONE sound (two identical skids 0 ms apart only
+    # phase against each other), at the louder of the two
+    merged = []
     for e in ground:
         if e['kind'] == 'sink':
             continue
+        twin = next((m for m in merged if m['actor'] == e['actor'] and m['kind'] == e['kind'] and abs(m['t'] - e['t']) < 0.034), None)
+        if twin:
+            twin['foot'] = 'LR'
+            twin['slide_mps'] = max(twin.get('slide_mps', 0), e.get('slide_mps', 0))
+            twin['down_mps'] = max(twin.get('down_mps', 0), e.get('down_mps', 0))
+        else:
+            merged.append(dict(e))
+    cues, n = [], 0
+    for e in merged:
         if e['kind'] == 'step':
             g = 0.22 + min(0.3, 0.12 * e.get('down_mps', 0) + 0.05 * e.get('slide_mps', 0))
             cues.append({'id': 'step-%s-%s-%d' % (e['actor'], e['foot'], n), 'file': steps[n % len(steps)], 't': e['t'],

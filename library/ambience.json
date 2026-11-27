@@ -1,8 +1,22 @@
 {
   "_about": "The sound of a PLACE, under every film shot there: one looping bed per set (engine/sound.mjs adds it when tools/film.sh renders with --set). A file, or an Openverse query (CC0 / CC-BY, credited in assets/sfx/credits.json like every found sound). Kept out of library/sets/ on purpose: a set file is part of the render stamp, a sound is not, so changing a bed never re-renders a frame.",
-  "edo-village": {"id": "amb-night-village", "query": "night crickets ambience", "min": 20, "max": 300, "gain": 0.22,
-                  "why": "a moonlit street: insects and night air under the lanterns"},
-  "ganryujima-beach": {"id": "amb-beach", "file": "assets/sfx/sea-bed.mp3", "gain": 0.3,
-                       "why": "the strait: waves on the sand"},
-  "bamboo-forest": {"id": "amb-bamboo", "file": "assets/sfx/wind-bed.mp3", "gain": 0.25, "why": "wind through the culms"}
+  "edo-village": {
+    "id": "amb-night-village",
+    "file": "assets/sfx/amb-night-village.mp3",
+    "gain": 0.3,
+    "why": "a moonlit street: crickets and night air under the lanterns",
+    "made_by": "python3 tools/ambience_synth.py night (synthesised here: Openverse is unreachable from this environment; ours, CC0)"
+  },
+  "ganryujima-beach": {
+    "id": "amb-beach",
+    "file": "assets/sfx/sea-bed.mp3",
+    "gain": 0.3,
+    "why": "the strait: waves on the sand"
+  },
+  "bamboo-forest": {
+    "id": "amb-bamboo",
+    "file": "assets/sfx/wind-bed.mp3",
+    "gain": 0.25,
+    "why": "wind through the culms"
+  }
 }

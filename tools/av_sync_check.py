@@ -53,7 +53,10 @@ def main(clip, film, hitstop=0):
             continue
         cl, _ = audio(cue['file'])
         cl = cl[: int(0.04 * sr)]
-        lo, hi = int(max(0, cue['t'] - 0.2) * sr), int((cue['t'] + 0.2) * sr)
+        # never search past half the way to another cue that plays the SAME clip (it would match that one instead)
+        same = [c['t'] for c in ev.get('cues', []) if c is not cue and c.get('file') == cue['file']]
+        w = min([0.2] + [abs(t_ - cue['t']) / 2 for t_ in same if abs(t_ - cue['t']) > 1e-4])
+        lo, hi = int(max(0, cue['t'] - w) * sr), int((cue['t'] + w) * sr)
         seg = mix[lo:hi + len(cl)]
         if len(seg) < len(cl) or not np.any(cl):
             continue
@@ -62,6 +65,10 @@ def main(clip, film, hitstop=0):
         r = c / n
         k = int(np.argmax(r))
         o = (lo + k) / sr - cue['t']
+        if float(r[k]) < 0.5:                       # buried under something louder: nothing to measure
+            print('[sync]   %-22s cue %.3f s: MASKED (best match %.2f) - under a louder sound, not measurable'
+                  % (cue['id'], cue['t'], float(r[k])))
+            continue
         ok = abs(o * fps) <= 1.0
         bad += 0 if ok else 1
         print('[sync]   %-22s cue %.3f s, found %+.1f ms (%+.2f frames, match %.2f) %s' % (

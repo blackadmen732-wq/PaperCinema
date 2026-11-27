@@ -47,7 +47,12 @@ async function find(cue) {
   const file = path.join(dir, `${cue.id}.mp3`);
   if (fs.existsSync(file) && credits[cue.id] && !args.includes('--refresh')) return file;
   const url = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cue.query)}&license=cc0,by&page_size=20`;
-  const res = await (await fetch(url, { headers: UA })).json();
+  let res;
+  try { res = await (await fetch(url, { headers: UA })).json(); }
+  catch (e) {                     // no network to Openverse (this cloud environment): skip this one sound, never the film
+    console.log(`✗ ${cue.id}: Openverse unreachable (${e.cause?.code ?? e.message}); this sound is skipped`);
+    return null;
+  }
   const cands = (res.results ?? []).filter((r) => r.duration && r.duration >= cue.min && r.duration <= cue.max && r.url);
   for (const r of cands.slice(0, 8)) {
     const raw = path.join(dir, `_cand.${(r.filetype || 'mp3').replace(/[^a-z0-9]/g, '')}`);
