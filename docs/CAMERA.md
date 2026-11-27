@@ -266,3 +266,10 @@ whip pan into the impact close-up with crash zoom + Dutch on the contact → bre
 **KUROKO on the camera bench** (`tools/camera_bench.py solve`, via `tools/camera_bench_kuroko.mjs`): `engine/kuroko.js`
 films the bench ball and is scored with the other operators. The look point now has feed-forward (`rig.feedForward`,
 1 by default, 0 = the old lag) and lead room scales with the shot: kuroko-frame went 67.8 → 82.4 (operator 81.2).
+
+**Check the framing before rendering** (`tools/shot_framing.py output/<film>.timeline.json [--single B2]`): per shot,
+the share of frames where every fighter's chest is inside the frame AND the fighters are at least 0.30 frame widths
+apart (so the foreground fighter never covers the other); `--single` marks a shot framed on one fighter. Exit 1
+when a shot passes on under 80% of its frames. It costs seconds; a render costs half an hour. On
+`kojiro-exchange-cams` it found the over-the-shoulder impact and recovery shots hiding Kojiro behind Musashi; the
+angles were then chosen by sweeping `az` / `screen` against it (B1 100%, B2 94%, B3 94%, B4 100%).

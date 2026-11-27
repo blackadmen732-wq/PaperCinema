@@ -13,4 +13,6 @@ Read pc-shot-production and pc-camera. Reuse the existing shot library and tools
 - Anime accents on events (crash zoom, whip pan, Dutch, breathing, shake, rack focus): `film.cameraMoves`
   (`engine/camfx.js`); depth of field and motion blur: `film.effects.dof` / `motionBlur`; ink frame, flash, speed lines:
   `tools/post_fx.py`. All in `docs/CAMERA.md` §9, proof film `film/kojiro-exchange-cams.json`.
+- Before any render: `python3 tools/shot_framing.py output/<film>.timeline.json` (both fighters inside and not hiding
+  each other, per shot). Chest-in-frame alone passed a shot where one fighter's back covered the other.
 - Locked vs eased tracking on one bake: `blender/bench/toss_bench.py` (`--cam locked|tracking`).
