@@ -38,6 +38,8 @@ TL = json.load(open(A.timeline))
 F = TL['frames']
 OUT = A.out or A.frames.rstrip('/') + '-fx'
 os.makedirs(OUT, exist_ok=True)
+for _old in glob.glob(os.path.join(OUT, 'f*.png')):   # a fresh output: a hit-stop renumbers the frames after it
+    os.remove(_old)
 FX = TL.get('effects') or {}
 WASHI = np.array([236, 228, 210], np.float32)
 INK = np.array([18, 16, 20], np.float32)
@@ -159,7 +161,40 @@ for p in files:
     Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).save(os.path.join(OUT, os.path.basename(p)))
     if e:
         done.append({'frame': n, **e})
-json.dump({'hits_0based': hits, 'frames': done, 'vignette': VIG}, open(os.path.join(OUT, 'fx.json'), 'w'), indent=1)
+# HIT-STOP (film.effects.hitStop = N frames): the picture freezes on the contact - ink, its negative, ink... - for N
+# frames, and everything after it moves N frames later. The events file is told (stops + every later cue shifted),
+# so the mixer keeps the sound locked to the picture: the contact transient stays ON the contact and the material
+# tail, which starts there, rings through the freeze (27 Nov: the Blender path had no hit-stop at all).
+HS = int(FX.get('hitStop', 0) or 0)
+if HS > 0 and hits and files:
+    h = hits[0] + 1                                  # 1-based file number of the first frame that shows the contact
+    src = os.path.join(OUT, 'f%04d.png' % h)
+    if os.path.exists(src):
+        for p in sorted(glob.glob(os.path.join(OUT, 'f*.png')), reverse=True):
+            n = int(os.path.basename(p)[1:5])
+            if n > h:
+                os.replace(p, os.path.join(OUT, 'f%04d.png' % (n + HS)))
+        held = Image.open(src).convert('RGB')
+        neg = Image.fromarray(255 - np.asarray(held))
+        for k in range(1, HS + 1):
+            (neg if k % 2 == 1 else held).save(os.path.join(OUT, 'f%04d.png' % (h + k)))
+        fps_ = float(TL.get('clock', {}).get('fps', 30))
+        if A.events and os.path.exists(A.events):
+            ev = json.load(open(A.events))
+            tc = (ev.get('contact') or {}).get('t')
+            if tc is not None and not ev.get('stops'):
+                d = HS / fps_
+                ev['stops'] = [{'tb': tc, 'd': round(d, 4), 'frames': HS, 'why': 'hit-stop on the contact (film.effects.hitStop)'}]
+                for c in ev.get('cues', []):
+                    if c['t'] > tc + 1e-4:
+                        c['t'] = round(c['t'] + d, 4)
+                for g in ev.get('ground', []):
+                    if g['t'] > tc + 1e-4:
+                        g['t'] = round(g['t'] + d, 4)
+                json.dump(ev, open(A.events, 'w'), indent=1)
+        print('[post-fx] hit-stop: %d frames held on frame %d (negative/ink strobe); later frames and cues moved %d frames'
+              % (HS, h, HS))
+json.dump({'hits_0based': hits, 'frames': done, 'vignette': VIG, 'hit_stop': HS}, open(os.path.join(OUT, 'fx.json'), 'w'), indent=1)
 print('[post-fx] %d frames -> %s · hits %s · effect frames %d' % (len(files), OUT, hits, len(done)))
 if A.sheet and hits:
     h0 = hits[0] + 1

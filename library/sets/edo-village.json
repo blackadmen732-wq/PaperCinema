@@ -7,32 +7,32 @@
  "lighting": {
   "preset": "night",
   "sun": {
-   "elev": 30,
-   "az": 35,
+   "elev": 24,
+   "az": 8,
    "color": [
     0.55,
     0.66,
     1.0
    ],
-   "energy": 0.8,
+   "energy": 1.4,
    "angle": 1.2
   },
   "sky": {
    "type": "night",
    "zenith": [
-    0.004,
-    0.007,
-    0.02
+    0.012,
+    0.022,
+    0.06
    ],
    "horizon": [
-    0.03,
-    0.04,
-    0.065
+    0.05,
+    0.07,
+    0.13
    ],
    "stars": 1.0,
-   "strength": 1.0
+   "strength": 1.5
   },
-  "exposure": 0.9,
+  "exposure": 1.6,
   "bloom": 0.8,
   "vignette": 0.45,
   "fighter": {
@@ -120,7 +120,7 @@
  },
  "materials": {
   "window_glow": {
-   "strength": 7.0
+   "strength": 9.0
   },
   "gravel": {
    "color": [
@@ -136,10 +136,10 @@
    "kit": "moon",
    "name": "moon",
    "params": {
-    "elev": 30,
-    "az": 35,
-    "size": 3.0,
-    "strength": 8.0
+    "elev": 24,
+    "az": 8,
+    "size": 3.2,
+    "strength": 9.0
    }
   },
   {
@@ -156,14 +156,14 @@
      110,
      30
     ],
-    "density": 0.018,
-    "height": 5.0,
+    "density": 0.01,
+    "height": 3.5,
     "noise": 0.45,
     "noise_scale": 0.08,
     "color": [
-     0.72,
-     0.78,
-     0.92
+     0.42,
+     0.5,
+     0.75
     ],
     "anisotropy": 0.5
    }
@@ -279,7 +279,8 @@
     4.6,
     6.8,
     0
-   ]
+   ],
+   "params": {}
   },
   {
    "kit": "pine",
@@ -388,7 +389,7 @@
    "kit": "stall",
    "name": "stall_1",
    "pos": [
-    -2.6,
+    -13.4,
     -4.7,
     0
    ],
@@ -401,7 +402,7 @@
    "kit": "stall",
    "name": "stall_2",
    "pos": [
-    1.6,
+    12.2,
     -4.7,
     0
    ],
@@ -708,8 +709,8 @@
    "kit": "ph_prop",
    "name": "baskets_stall",
    "pos": [
-    -2.6,
-    -3.55,
+    -13.4,
+    -3.6,
     0
    ],
    "params": {
@@ -723,8 +724,8 @@
    "kit": "ph_prop",
    "name": "baskets_stall2",
    "pos": [
-    1.6,
-    -3.55,
+    12.2,
+    -3.6,
     0
    ],
    "params": {
@@ -767,8 +768,8 @@
    "kit": "ph_prop",
    "name": "stools_stall",
    "pos": [
-    0.0,
-    -3.4,
+    -11.9,
+    -3.5,
     0
    ],
    "params": {
@@ -1044,5 +1045,6 @@
   "samples": 32,
   "res": "540x960",
   "volume_step_rate": 4.0
- }
+ },
+ "layout_why": "CAM_medium looks north from (0.6, -7.2): its cone is ~1.7 m wide 2.5 m in front of the lens, so nothing stands on the south side between x -3 and 4; the stalls are at the street ends (27 Nov: a stall filled the frame)"
 }
