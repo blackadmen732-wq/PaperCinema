@@ -45,6 +45,17 @@ a full village... make it fight good, a system for groundbreaking sound and cool
   before the 18.5 s cut (curves now split at a cut; foot-lock smoothing, the life window and the cloth springs stop
   at it). AFTER: `[motion] ganryujima-ep1: PASS` (statues 0.0 s, nothing frozen, no hard starts or stops). Paper
   surface v3 on for the cast (film.paperSurface). Re-bake + check stills, then the render restarts.
+- 28 Nov 00:05 UTC: the checks after the motion fix found 5 more faults, all fixed and measured:
+  (1) Musashi HOPPED through both walks (16 steps with both feet off the ground: the foot planner staggered only a
+  film's first step) -> the feet alternate: 0 hops, steps 0.37-0.40 s apart in the wade, 0.53-0.67 s in the walk-away;
+  worst foot slide 0.30 -> 0.17 m (`node tools/footslide.mjs` now reports the gait; the other films unchanged: dash-test
+  0.00 m, kuroko-duel 0.23 m, 0 hops). (2) after the 18.5 s cut his feet stayed at the boat and flew 2.5 m to his body
+  over 5 frames -> no contact, step or smoothing crosses a cut. (3) the teleport made a dash burst, dust, a skid, a
+  whoosh and a 328 m/s "attack" -> every detector skips it. (4) the last boat frame smeared Musashi 1.35 m toward the
+  surf (joints interpolated into the next shot inside the shutter) -> every keyed object holds on the frame before a
+  cut. (5) the wade shot B7 had Musashi out of frame for 4.2 s of 4.9 (camera report): it framed Kojiro only -> it
+  follows Musashi from behind, both in frame on every frame. Also: Blender returned 0 on a Python error, so film.sh
+  would have rendered on a failed bake (--python-exit-code 1 now). Audit before the last fixes: PASS 9.6/10, 0 critical.
 - 27 Nov 21:15 UTC: the machine rebooted at ~21:04 and killed the Episode 1 render at frame 15; restarted (setsid). Mark asked for the whole board cast and a real cloth simulation: items 14-15 added; 3 new figures generated (Noblewoman, Monk, Ronin: 15 + 90 credits, balance 355).
 - 27 Nov 19:25 UTC: Episode 1 preview render started (tools/film.sh, 360x640, 2 workers, ~8 h, detached: setsid). Before it: 3 rounds of check stills (33 + 24 + 6 frames) fixed the shots facing the dark south (the set's dawn glow is north), the hook (the camera was inside a paper hand), the anger close-up (blocked by his hands), the headband (the ink texture had been read; now the 'band' material slot falls to the sand), Musashi's 41 cm foot pop on a boat thwart (he now steps out on the cut). Engine audit 9.3/10, 0 critical. The bake key now covers only what the bake solves: a camera change kept the same key (measured: 93eb3d1c860ba6b1 before and after).
 - 27 Nov 18:15 UTC: item 12 in progress. Built: thrown scabbard (sword_draw.set_throw), part drop by paint (the headband baked into Musashi's head), measured body impacts (bake_events), stage.origin, titles + score steps in film.sh, the boat landed in the beach set, the bake key narrowed to what the bake solves. Episode 1 film: 18 shots, baking (1800 frames). Engine audit of the first camera plan: 8.3/10 with 4 critical, all one browser-world pine that the Blender set does not have (waived, to be checked on the set with --camera-report); the line crossings, the lost two-shot and the jump cuts re-planned.
