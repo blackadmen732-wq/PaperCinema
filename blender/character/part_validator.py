@@ -195,6 +195,17 @@ def validate(recipe_path, poses=None, only=None):
         if spec:
             by_slot.setdefault(spec['slot'], []).append(ob)
 
+    # ---- pairs: a one-sided part (a generated LEFT sleeve) needs its other side in the same slot. Without this
+    # check kojiro-ai2 and musashi-ai passed with one sleeve, one leg and one foot (27 Nov).
+    sided = {}
+    for e in recipe['parts']:
+        socks = reg.PARTS[e['part']]['socket']
+        socks = [socks] if isinstance(socks, str) else list(socks)
+        if len(socks) == 1 and socks[0][-2:] in ('.L', '.R') and reg.PARTS[e['part']]['slot'] not in ('accessory', 'armor'):
+            sided.setdefault(reg.PARTS[e['part']]['slot'], set()).add(socks[0][-1])
+    for slot, sides in sorted(sided.items()):
+        check('pair', slot, sides == {'L', 'R'}, 'sides ' + ''.join(sorted(sides)) + (' (one side missing)' if sides != {'L', 'R'} else ''))
+
     # ---- static checks, part by part
     for ob in ch['objects']:
         key = ob.get('pc_recipe', '?')

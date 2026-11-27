@@ -33,7 +33,7 @@ import time
 import bmesh
 import bpy
 import numpy as np
-from mathutils import Matrix, Vector
+from mathutils import Euler, Matrix, Vector
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -123,28 +123,42 @@ def poly_paint(me):
 
 
 FACING = {'+x': 0.0, '+y': 90.0, '-x': 180.0, '-y': -90.0}
-if E.get('facing'):
+if E.get('facing') or E.get('facing_deg') is not None:
     cen, eyes = None, np.zeros(0, bool)
+    if E.get('glow'):                                      # still wanted: the eyes as an anchor (fit 'box')
+        cen, pp = poly_paint(hi.data)
+        _, eyes = srgb_classes(pp, E.get('dark_below', 0.3), E['glow'])
 else:
     cen, pp = poly_paint(hi.data)
     _, eyes = srgb_classes(pp, E.get('dark_below', 0.3), E['glow'])
-if E.get('facing'):
+if E.get('facing_deg') is not None:                        # a three-quarter concept: the front at any angle
+    ang = float(E['facing_deg'])
+    REP['facing'] = {'from': 'manifest (deg)', 'deg': ang}
+elif E.get('facing'):
     ang = FACING[E['facing']]
     REP['facing'] = {'from': 'manifest', 'deg': ang}
 elif eyes.sum() >= 20:
     d = cen[eyes].mean(0) - cen.mean(0)
     raw = math.degrees(math.atan2(d[1], d[0]))
-    ang = round(raw / 90.0) * 90.0
+    ang = raw if E.get('facing_snap') is False else round(raw / 90.0) * 90.0
     REP['facing'] = {'from': 'eye paint', 'raw_deg': round(raw, 1), 'deg': ang, 'eye_faces': int(eyes.sum())}
 else:
     raise SystemExit(f'{PID}: no glow paint to find the face by; give "facing" in the manifest')
 turn = math.radians(-90.0 - ang)                   # bring the face round to -Y, the rig's front
 hi.data.transform(Matrix.Rotation(turn, 4, 'Z'))
+ROT = Matrix.Rotation(turn, 3, 'Z')
+if E['fit'].get('rotate'):                         # then any turn the part needs on its socket (a fan held point-down)
+    R3 = Euler([math.radians(a) for a in E['fit']['rotate']], 'XYZ').to_matrix()
+    hi.data.transform(R3.to_4x4())
+    ROT = R3 @ ROT
 log('facing %s -> turned %.0f deg so the face looks down -Y' % (REP['facing'], math.degrees(turn)))
-eye_x = float((np.array(Matrix.Rotation(turn, 3, 'Z')) @ cen[eyes].mean(0))[0]) if cen is not None and eyes.sum() else None
+eye_c = (ROT @ Vector(cen[eyes].mean(0).tolist())) if cen is not None and eyes.sum() else None
+eye_x = float(eye_c.x) if eye_c is not None else None
 
 # ---------------------------------------------------------------- 2 cut
-BODY = E['fit'].get('mode') == 'body'
+MODE = E['fit'].get('mode', 'head')     # head: cut + fit to the neck; body: one figure -> sections; box: a prop
+BODY, BOX = MODE == 'body', MODE == 'box'
+HEAD = not BODY and not BOX
 zs = [v.co.z for v in hi.data.vertices]
 z0, z1 = min(zs), max(zs)
 if BODY:
@@ -159,6 +173,8 @@ if BODY:
     REP['fit'] = {'mode': 'body', 'scale': sb, 'waist_centre_model': [bcx, bcy], 'height_m': (z1 - z0) * sb}
     log('body fit: scale %.4f, figure %.3f m tall, waist centre (%.3f, %.3f)' % (sb, (z1 - z0) * sb, bcx, bcy))
     zc = None
+elif BOX:
+    zc = z0 + E['cut'] * (z1 - z0) if E.get('cut') else None   # a prop keeps all of itself, or what is above `cut`
 else:
     zc = z0 + E['cut'] * (z1 - z0)
 bm = bmesh.new()
@@ -184,7 +200,7 @@ if BODY:
             no_[i] = sign
             bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
                                    plane_co=co_, plane_no=no_, clear_inner=True)
-else:
+elif zc is not None:
     bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
                            plane_co=(0, 0, zc), plane_no=(0, 0, 1), clear_inner=True)
 # a cut can leave loose crumbs of the neighbouring section: keep the islands that hold most of the faces
@@ -224,7 +240,35 @@ if not REP['faces_cut']:
 
 # ---------------------------------------------------------------- 4 fit (computed on the full-detail copy)
 # fitted once for the whole body before the cut (BODY); a head is fitted here, from its own cut and eyes
-if not BODY:
+if BOX:
+    # a prop: one size (fit.size: {axis: metres}) and anchors (fit.anchor: {axis: [min|max|mid|eyes, metres]}) in
+    # rig rest space, e.g. a helmet's lowest point at the neck, a mask's back on the face, a fan's pivot in the hand
+    F = E['fit']
+    co = np.empty(len(hi.data.vertices) * 3, np.float32)
+    hi.data.vertices.foreach_get('co', co)
+    co = co.reshape(-1, 3)
+    mn, mx = co.min(0), co.max(0)
+    (sax, size), = F['size'].items()
+    if sax == 'x_at_eyes':                         # a head-like piece: its width across the eyes (a hood: 0.20 m)
+        if eye_c is None:
+            raise SystemExit(f'{PID}: size "x_at_eyes" needs glow paint (give "glow")')
+        band = co[np.abs(co[:, 2] - eye_c.z) < 0.02 * float(mx[2] - mn[2])]
+        s = size / float(band[:, 0].max() - band[:, 0].min())
+    else:
+        si = 'xyz'.index(sax)
+        s = size / float(mx[si] - mn[si])
+    t = [0.0, 0.0, 0.0]
+    for ax, (where, val) in F['anchor'].items():
+        j = 'xyz'.index(ax)
+        if where == 'eyes' and eye_c is None:
+            raise SystemExit(f'{PID}: anchor "eyes" needs glow paint (give "glow")')
+        ref = {'min': mn[j], 'max': mx[j], 'mid': (mn[j] + mx[j]) / 2}.get(where, eye_c[j] if eye_c is not None else 0)
+        t[j] = val - s * float(ref)
+    hi.data.transform(Matrix.Translation(t) @ Matrix.Scale(s, 4))
+    REP['fit'] = {'mode': 'box', 'scale': s, 'size_m': [round(float(x) * s, 4) for x in (mx - mn)],
+                  'eyes': [round(float(eye_c[j]) * s + t[j], 4) for j in range(3)] if eye_c is not None else None}
+    log('box fit: scale %.4f, size %s m, eyes at %s' % (s, REP['fit']['size_m'], REP['fit']['eyes']))
+elif HEAD:
     uvl = hi.data.uv_layers.active.data
     band_top = zc + 0.03 * (z1 - z0)
     pts = []
@@ -385,7 +429,7 @@ else:
     sc.render.bake.use_clear = False            # keep the magenta: "clear" paints the image black before baking
     tb = time.time()
     # reach: how far a ray from the reduced surface may travel to find the original (2 cm for a head).
-    CAGE, RAY = E.get('cage', 0.02 if BODY else 0.004), E.get('ray', 0.10 if BODY else 0.02)
+    CAGE, RAY = E.get('cage', 0.01 if BOX else 0.004), E.get('ray', 0.05 if BOX else 0.02)
     bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'}, use_selected_to_active=True,
                         cage_extrusion=CAGE, max_ray_distance=RAY, margin=6)
     REP['bake_s'] = round(time.time() - tb, 1)
@@ -449,7 +493,7 @@ def in_zone(c, zone):
                for box in (zone if isinstance(zone, list) else [zone]))
 cls = []
 for p in lo.data.polygons:
-    if not BODY and p.center.z < E['fit']['bottom_z'] + 0.004 and p.normal.z < -0.7:   # the cap: in the collar
+    if HEAD and p.center.z < E['fit']['bottom_z'] + 0.004 and p.normal.z < -0.7:   # the cap: in the collar
         cls.append(0)
         continue
     if BODY:
@@ -532,6 +576,9 @@ log('classes %s; ink %.2f%% of texels, glow %.3f%%, bake missed %.2f%%'
     % (REP['classes_pct'], REP['ink_pct'], REP['glow_pct'], REP['bake_missed_pct']))
 
 # ---------------------------------------------------------------- write the part
+if E.get('shift'):        # moved AFTER its paint is read (the cut planes stay where the paint sampler expects them):
+    lo.data.transform(Matrix.Translation(E['shift']))   # a helmet seated on the folded neck (27 Nov: 5.5 cm gap)
+    REP['shift'] = E['shift']
 lo.data.materials.clear()
 for nm in NAMES:
     lo.data.materials.append(bpy.data.materials.new(nm))

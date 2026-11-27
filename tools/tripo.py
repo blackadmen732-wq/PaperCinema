@@ -19,6 +19,7 @@ output/tripo/ledger.jsonl, so the cost of every part is a number. A task polls u
 Outputs: <out>.png (rendered preview or image), <out>.glb (textured model), <out>.task.json (the raw answer).
 """
 import argparse
+import fcntl
 import json
 import mimetypes
 import os
@@ -33,6 +34,9 @@ KEY = os.environ.get('TRIPO_API_KEY', 'proxy-injected')
 UA = 'papercinema-tripo/1.0'
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEDGER = os.path.join(REPO, 'output', 'tripo', 'ledger.jsonl')
+# what a task costs when the balance cannot say (other tasks ran at the same time: 27 Nov, five images in parallel
+# each logged the whole 25-credit drop). Measured one at a time on this key.
+PRICES = {'text_to_image': 5, 'generate_image': 5, 'image_to_model': 30, 'animate_rig': 25}
 
 
 def call(method, path, body=None, files=None, timeout=120):
@@ -122,21 +126,56 @@ def save(d, out):
     return files
 
 
+def _inflight(update):
+    """The tasks running on this machine (pid -> start), under a file lock, so a task knows whether the balance
+    drop it measured is its own."""
+    os.makedirs(os.path.dirname(LEDGER), exist_ok=True)
+    path = LEDGER + '.inflight'
+    with open(path + '.lock', 'w') as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        try:
+            st = json.load(open(path))
+        except (OSError, ValueError):
+            st = {'tasks': {}, 'started': 0}
+        for pid in list(st['tasks']):                       # a task killed mid-way must not count for ever
+            try:
+                os.kill(int(pid), 0)
+            except OSError:
+                st['tasks'].pop(pid)
+        out = update(st)
+        json.dump(st, open(path, 'w'))
+        return out
+
+
 def run(task, out, timeout):
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    me = str(os.getpid())
+
+    def start(st):
+        snap = (len(st['tasks']), st['started'])
+        st['tasks'][me] = time.time()
+        st['started'] += 1
+        return snap
+    others0, started0 = _inflight(start)
     b0 = balance()
-    tid = call('POST', '/task', task)['task_id']
-    print(f'[tripo] {task["type"]} task {tid} (balance {b0})', flush=True)
-    d = wait(tid, timeout)
-    files = save(d, out)
-    b1 = balance()
+    try:
+        tid = call('POST', '/task', task)['task_id']
+        print(f'[tripo] {task["type"]} task {tid} (balance {b0})', flush=True)
+        d = wait(tid, timeout)
+        files = save(d, out)
+        b1 = balance()
+    finally:
+        started1 = _inflight(lambda st: (st['tasks'].pop(me, None), st['started'])[1])
+    alone = others0 == 0 and started1 == started0 + 1
     rec = {'at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'task': tid, 'type': task['type'],
            'status': d.get('status'), 'params': {k: v for k, v in task.items() if k not in ('file', 'files')},
-           'credits': b0 - b1, 'balance_before': b0, 'balance_after': b1, 'out': out, 'files': files}
+           'credits': (b0 - b1) if alone else PRICES.get(task['type'], b0 - b1),
+           'credits_from': 'balance' if alone else 'price table (other tasks ran at the same time)',
+           'balance_before': b0, 'balance_after': b1, 'out': out, 'files': files}
     os.makedirs(os.path.dirname(LEDGER), exist_ok=True)
     with open(LEDGER, 'a') as f:
         f.write(json.dumps(rec) + '\n')
-    print(f'[tripo] {d.get("status")}: {b0 - b1} credits (balance {b1}) -> {files}')
+    print(f'[tripo] {d.get("status")}: {rec["credits"]} credits ({rec["credits_from"]}; balance {b1}) -> {files}')
     if d.get('status') != 'success':
         raise SystemExit(1)
     return d

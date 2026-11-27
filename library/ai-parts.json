@@ -976,5 +976,770 @@
       "hair": 0.0,
       "band": 0.0
     }
+  },
+  "hood_ninja_t1": {
+    "label": "Ninja hood and face wrap, amber eyes (look board: Assassin)",
+    "slot": "face",
+    "socket": "face",
+    "bone": "head",
+    "layer": 40,
+    "raw": "output/tripo/board/model-hood.pbr.glb",
+    "prepared": "assets/models/ai/hood_ninja_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-hood.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-hood.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "prompt": "output/tripo/board/prompts.txt",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "cut": 0.37,
+    "fit": {
+      "mode": "box",
+      "size": {
+        "x_at_eyes": 0.2
+      },
+      "anchor": {
+        "x": [
+          "eyes",
+          0.0
+        ],
+        "y": [
+          "eyes",
+          -0.095
+        ],
+        "z": [
+          "eyes",
+          1.615
+        ]
+      },
+      "why": "a hood over a head: 0.20 m across the eyes (the AI heads are ~0.15 m + cloth), eyes where the heads have them (1.615 m, just behind the face front at -0.125); the concept's toy bust below the shoulders cut off (cut 0.37)"
+    },
+    "faces": 3000,
+    "dark_below": 0.3,
+    "glow": {
+      "min_sat": 0.35,
+      "hue": [
+        20,
+        65
+      ],
+      "rgb": [
+        1.0,
+        0.52,
+        0.14
+      ],
+      "strength": 3.5
+    },
+    "palette": [
+      {
+        "name": "cloth",
+        "rgb": [
+          [
+            0.094,
+            0.094,
+            0.102
+          ],
+          [
+            0.176,
+            0.176,
+            0.188
+          ],
+          [
+            0.275,
+            0.275,
+            0.29
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "cloth": "washi_sumi"
+    },
+    "paint_on": [
+      "cloth"
+    ],
+    "lantern": {
+      "cloth": 0.0
+    }
+  },
+  "kabuto_t1": {
+    "label": "Kabuto helmet: black lacquer bowl, gold crescent crest, red lacing (look board: Samurai/Warrior)",
+    "slot": "hat",
+    "socket": "head_top",
+    "bone": "head",
+    "raw": "output/tripo/board/model-kabuto.pbr.glb",
+    "prepared": "assets/models/ai/kabuto_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-kabuto.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-kabuto.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "prompt": "output/tripo/board/prompts.txt",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "size": {
+        "x": 0.42
+      },
+      "anchor": {
+        "x": [
+          "mid",
+          0.0
+        ],
+        "y": [
+          "mid",
+          0.015
+        ],
+        "z": [
+          "min",
+          1.5
+        ]
+      },
+      "why": "the bowl is ~56% of the width with its side flaps, so 0.42 m makes a ~0.24 m bowl over a 0.15-0.17 m head; the neck guard's lowest edge at 1.50 m (the nape)"
+    },
+    "faces": 4000,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "lacquer",
+        "rgb": [
+          [
+            0.086,
+            0.086,
+            0.094
+          ],
+          [
+            0.176,
+            0.176,
+            0.188
+          ],
+          [
+            0.294,
+            0.294,
+            0.314
+          ]
+        ]
+      },
+      {
+        "name": "gold",
+        "rgb": [
+          [
+            0.745,
+            0.588,
+            0.275
+          ],
+          [
+            0.902,
+            0.784,
+            0.471
+          ],
+          [
+            0.588,
+            0.451,
+            0.196
+          ]
+        ]
+      },
+      {
+        "name": "cord",
+        "rgb": [
+          [
+            0.667,
+            0.118,
+            0.118
+          ],
+          [
+            0.824,
+            0.216,
+            0.176
+          ],
+          [
+            0.471,
+            0.078,
+            0.078
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "lacquer": "card_charcoal",
+      "gold": "card_gold",
+      "cord": "washi_crimson"
+    }
+  },
+  "oni_light_t1": {
+    "label": "Oni mask, cream washi with crimson horns (look board: masks)",
+    "slot": "face",
+    "socket": "face",
+    "bone": "head",
+    "layer": 40,
+    "raw": "output/tripo/board/model-oni_light.pbr.glb",
+    "prepared": "assets/models/ai/oni_light_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-oni_light.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-oni_light.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "prompt": "output/tripo/board/prompts.txt",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "size": {
+        "z": 0.31
+      },
+      "anchor": {
+        "x": [
+          "mid",
+          0.0
+        ],
+        "y": [
+          "min",
+          -0.15
+        ],
+        "z": [
+          "min",
+          1.5
+        ]
+      },
+      "why": "a mask that is a whole head shell: chin to horn tips 0.31 m (a face is ~0.20 m chin to brow), chin at 1.50 m like the AI heads, its front 2.5 cm ahead of the AI faces (-0.125)"
+    },
+    "faces": 4000,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "paper",
+        "rgb": [
+          [
+            0.882,
+            0.824,
+            0.647
+          ],
+          [
+            0.765,
+            0.706,
+            0.529
+          ],
+          [
+            0.627,
+            0.569,
+            0.412
+          ]
+        ]
+      },
+      {
+        "name": "red",
+        "rgb": [
+          [
+            0.784,
+            0.275,
+            0.176
+          ],
+          [
+            0.627,
+            0.176,
+            0.118
+          ],
+          [
+            0.882,
+            0.431,
+            0.314
+          ]
+        ]
+      },
+      {
+        "name": "dark",
+        "rgb": [
+          [
+            0.176,
+            0.137,
+            0.11
+          ],
+          [
+            0.314,
+            0.235,
+            0.176
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "paper": "washi_natural",
+      "red": "washi_crimson",
+      "dark": "washi_sumi"
+    }
+  },
+  "oni_dark_t1": {
+    "label": "Oni mask, black lacquer with crimson horns, gold eyes, white fangs (look board: masks)",
+    "slot": "face",
+    "socket": "face",
+    "bone": "head",
+    "layer": 40,
+    "raw": "output/tripo/board/model-oni_dark.pbr.glb",
+    "prepared": "assets/models/ai/oni_dark_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-oni_dark.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-oni_dark.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "prompt": "output/tripo/board/prompts.txt",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "size": {
+        "z": 0.31
+      },
+      "anchor": {
+        "x": [
+          "mid",
+          0.0
+        ],
+        "y": [
+          "min",
+          -0.15
+        ],
+        "z": [
+          "min",
+          1.5
+        ]
+      },
+      "why": "a mask that is a whole head shell: chin to horn tips 0.31 m (a face is ~0.20 m chin to brow), chin at 1.50 m like the AI heads, its front 2.5 cm ahead of the AI faces (-0.125)"
+    },
+    "faces": 4000,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "lacquer",
+        "rgb": [
+          [
+            0.086,
+            0.086,
+            0.094
+          ],
+          [
+            0.176,
+            0.176,
+            0.188
+          ],
+          [
+            0.294,
+            0.294,
+            0.314
+          ]
+        ]
+      },
+      {
+        "name": "red",
+        "rgb": [
+          [
+            0.667,
+            0.157,
+            0.137
+          ],
+          [
+            0.51,
+            0.098,
+            0.098
+          ],
+          [
+            0.824,
+            0.275,
+            0.216
+          ]
+        ]
+      },
+      {
+        "name": "gold",
+        "rgb": [
+          [
+            0.784,
+            0.627,
+            0.275
+          ],
+          [
+            0.902,
+            0.765,
+            0.431
+          ]
+        ]
+      },
+      {
+        "name": "white",
+        "rgb": [
+          [
+            0.902,
+            0.894,
+            0.863
+          ],
+          [
+            0.784,
+            0.776,
+            0.745
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "lacquer": "card_charcoal",
+      "red": "washi_crimson",
+      "gold": "card_gold",
+      "white": "washi_bleached"
+    },
+    "glow": {
+      "min_sat": 0.35,
+      "hue": [
+        20,
+        65
+      ],
+      "rgb": [
+        1.0,
+        0.52,
+        0.14
+      ],
+      "strength": 3.5
+    },
+    "paint_on": [
+      "gold",
+      "lacquer"
+    ]
+  },
+  "fan_t1": {
+    "label": "Folding fan (sensu): cream washi, red sun, black ribs (look board: props)",
+    "slot": "accessory",
+    "socket": "hand.L",
+    "bone": "lH",
+    "raw": "output/tripo/board/model-fan.pbr.glb",
+    "prepared": "assets/models/ai/fan_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-fan.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-fan.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "prompt": "output/tripo/board/prompts.txt",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "rotate": [
+        0,
+        180,
+        0
+      ],
+      "size": {
+        "x": 0.44
+      },
+      "anchor": {
+        "x": [
+          "mid",
+          0.23
+        ],
+        "y": [
+          "mid",
+          -0.03
+        ],
+        "z": [
+          "max",
+          0.8
+        ]
+      },
+      "why": "an open sensu ~0.44 m across; held in the left hand, pivot in the grip (0.80 m), the leaf hanging below the hand and facing front in the rest pose"
+    },
+    "faces": 2500,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "paper",
+        "rgb": [
+          [
+            0.882,
+            0.843,
+            0.706
+          ],
+          [
+            0.784,
+            0.745,
+            0.608
+          ],
+          [
+            0.667,
+            0.627,
+            0.51
+          ]
+        ]
+      },
+      {
+        "name": "red",
+        "rgb": [
+          [
+            0.784,
+            0.157,
+            0.137
+          ],
+          [
+            0.627,
+            0.118,
+            0.098
+          ]
+        ]
+      },
+      {
+        "name": "ribs",
+        "rgb": [
+          [
+            0.118,
+            0.118,
+            0.125
+          ],
+          [
+            0.235,
+            0.235,
+            0.243
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "paper": "washi_natural",
+      "red": "washi_crimson",
+      "ribs": "card_charcoal"
+    }
+  },
+  "armored": {
+    "kind": "body",
+    "label": "Armoured samurai (Tripo body, look board: Samurai)",
+    "raw": "output/tripo/board/model-armored.pbr.glb",
+    "facing": "+x",
+    "head": true,
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.69,
+      "shoulder_z": 1.4,
+      "why": "the crest horns add 8% on top: the helmet bowl tops out at 0.92 of the figure where Musashi's hair does at 1.0, so his 0.74 becomes ~0.69 (the width profile: the neck guard starts at 0.78-0.80)"
+    },
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-armored.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-armored.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "colors": {
+      "robe": [
+        [
+          0.267,
+          0.224,
+          0.204
+        ],
+        [
+          0.227,
+          0.18,
+          0.169
+        ],
+        [
+          0.094,
+          0.086,
+          0.078
+        ],
+        [
+          0.161,
+          0.137,
+          0.125
+        ],
+        [
+          0.376,
+          0.204,
+          0.192
+        ]
+      ],
+      "under": [
+        [
+          0.561,
+          0.165,
+          0.184
+        ],
+        [
+          0.576,
+          0.204,
+          0.212
+        ],
+        [
+          0.471,
+          0.157,
+          0.157
+        ]
+      ],
+      "obi": [
+        [
+          0.667,
+          0.529,
+          0.38
+        ],
+        [
+          0.627,
+          0.502,
+          0.376
+        ]
+      ],
+      "hakama": [
+        [
+          0.247,
+          0.216,
+          0.204
+        ],
+        [
+          0.204,
+          0.173,
+          0.165
+        ],
+        [
+          0.114,
+          0.106,
+          0.098
+        ],
+        [
+          0.255,
+          0.239,
+          0.227
+        ],
+        [
+          0.165,
+          0.157,
+          0.145
+        ],
+        [
+          0.098,
+          0.094,
+          0.09
+        ]
+      ],
+      "tabi": [
+        [
+          0.776,
+          0.765,
+          0.745
+        ]
+      ],
+      "straw": [
+        [
+          0.443,
+          0.341,
+          0.251
+        ],
+        [
+          0.58,
+          0.482,
+          0.384
+        ]
+      ],
+      "skin": [
+        [
+          0.431,
+          0.09,
+          0.051
+        ],
+        [
+          0.729,
+          0.133,
+          0.063
+        ]
+      ],
+      "hair": [
+        [
+          0.259,
+          0.239,
+          0.224
+        ],
+        [
+          0.161,
+          0.114,
+          0.106
+        ],
+        [
+          0.098,
+          0.098,
+          0.106
+        ]
+      ],
+      "band": [
+        [
+          0.831,
+          0.69,
+          0.467
+        ],
+        [
+          0.62,
+          0.518,
+          0.361
+        ]
+      ]
+    },
+    "sheets": {
+      "robe": "card_charcoal",
+      "under": "washi_crimson",
+      "obi": "washi_hat",
+      "hakama": "washi_sumi",
+      "tabi": "washi_bleached",
+      "straw": "washi_hat",
+      "skin": "washi_crimson",
+      "hair": "card_charcoal",
+      "band": "card_gold"
+    },
+    "classes_why": "the section classes are colour slots: robe = the black lacquer plates, under = the crimson lacing, obi = the tan belt, hakama = the charcoal hakama and skirt plates; on the head skin = the red menpo, hair = the black helmet, band = the gold crest",
+    "keep": {
+      "head": {
+        "z": [
+          1.58,
+          2.2
+        ]
+      }
+    },
+    "colors_from": "the model's own paint (AI_PART_DUMP=1 + k-means per section, 27 Nov)",
+    "classes": {
+      "sleeve_L": [
+        "robe",
+        "under",
+        "obi"
+      ],
+      "sleeve_R": [
+        "robe",
+        "under",
+        "obi"
+      ],
+      "hakama": [
+        "hakama",
+        "under",
+        "obi"
+      ],
+      "foot_L": [
+        "tabi",
+        "straw",
+        "hakama"
+      ],
+      "foot_R": [
+        "tabi",
+        "straw",
+        "hakama"
+      ]
+    },
+    "zones": {
+      "hakama": [
+        {
+          "z": [
+            -0.1,
+            0.95
+          ]
+        }
+      ]
+    },
+    "zones_why": "above the waist every dark facet is a lacquer plate (card_charcoal), never the matte hakama",
+    "shift": {
+      "head": [
+        0.0,
+        0.0,
+        -0.055
+      ]
+    },
+    "shift_why": "the helmet's lowest edge is at 1.58 m on the figure and the folded neck tops out at ~1.52 m: 5.5 cm down seats it (validator joint_gap limit 4 cm)"
   }
 }

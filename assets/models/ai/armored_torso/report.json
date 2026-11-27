@@ -1,0 +1,62 @@
+{
+ "id": "armored_torso",
+ "raw": "output/tripo/board/model-armored.pbr.glb",
+ "faces_raw": 970122,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 2.0299416014240075,
+  "waist_centre_model": [
+   0.004970094292328452,
+   -0.00841844045723651
+  ],
+  "height_m": 2.028985507246377
+ },
+ "welded_verts": 25215,
+ "open_edges_after_weld": 0,
+ "islands": {
+  "found": 2,
+  "crumb_faces_removed": 777
+ },
+ "cut_z_model": null,
+ "faces_cut": 156007,
+ "facets_turned_to_surface": 26,
+ "faces_part": 5074,
+ "paint_samples": {
+  "ray": 17287,
+  "nearest": 1930,
+  "none": 1079
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 263,
+ "despeckled_faces": 726,
+ "classes_pct": {
+  "robe": 81.4,
+  "under": 0.6,
+  "obi": 3.7,
+  "hakama": 14.3
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.2152162790298462,
+   -0.21754950284957886,
+   0.8598896861076355
+  ],
+  "max": [
+   0.21537289023399353,
+   0.2330220639705658,
+   1.50038743019104
+  ]
+ },
+ "total_s": 18.5
+}

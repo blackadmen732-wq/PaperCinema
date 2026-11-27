@@ -1,0 +1,59 @@
+{
+ "id": "oni_dark_t1",
+ "raw": "output/tripo/board/model-oni_dark.pbr.glb",
+ "faces_raw": 973988,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 14565,
+ "open_edges_after_weld": 0,
+ "cut_z_model": null,
+ "faces_cut": 973988,
+ "fit": {
+  "mode": "box",
+  "scale": 0.3101249208578561,
+  "size_m": [
+   0.2444,
+   0.2582,
+   0.31
+  ],
+  "eyes": [
+   -0.0016,
+   -0.0935,
+   1.6624
+  ]
+ },
+ "facets_turned_to_surface": 15,
+ "faces_part": 3998,
+ "bake_s": 7.3,
+ "bake_missed_pct": 28.56,
+ "bake_black_pct": 0.0,
+ "source_black_pct": 0.0,
+ "despeckled_faces": 46,
+ "classes_pct": {
+  "lacquer": 78.0,
+  "red": 14.4,
+  "gold": 2.0,
+  "white": 5.6
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 62.78,
+ "glow_pct": 1.303,
+ "bbox": {
+  "min": [
+   -0.12228956818580627,
+   -0.15007628500461578,
+   1.5004173517227173
+  ],
+  "max": [
+   0.12236862629652023,
+   0.10823404788970947,
+   1.8101897239685059
+  ]
+ },
+ "total_s": 33.8
+}

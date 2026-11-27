@@ -1,0 +1,60 @@
+{
+ "id": "hood_ninja_t1",
+ "raw": "output/tripo/board/model-hood.pbr.glb",
+ "faces_raw": 989257,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 14314,
+ "open_edges_after_weld": 2,
+ "islands": {
+  "found": 3,
+  "crumb_faces_removed": 5143
+ },
+ "cut_z_model": -0.1297252467274666,
+ "faces_cut": 449766,
+ "fit": {
+  "mode": "box",
+  "scale": 0.48628321886535475,
+  "size_m": [
+   0.3092,
+   0.2269,
+   0.3064
+  ],
+  "eyes": [
+   0.0,
+   -0.095,
+   1.615
+  ]
+ },
+ "facets_turned_to_surface": 29,
+ "faces_part": 3006,
+ "bake_s": 5.9,
+ "bake_missed_pct": 35.02,
+ "bake_black_pct": 16.49,
+ "source_black_pct": 13.51,
+ "despeckled_faces": 0,
+ "classes_pct": {
+  "cloth": 100.0
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 64.37,
+ "glow_pct": 0.503,
+ "bbox": {
+  "min": [
+   -0.15174657106399536,
+   -0.13589099049568176,
+   1.479653000831604
+  ],
+  "max": [
+   0.1561383455991745,
+   0.09086894989013672,
+   1.7868900299072266
+  ]
+ },
+ "total_s": 27.5
+}

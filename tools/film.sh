@@ -234,18 +234,24 @@ else
     i=0; PIDS=; LOGS=
     for runs in $(echo "$PLAN" | tail -n +2 | tr ' ' ','); do
       i=$((i + 1)); LOG="output/$NAME-render-w$i.log"; LOGS="$LOGS $LOG"
-      ( for r in $(echo "$runs" | tr ',' ' '); do
+      ( rc=0; for r in $(echo "$runs" | tr ',' ' '); do
           nice -n 10 "$B" -b -t "$T" -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --frames "$r" \
-            --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || exit 1
-        done ) > "$LOG" 2>&1 &
+            --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || rc=1
+        done; exit $rc ) > "$LOG" 2>&1 &
       PIDS="$PIDS $!"
       echo "  worker $i: frames $(echo "$runs" | tr ',' ' ') -> $LOG"
     done
     BAD=0
     for pid in $PIDS; do wait "$pid" || BAD=$((BAD + 1)); done
     if [ "$BAD" -gt 0 ]; then
-      for l in $LOGS; do echo; echo "--- tail of $l"; tail -25 "$l"; done
-      die "step 5 render: $BAD of $i Blender process(es) failed (tails above; full logs:$LOGS)."
+      # judged by the FRAMES, not the exit code: Blender 4.5 can crash on exit in the Mesa EGL teardown after its
+      # last frame is saved (27 Nov: worker 2 segfaulted in libgallium right after f0090; every frame was there)
+      LEFT=$(python3 "$R/tools/render_plan.py" "$FR" "$FA" "$FB" 1 | head -1)
+      if [ "$LEFT" != 0 ]; then
+        for l in $LOGS; do echo; echo "--- tail of $l"; tail -25 "$l"; done
+        die "step 5 render: $BAD of $i Blender process(es) failed and $LEFT frame(s) are missing (tails above; full logs:$LOGS)."
+      fi
+      echo "  ($BAD Blender process(es) exited with an error AFTER saving every frame: a crash at exit; frames kept)"
     fi
     grep -h "Cycles device:" $LOGS | head -1
   fi

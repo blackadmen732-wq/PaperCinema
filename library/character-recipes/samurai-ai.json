@@ -1,0 +1,19 @@
+{
+  "id": "samurai-ai",
+  "name": "Armoured samurai from one generated figure (look board: Samurai)",
+  "extends": "ronin-reference.json",
+  "note": "The look board's Samurai from data: one Tripo figure in full armour (library/ai-parts.json `armored`: text_to_image 5 + image_to_model 30 credits) cut into the standard sections and bound to our bones: kabuto with menpo and crest (head), cuirass (torso), shoulder guards with armoured sleeves (sleeves), skirt plates over the hakama, two legs, two feet. Kept from the folded library: the neck, the hands and the sword; the forearm is the folded kote_plated. A test recipe.",
+  "drop": ["face", "hair", "hat", "torso", "sleeve_upper", "sleeve_hanging", "thigh", "shin", "armor", "foot", "collar", "obi"],
+  "swap": [{"part": "kote_plated"}],
+  "add": [
+    {"part": "armored_head"},
+    {"part": "armored_torso"},
+    {"part": "armored_sleeve_L"},
+    {"part": "armored_sleeve_R"},
+    {"part": "armored_hakama"},
+    {"part": "armored_leg_L"},
+    {"part": "armored_leg_R"},
+    {"part": "armored_foot_L"},
+    {"part": "armored_foot_R"}
+  ]
+}

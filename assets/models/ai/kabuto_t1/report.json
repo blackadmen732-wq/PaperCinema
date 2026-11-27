@@ -1,0 +1,54 @@
+{
+ "id": "kabuto_t1",
+ "raw": "output/tripo/board/model-kabuto.pbr.glb",
+ "faces_raw": 974808,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 26686,
+ "open_edges_after_weld": 0,
+ "cut_z_model": null,
+ "faces_cut": 974808,
+ "fit": {
+  "mode": "box",
+  "scale": 0.42518723266010705,
+  "size_m": [
+   0.42,
+   0.2721,
+   0.3548
+  ],
+  "eyes": null
+ },
+ "facets_turned_to_surface": 373,
+ "faces_part": 4000,
+ "bake_s": 7.0,
+ "bake_missed_pct": 26.82,
+ "bake_black_pct": 0.0,
+ "source_black_pct": 0.0,
+ "despeckled_faces": 127,
+ "classes_pct": {
+  "lacquer": 90.0,
+  "gold": 6.4,
+  "cord": 3.6
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 64.91,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.20788101851940155,
+   -0.12173329293727875,
+   1.5009512901306152
+  ],
+  "max": [
+   0.20952928066253662,
+   0.15092508494853973,
+   1.853105068206787
+  ]
+ },
+ "total_s": 35.3
+}

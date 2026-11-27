@@ -9,7 +9,7 @@ tools/ai_part.py prepares and part_registry registers:
 
 The boxes are in rig metres after the body fit (feet at 0, the shoulder line at 1.40 m), proven on Kojiro
 (kojiro_*_t1, 27 Nov: 152/152, bends through the 5-pose sweep). A section may only contain the classes listed for
-it in SECTIONS, so a sleeve can never pick up hakama paint. Used by tools/ai_part.py and part_registry.load_ai_parts().
+it in SECTIONS (or the block's own "classes": {section: [...]}), so a sleeve can never pick up hakama paint. Used by tools/ai_part.py and part_registry.load_ai_parts().
 """
 import json
 import os
@@ -50,6 +50,7 @@ def expand_body(prefix, b):
         if sec == 'head' and not b.get('head'):
             continue
         slot, socket, keep, faces, classes, bind = SECTIONS[sec]
+        classes = b.get('classes', {}).get(sec, classes)   # an outfit that is not a kimono (armour: red lacing on the skirt)
         keep = dict(keep, **(b.get('keep', {}).get(sec, {})))
         pal = [{'name': c, 'rgb': colors[c]} for c in classes if c in colors]
         e = {'label': f'{b.get("label", prefix)}: {sec.replace("_", " ")}', 'slot': slot, 'socket': socket,
@@ -63,6 +64,8 @@ def expand_body(prefix, b):
         for k in ('cage', 'ray', 'bake_res'):          # bake settings shared by every section of the body
             if k in b:
                 e[k] = b[k]
+        if sec in b.get('shift', {}):                  # a section moved after it is cut and painted (rig metres)
+            e['shift'] = b['shift'][sec]
         zones = {c: z for c, z in b.get('zones', {}).items() if c in classes}
         if zones:                                       # where on the body each class may be (rig metres)
             e['zones'] = zones

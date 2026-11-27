@@ -1,0 +1,54 @@
+{
+ "id": "oni_light_t1",
+ "raw": "output/tripo/board/model-oni_light.pbr.glb",
+ "faces_raw": 992980,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 19664,
+ "open_edges_after_weld": 4,
+ "cut_z_model": null,
+ "faces_cut": 992980,
+ "fit": {
+  "mode": "box",
+  "scale": 0.3101075760181204,
+  "size_m": [
+   0.2518,
+   0.2815,
+   0.31
+  ],
+  "eyes": null
+ },
+ "facets_turned_to_surface": 286,
+ "faces_part": 4000,
+ "bake_s": 6.7,
+ "bake_missed_pct": 30.08,
+ "bake_black_pct": 0.0,
+ "source_black_pct": 0.0,
+ "despeckled_faces": 96,
+ "classes_pct": {
+  "paper": 83.2,
+  "red": 16.8,
+  "dark": 0.0
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.49,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.1252029687166214,
+   -0.1502949446439743,
+   1.5003525018692017
+  ],
+  "max": [
+   0.12656717002391815,
+   0.13166780769824982,
+   1.8108470439910889
+  ]
+ },
+ "total_s": 34.7
+}

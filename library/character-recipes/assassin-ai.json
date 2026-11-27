@@ -1,0 +1,16 @@
+{
+  "id": "assassin-ai",
+  "name": "Assassin: generated hood on a dark ronin (look board test)",
+  "extends": "ronin-reference.json",
+  "note": "The look board's Assassin from data: the generated ninja hood with its amber eyes (hood_ninja_t1, Tripo 35 credits) as the head, the reference ronin's outfit re-sheeted in charcoal card and sumi washi. No kasa, no folded hair. A test recipe.",
+  "drop": ["hair", "hat"],
+  "swap": [
+    {"part": "hood_ninja_t1"},
+    {"part": "kimono_layered", "scale": 1.0, "params": {"material": "card_charcoal"}},
+    {"part": "sleeve_upper_folded", "scale": 1.0, "params": {"material": "card_charcoal"}},
+    {"part": "tamoto_wide", "scale": 1.0, "params": {"material": "card_charcoal"}},
+    {"part": "hakama_pleated", "scale": 1.0, "params": {"material": "washi_sumi"}},
+    {"part": "hakama_shin_pleated", "scale": 1.0, "params": {"material": "washi_sumi"}},
+    {"part": "hakama_apron", "scale": 1.0, "params": {"material": "washi_sumi"}}
+  ]
+}

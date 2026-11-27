@@ -462,21 +462,40 @@ def load_recipe(path):
         if 'swap' in r or 'add' in r or 'drop' in r:
             # Swap by SLOT (one kasa, one torso, one obi…), except the slots that legitimately hold several
             # parts at once — there armour and accessories are swapped, added and dropped BY NAME.
+            # A ONE-SIDED part (one socket ending .L or .R: a generated left sleeve) is keyed by slot AND side, so
+            # a recipe can hold a left and a right sleeve; keyed by slot alone the right one silently replaced the
+            # left (27 Nov: kojiro-ai2 and musashi-ai built one sleeve, one leg and one foot). A one-sided part
+            # replaces a two-sided part of its slot (the folded sleeve builds both sides), and the other way round.
             multi = {'armor', 'accessory'}
+
+            def side(e):
+                socks = reg.PARTS[e['part']]['socket']
+                socks = [socks] if isinstance(socks, str) else list(socks)
+                return socks[0].rsplit('.', 1)[1] if len(socks) == 1 and socks[0][-2:] in ('.L', '.R') else None
 
             def k(e):
                 sl = reg.PARTS[e['part']]['slot']
-                return e['part'] if sl in multi else sl
+                if sl in multi:
+                    return e['part']
+                sd = side(e)
+                return f'{sl}.{sd}' if sd else sl
+
+            def put(kit, e):
+                key, sl = k(e), reg.PARTS[e['part']]['slot']
+                if sl not in multi:
+                    for kk in [kk for kk in kit if (kk.startswith(sl + '.') if key == sl else kk == sl)]:
+                        kit.pop(kk)
+                kit[key] = e
             kit = {k(e): e for e in merged['parts']}
             for e in r.get('swap', []):
-                kit[k(e)] = e
+                put(kit, e)
             for name in r.get('drop', []):
                 kit.pop(name, None)
                 for key, e in list(kit.items()):
                     if e['part'] == name or reg.PARTS[e['part']]['slot'] == name:
                         kit.pop(key, None)
             for e in r.get('add', []):
-                kit[k(e)] = e
+                put(kit, e)
             merged['parts'] = list(kit.values())
         r = merged
     return r

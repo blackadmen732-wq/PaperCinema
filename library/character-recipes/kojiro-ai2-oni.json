@@ -1,0 +1,7 @@
+{
+  "id": "kojiro-ai2-oni",
+  "name": "Kojiro's generated body under the cream oni mask (look board test)",
+  "extends": "kojiro-ai2.json",
+  "note": "kojiro-ai2 with the generated cream oni mask (oni_light_t1, Tripo 35 credits) in place of his generated head. A test recipe.",
+  "swap": [{"part": "oni_light_t1"}]
+}

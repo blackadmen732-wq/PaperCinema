@@ -1,0 +1,28 @@
+{
+  "label": "Gold foil card (kinpaku)",
+  "paper_type": "card-stock",
+  "color": [
+    0.52,
+    0.33,
+    0.075
+  ],
+  "translucent_color": [
+    0.9,
+    0.6,
+    0.2
+  ],
+  "fibre_density": 0.8,
+  "fibre_direction": "crosswise",
+  "fibre_strength": 0.05,
+  "roughness": 0.42,
+  "sheen": 0.65,
+  "thickness_mm": 0.8,
+  "fold_darkening": 0.4,
+  "edge_wear": 0.3,
+  "translucency": 0.02,
+  "inner_light": 0.1,
+  "facet_variation": 0.09,
+  "shimi": "ink-bleed",
+  "note": "Gold foil card: helmet crests (kuwagata), fittings. No metal shader on purpose: folded foil paper reads gold by its warm colour and a strong sheen that flashes facet by facet. Colour ~ sRGB (191,156,78) in linear.",
+  "id": "card_gold"
+}

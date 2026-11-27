@@ -1,0 +1,57 @@
+{
+ "id": "armored_foot_R",
+ "raw": "output/tripo/board/model-armored.pbr.glb",
+ "faces_raw": 970122,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 2.0299416014240075,
+  "waist_centre_model": [
+   0.004970094292328452,
+   -0.00841844045723651
+  ],
+  "height_m": 2.028985507246377
+ },
+ "welded_verts": 25215,
+ "open_edges_after_weld": 0,
+ "cut_z_model": null,
+ "faces_cut": 18585,
+ "facets_turned_to_surface": 0,
+ "faces_part": 904,
+ "paint_samples": {
+  "ray": 3226,
+  "nearest": 325,
+  "none": 65
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 16,
+ "despeckled_faces": 25,
+ "classes_pct": {
+  "tabi": 17.4,
+  "straw": 30.9,
+  "hakama": 51.8
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.334676057100296,
+   -0.1651517152786255,
+   -1.1646114217001013e-05
+  ],
+  "max": [
+   -0.14730128645896912,
+   0.15447774529457092,
+   0.15002262592315674
+  ]
+ },
+ "total_s": 13.7
+}

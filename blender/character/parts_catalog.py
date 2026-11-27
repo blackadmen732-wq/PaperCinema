@@ -78,6 +78,11 @@ def tiles(folder):
     os.makedirs(folder, exist_ok=True)
     meta = []
     names = sorted(reg.PARTS, key=lambda n: (reg.PARTS[n]['layer'], n))
+    if arg('only'):          # --only armored_,fan_t1: (re)render just these (name prefixes), keep the other tiles
+        pre = tuple(arg('only').split(','))
+        names = [n for n in names if n.startswith(pre)]
+        old = os.path.join(folder, 'tiles.json')
+        meta = [m for m in (json.load(open(old)) if os.path.exists(old) else []) if m['part'] not in names]
     for nm in names:
         spec = reg.PARTS[nm]
         bpy.ops.wm.read_factory_settings(use_empty=True)

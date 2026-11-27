@@ -44,6 +44,8 @@ The old mask was 0.258 m wide: cartoon-wide.
 | (Musashi) 45-75% of every bake pure black | Tripo marked 77% of his paint as METAL (ORM blue, mean 0.705; Kojiro's 0.09 / 0.02) and a diffuse-colour bake is base x (1 - metallic) | `ai_part.py` cuts the Metallic and Transmission inputs before any bake |
 | 25% "black" even on the good Kojiro head | the bake's own *clear* painted the gaps between UV islands black, so they counted as misses and fed the ink mask | the target is filled magenta and `use_clear` is off: gaps = magenta = not counted (both heads now 0.0% black) |
 | 56% of Musashi's torso sorted as "obi" | the palette came from the CONCEPT (a mid navy robe); the model painted the robe near-black navy, nearer the obi's black | palette from the model's OWN paint (`AI_PART_DUMP=1` + k-means per section) and **zones**: the obi may only be at the waist (0.66-1.09 m) and on the sandal thongs |
+| kojiro-ai2 and musashi-ai built ONE sleeve, ONE leg, ONE foot (all day, unseen: 152/152 passed) | the recipe merge keyed parts by slot, so `*_R` replaced `*_L` | one-sided parts are keyed by slot + side (`modular_builder.load_recipe`) and the validator has a `pair` check (a one-sided slot needs both sides; held props exempt) |
+| five parallel Tripo tasks each logged the whole 25-credit drop | the ledger measured the balance before/after, and other tasks spent in between | `tools/tripo.py` knows when tasks overlap (file lock + pids) and logs the price table then; the five lines corrected |
 | flat skin shelf under Musashi's chin; then a 4 cm gap | a head cut 3 cm under the chin caught the collar; at the figure's own height the head sat above the folded neck | cut just under the chin, the cut to 1.51 m (the neck top) |
 
 ## Body sections (one figure, cut, bound to our bones)
@@ -57,9 +59,27 @@ A face needs printed ink, so a head is cut from the same model in head mode (bak
 
 | character | recipe | parts | checks |
 |---|---|---|---|
-| Kojiro | `kojiro-ai2` | kojiro_head_t1 (own head model) + 8 kojiro_*_t1 | validator 152/152, 5-pose sweep |
-| Musashi | `musashi-ai` | musashi_head_t1 + 8 musashi_* from one figure (35 credits) | validator 152/152, 5-pose sweep `output/heads/poses-musashi-ai-*.png` |
+| Kojiro | `kojiro-ai2` | kojiro_head_t1 (own head model) + 8 kojiro_*_t1 | validator 174/174 (both sides, since 27 Nov pm), 5-pose sweep |
+| Musashi | `musashi-ai` | musashi_head_t1 + 8 musashi_* from one figure (35 credits) | validator 175/175, 5-pose sweep `output/heads/poses-ai-bodies.png` |
+| Armoured samurai (look board) | `samurai-ai` | 9 armored_* from one figure (35 credits): kabuto + menpo, cuirass, shoulder guards + sleeves, skirt plates, legs, feet; folded `kote_plated` forearms | validator 225/225, same sweep |
 
 Kept from the folded library on both: neck, forearm under-sleeve (the hand floated off the cuff without it), hands
 (the sword grips swap them), sword. Known limits: a raised arm crumples the skinned sleeve; the forearm under-sleeve
 reads as a flat plank in a low dodge.
+
+## Props and headwear (fit `box`)
+A prop is fitted by ONE size and anchors in rig rest space (`"fit": {"mode": "box", "size": {axis: m}, "anchor":
+{axis: [min|max|mid|eyes, m]}}`, optional `rotate`, `cut`, and `size: {"x_at_eyes": m}` for a hood). Every Tripo
+model came out facing +X, three-quarter concepts included. Concept first (5 credits), look at it, then the model (30).
+
+| part | slot | fit | sheets | test recipe |
+|---|---|---|---|---|
+| `hood_ninja_t1` | face | 0.20 m across the eyes, eyes at 1.615 m, toy bust cut (0.37) | washi_sumi + glowing amber eyes | `assassin-ai` |
+| `kabuto_t1` | hat | 0.42 m wide with the side flaps, neck guard at 1.50 m | card_charcoal, card_gold (new), washi_crimson | `ronin-ai-kabuto` |
+| `oni_light_t1` | face | a head shell 0.31 m chin to horns, chin 1.50 m | washi_natural, washi_crimson | `kojiro-ai2-oni` |
+| `oni_dark_t1` | face | same | card_charcoal, crimson, gold glowing eyes, bleached fangs | `oni-ai` |
+| `fan_t1` | accessory (left hand) | 0.44 m open, pivot in the grip, turned point-down | washi_natural, crimson sun, charcoal ribs | `oni-ai` |
+
+Not made: the kasa (the procedural `kasa_wide`/`kasa_narrow` already match the reference; 35 credits for nothing).
+All in the catalogue: `$B -b -P blender/character/parts_catalog.py -- --tiles output/character/catalog-new [--only prefix]`,
+then `python3 blender/character/parts_catalog.py --sheet output/character/catalog-new` (64 parts, 32 generated).

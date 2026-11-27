@@ -1,0 +1,8 @@
+{
+  "id": "oni-ai",
+  "name": "Oni: generated black oni mask on Musashi's generated body, with the fan (look board test)",
+  "extends": "musashi-ai.json",
+  "note": "musashi-ai with the generated black oni mask (oni_dark_t1: lacquer, crimson horns, glowing gold eyes, white fangs) as the head and the generated folding fan (fan_t1) in the left hand. Tripo 35 + 35 credits. A test recipe.",
+  "swap": [{"part": "oni_dark_t1"}],
+  "add": [{"part": "fan_t1"}]
+}
