@@ -351,6 +351,7 @@
      "x": -6.1,
      "z": 5.3,
      "ry": 2.251,
+     "cut": true,
      "note": "the cut into S4: already wading out of the shallows"
     },
     {
@@ -882,20 +883,22 @@
    "cut": true,
    "rig": "compose",
    "subjects": [
-    "hero",
-    "target"
+    "target",
+    "hero"
    ],
-   "az0": -40,
-   "az1": -32,
-   "elev": 6,
-   "size": 0.34,
+   "basis": "target",
+   "target": "hero",
+   "az0": 194,
+   "az1": 189,
+   "elev": 11,
+   "size": 0.39,
    "screen": [
-    0.5,
-    0.58
+    0.37,
+    0.4
    ],
    "fov": 34,
    "feel": "dolly",
-   "note": "S4 WIDE: behind Musashi wading up from the sea, Kojiro ahead on the duel ground against the glow"
+   "note": "S4 WIDE: following behind Musashi as he wades up from the sea, over his shoulder Kojiro waits on the duel ground against the glow"
   },
   {
    "t": 23.4,

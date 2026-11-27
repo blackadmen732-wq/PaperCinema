@@ -131,6 +131,14 @@ F.forEach((d, i) => {
   if (!META.cuts && d.camStep > 1.0 && d.pan > 20) cuts.add(i);
 });
 const isCut = (i) => cuts.has(i);
+// a teleport hidden by a cut (engine/figure.js: a key pair that moves the root 0.5 m or more in under 2 frames) is not
+// motion: no slide, blade speed, pop or turn is measured across it (27 Nov: Episode 1's cut into the surf read as a
+// 3.2 m foot slide and an 82 m/s blade)
+const tele = (i, id) => {
+  if (!i || !isCut(i)) return false;
+  const a = F[i].fighters[id]?.root, b = F[i - 1].fighters[id]?.root;
+  return !!a && !!b && Math.hypot(a[0] - b[0], a[2] - b[2]) >= 0.5;
+};
 const free = (d) => d.free === true || d.impactFrame;       // a shot that is not about the fighters, or the one-frame ink page
 
 // V1: subject off screen. A close-up counts as seen: the figure is larger than the frame and at least one key joint is in it.
@@ -207,7 +215,7 @@ for (const id of ids) {
   for (const foot of ['rFoot', 'lFoot']) {
     const sp = F.map((d, i) => {
       const f = d.fighters[id], p = F[i - 1]?.fighters[id];
-      if (!i || !f.visible || !p?.visible || f.root[1] > 0.03 || f.joints[foot][1] > 0.12) return 0;
+      if (!i || tele(i, id) || !f.visible || !p?.visible || f.root[1] > 0.03 || f.joints[foot][1] > 0.12) return 0;
       const a = f.joints[foot], b = p.joints[foot];
       return Math.hypot(a[0] - b[0], a[2] - b[2]);
     });
@@ -223,12 +231,12 @@ for (const id of ids) {
 for (const id of ids) {
   const rel = (d, j) => sub(d.fighters[id].joints[j], d.fighters[id].joints.chest);
   for (const j of ['rHand', 'lHand', 'head']) {
-    const st = F.map((d, i) => (i && d.fighters[id].visible && F[i - 1].fighters[id].visible ? dist(rel(d, j), rel(F[i - 1], j)) / Math.max(0.2, d.rate) : 0));
+    const st = F.map((d, i) => (i && !tele(i, id) && d.fighters[id].visible && F[i - 1].fighters[id].visible ? dist(rel(d, j), rel(F[i - 1], j)) / Math.max(0.2, d.rate) : 0));
     st.forEach((s, i) => { if (i > 0 && i < st.length - 1 && s > RULE.popStep * STEP && s > 4 * Math.max(st[i - 1], st[i + 1], 0.02)) add('joint-pop', 'animation', 'major', F[i].t, F[i].t, `${id}: ${j} jumps ${s.toFixed(2)} m in one frame and stops`, 'a single-frame jump is a pop: check the keys around it (IK flip, an angle that wraps past ±180°)'); });
   }
-  const ry = F.map((d, i) => (i ? Math.abs(d.fighters[id].ry - F[i - 1].fighters[id].ry) : 0));
+  const ry = F.map((d, i) => (i && !tele(i, id) ? Math.abs(d.fighters[id].ry - F[i - 1].fighters[id].ry) : 0));
   ry.forEach((a, i) => { if (a > 1.75 * STEP && F[i].fighters[id].visible) add('body-flip', 'animation', 'major', F[i].t, F[i].t, `${id}: the whole body turns ${((a * 180) / Math.PI).toFixed(0)}° in one frame`, 'a turn needs at least 4 frames: head first, then hips, then the blade'); });
-  const tip = F.map((d, i) => (i && d.fighters[id].blade && F[i - 1].fighters[id].blade ? dist(d.fighters[id].blade.tip, F[i - 1].fighters[id].blade.tip) / STEP : 0));
+  const tip = F.map((d, i) => (i && !tele(i, id) && d.fighters[id].blade && F[i - 1].fighters[id].blade ? dist(d.fighters[id].blade.tip, F[i - 1].fighters[id].blade.tip) / STEP : 0));
   for (const r of runs(F, (d, i) => tip[i] > RULE.tipTeleport))
     add('blade-teleport', 'slash/smear', 'major', r.frames[0].t, r.frames[r.frames.length - 1].t, `${id}: the blade tip moves ${Math.max(...r.frames.map((d, k) => tip[r.a + k])).toFixed(1)} m in one frame (over ${(RULE.tipTeleport * FPS).toFixed(0)} m/s)`, 'slow the body through the cut with a speed ramp (film.ramps), or add an in-between; a smear cannot cover this much');
   for (const r of runs(F, (d, i) => tip[i] > RULE.tipNoSmear && tip[i] <= RULE.tipTeleport && d.fighters[id].smear !== undefined && d.fighters[id].smear < 0.15 && !d.impactFrame))

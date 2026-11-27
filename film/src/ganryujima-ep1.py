@@ -87,7 +87,7 @@ target += [
     {'t': 15.4, 'pose': 'stand-blade-low', 'x': M_IN[0], 'z': M_IN[1], 'ry': face(M_IN, K0), 'hx': -0.12,
      'note': 'lowers it, looks up at the island (the step out happens on the cut: inside the boat the path crosses a thwart)'},
     {'t': 18.49, 'pose': 'stand-blade-low', 'x': M_IN[0], 'z': M_IN[1], 'ry': face(M_IN, K0)},
-    {'t': 18.5, 'pose': 'stand-blade-low', 'x': M_SAND[0], 'z': M_SAND[1], 'ry': face(M_SAND, M_STOP),
+    {'t': 18.5, 'pose': 'stand-blade-low', 'x': M_SAND[0], 'z': M_SAND[1], 'ry': face(M_SAND, M_STOP), 'cut': True,
      'note': 'the cut into S4: already wading out of the shallows'},
 ]
 walk(target, 18.5, 23.4, M_SAND, M_STOP, 'stand-blade-low')
@@ -171,8 +171,13 @@ film['camera'] = [
      'screen': [0.5, 0.55], 'fov': 32, 'feel': 'dolly', 'note': 'S3: Musashi in the boat from the south-east, looking up at the island, the glow beyond'},
     # S4 (20-32 s): the meeting. The line runs Kojiro -> Musashi at bearing -48 deg: every two-fighter camera stays on the
     # side az -48..132 (hero positive), so nobody swaps sides of the screen
-    {'t': 18.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero', 'target'], 'az0': -40, 'az1': -32, 'elev': 6, 'size': 0.34,
-     'screen': [0.5, 0.58], 'fov': 34, 'feel': 'dolly', 'note': 'S4 WIDE: behind Musashi wading up from the sea, Kojiro ahead on the duel ground against the glow'},
+    # (27 Nov: this shot framed Kojiro alone and started with the lens beside Musashi's shoulder: the camera report had
+    # Musashi out of frame for 4.2 s of its 4.9 s. Now it FOLLOWS Musashi from behind, over his shoulder to Kojiro:
+    # camera az 194-189 around Musashi from the Kojiro side = 14-9 deg off their line on the hero-positive side, so the
+    # screen sides hold: Musashi left, Kojiro right, closing in as he wades up)
+    {'t': 18.5, 'cut': True, 'rig': 'compose', 'subjects': ['target', 'hero'], 'basis': 'target', 'target': 'hero',
+     'az0': 194, 'az1': 189, 'elev': 11, 'size': 0.39, 'screen': [0.37, 0.40], 'fov': 34, 'feel': 'dolly',
+     'note': 'S4 WIDE: following behind Musashi as he wades up from the sea, over his shoulder Kojiro waits on the duel ground against the glow'},
     {'t': 23.4, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 32, 'az1': 26, 'elev': 0, 'size': 1.3,
      'aim': 'chest', 'screen': [0.5, 0.5], 'fov': 32, 'feel': 'locked', 'note': 'S4 THE DRAW: the long blade leaves the scabbard'},
     {'t': 25.3, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'az0': -26, 'az1': -32, 'elev': 6, 'size': 0.4,

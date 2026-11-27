@@ -283,7 +283,8 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
       const moved = ['x', 'z'].map((a) => (k[a] ?? null)).some((v) => v !== null);
       // dense keys (motion capture) may move every frame: only a jump faster than 6 m/s is a teleport
       const pk = keys[j - 1], dist = isNum(pk.x) && isNum(pk.z) && isNum(k.x) && isNum(k.z) ? Math.hypot(k.x - pk.x, k.z - pk.z) : null;
-      if (moved && dt < 0.15 && (dist === null || dist / dt > 6)) warn(kw, `position changes in ${dt.toFixed(2)}s; that is a teleport, not a step`);
+      // a teleport on purpose (hidden by a camera cut) says so with "cut": true (engine/figure.js splits the curve there)
+      if (moved && dt < 0.15 && (dist === null || dist / dt > 6) && !k.cut) warn(kw, `position changes in ${dt.toFixed(2)}s; that is a teleport, not a step (if a camera cut hides it, mark the key "cut": true)`);
     }
   });
   try {

@@ -677,8 +677,9 @@ if flag('mannequin'):
 # snap of a cut would soften into a drift. Hold every curve linear between the baked frames.
 # (Review, 26 Nov: this loop used to visit the Rig WRAPPERS, which carry no animation, so the joint empties
 # that are actually keyed kept Blender's Bezier easing and every cut was softened. Visit the joints.)
-for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rigs.values()] + list(swords.values()) + \
-        [x for a_ in PACT if a_.draw for x in (a_.draw.sword, a_.draw.saya)] + [cam, cd]:
+_KEYED = [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rigs.values()] + list(swords.values()) + \
+    [x for a_ in PACT if a_.draw for x in (a_.draw.sword, a_.draw.saya)] + [cam, cd]
+for ob in _KEYED:
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     if not act:
@@ -686,9 +687,11 @@ for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rig
     for fc in getattr(act, 'fcurves', []):
         for kp in fc.keyframe_points:
             kp.interpolation = 'LINEAR'
-# A hard cut: the camera key on the frame BEFORE the cut holds (CONSTANT) until the cut frame, so neither motion
-# blur nor a sub-frame sample ever sees the camera flying from one set-up to the next.
-for ob in (cam, cd):                                           # cd carries lens and focus distance
+# A hard cut: every key on the frame BEFORE the cut holds (CONSTANT) until the cut frame, so neither motion blur nor a
+# sub-frame sample ever sees the camera flying from one set-up to the next, or a body that teleports at the cut. 27 Nov:
+# only the camera held, and the last boat frame of Episode 1 smeared Musashi 1.35 m toward the surf (the joints were
+# interpolated into the next shot while the shutter was open).
+for ob in _KEYED:                                              # cd carries lens and focus distance
     ad = getattr(ob, 'animation_data', None)
     act = getattr(ad, 'action', None) if ad else None
     for fc in (act.fcurves if act else []):
