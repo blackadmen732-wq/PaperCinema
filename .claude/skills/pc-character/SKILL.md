@@ -55,6 +55,13 @@ reg.asset_part('kasa_bought', slot='hat', socket='head_top', bone='head',
 ~900 faces — measured 60,042 → 917), normalises to the socket, and hands it to the same `ctx.add()`
 every folded part uses. **A bought mesh becomes paper on the way in.**
 
+**Painted generated parts (Tripo heads, faces) go through the full chain instead** (`docs/AI-PARTS.md`):
+`tools/tripo.py` (concept image + model, every credit logged) -> an entry in `library/ai-parts.json` ->
+`tools/ai_part.py` (turn to -Y from the eye paint, weld seams, cut, fit to the rig's head, reduce, bake the paint,
+two washi sheets per facet, printed ink + glow masks) -> a recipe names it (`kojiro-ai.json`). Proof: Kojiro's
+head, 35 credits, 944k -> 4,008 facets, `output/heads/compare-3.png`. Judge it with
+`blender/character/head_compare.py` (same cameras, head size in metres, `--poses` sweep).
+
 Buy what does not fold: hats, masks, helmets, plates, weapons, props. Fold cloth here. Never buy the
 skeleton. Generating a whole character then **segmenting** it beats 16 separate generations, which
 give 16 different characters. Services and licences: `.claude/skills/buy-the-geometry/SKILL.md`.

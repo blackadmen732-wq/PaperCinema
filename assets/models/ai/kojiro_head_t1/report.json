@@ -1,0 +1,42 @@
+{
+ "id": "kojiro_head_t1",
+ "raw": "output/tripo/kojiro-head-model-1.pbr.glb",
+ "faces_raw": 943936,
+ "facing": {
+  "from": "eye paint",
+  "raw_deg": 0.3,
+  "deg": 0.0,
+  "eye_faces": 3772
+ },
+ "welded_verts": 15488,
+ "open_edges_after_weld": 0,
+ "cut_z_model": -0.14341092601418498,
+ "faces_cut": 527574,
+ "fit": {
+  "scale": 0.4413393606754666,
+  "centre_model_x": -2.7224511869959547e-05,
+  "neck_model_y": -0.07128588855266571,
+  "neck_light_x": -0.0010972199961543083,
+  "neck_samples": 10409
+ },
+ "faces_part": 4008,
+ "bake_s": 2.9,
+ "bake_missed_pct": 0.0,
+ "despeckled_faces": 42,
+ "hair_faces_pct": 74.2,
+ "ink_pct": 74.22,
+ "glow_pct": 0.988,
+ "bbox": {
+  "min": [
+   -0.12326230853796005,
+   -0.12451028823852539,
+   1.4989376068115234
+  ],
+  "max": [
+   0.12353493273258209,
+   0.16136828064918518,
+   1.7829135656356812
+  ]
+ },
+ "total_s": 17.9
+}

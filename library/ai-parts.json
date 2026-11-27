@@ -1,0 +1,53 @@
+{
+  "_about": "Generated parts (Tripo, TRELLIS, ...) as DATA. Each entry is prepared once by tools/ai_part.py (raw model -> cut, fitted, reduced, painted paper part in <prepared>/) and registered automatically by blender/character/part_registry.py as a rigid part a recipe can name. Rigid only: a generated mesh is one fused shell, so it is a hat, a head, a mask, a plate, a prop - never a body that bends. cut = keep above this fraction of the model height; fit = where the cut plane goes in the rig (bottom_z, metres), how tall the kept piece is (height, metres) and where the neck skin is centred (neck_xy); faces = facets after reduction; dark_below = sRGB luminance under which paint counts as dark (hair sheet, ink); glow = which paint glows.",
+  "kojiro_head_t1": {
+    "label": "Sasaki Kojiro: head, face and hair (Tripo test 1)",
+    "slot": "face",
+    "socket": "face",
+    "bone": "head",
+    "layer": 40,
+    "raw": "output/tripo/kojiro-head-model-1.pbr.glb",
+    "prepared": "assets/models/ai/kojiro_head_t1",
+    "source": {
+      "service": "Tripo API (commercial use with an API key)",
+      "reference": "research/ref-origami-samurai-standing.jpg (head crop: output/tripo/ref-head-crop.png)",
+      "concept_task": "ac3b022a-dcb8-48fa-89ca-f90cb0cdb798 (generate_image, 5 credits)",
+      "model_task": "58e6aa09-14ae-4198-81f9-d1301821b52a (image_to_model, v3.0-20250812, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "cut": 0.355,
+    "fit": {
+      "bottom_z": 1.499,
+      "height": 0.284,
+      "neck_xy": [
+        0.0,
+        0.0
+      ],
+      "why": "chin to crown = 0.225 m (the rig's head: today's mask runs 1.506-1.731), so the kept piece (cut just under the chin to the top of the bun) is 0.284 m and the chin lands at 1.506; the head is then 0.147 m wide, about a third of the shoulders, as on a person"
+    },
+    "faces": 4000,
+    "dark_below": 0.3,
+    "glow": {
+      "min_sat": 0.35,
+      "hue": [
+        20,
+        65
+      ],
+      "rgb": [
+        1.0,
+        0.52,
+        0.14
+      ],
+      "strength": 3.5
+    },
+    "sheets": {
+      "skin": "washi_natural",
+      "hair": "washi_sumi"
+    },
+    "ink": [
+      0.018,
+      0.016,
+      0.015
+    ]
+  }
+}

@@ -95,6 +95,10 @@ sc.render.fps = FPS
 # kojiro / musashi have their own recipes since Nov 26 (the story bible's colours: crimson haori and dark red
 # hakama; slate indigo, grey-brown hakama, white headband). Before that both were stand-ins: Kojiro wore the
 # ronin's straw hat and Musashi the armoured warrior's plates, which neither had at Ganryujima.
+try:
+    FILM_CAST = json.load(open(os.path.join(REPO, TL['film']['path'])))['cast'] or {}
+except Exception:                   # a timeline without its film file: production recipes only
+    FILM_CAST = {}
 RECIPES = {'kojiro': 'kojiro', 'musashi': 'musashi', 'ronin': 'ronin-reference', 'warrior': 'armoured-warrior'}
 rigs = {}
 chars = {}
@@ -102,7 +106,9 @@ char_meshes = []          # every built character mesh, for the look block (ink 
 for a in TL['actors']:
     if a.get('hidden'):
         continue
-    rid = RECIPES.get(a.get('character'), arg('recipe', 'ronin-reference'))
+    # a film may name a test recipe for one actor (film.cast.<id>.recipe), e.g. a generated head under review,
+    # without touching the production character every other film uses
+    rid = FILM_CAST.get(a['id'], {}).get('recipe') or RECIPES.get(a.get('character'), arg('recipe', 'ronin-reference'))
     path = os.path.join(REPO, 'library', 'character-recipes', rid + '.json')
     if not os.path.exists(path):
         path = os.path.join(REPO, 'library', 'character-recipes', 'ronin-reference.json')

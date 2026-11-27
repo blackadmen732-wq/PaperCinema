@@ -1,0 +1,20 @@
+{
+  "label": "Sumi-dyed washi, ink black",
+  "paper_type": "washi-kozo",
+  "color": [0.011, 0.0105, 0.012],
+  "translucent_color": [0.05, 0.04, 0.035],
+  "fibre_density": 1.0,
+  "fibre_direction": "vertical",
+  "fibre_strength": 0.15,
+  "roughness": 0.78,
+  "sheen": 0.1,
+  "thickness_mm": 0.5,
+  "fold_darkening": 0.15,
+  "edge_wear": 0.3,
+  "translucency": 0.02,
+  "inner_light": 0.08,
+  "facet_variation": 0.08,
+  "shimi": "ink-bleed",
+  "note": "Black hair and black cord: washi soaked in sumi ink, matte (card_charcoal's lacquer sheen greyed the hair out under a studio light). Light edge wear keeps the folds readable on black.",
+  "id": "washi_sumi"
+}

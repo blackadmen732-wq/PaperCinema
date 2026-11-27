@@ -24,6 +24,7 @@ than one fused blob.
 Geometry is built in the rig's REST world space (metres, Z up, the character faces -Y), around the part's
 socket. The builder (modular_builder.py) scales, binds and poses it.
 """
+import json
 import math
 import os
 import random
@@ -1278,6 +1279,87 @@ def tassels(ctx, P, rnd):
 
 
 # =========================================================================== reporting
+# =========================================================================== generated parts (library/ai-parts.json)
+# A generated part is DATA: tools/ai_part.py has already cut, fitted, reduced and painted it into <prepared>/
+# (part.glb in the rig's rest space, with 'skin'/'hair' material slots, and ink/glow masks on its UVs). Here each
+# manifest entry becomes an ordinary rigid part: a recipe names it, the builder binds it to its bone, and it is
+# made of the same washi sheets as everything else, with the paint printed on top (pm.add_paint).
+AI_PARTS_FILE = os.path.join(REPO, 'library', 'ai-parts.json')
+
+
+def _glb_bmesh(path):
+    """One mesh from a prepared part.glb as a bmesh, with its material slot names (skin, hair...) in face order."""
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == 'MESH']
+    if len(meshes) != 1:
+        raise ValueError(f'{path}: a prepared part holds exactly one mesh, found {len(meshes)}')
+    o = meshes[0]
+    names = [(m.name.rsplit('.', 1)[0] if m and '.' in m.name and m.name.rsplit('.', 1)[1].isdigit() else
+              (m.name if m else '')) for m in o.data.materials]
+    bm = bmesh.new()
+    bm.from_mesh(o.data)
+    bmesh.ops.transform(bm, matrix=o.matrix_world, verts=bm.verts[:])
+    imported_mats = [m for m in o.data.materials if m]
+    for ob in new:
+        bpy.data.objects.remove(ob, do_unlink=True)
+    for m in imported_mats:
+        if m.users == 0:
+            bpy.data.materials.remove(m)
+    return bm, names
+
+
+def _ai_part(pid, e):
+    def _built(ctx, P, rnd):
+        d = os.path.join(REPO, P['prepared'])
+        bm, names = _glb_bmesh(os.path.join(d, 'part.glb'))
+        sheets = P['sheets']
+        mats = []
+        for nm in names:
+            m = ctx.mat(sheets.get(nm, sheets.get('skin', 'washi_natural')))
+            if nm == 'skin' and (P.get('ink') or P.get('glow')):
+                painted = bpy.data.materials.get(m.name + '_paint_' + pid)
+                if painted is None:
+                    painted = m.copy()
+                    painted.name = m.name + '_paint_' + pid
+                    ink = glow = None
+                    if P.get('ink') and os.path.exists(os.path.join(d, 'ink.png')):
+                        ink = (bpy.data.images.load(os.path.join(d, 'ink.png'), check_existing=True), P['ink'])
+                    if P.get('glow') and os.path.exists(os.path.join(d, 'glow.png')):
+                        g = P['glow']
+                        glow = (bpy.data.images.load(os.path.join(d, 'glow.png'), check_existing=True),
+                                g.get('rgb', ctx.glow[0]), float(g.get('strength', 6.0)))
+                    pm.add_paint(painted, ink=ink, glow=glow)
+                m = painted
+            mats.append(m)
+        # the geometry is already in rest space at its socket (tools/ai_part.py fitted it): no socket offset
+        return ctx.add(pid, bm, mats, thickness=0.0, rim_mat=False)
+    _built.__doc__ = e.get('label', pid)
+    part(pid, slot=e['slot'], socket=e['socket'], bone=e.get('bone'), rigid=True, size=(1.0, 1.0),
+         layer=e.get('layer'), material=e.get('sheets', {}).get('skin', 'washi_natural'), tags=('ai',),
+         prepared=e['prepared'], sheets=e.get('sheets', {'skin': 'washi_natural'}), ink=e.get('ink'),
+         glow=e.get('glow'))(_built)
+
+
+def load_ai_parts(path=AI_PARTS_FILE):
+    """Register every prepared generated part in the manifest (entries whose <prepared>/part.glb exists)."""
+    if not os.path.exists(path):
+        return []
+    done = []
+    for pid, e in json.load(open(path)).items():
+        if pid.startswith('_') or not isinstance(e, dict):
+            continue
+        if not os.path.exists(os.path.join(REPO, e['prepared'], 'part.glb')):
+            continue                               # not prepared yet: python3 tools/ai_part.py ... first
+        _ai_part(pid, e)
+        done.append(pid)
+    return done
+
+
+load_ai_parts()
+
+
 def describe(slots_only=False):
     out = ['SLOTS (what goes where, and what covers what)',
            f'{"slot":<16}{"layer":>6}  what it is']

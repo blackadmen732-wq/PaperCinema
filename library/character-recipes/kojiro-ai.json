@@ -1,0 +1,8 @@
+{
+  "id": "kojiro-ai",
+  "name": "Sasaki Kojiro (Ganryujima) - generated head test",
+  "extends": "kojiro.json",
+  "note": "Kojiro with the generated head, face and hair (library/ai-parts.json: kojiro_head_t1, Tripo) in place of the folded mask and topknot. Same skeleton, body, outfit and neck; only the head slot changes. A test: the production Kojiro stays library/character-recipes/kojiro.json until the comparison is approved.",
+  "drop": ["face", "hair"],
+  "add": [{"part": "kojiro_head_t1", "scale": 1.0}]
+}

@@ -385,6 +385,66 @@ def sea_material(name='LO_SeaPaper', deep=(0.03, 0.07, 0.10), shallow=(0.10, 0.2
     return m
 
 
+def add_paint(m, *, uv_map='', ink=None, glow=None):
+    """Print paint onto a paper material, from masks on the part's own UVs (tools/ai_part.py makes them).
+
+    ink   (image, rgb)            where the mask is white the sheet is printed with this colour (brows, eye lines)
+    glow  (image, rgb, strength)  where the mask is white the paper glows (eye slits lit from inside)
+    The washi underneath keeps its fibre, facet tone and folds; ink sits on top of it like printed paint.
+    """
+    nt = m.node_tree
+    N, L = nt.nodes, nt.links
+    p = next(n for n in N if n.type == 'BSDF_PRINCIPLED')
+    out = next(n for n in N if n.type == 'OUTPUT_MATERIAL')
+    uv = N.new('ShaderNodeUVMap')
+    uv.uv_map = uv_map
+
+    def tex(img):
+        t = N.new('ShaderNodeTexImage')
+        t.image = img
+        img.colorspace_settings.name = 'Non-Color'
+        t.interpolation = 'Linear'
+        L.new(uv.outputs['UV'], t.inputs['Vector'])
+        return t
+    if ink:
+        img, rgb = ink
+        t = tex(img)
+        mix = N.new('ShaderNodeMix')
+        mix.data_type = 'RGBA'
+        L.new(t.outputs['Color'], mix.inputs[0])
+        bc = p.inputs['Base Color']
+        if bc.links:
+            L.new(bc.links[0].from_socket, mix.inputs[6])
+        else:
+            mix.inputs[6].default_value = bc.default_value
+        mix.inputs[7].default_value = (*rgb, 1.0)
+        L.new(mix.outputs[2], bc)
+        # printed ink is matte and does not let the lantern through
+        if p.inputs['Roughness'].links:
+            rmix = N.new('ShaderNodeMix')
+            L.new(t.outputs['Color'], rmix.inputs[0])
+            L.new(p.inputs['Roughness'].links[0].from_socket, rmix.inputs[2])
+            rmix.inputs[3].default_value = 0.95
+            L.new(rmix.outputs[0], p.inputs['Roughness'])
+    if glow:
+        img, rgb, strength = glow
+        t = tex(img)
+        em = N.new('ShaderNodeEmission')
+        em.inputs['Color'].default_value = (*rgb, 1.0)
+        k = N.new('ShaderNodeMath')
+        k.operation = 'MULTIPLY'
+        L.new(t.outputs['Color'], k.inputs[0])
+        k.inputs[1].default_value = strength
+        L.new(k.outputs[0], em.inputs['Strength'])
+        src = out.inputs['Surface'].links[0].from_socket
+        ad = N.new('ShaderNodeAddShader')
+        L.new(src, ad.inputs[0])
+        L.new(em.outputs['Emission'], ad.inputs[1])
+        L.new(ad.outputs['Shader'], out.inputs['Surface'])
+    m['pc_paint'] = 1
+    return m
+
+
 def emission_material(name, color, strength):
     m = new_material(name)
     T = _NT(m.node_tree)

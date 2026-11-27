@@ -71,6 +71,7 @@ list (a free settings change) · 👤 needs Mark's own login, download by hand.
 
 | Tool | Cost | Licence of output | Verdict |
 |---|---|---|---|
+| **Tripo API** (`tools/tripo.py`, key saved on the environment) | concept image 5 credits, image-to-3D 30 credits (v3.0); 1,000 free credits, then $1 = 100 credits | commercial use with an API key | **Used**: Kojiro's head, 35 credits, `docs/AI-PARTS.md` |
 | TRELLIS on our RunPod (`gpu/gen_trellis.py`) | ~$0.34/h (RTX 4090 community) | MIT model, outputs ours | **Use** for helmets, hats, armour plates, masks, sword fittings: rigid pieces on sockets. |
 | [Meshy](https://www.meshy.ai/pricing) | free 100 credits/m; Pro $20/m | free = CC BY 4.0 | Only if TRELLIS fails on a part. |
 | [Tripo](https://www.tripo3d.ai/pricing) | free 200 credits/m; Pro $20/m | free = **non-commercial** | Free tier unusable for posted films. |
