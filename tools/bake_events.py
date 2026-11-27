@@ -376,10 +376,63 @@ def main(film):
                         break
     if contact[0] is None:
         raise SystemExit('[events] no approach between the blades at all')
-    tf_c, d_c, where = contact
+    # AUTHORED BODY IMPACTS (film.impacts[{t, at: "<actor>.<capsule>"}], t in action time): measured on the same bake -
+    # the frame where the striker's weapon comes closest to that part of the struck body (its capsule from the bake),
+    # within 0.4 s of the authored time. Ganryujima's decisive hit is the oar on Kojiro's head, not blade on blade.
+    impacts = []
+    tb_of = [fr_.get('tb', fr_['t']) for fr_ in TL['frames']]
+    for imp in F.get('impacts') or []:
+        at = str(imp.get('at', ''))
+        who, part = (at.split('.', 1) + ['head'])[:2] if '.' in at else (at or hero, 'head')
+        if who not in bake['actors']:
+            continue
+        segs_who = bake['actors'][who]['segs']
+        cands = [i for i, tb in enumerate(tb_of) if abs(tb - float(imp['t'])) <= 0.4 and i < len(segs_who) and segs_who[i]]
+        bestI, tip_sp = None, []
+        prevI = None
+        for i in cands:
+            for q4 in range(4):
+                tf = i + q4 / 4.0
+                if who == hero:
+                    wa, wb = foe_blade(tf / fps)
+                    wpts = [tuple(wa[k_] + (wb[k_] - wa[k_]) * j / 8 for k_ in range(3)) for j in range(9)]
+                else:
+                    wpts = hero_blade(tf)
+                caps = [c_ for c_ in segs_who[min(i, len(segs_who) - 1)] if c_[0].startswith(part)]
+                for nm, a_, b_, r_ in caps:
+                    for p0, p1 in zip(wpts, wpts[1:]):
+                        d_, c_ = seg_dist(p0, p1, tuple(a_), tuple(b_))
+                        d_ -= r_
+                        if bestI is None or d_ < bestI[0]:
+                            bestI = (d_, tf, c_)
+                if prevI is not None:
+                    tip_sp.append((tf, math.dist(wpts[-1], prevI) * fps * 4))
+                prevI = wpts[-1]
+        if bestI is None:
+            print('[events] impact %s at %.2f s: no frames to measure' % (at, float(imp['t'])))
+            continue
+        d_i, tf_i, w_i = bestI
+        ap_i = max((s_ for s_ in tip_sp if s_[0] <= tf_i), key=lambda s_: s_[1], default=(tf_i, 0.0))
+        impacts.append({'at': at, 'frame': int(math.floor(tf_i)) + 1, 'subframe': round(tf_i + 1, 2), 't': round(tf_i / fps, 4),
+                        'gap_cm': round(d_i * 100, 1), 'where': [round(v, 3) for v in w_i], 'touch': d_i <= 0.02,
+                        'apex': {'frame': round(ap_i[0] + 1, 2), 't': round(ap_i[0] / fps, 4), 'mps': round(ap_i[1], 1)}})
+        print('[events] impact %s: the weapon meets it at frame %d (film %.4f s), %s %.1f cm; tip %.1f m/s' % (
+            at, impacts[-1]['frame'], tf_i / fps, 'inside by' if d_i < 0 else 'gap', abs(d_i) * 100, ap_i[1]))
+    blades_touch = bool(first)
+    if impacts and not blades_touch:
+        # the blades never touch: the decisive moment (hit-stop, the slash cut, the music's silence) is the impact
+        tf_c, d_c, where = impacts[0]['subframe'] - 1, impacts[0]['gap_cm'] / 100.0, tuple(impacts[0]['where'])
+        first = (tf_c, d_c, where) if impacts[0]['touch'] else None
+        print('[events] the blades never touch: the contact is the authored impact (%s)' % impacts[0]['at'])
+    elif impacts:
+        print('[events] ! the blades touch AND an impact is authored: the contact stays the blade contact')
+    tf_c, d_c, where = (tf_c, d_c, where) if impacts and not blades_touch else contact
     t_c = tf_c / fps
     frame_c = int(math.floor(tf_c)) + 1              # the Blender frame on which the blades meet
-    apex = max((s for s in speed if s[0] < tf_c), key=lambda s: s[1])
+    if impacts and not blades_touch:
+        apex = (impacts[0]['apex']['frame'] - 1, impacts[0]['apex']['mps'])
+    else:
+        apex = max((s for s in speed if s[0] < tf_c), key=lambda s: s[1])
     print('[events] %s vs %s: blades meet at frame %d (film %.4f s, sub-frame %.2f), gap %.1f cm%s' % (
         hero, foe, frame_c, t_c, tf_c + 1, d_c * 100, '' if first else '  (NO CONTACT: closest approach only)'))
     print('[events] katana through the bokken after the contact (<0.5 cm): %s' % (through[:12] or 'never'))
@@ -396,14 +449,15 @@ def main(film):
     cut(os.path.join(lib, 'steel-scrape.mp3'), os.path.join(sfx, 'scrape.wav'), o, scrape_len)
     layers.append({'id': 'draw-scrape', 'file': os.path.join(sfx, 'scrape.wav'), 't': round(dr['slide'], 4),
                    'len': round(scrape_len, 3), 'gain': 0.45, 'why': 'blade slides out: slide -> clear'})
-    o = onset(os.path.join(lib, 'clash-light.mp3'))
-    cut(os.path.join(lib, 'clash-light.mp3'), os.path.join(sfx, 'transient.wav'), o, 0.14)
-    layers.append({'id': 'contact-transient', 'file': os.path.join(sfx, 'transient.wav'), 't': round(t_c, 4),
-                   'len': 0.14, 'gain': 1.0, 'why': 'onset ON the measured contact'})
-    o = onset(os.path.join(lib, 'impact.mp3'))
-    cut(os.path.join(lib, 'impact.mp3'), os.path.join(sfx, 'tail.wav'), o, 1.3)
-    layers.append({'id': 'material-tail', 'file': os.path.join(sfx, 'tail.wav'), 't': round(t_c, 4),
-                   'len': 1.3, 'gain': 0.55, 'why': 'steel on wood body/ring, rings through any hit-stop, one trigger'})
+    if blades_touch or not impacts:                  # steel on the oar: the clash layers (a body impact has its own)
+        o = onset(os.path.join(lib, 'clash-light.mp3'))
+        cut(os.path.join(lib, 'clash-light.mp3'), os.path.join(sfx, 'transient.wav'), o, 0.14)
+        layers.append({'id': 'contact-transient', 'file': os.path.join(sfx, 'transient.wav'), 't': round(t_c, 4),
+                       'len': 0.14, 'gain': 1.0, 'why': 'onset ON the measured contact'})
+        o = onset(os.path.join(lib, 'impact.mp3'))
+        cut(os.path.join(lib, 'impact.mp3'), os.path.join(sfx, 'tail.wav'), o, 1.3)
+        layers.append({'id': 'material-tail', 'file': os.path.join(sfx, 'tail.wav'), 't': round(t_c, 4),
+                       'len': 1.3, 'gain': 0.55, 'why': 'steel on wood body/ring, rings through any hit-stop, one trigger'})
     whoosh = {'id': 'apex-whoosh', 'earshot': 'whoosh_fast/whip', 't': round(apex[0] / fps, 4), 'apex': 0.2,
               'len': 0.6, 'gain': 0.5, 'why': "the whoosh's loudest point on the tip's fastest moment"}
     cached = os.path.join(lib, 'earshot', 'whoosh_fast_whip-0.6-0.2.wav')
@@ -438,7 +492,8 @@ def main(film):
                        'where': [round(v, 3) for v in where], 'touch': bool(first)},
            'apex': {'frame': round(apex[0] + 1, 2), 't': round(apex[0] / fps, 4), 'mps': round(apex[1], 1)},
            'draw': {'slide': dr['slide'], 'clear': dr['clear']},
-           'cues': layers, 'contacts': [round(t_c, 4)], 'impacts': [], 'stops': [], 'ground': ground}
+           'cues': layers, 'contacts': [round(t_c, 4)], 'impacts': impacts, 'blades_touch': blades_touch,
+           'stops': [], 'ground': ground}
     path = os.path.join(REPO, 'output', film + '.bake-events.json')
     json.dump(out, open(path, 'w'), indent=1)
     print('[events] ->', path)

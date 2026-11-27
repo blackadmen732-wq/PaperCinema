@@ -411,6 +411,22 @@ class Draw:
         self.last_target = None
         self.residual = {}
         self.residual_l = {}
+        self.throw = None                                   # set_throw(): the scabbard thrown away (Ganryujima)
+        self.rate = 1.0                                     # this frame's speed-ramp rate (world time per film frame)
+        self.surface = None                                 # (ground(x, y, z_from), sea(x, y)): where a thrown thing lands
+        self.fps = 30.0
+        self.events = []                                    # [{'kind': 'splash' | 'land', 'frame', 'pos'}]
+
+    def set_throw(self, grab, release, to, apex=2.0, spin=9.0, reach=6, sink=0.6):
+        """Kojiro throws the scabbard away (research/ganryujima.md, tradition): `reach` frames before `grab` the left
+        hand goes to the scabbard's mouth at the obi; from `grab` it carries it (the pose throws the arm); at `release`
+        it flies on a ballistic arc `apex` m above the release point to the place `to` (world x, y), turning `spin`
+        rad/s end over end, and lands on the sea (a splash, then it sinks `sink` m over a second) or the sand. Times
+        in frames. After the throw the left arm follows the pose (two hands on the hilt), no fist at the hip."""
+        self.throw = {'grab': grab, 'release': release, 'to': Vector((float(to[0]), float(to[1]), 0.0)),
+                      'apex': float(apex), 'spin': float(spin), 'reach': int(reach), 'sink': float(sink)}
+        self._throw_arm = None
+        self._flight = None
 
     def _D(self):
         return self.rig.J['torso'].matrix_world @ Matrix.Translation(-self.torso_rest)
@@ -419,6 +435,7 @@ class Draw:
         """Pose the rig for frame f from `pose` (a full pose dict), fix the right arm, place sword and saya.
         Returns the phase name."""
         rig = self.rig
+        pose_in = dict(pose)
         rig.pose(pose)
         bpy.context.view_layer.update()
         D = self._D()
@@ -554,7 +571,7 @@ class Draw:
                 pose[k] = pose[k] + (solved[k] - pose[k]) * wl
             rig.pose(pose)
             bpy.context.view_layer.update()
-        if phase == 'drawn' and wl < 1.0:
+        if phase == 'drawn' and wl < 1.0 and not (self.throw is not None and f >= self.throw['grab'] - self.throw['reach']):
             # the recovery contact: a fist on the side of the left hip, a hand's width out from the obi
             D = self._D()
             spot = D @ self.recover_at
@@ -643,6 +660,9 @@ class Draw:
         if phase == 'drawing':
             self._rel_prev = (hand.to_3x3().inverted() @ S.to_3x3()).to_quaternion()
             self._arm_at_clear = {k: pose[k] for k in ARM}  # the last drawing frame's arm, for the release
+        held_l = None
+        if self.throw is not None and phase == 'drawn' and f >= self.throw['grab'] - self.throw['reach']:
+            Y, pose, held_l = self._throw_step(f, Y, pose, pose_in)
         for ob, M in ((self.sword, S), (self.saya, Y)):
             loc, rot, _ = M.decompose()
             ob.location = loc
@@ -652,11 +672,81 @@ class Draw:
         # the hands: the gripping shape while the hand is ON the sword / scabbard, the open one otherwise
         holding = {'r': w > 0.85 or phase == 'drawn',
                    'l': wl > 0.85 and not (phase == 'drawn' and f >= self.clear + self.let_go)}   # opens as it lets go
+        if held_l is not None:
+            holding['l'] = held_l
         for side, (opens, grip) in self.hands.items():
             for ob in opens:
                 key_visible(ob, f, not holding[side])
             key_visible(grip, f, holding[side])
         return phase
+
+    def _throw_step(self, f, Y, pose, pose_in):
+        """The scabbard throw for frame f (see set_throw). Returns (saya frame, pose, left hand holding or None)."""
+        T, rig = self.throw, self.rig
+        g0 = T['grab'] - T['reach']
+        if f < T['grab']:                                   # reach: the left hand to the mouth of the scabbard
+            wl = _smooth((f - g0) / T['reach'])
+            lt = frame(Y @ Vector((LEFT_AT, 0, 0)), Y.to_3x3().col[0])
+            solved, _res = ik_arm(rig, pose, lt, self.H, side='l')
+            pose = dict(pose)
+            for k in arm_keys('l'):
+                pose[k] = pose[k] + (solved[k] - pose[k]) * wl
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+            self._throw_arm = {k: pose[k] for k in arm_keys('l')}
+            return Y, pose, wl > 0.85
+        if f < T['release'] or self._flight is None and f == T['release']:
+            # carried: the left arm eases from its grip at the obi into the authored throw (the pose's own left arm,
+            # not the recovery fist the draw would hold it in), and the scabbard rides the fist
+            u = _smooth((f - T['grab']) / max(1, T['reach']))
+            pose = dict(pose)
+            for k in arm_keys('l'):
+                start = (self._throw_arm or {}).get(k, pose_in[k])
+                pose[k] = start + (pose_in[k] - start) * u
+            rig.pose(pose)
+            bpy.context.view_layer.update()
+            Yh = (rig.J['lH'].matrix_world @ self.H) @ Matrix.Translation((-LEFT_AT, 0, 0))
+            self._last_held = (f, Yh)
+            if f < T['release']:
+                return Yh, pose, True
+            Y = Yh
+        if self._flight is None:                            # the release: a ballistic arc to the target place
+            c0 = Y @ Vector((self.L * 0.5, 0, 0))          # the scabbard's middle
+            g = 9.81
+            vz = math.sqrt(2 * g * max(0.2, T['apex']))
+            land = 0.0
+            if self.surface:
+                gr, sea = self.surface
+                zs = [z for z in ((gr(T['to'].x, T['to'].y, c0.z + 5.0) if gr else None),
+                                  (sea(T['to'].x, T['to'].y) if sea else None)) if z is not None]
+                land = max(zs) if zs else 0.0
+            tf = (vz + math.sqrt(vz * vz + 2 * g * max(0.0, c0.z - land))) / g
+            vh = (T['to'] - Vector((c0.x, c0.y, 0.0))) / tf
+            axis = Vector((vh.y, -vh.x, 0.0)).normalized() if vh.length > 1e-6 else Vector((1, 0, 0))
+            self._flight = {'f0': f, 'c0': c0, 'v': Vector((vh.x, vh.y, vz)), 'tf': tf, 'land': land, 'axis': axis,
+                            'R0': Y.to_3x3(), 't': 0.0, 'landed': None}
+        Fl = self._flight
+        if f > Fl['f0']:
+            Fl['t'] += self.rate / self.fps                 # world time: slow motion slows the flight too
+        t = min(Fl['t'], Fl['tf'])
+        c = Fl['c0'] + Fl['v'] * t + Vector((0, 0, -0.5 * 9.81 * t * t))
+        R = Matrix.Rotation(T['spin'] * t, 3, Fl['axis']) @ Fl['R0']
+        if Fl['t'] >= Fl['tf']:
+            if Fl['landed'] is None:
+                Fl['landed'] = f
+                kind = 'splash'
+                if self.surface and self.surface[1] is not None:
+                    s_ = self.surface[1](c.x, c.y)
+                    kind = 'splash' if s_ is not None and s_ >= Fl['land'] - 0.02 else 'land'
+                self.events.append({'kind': kind, 'frame': f, 'pos': [round(v, 3) for v in c]})
+            u = min(1.0, (Fl['t'] - Fl['tf']) / 1.0)
+            c = c + Vector((0, 0, -T['sink'] * _smooth(u)))  # it sinks (or settles in the sand)
+            flat = Vector((R.col[0].x, R.col[0].y, 0.0))
+            if flat.length > 1e-6:
+                R = blend(R.to_4x4(), frame(Vector((0, 0, 0)), flat), min(1.0, u * 3)).to_3x3()
+        M = R.to_4x4()
+        M.translation = c - R @ Vector((self.L * 0.5, 0, 0))
+        return M, pose, False
 
     def _keep_out(self, S, pose, step=4.0, max_turn=40.0):
         """If the drawn blade would pass INTO the body, turn it about the grip, a few degrees at a time, away

@@ -286,6 +286,14 @@ if python3 -c "import json,sys;sys.exit(0 if (json.load(open('$FILM')).get('effe
   ENC="$FR-fx"
 fi
 
+# 5c: the film's titles (hook, place, narration, a spoken line, the end card) burned into the frames inside the
+# vertical safe box (tools/titles.py); the encoded frames stay untouched in $ENC
+if python3 -c "import json,sys;sys.exit(0 if json.load(open('$FILM')).get('titles') else 1)"; then
+  step "5c/9 titles on the frames"
+  python3 tools/titles.py --film "$FILM" --frames "$ENC" --out "$FR-txt" || die "step 5c: tools/titles.py failed (see above)."
+  ENC="$FR-txt"
+fi
+
 step "6/9 encode"
 FIRST=$(basename "$(ls "$ENC"/f*.png | head -1)" .png); FIRST=${FIRST#f}
 ffmpeg -loglevel error -y -framerate "$FPS" -start_number "$((10#$FIRST))" -i "$ENC/f%04d.png" \
@@ -317,6 +325,12 @@ fi
 
 step "8/9 sound"
 EVARG=(); [ -s "output/$NAME.bake-events.json" ] && [ "output/$NAME.bake-events.json" -nt "output/$NAME.bake.json" ] && EVARG=(--events "output/$NAME.bake-events.json")
+# the film's own music (film.score -> tools/score_synth.py), its hits placed on the bake's measured contact and moved
+# by the hit-stops; the film's sounds[] list carries it as a "music" cue (output/<name>-score.wav)
+if python3 -c "import json,sys;sys.exit(0 if json.load(open('$FILM')).get('score') else 1)"; then
+  python3 tools/score_synth.py --film "$FILM" ${EVARG[1]:+--events "${EVARG[1]}"} --out "output/$NAME-score.wav" \
+    || die "step 8 sound: tools/score_synth.py failed (see above)."
+fi
 SETSND=(); [ -n "$SET" ] && SETSND=(--set "$(basename "$SET" .blend)")
 node engine/sound.mjs --film "$FILM" --video "output/$NAME.mp4" --out "output/$NAME-final.mp4" "${EVARG[@]+"${EVARG[@]}"}" "${SETSND[@]+"${SETSND[@]}"}" \
   || die "step 8 sound: engine/sound.mjs failed (see above)."

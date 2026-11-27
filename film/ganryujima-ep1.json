@@ -308,51 +308,51 @@
     {
      "t": 17.0,
      "pose": "stand-blade-low",
-     "x": -6.8,
-     "z": 6.15,
-     "ry": 2.583
+     "x": -6.575,
+     "z": 5.925,
+     "ry": 2.492
     },
     {
      "t": 17.4,
      "pose": "stand-blade-low",
-     "x": -6.55,
-     "z": 5.75,
-     "ry": 2.583
+     "x": -6.1,
+     "z": 5.3,
+     "ry": 2.492
     },
     {
      "t": 17.9,
      "pose": "stand-blade-low",
-     "x": -6.374,
-     "z": 5.593,
-     "ry": 2.302
+     "x": -5.965,
+     "z": 5.183,
+     "ry": 2.285
     },
     {
      "t": 18.4,
      "pose": "stand-blade-low",
-     "x": -6.199,
-     "z": 5.435,
-     "ry": 2.302
+     "x": -5.83,
+     "z": 5.066,
+     "ry": 2.285
     },
     {
      "t": 18.9,
      "pose": "stand-blade-low",
-     "x": -6.023,
-     "z": 5.277,
-     "ry": 2.302
+     "x": -5.695,
+     "z": 4.949,
+     "ry": 2.285
     },
     {
      "t": 19.4,
      "pose": "stand-blade-low",
-     "x": -5.848,
-     "z": 5.12,
-     "ry": 2.302
+     "x": -5.56,
+     "z": 4.832,
+     "ry": 2.285
     },
     {
      "t": 19.9,
      "pose": "stand-blade-low",
-     "x": -5.672,
-     "z": 4.963,
-     "ry": 2.302
+     "x": -5.425,
+     "z": 4.715,
+     "ry": 2.285
     },
     {
      "t": 20.0,
@@ -599,15 +599,25 @@
    ],
    "drop": [
     {
-     "part": "hachigane",
+     "part": "musashi_head_t1",
      "t": 33.3,
      "v": [
-      0.4,
-      1.6,
-      -0.6
+      0.5,
+      1.4,
+      -0.7
      ],
-     "spin": 7.0,
-     "drag": 2.2
+     "spin": 6.0,
+     "drag": 2.4,
+     "paint": {
+      "sat_max": 0.16,
+      "val_min": 0.55,
+      "to": [
+       0.07,
+       0.065,
+       0.07
+      ]
+     },
+     "note": "the headband cut (tradition): the band baked into the generated head leaves it"
     }
    ]
   }
@@ -631,10 +641,11 @@
    "aim": "tsuba",
    "span": 0.4,
    "az0": 112,
-   "az1": 122,
+   "az1": 120,
    "elev": 2,
-   "size0": 0.8,
-   "size1": 1.05,
+   "size0": 0.72,
+   "size1": 1.15,
+   "ease": "out",
    "screen": [
     0.5,
     0.46
@@ -642,7 +653,28 @@
    "fov": 28,
    "feel": "dolly",
    "guard": false,
-   "note": "S1 HOOK: the guard of the long sword in the hand, the low sun beyond (slow push)"
+   "note": "S1 HOOK: the guard of the long sword, a fast push in toward the low sun"
+  },
+  {
+   "t": 1.3,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 150,
+   "az1": 158,
+   "elev0": -12,
+   "elev1": -4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "crane",
+   "note": "S1: Kojiro dark against the red sun, the camera rising"
   },
   {
    "t": 3.0,
@@ -652,7 +684,7 @@
     "hero"
    ],
    "az0": 196,
-   "az1": 184,
+   "az1": 186,
    "elev0": 12,
    "elev1": 8,
    "size": 0.26,
@@ -714,8 +746,8 @@
     "target"
    ],
    "basis": "facing",
-   "az0": 8,
-   "az1": -6,
+   "az0": -6,
+   "az1": -14,
    "elev": -6,
    "size": 0.7,
    "screen": [
@@ -734,17 +766,17 @@
     "hero",
     "target"
    ],
-   "az0": 136,
-   "az1": 144,
-   "elev": 6,
-   "size": 0.42,
+   "az0": 96,
+   "az1": 104,
+   "elev": 10,
+   "size": 0.34,
    "screen": [
     0.5,
-    0.56
+    0.58
    ],
    "fov": 34,
    "feel": "dolly",
-   "note": "S4 WIDE: over Kojiro, Musashi walks up from the sea with the sun behind him"
+   "note": "S4 WIDE: behind Kojiro, Musashi walks up from the sea, the sun behind him"
   },
   {
    "t": 23.4,
@@ -794,7 +826,7 @@
     "target"
    ],
    "basis": "facing",
-   "az": 14,
+   "az": -14,
    "elev": 2,
    "aim": "head",
    "span": 0.55,
@@ -816,7 +848,7 @@
     "hero"
    ],
    "basis": "facing",
-   "az": -12,
+   "az": 12,
    "elev": -3,
    "aim": "head",
    "span": 0.6,
@@ -838,17 +870,17 @@
     "hero",
     "target"
    ],
-   "az0": 214,
-   "az1": 220,
+   "az0": 64,
+   "az1": 70,
    "elev": -5,
-   "size": 0.46,
+   "size": 0.34,
    "screen": [
     0.5,
     0.58
    ],
    "fov": 36,
    "feel": "torpedo",
-   "note": "S5 THE CHARGE: low, toward the sun"
+   "note": "S5 THE CHARGE: low, three-quarter from Kojiro's side"
   },
   {
    "t": 33.25,
@@ -860,7 +892,7 @@
    ],
    "az": 42,
    "elev": 0,
-   "size": 0.72,
+   "size": 0.6,
    "screen": [
     0.5,
     0.5
@@ -877,16 +909,17 @@
     "target"
    ],
    "basis": "facing",
-   "az": 158,
+   "az": -158,
    "elev": 2,
-   "size": 0.8,
+   "size0": 0.74,
+   "size1": 0.86,
    "screen": [
     0.4,
     0.55
    ],
    "fov": 34,
    "feel": "dolly",
-   "note": "S5 AFTER: Musashi in zanshin, the cut headband falling"
+   "note": "S5 AFTER: over Musashi in zanshin, the cut headband falling"
   },
   {
    "t": 37.2,
@@ -896,7 +929,7 @@
     "hero"
    ],
    "basis": "facing",
-   "az": 22,
+   "az": 50,
    "elev": -8,
    "size": 0.55,
    "screen": [
@@ -915,7 +948,7 @@
     "target",
     "hero"
    ],
-   "az": 300,
+   "az": 20,
    "elev0": 10,
    "elev1": 24,
    "size": 0.44,
@@ -954,8 +987,8 @@
    "subjects": [
     "target"
    ],
-   "az0": 206,
-   "az1": 198,
+   "az0": 128,
+   "az1": 120,
    "elev": 7,
    "size": 0.2,
    "screen": [
@@ -964,7 +997,7 @@
    ],
    "fov": 34,
    "feel": "crane",
-   "note": "S7 THE LAST SHOT LIVES: the boat, the sun; the end card over it"
+   "note": "S7 THE LAST SHOT LIVES: the sea, the sun; the end card over it"
   }
  ],
  "cameraMoves": [
@@ -1033,6 +1066,368 @@
    "note": "the oar on the head: paper shards and red"
   }
  ],
+ "sounds": [
+  {
+   "id": "oar-on-head",
+   "t": 33.45,
+   "body": true,
+   "sfx": "wood-chop",
+   "len": 0.6,
+   "gain": 1.1,
+   "note": "the oar sword lands: a dry wooden crack (the score drops out under it)"
+  },
+  {
+   "id": "oar-on-head-thud",
+   "t": 33.45,
+   "body": true,
+   "sfx": "impact-drum",
+   "len": 1.2,
+   "gain": 0.8,
+   "layer": "oar-on-head"
+  },
+  {
+   "id": "fall-knees",
+   "t": 38.6,
+   "body": true,
+   "sfx": "fall",
+   "len": 1.0,
+   "gain": 0.7
+  },
+  {
+   "id": "score",
+   "t": 0,
+   "file": "output/ganryujima-ep1-score.wav",
+   "len": 60,
+   "gain": 0.62,
+   "music": true,
+   "note": "tools/score_synth.py from film.score (film.sh renders it before the mix)"
+  },
+  {
+   "id": "end-bell",
+   "t": 55.1,
+   "sfx": "temple-bell",
+   "len": 4.6,
+   "gain": 0.5
+  }
+ ],
+ "score": {
+  "seed": 5,
+  "key": "D",
+  "scale": "in",
+  "reverb": 0.3,
+  "rt60": 2.6,
+  "gain": 0.9,
+  "cues": [
+   {
+    "t": 0.12,
+    "kind": "odaiko",
+    "gain": 1.0
+   },
+   {
+    "t": 0.5,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "A4",
+      2.6
+     ]
+    ],
+    "gain": 0.5
+   },
+   {
+    "t": 1.3,
+    "kind": "taiko",
+    "gain": 0.6
+   },
+   {
+    "t": 3.0,
+    "until": 21.0,
+    "kind": "drone",
+    "note": "D2",
+    "gain": 0.55
+   },
+   {
+    "t": 3.6,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "D5",
+      2.4
+     ],
+     [
+      2.3,
+      "Eb5",
+      1.2
+     ],
+     [
+      3.4,
+      "D5",
+      3.0
+     ],
+     [
+      7.0,
+      "A4",
+      3.2
+     ]
+    ],
+    "gain": 0.45
+   },
+   {
+    "t": 11.0,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "D4"
+     ],
+     [
+      0.8,
+      "A3"
+     ],
+     [
+      1.6,
+      "D4"
+     ],
+     [
+      2.4,
+      "Eb4"
+     ],
+     [
+      3.6,
+      "D4"
+     ],
+     [
+      4.4,
+      "A3"
+     ],
+     [
+      5.2,
+      "G3"
+     ],
+     [
+      6.4,
+      "A3"
+     ]
+    ],
+    "gain": 0.5
+   },
+   {
+    "t": 11.0,
+    "until": 20.0,
+    "kind": "pulse",
+    "bpm0": 54,
+    "bpm1": 60,
+    "note": "D2",
+    "gain": 0.35
+   },
+   {
+    "t": 20.0,
+    "until": 27.0,
+    "kind": "pulse",
+    "bpm0": 62,
+    "bpm1": 84,
+    "note": "D2",
+    "gain": 0.5
+   },
+   {
+    "t": 20.0,
+    "until": 33.0,
+    "kind": "drone",
+    "note": "Eb2",
+    "gain": 0.5
+   },
+   {
+    "t": 24.4,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "Bb4"
+     ],
+     [
+      0.12,
+      "A4"
+     ]
+    ],
+    "gain": 0.5,
+    "bright": 0.8
+   },
+   {
+    "t": 26.9,
+    "kind": "odaiko",
+    "gain": 0.8
+   },
+   {
+    "t": 27.4,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "Eb5",
+      3.4
+     ]
+    ],
+    "gain": 0.4,
+    "vib": 0.5
+   },
+   {
+    "t": 30.6,
+    "until": 32.2,
+    "kind": "pulse",
+    "bpm0": 96,
+    "bpm1": 120,
+    "note": "D2",
+    "gain": 0.6
+   },
+   {
+    "t": 32.2,
+    "until": 34.0,
+    "kind": "roll",
+    "gain": 0.9
+   },
+   {
+    "at": "contact",
+    "dt": -0.06,
+    "until_dt": 2.6,
+    "kind": "silence",
+    "fade": 0.03
+   },
+   {
+    "at": "contact",
+    "dt": 0.9,
+    "kind": "odaiko",
+    "gain": 1.0
+   },
+   {
+    "t": 37.0,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "A5",
+      4.0
+     ]
+    ],
+    "gain": 0.35,
+    "vib": 0.25
+   },
+   {
+    "t": 42.0,
+    "until": 55.0,
+    "kind": "drone",
+    "note": "D2",
+    "gain": 0.5
+   },
+   {
+    "t": 42.5,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "A4"
+     ],
+     [
+      1.2,
+      "G4"
+     ],
+     [
+      2.4,
+      "Eb4"
+     ],
+     [
+      3.6,
+      "D4"
+     ],
+     [
+      6.0,
+      "A3"
+     ],
+     [
+      7.2,
+      "D4"
+     ]
+    ],
+    "gain": 0.5
+   },
+   {
+    "t": 47.0,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "D5",
+      2.8
+     ],
+     [
+      2.6,
+      "A4",
+      2.0
+     ],
+     [
+      4.4,
+      "Bb4",
+      1.4
+     ],
+     [
+      5.6,
+      "A4",
+      3.6
+     ]
+    ],
+    "gain": 0.45
+   },
+   {
+    "t": 55.0,
+    "kind": "rin",
+    "note": "A5",
+    "gain": 0.5,
+    "len": 5.0
+   },
+   {
+    "t": 55.0,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "D4"
+     ],
+     [
+      0.3,
+      "A4"
+     ],
+     [
+      0.6,
+      "D5"
+     ]
+    ],
+    "gain": 0.45
+   }
+  ]
+ },
+ "audit": {
+  "waive": [
+   {
+    "check": "foreground-blocker",
+    "from": 5.2,
+    "to": 6.6,
+    "why": "the browser preview world has pines at (-4.6,-7.6)/(-2.1,-10) right behind the duel ground; the Blender beach set has none there (its nearest pine ~13 m back): measured on the set with film_modular --camera-report"
+   },
+   {
+    "check": "subject-occluded",
+    "from": 5.2,
+    "to": 6.6,
+    "why": "same: the occluder is a browser-world pine that the Blender set does not have"
+   },
+   {
+    "check": "camera-in-geometry",
+    "from": 5.2,
+    "to": 6.6,
+    "why": "same: a browser-world pine; the set clearance is checked by film_modular --camera-report"
+   }
+  ]
+ },
  "titles": [
   {
    "start": 0.15,

@@ -41,9 +41,29 @@ def _code_files(repo):
     return out
 
 
-def bake_stamp(repo, film):
-    return stamp([os.path.join(repo, 'output', film + '.timeline.json'),
-                  os.path.join(repo, 'film', film + '.json')] + _code_files(repo))
+def bake_stamp(repo, film, extra=()):
+    """The bake's cache key: only what it solves. From the film file: cast, performances (not `drop`: that falls at
+    render time), stage, motion and the clock; from the timeline: the actors and the body clock of every frame and
+    sub-frame (not the camera, titles or sounds: changing a shot no longer re-bakes 60 s of motion); the bake code; and
+    `extra` (the set file: the terrain the bodies stand on)."""
+    h = hashlib.sha256()
+    try:
+        F = json.load(open(os.path.join(repo, 'film', film + '.json')))
+        perf = {k: {kk: vv for kk, vv in (v or {}).items() if kk != 'drop'} for k, v in (F.get('performances') or {}).items()}
+        key = {k: F.get(k) for k in ('cast', 'stage', 'motion', 'fps', 'duration')}
+        key['performances'] = perf
+        h.update(json.dumps(key, sort_keys=True).encode())
+    except (OSError, ValueError):
+        h.update(b'no film file')
+    try:
+        TL = json.load(open(os.path.join(repo, 'output', film + '.timeline.json')))
+        h.update(json.dumps([(fr.get('actors'), fr.get('tb'), fr.get('rate')) for fr in TL['frames']], sort_keys=True).encode())
+        h.update(json.dumps([sf.get('actors') for sf in TL.get('subframes') or []], sort_keys=True).encode())
+        h.update(json.dumps(TL.get('actors'), sort_keys=True).encode())
+    except (OSError, ValueError, KeyError):
+        h.update(b'no timeline')
+    h.update(stamp(_code_files(repo) + [p for p in extra if p]).encode())
+    return h.hexdigest()[:16]
 
 
 def check_pose_channels(TL, f0, f1, film):
@@ -140,6 +160,10 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
     ground_at = ground_sampler(sc, {o for a in actors for o in a.objects})
     sea_at = sea_sampler(sc)
     last_g = {a.aid: 0.0 for a in actors}             # each body casts from 1 m above ITS last ground (a hillside)
+    for a in actors:
+        if a.draw is not None:                        # a thrown scabbard lands on the set (sand or sea)
+            a.draw.surface = (ground_at, sea_at)
+            a.draw.fps = float(fps)
     frames = TL['frames']
     out = {'fps': fps, 'n': len(frames), 'actors': {}, 'checks': {}}
     body = {a.aid: BC.BodyCapsules(a.rig, shrink=body_shrink) for a in actors}
@@ -178,6 +202,7 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                     if _s is not None and _s > base + 0.05:     # standing in the water (the ground is under the sea)
                         chk[a.aid].setdefault('wet', []).append((f, round(_s - base, 3)))
             if a.draw:
+                a.draw.rate = float(fr.get('rate', 1.0) or 1.0)
                 phase = a.draw.step(f, dict(act['pose']))
             else:
                 a.rig.pose(act['pose'])
@@ -225,9 +250,14 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                 chk[a.aid]['phase'].append(phase)
             if checks:
                 _check_frame(a, f, phase, body[a.aid], garment[a.aid], sleeves[a.aid], chk[a.aid], aprons[a.aid])
+    out['props'] = []                                  # things that leave a body: a thrown scabbard's splash / landing
     for a in actors:
         out['actors'][a.aid] = rec[a.aid]
         out['checks'][a.aid] = chk[a.aid]
+        if a.draw is not None and getattr(a.draw, 'events', None):
+            for e in a.draw.events:
+                out['props'].append(dict(e, actor=a.aid, what='saya', t=round((e['frame'] - 1) / fps, 4)))
+                print('[bake] %s scabbard %s at frame %d, %s' % (a.aid, e['kind'], e['frame'], e['pos']))
         if a.springs is not None:
             chk[a.aid]['cloth_lag'] = {j: [r[0] for r in rows] for j, rows in a.springs.log.items()}
         if chk[a.aid].get('terrain'):

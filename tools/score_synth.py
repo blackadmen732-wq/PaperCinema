@@ -183,9 +183,10 @@ def resolve_t(cue, events, fps):
     ev = events.get(cue['at'])
     if not ev or 't' not in ev:
         raise SystemExit('score: the events file has no %r' % cue['at'])
-    tb = float(ev['t'])
-    shift = sum(int(s.get('n', 0)) for s in (events.get('stops') or []) if float(s.get('t', s.get('frame', 0) / fps)) <= tb)
-    return tb + shift / fps + float(cue.get('dt', 0.0))
+    tb = float(ev['t']) + float(cue.get('dt', 0.0))
+    # a hit-stop (tools/post_fx.py: stops [{tb, frames}]) holds the picture on its frame and moves everything after it
+    shift = sum(int(s.get('frames', s.get('n', 0))) for s in (events.get('stops') or []) if float(s.get('tb', s.get('t', 0))) < tb)
+    return tb + shift / fps
 
 
 def render(score, dur, events=None, fps=30):

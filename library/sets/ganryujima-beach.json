@@ -75,12 +75,12 @@
       "kit": "boat",
       "name": "musashi_boat",
       "pos": [
-        -9.0,
-        -14.0,
+        -8.0,
+        -11.0,
         0.05
       ],
-      "rot": 56,
-      "note": "Musashi's boat at MARK_boat, bow toward the duel ground (MARK_hero). Static in v1: landed."
+      "rot": 52,
+      "note": "Musashi's boat landed: bow on the wet sand toward the duel ground (MARK_hero), stern in the water. 27 Nov: moved from (-9, -14) where it floated ~4 m off the beach in water 0.6-0.9 m deep (terrain map), so Episode 1's Musashi can step from the bow onto the sand"
     }
   ],
   "marks": {
@@ -119,8 +119,8 @@
     },
     "MARK_boat": {
       "pos": [
-        -9,
-        -14,
+        -8.0,
+        -11.0,
         0
       ],
       "face": [
@@ -225,13 +225,13 @@
     },
     "CAM_boat": {
       "pos": [
-        -3.6,
-        -20.2,
+        -2.6,
+        -17.2,
         1.15
       ],
       "look": [
-        -9.0,
-        -14.0,
+        -8.0,
+        -11.0,
         0.9
       ],
       "lens": 28,

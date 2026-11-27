@@ -73,6 +73,9 @@ TL = json.load(open(os.path.join(REPO, 'output', f'{FILM}.timeline.json')))
 FPS = TL['clock']['fps'] if isinstance(TL.get('clock'), dict) else 24
 FRAMES = TL['frames']
 f0, f1 = (int(x) for x in arg('frames', f'0-{len(FRAMES) - 1}').split('-'))
+STILLS = sorted({int(v) for v in arg('stills').split(',')}) if arg('stills') else None
+if STILLS:
+    f0, f1 = STILLS[0], STILLS[-1]
 f1 = min(f1, len(FRAMES) - 1)
 import production_bake as PB                                    # noqa: E402  the ONE solve of body, props, paper
 PB.check_pose_channels(TL, f0, f1, FILM)                        # before Blender builds anything
@@ -100,6 +103,11 @@ if arg('set'):
         _roots = [A['root'] for A in TL['frames'][0]['actors'].values() if A.get('root') and not A.get('hidden')]
         _cx = sum(r[0] for r in _roots) / max(1, len(_roots))
         _cy = sum(-r[2] for r in _roots) / max(1, len(_roots))
+        if _stage.get('origin'):
+            # stage.origin: the mark goes under the FILM's origin, so film coordinates are set coordinates measured
+            # from the mark (a film that travels the whole set - a boat 13 m from the duel ground - is blocked on
+            # the set's map, not around wherever its actors happen to stand on frame 0)
+            _cx = _cy = 0.0
         _hdl = bpy.data.objects.new('SET_STAGE', None)
         bpy.context.scene.collection.objects.link(_hdl)
         for _o in list(bpy.data.objects):
@@ -262,6 +270,10 @@ for aid, rig in rigs.items():
         fr_ = lambda t: int(round(float(t) * FPS)) + 1
         draw = SD.Draw(rig, K['sword'], K['saya'], float(dd.get('blade', 0.91)), grab=fr_(dd['grab']),
                        slide=fr_(dd['slide']), clear=fr_(dd['clear']), R=K['R'])
+        _th = ((FILMJ.get('performances') or {}).get(aid) or {}).get('throwSaya')
+        if _th:                                             # the scabbard thrown away; `to` in film (x, z)
+            draw.set_throw(fr_(_th['grab']), fr_(_th['release']), (float(_th['to'][0]), -float(_th['to'][1])),
+                           apex=float(_th.get('apex', 2.0)), spin=float(_th.get('spin', 9.0)))
         opens = {s_: [o for o in ch['objects'] if o.get('pc_recipe') == 'hand_folded' and o.get('pc_socket') == 'hand.' + s_]
                  for s_ in ('R', 'L')}
         skin = next((o.data.materials[0] for o in opens['R'] if o.data.materials), None)
@@ -279,9 +291,14 @@ for aid, rig in rigs.items():
 # every switch that changes the solved motion is part of the cache key, so a comparison run can never load
 # motion baked under other settings (and its own bake file, so the two never overwrite each other)
 _variant = ''.join(s_ for s_, on in (('-stiff', flag('stiff-cloth')), ('-nokeep', flag('no-keep-out'))) if on)
-_stamp = PB.bake_stamp(REPO, FILM) + _variant
+_stamp = PB.bake_stamp(REPO, FILM, extra=[os.path.abspath(arg('set'))] if arg('set') else []) + _variant
 BAKE_PATH = os.path.join(REPO, 'output', FILM + '.bake' + _variant + '.json')
 BAKE = PB.load(BAKE_PATH, _stamp)
+if BAKE is None and flag('reuse-bake') and os.path.exists(BAKE_PATH):
+    # --reuse-bake: render on the bake that is on disk although its key differs (only render-side code changed:
+    # the camera, a dropped part, the look). Never for a film whose motion, cast, stage or set changed.
+    BAKE = json.load(open(BAKE_PATH))
+    print('[bake] REUSING %s although its key differs (%s, now %s): --reuse-bake' % (BAKE_PATH, BAKE.get('stamp'), _stamp))
 if BAKE is None:
     print(f'[bake] solving {len(FRAMES)} frames once (draw: {sorted(DRAWS) or "none"}, springs: {not flag("stiff-cloth")})')
     BAKE = PB.solve(TL, PACT, FPS, checks=True)
@@ -400,6 +417,174 @@ for i in range(f0, f1 + 1):
         if _DOF and c.get('focus_m'):                           # depth of field / rack focus, keyed from the timeline
             cd.dof.focus_distance = float(c['focus_m'])
             cd.dof.keyframe_insert('focus_distance')
+# ---------------------------------------------------------------- a part leaves the body (performances.<id>.drop)
+# {"part": "<recipe part id>", "t": s, "v": [x, y, z] film m/s, "spin": rad/s, "drag": 1/s, "paint": {...}}: from that frame
+# a free copy falls from where the part was (gravity with air drag: cloth falls slowly), turning, until it lies on the
+# ground; world time follows the speed ramps. Without "paint" the worn part is hidden. With "paint" {"sat_max", "val_min",
+# "to": [r, g, b]} only the faces painted like that leave (Musashi's headband is baked into his generated head): they are
+# copied out, and from that frame the head's own paint shows `to` where they were (a keyed mix to a repainted texture).
+def _tex_node(mat):
+    for n in (mat.node_tree.nodes if mat and mat.use_nodes else []):
+        if n.type == 'TEX_IMAGE' and n.image is not None and n.outputs['Color'].links:
+            return n
+    return None
+
+
+def _paint_piece(o, spec, f_d):
+    import numpy as np
+    from PIL import Image as _PI, ImageDraw as _PD
+    mat = o.active_material
+    tn = _tex_node(mat)
+    if tn is None:
+        print('[drop] %s has no painted texture: no paint piece' % o.name)
+        return None
+    img = tn.image
+    W, H = img.size
+    px = np.array(img.pixels[:], dtype=np.float32).reshape(H, W, 4)
+    mx = px[..., :3].max(-1)
+    mn = px[..., :3].min(-1)
+    sat = np.where(mx > 1e-4, (mx - mn) / np.maximum(mx, 1e-4), 0)
+    match = (sat <= float(spec.get('sat_max', 0.18))) & (mx >= float(spec.get('val_min', 0.55)))
+    me = o.data
+    uv = me.uv_layers.active.data
+    keep = []
+    for p in me.polygons:
+        us = [uv[li].uv for li in p.loop_indices]
+        cu = sum(u.x for u in us) / len(us)
+        cv = sum(u.y for u in us) / len(us)
+        x_, y_ = min(W - 1, max(0, int(cu * W))), min(H - 1, max(0, int(cv * H)))
+        if match[y_, x_]:
+            keep.append(p.index)
+    if not keep:
+        print('[drop] %s: no faces painted like %s' % (o.name, spec))
+        return None
+    # the piece: those faces, their own copy of the material (the original paint)
+    import bmesh as _bm
+    bm = _bm.new()
+    bm.from_mesh(me)
+    ks = set(keep)
+    _bm.ops.delete(bm, geom=[f for f in bm.faces if f.index not in ks], context='FACES')
+    cen = sum((v.co for v in bm.verts), Vector()) / max(1, len(bm.verts))
+    for v in bm.verts:
+        v.co = cen + (v.co - cen) * 1.015                   # just outside the head: no flicker on the first frames
+    pm_ = bpy.data.meshes.new(o.name + '_piece')
+    bm.to_mesh(pm_)
+    bm.free()
+    pm_.materials.clear()
+    pm_.materials.append(mat.copy())
+    piece = bpy.data.objects.new(o.name + '_piece', pm_)
+    sc.collection.objects.link(piece)
+    # the head's paint without the piece: the matched pixels inside the piece's UV islands -> `to`
+    mask = _PI.new('L', (W, H), 0)
+    dr = _PD.Draw(mask)
+    for pi in keep:
+        p = me.polygons[pi]
+        dr.polygon([(uv[li].uv.x * W, uv[li].uv.y * H) for li in p.loop_indices], fill=255)
+    mk = np.asarray(mask.filter(__import__('PIL.ImageFilter', fromlist=['x']).MaxFilter(5))) > 0
+    sel = mk & match
+    to = spec.get('to', [0.06, 0.06, 0.07])
+    rp = px.copy()
+    rp[sel, 0], rp[sel, 1], rp[sel, 2] = to[0], to[1], to[2]
+    img2 = bpy.data.images.new(img.name + '_without', W, H, alpha=True)
+    img2.pixels[:] = rp.ravel()
+    img2.pack()
+    nt = mat.node_tree
+    t2 = nt.nodes.new('ShaderNodeTexImage')
+    t2.image = img2
+    t2.interpolation = tn.interpolation
+    if tn.inputs['Vector'].links:
+        nt.links.new(tn.inputs['Vector'].links[0].from_socket, t2.inputs['Vector'])
+    mix = nt.nodes.new('ShaderNodeMix')
+    mix.data_type = 'RGBA'
+    outs = [l_.to_socket for l_ in tn.outputs['Color'].links]
+    nt.links.new(tn.outputs['Color'], mix.inputs[6])
+    nt.links.new(t2.outputs['Color'], mix.inputs[7])
+    for s_ in outs:
+        nt.links.new(mix.outputs[2], s_)
+    fac = mix.inputs[0]
+    fac.default_value = 0.0
+    fac.keyframe_insert('default_value', frame=f_d - 1)
+    fac.default_value = 1.0
+    fac.keyframe_insert('default_value', frame=f_d)
+    for fc in (nt.animation_data.action.fcurves if nt.animation_data and nt.animation_data.action else []):
+        for k in fc.keyframe_points:
+            k.interpolation = 'CONSTANT'
+    print('[drop] %s: %d of %d faces painted like the band leave it; %d texels repainted' % (
+        o.name, len(keep), len(me.polygons), int(sel.sum())))
+    return piece
+
+
+def _drops():
+    for _aid, _p in (FILMJ.get('performances') or {}).items():
+        for _d in (_p or {}).get('drop') or []:
+            _mine = [o for o in chars.get(_aid, {}).get('objects', []) if o.type == 'MESH']
+            _obs = [o for o in _mine if o.get('pc_recipe') == _d['part'] or o.get('pc_part') == _d['part']] or \
+                   [o for o in _mine if _d['part'] in o.name][:1]
+            if not _obs:
+                print('[drop] %s: no part %r on the body - skipped' % (_aid, _d['part']))
+                continue
+            # `t` is action time, like the keys: the first film frame whose body clock reaches it (speed ramps)
+            f_d = next((k + 1 for k, fr_d in enumerate(FRAMES) if float(fr_d.get('tb', fr_d.get('t', 0))) >= float(_d['t']) - 1e-6),
+                       len(FRAMES))
+            if f_d > f1 + 1:
+                continue                                    # after this worker's frames: the part is still worn
+            sc.frame_set(f_d)
+            PB.apply(BAKE, f_d - 1, PACT)
+            bpy.context.view_layer.update()
+            _gr = PB.ground_sampler(sc, set(char_meshes))
+            v0 = Vector((float(_d['v'][0]), -float(_d['v'][2]), float(_d['v'][1]))) if _d.get('v') else Vector((0, 0, 0.5))
+            spin, drag = float(_d.get('spin', 6.0)), float(_d.get('drag', 2.0))
+            for o in _obs:
+                M0 = o.matrix_world.copy()
+                if _d.get('paint'):
+                    cp = _paint_piece(o, _d['paint'], f_d)
+                    if cp is None:
+                        continue
+                    for fi in sorted({f0 + 1, f_d - 1, f_d}):
+                        cp.hide_render = cp.hide_viewport = fi < f_d
+                        cp.keyframe_insert('hide_render', frame=fi)
+                        cp.keyframe_insert('hide_viewport', frame=fi)
+                else:
+                    cp = o.copy()
+                    cp.data = o.data
+                    cp.parent = None
+                    cp.constraints.clear()
+                    sc.collection.objects.link(cp)
+                    cp.animation_data_clear()
+                    for ob_, before in ((o, True), (cp, False)):
+                        for fi in sorted({f0 + 1, f_d - 1, f_d}):
+                            on = (fi < f_d) == before
+                            ob_.hide_render = ob_.hide_viewport = not on
+                            ob_.keyframe_insert('hide_render', frame=fi)
+                            ob_.keyframe_insert('hide_viewport', frame=fi)
+                cp.rotation_mode = 'QUATERNION'
+                pos, rot, scl = M0.decompose()
+                axis = Vector((v0.y, -v0.x, 0.3)).normalized() if v0.length > 1e-6 else Vector((1, 0, 0))
+                p_, v_, t_, rest = pos.copy(), v0.copy(), 0.0, None
+                for fi in range(f_d, f1 + 2):               # integrated from the drop frame: every worker the same path
+                    if fi > f_d and rest is None:
+                        dt = float(FRAMES[min(fi - 1, len(FRAMES) - 1)].get('rate', 1.0) or 1.0) / FPS
+                        v_ += (Vector((0, 0, -9.81)) - v_ * drag) * dt
+                        p_ += v_ * dt
+                        t_ += dt
+                        gz = _gr(p_.x, p_.y, p_.z + 0.5) if _gr else 0.0
+                        if gz is not None and p_.z <= gz + 0.01:
+                            p_.z = gz + 0.01
+                            rest = fi
+                    if fi < f0 + 1:
+                        continue
+                    cp.location = p_
+                    cp.rotation_quaternion = Quaternion(axis, spin * t_) @ rot
+                    cp.scale = scl
+                    cp.keyframe_insert('location', frame=fi)
+                    cp.keyframe_insert('rotation_quaternion', frame=fi)
+                print('[drop] %s %s leaves the body at frame %d%s' % (
+                    _aid, o.name, f_d, (', lies on the ground from frame %d' % rest) if rest else ''))
+
+
+if any(((p or {}).get('drop')) for p in (FILMJ.get('performances') or {}).values()):
+    _drops()
+
 if _cam_log:
     print('[camera] raised clear of the %s on %d frame(s) (frame, metres): %s' % (
         '/'.join(sorted({k for _f, _d, k in _cam_log})), len(_cam_log), [(f_, d_) for f_, d_, _k in _cam_log[:12]]))
@@ -769,4 +954,11 @@ if arg('probe'):
                 row.append('%s centroid %s' % (kind, [round(c, 3) for c in (tot / max(n, 1))]))
             print('[probe] frame %d %s: %s' % (f, aid, ' | '.join(row)))
     raise SystemExit(0)
-bpy.ops.render.render(animation=True)
+if STILLS:
+    for _st in STILLS:
+        sc.frame_set(_st + 1)
+        sc.render.filepath = os.path.join(out, 'f%04d' % (_st + 1))
+        bpy.ops.render.render(write_still=True)
+        print('[film] still frame %d -> %s.png' % (_st + 1, sc.render.filepath))
+else:
+    bpy.ops.render.render(animation=True)

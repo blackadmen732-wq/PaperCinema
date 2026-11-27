@@ -249,6 +249,11 @@ const ids = new Set();
   ids.add(c.id);
   if (!isNum(c.t) || c.t < 0 || c.t > D) err(w, `t must be within 0–${D}s`);
   if (c.sfx) return;                        // reuses a sound already in assets/sfx by id: no search needed
+  if (c.file) {                             // a ready local file (a synthesized score, a made sound): no search either
+    if (!isNum(c.len) || c.len <= 0) err(w, 'len (seconds used) must be > 0');
+    if (!isNum(c.gain) || c.gain < 0 || c.gain > 2) err(w, 'gain must be 0–2 (1 = normal)');
+    return;
+  }
   if (!c.query) err(w, 'needs "query" search words, e.g. "sword unsheath"');
   if (!isNum(c.len) || c.len <= 0) err(w, 'len (seconds used) must be > 0');
   if (!isNum(c.min) || !isNum(c.max) || c.max <= c.min) err(w, 'min/max (milliseconds) must be numbers with max > min');

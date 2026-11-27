@@ -66,6 +66,35 @@ grass is tufts of thin folded blades, open-sea foam patches are off (`foam: 0`),
 sun (`lighting.note` in the set file has the measured luma before and after). Set previews can show the film
 characters: `build_set.py --with-character foe:hasso:recipe=kojiro`.
 
+
+## The Blender route (27 Nov, autopilot item 12) - what is built and what is left
+One film, `film/ganryujima-ep1.json` (60 s, 30 fps, 9:16, on `engine/motion.html`), staged with `stage.origin` on
+MARK_center so the film's coordinates are the set's map (the boat 13 m away, the waterline, the duel ground). Authored
+by a generator during drafting; the JSON is the source.
+
+| beat | s | shots (camera beats) | parts it uses |
+|---|---|---|---|
+| S1 hook | 0-3 | the Shiokaze tsuba, fast push · Kojiro dark against the sun, rising | the draw rig's sword, the generated tsuba |
+| S2 waiting | 3-11 | wide from behind toward the sun · medium, the wind, he sees the boat | cloth springs |
+| S3 the boat | 11-20 | low over the water · Musashi against the sun steps over the bow into the surf | the boat kit piece (moved to land its bow), the oar bokken, terrain follow (boat floor, surf) |
+| S4 the meeting | 20-32 | behind Kojiro, Musashi walks up from the sea · the draw · the throw · the line · anger | the draw, **the thrown scabbard** (new), the 180-degree line kept |
+| S5 one strike | 32-42 | the charge · the impact in profile (slow motion, hit-stop) · Musashi in zanshin, the headband falling · the fall | **measured body impact** (new), **the headband cut** (new: the band's paint leaves the generated head) |
+| S6 after | 42-55 | crane up over the fallen · Musashi walks back to the sea | walk on the slope |
+| S7 end | 55-60 | the last shot lives, the end card | titles |
+
+New parts (each a library feature, data-driven):
+- `performances.<id>.throwSaya {grab, release, to, apex}`: sword_draw.Draw carries the scabbard in the left fist and throws
+  it on a ballistic arc (spinning, slowed by speed ramps) onto the sea / sand; the bake records the splash.
+- `performances.<id>.drop [{part, t, v, spin, drag, paint}]`: a part leaves the body and falls with air drag; with `paint`
+  only the faces painted like that leave (the band baked into Musashi's generated head) and the head's paint shows hair there.
+- `impacts[{t, at: "hero.head"}]`: tools/bake_events.py measures when the striker's weapon reaches that capsule; without
+  a blade contact it drives the hit-stop, the slash and the score's silence.
+- `titles[]` burned in by tools/titles.py (film.sh step 5c); `score{}` synthesized by tools/score_synth.py (step 8).
+- `stage.origin`, `stage.offset`; the camera on terrain (item 13).
+
+Left: the preview render (360x640 here, ~8 h CPU), watching it frame by frame, fixes, then the 1080x1920 final on a rented
+GPU (a new paid service: Mark decides).
+
 ## Order
 1. Shot 2 as one still (Kojirō waiting, vertical, dawn): tune the look knobs to the numbers → Mark sees it.
 2. Recipes + the oar sword (parts 1–2), checked on a turnaround.
