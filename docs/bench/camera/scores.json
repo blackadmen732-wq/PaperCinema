@@ -1,0 +1,53 @@
+{
+ "note": "tools/camera_bench.py solve, 27 Nov 2026: same 8 s ball flight, same measurements; kuroko-* = engine/kuroko.js via tools/camera_bench_kuroko.mjs",
+ "scores": {
+  "locked": {
+   "in_frame_pct": 100.0,
+   "visible_pct": 56.77,
+   "readable_size_pct": 0.0,
+   "turn_accel_p95_deg": 0.0,
+   "lead_room_pct": 46.15,
+   "score": 61.3
+  },
+  "naive": {
+   "in_frame_pct": 100.0,
+   "visible_pct": 54.69,
+   "readable_size_pct": 100.0,
+   "turn_accel_p95_deg": 0.71,
+   "lead_room_pct": 76.92,
+   "score": 76.1
+  },
+  "chase": {
+   "in_frame_pct": 100.0,
+   "visible_pct": 74.48,
+   "readable_size_pct": 3.65,
+   "turn_accel_p95_deg": 3.98,
+   "lead_room_pct": 80.77,
+   "score": 54.0
+  },
+  "operator": {
+   "in_frame_pct": 100.0,
+   "visible_pct": 95.83,
+   "readable_size_pct": 100.0,
+   "turn_accel_p95_deg": 1.86,
+   "lead_room_pct": 86.54,
+   "score": 81.2
+  },
+  "kuroko-frame": {
+   "in_frame_pct": 100.0,
+   "visible_pct": 90.1,
+   "readable_size_pct": 86.98,
+   "turn_accel_p95_deg": 1.29,
+   "lead_room_pct": 88.46,
+   "score": 82.4
+  },
+  "kuroko-track": {
+   "in_frame_pct": 89.58,
+   "visible_pct": 83.85,
+   "readable_size_pct": 2.08,
+   "turn_accel_p95_deg": 6.81,
+   "lead_room_pct": 90.38,
+   "score": 57.0
+  }
+ }
+}
