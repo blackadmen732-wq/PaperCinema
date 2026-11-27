@@ -560,6 +560,21 @@
    "status_note": "✅"
   },
   {
+   "id": "CAMBENCH",
+   "name": "Camera bench (how good is a camera operator?)",
+   "does": "A folded-paper ball floats and DASHES (4 dashes, a boom + dash whoosh each) between paper boxes, passing behind tall ones on purpose. Four operators film the same flight: locked, naive look-at, chase, and the skilled operator (viewpoint chosen by line of sight now and 0.3 s ahead, lead room from the ball's velocity, widens before each dash on the cue sheet, damped springs). Each is scored on the same per-frame maths: in frame, visible (9 rays vs the boxes), readable size, turn jerk, lead room. 2x2 grid video with live readouts and the booms mixed and sync-checked. Isolated from the episodes",
+   "files": [
+    "tools/camera_bench.py",
+    "blender/bench/camera_bench_render.py"
+   ],
+   "guide": [
+    "tools/camera_bench.py"
+   ],
+   "command": "python3 tools/camera_bench.py solve",
+   "status": "test",
+   "status_note": "🧪"
+  },
+  {
    "id": "SWORDDRAW",
    "name": "Sword draw with the real katana",
    "does": "One REAL sword and scabbard per swordsman (`katana_real.py`: full curved steel blade with ridge, temper line and point; wrapped handle; gold-motif iron guard; curved lacquer scabbard with horn mouth, cord knob and vermilion cord). The scabbard is worn outside the clothes (position searched for camera visibility); the left hand holds it, levels it and turns it to meet the right hand; the right hand grips the handle (two-pass arm IK, 0 mm / 0 deg from the grab on); the blade slides out ALONG ITS OWN CURVE (blade and scabbard share one circle), the scabbard pulled back (saya-biki); when the tip clears, the scabbard settles at the hip. Test clips: `output/draw-hip/`, `output/draw-test/` (30 fps)",
