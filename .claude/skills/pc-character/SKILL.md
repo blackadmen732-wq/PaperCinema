@@ -55,6 +55,11 @@ reg.asset_part('kasa_bought', slot='hat', socket='head_top', bone='head',
 ~900 faces — measured 60,042 → 917), normalises to the socket, and hands it to the same `ctx.add()`
 every folded part uses. **A bought mesh becomes paper on the way in.**
 
+**See the whole library**: `$B -b -P blender/character/parts_catalog.py -- --tiles output/character/catalog` then
+`python3 blender/character/parts_catalog.py --sheet output/character/catalog` (every part, named, by slot), and
+`-- --explode library/character-recipes/<id>.json --out <png>` (a character pulled apart into its parts).
+The library is 33 parts in 16 slots (27 Nov 2026), not ~100.
+
 **Painted generated parts (Tripo heads, faces) go through the full chain instead** (`docs/AI-PARTS.md`):
 `tools/tripo.py` (concept image + model, every credit logged) -> an entry in `library/ai-parts.json` ->
 `tools/ai_part.py` (turn to -Y from the eye paint, weld seams, cut, fit to the rig's head, reduce, bake the paint,

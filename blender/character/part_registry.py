@@ -377,11 +377,11 @@ def hachigane(ctx, P, rnd):
         pts += [(x, y, z), (x, y, z + P['height'] * (1.0 if i in (3, 4, 5) else 0.72))]
     for i in range(n - 1):
         faces.append((2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2))
-    band = ctx.add('hachigane', shell(pts, faces), [ctx.mat(P['material']), ctx.mat('seam_shadow')],
+    band = ctx.add('hachigane', shell(pts, faces), [ctx.mat(P.get('material', 'card_charcoal')), ctx.mat('seam_shadow')],
                    thickness=0.008)
     if P['spine']:
         ctx.add('hachigane_spine', box(0, -P['width'] * 0.90, z + P['height'] * 0.55, 0.018, 0.03, 0.075,
-                                       rot=(0.3, 0, 0)), [ctx.mat(P['material']), ctx.mat('seam_shadow')],
+                                       rot=(0.3, 0, 0)), [ctx.mat(P.get('material', 'card_charcoal')), ctx.mat('seam_shadow')],
                 thickness=0.006)
     return band
 
