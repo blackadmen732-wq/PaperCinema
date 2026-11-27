@@ -135,8 +135,20 @@ function earshot(cue) {
   return file;
 }
 
+// AMBIENCE: the place's own bed (library/ambience.json, by the set the film was rendered in: --set NAME), looped
+// under the whole film; beds dip under speech like any bed
+const ambience = [];
+if (opt('set')) {
+  try {
+    const A = JSON.parse(fs.readFileSync('library/ambience.json', 'utf8'))[opt('set')];
+    if (A) {
+      ambience.push({ ...A, t: 0, len: DUR, bed: true });
+      console.log(`+ ambience for ${opt('set')}: ${A.file ?? A.query} (gain ${A.gain})`);
+    }
+  } catch { /* no ambience file */ }
+}
 const placed = [];
-for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
+for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues, ...ambience]) {
   // "sfx" reuses another sound by its id (one file, many cues); defaults for length checks
   // "earshot": "<bank id>" renders a sound from the Earshot bank (MIT, github.com/Leonxlnx/earshot; 252 sounds,
   // no network), aimed so its loudest moment ("apex", seconds into the sound) lands where the cue wants it.

@@ -312,7 +312,8 @@ fi
 
 step "8/9 sound"
 EVARG=(); [ -s "output/$NAME.bake-events.json" ] && [ "output/$NAME.bake-events.json" -nt "output/$NAME.bake.json" ] && EVARG=(--events "output/$NAME.bake-events.json")
-node engine/sound.mjs --film "$FILM" --video "output/$NAME.mp4" --out "output/$NAME-final.mp4" "${EVARG[@]+"${EVARG[@]}"}" \
+SETSND=(); [ -n "$SET" ] && SETSND=(--set "$(basename "$SET" .blend)")
+node engine/sound.mjs --film "$FILM" --video "output/$NAME.mp4" --out "output/$NAME-final.mp4" "${EVARG[@]+"${EVARG[@]}"}" "${SETSND[@]+"${SETSND[@]}"}" \
   || die "step 8 sound: engine/sound.mjs failed (see above)."
 [ -s "output/$NAME-final.mp4" ] || die "step 8 sound: output/$NAME-final.mp4 was not written."
 
