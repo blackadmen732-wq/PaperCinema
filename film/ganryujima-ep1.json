@@ -1290,7 +1290,7 @@
    {
     "at": "contact",
     "dt": -0.06,
-    "until_dt": 2.6,
+    "until_dt": 0.86,
     "kind": "silence",
     "fade": 0.03
    },
@@ -1447,7 +1447,8 @@
    "start": 7.0,
    "end": 10.8,
    "style": "bottom",
-   "en": "Sasaki Kojirō waited.\nMusashi was late."
+   "en": "Sasaki Kojirō waited.\nMusashi was late.",
+   "sub": "as tradition tells it"
   },
   {
    "start": 11.6,
