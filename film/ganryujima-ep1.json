@@ -564,12 +564,12 @@
      "slot": "band",
      "becomes": "hair",
      "v": [
-      0.5,
-      1.4,
-      -0.7
+      -0.4,
+      2.0,
+      0.9
      ],
-     "spin": 6.0,
-     "drag": 2.4,
+     "spin": 5.0,
+     "drag": 4.5,
      "note": "the headband cut (tradition): the band slot of the generated head leaves it"
     }
    ]
@@ -668,11 +668,11 @@
    "az0": 38,
    "az1": 30,
    "elev": 3,
-   "size": 0.72,
+   "size": 0.66,
    "aim": "chest",
    "screen": [
     0.46,
-    0.52
+    0.6
    ],
    "fov": 34,
    "feel": "handheld",
@@ -706,18 +706,17 @@
    "subjects": [
     "target"
    ],
-   "basis": "facing",
-   "az0": 150,
-   "az1": 140,
-   "elev": -4,
-   "size": 0.62,
+   "az0": 60,
+   "az1": 52,
+   "elev": -6,
+   "size": 0.75,
    "screen": [
     0.5,
-    0.52
+    0.55
    ],
    "fov": 32,
    "feel": "dolly",
-   "note": "S3 BEHIND: over the water behind Musashi, the island and the glow ahead of him"
+   "note": "S3: Musashi in the boat from the south-east, looking up at the island, the glow beyond"
   },
   {
    "t": 18.5,
@@ -809,19 +808,18 @@
     "hero"
    ],
    "basis": "facing",
-   "az": 45,
-   "elev": -3,
-   "aim": "head",
-   "span": 0.8,
-   "size0": 0.85,
-   "size1": 1.0,
+   "az": 10,
+   "elev": -6,
+   "aim": "chest",
+   "size0": 0.5,
+   "size1": 0.58,
    "screen": [
     0.5,
-    0.45
+    0.56
    ],
-   "fov": 30,
+   "fov": 32,
    "feel": "handheld",
-   "note": "S4 ANGER: hasso"
+   "note": "S4 ANGER: low medium, he takes hasso against the glow (the close-up was blocked by his own raised hands)"
   },
   {
    "t": 32.2,
@@ -853,7 +851,7 @@
    ],
    "az": 42,
    "elev": 0,
-   "size": 0.6,
+   "size": 0.5,
    "screen": [
     0.5,
     0.5

@@ -432,8 +432,21 @@ def _slot_piece(o, spec, f_d):
     over in which those faces wear the `becomes` slot (hair), so no hole and no band are left on the head."""
     import bmesh as _bm
     names = [(s_.material.name.lower() if s_.material else '') for s_ in o.material_slots]
-    si = next((i for i, n in enumerate(names) if spec['slot'] in n), None)
-    bi = next((i for i, n in enumerate(names) if spec.get('becomes') and spec['becomes'] in n), None)
+    # a generated part's slots are its palette classes in order (library/ai-parts.json), renamed to paper sheets
+    # when it is built (natural / sumi / bleached): find the class by name in the material, else by its palette place
+    try:
+        _pal = [c_['name'] for c_ in (json.load(open(os.path.join(REPO, 'library', 'ai-parts.json'))).get(spec['part']) or {}).get('palette', [])]
+    except (OSError, ValueError):
+        _pal = []
+
+    def _find(cls):
+        if not cls:
+            return None
+        hit = next((i for i, n in enumerate(names) if cls in n), None)
+        if hit is None and cls in _pal and _pal.index(cls) < len(names):
+            hit = _pal.index(cls)
+        return hit
+    si, bi = _find(spec['slot']), _find(spec.get('becomes'))
     if si is None:
         print('[drop] %s has no material slot like %r (slots %s): skipped' % (o.name, spec['slot'], names))
         return None
