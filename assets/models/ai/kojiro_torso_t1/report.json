@@ -2,6 +2,9 @@
  "id": "kojiro_torso_t1",
  "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
  "faces_raw": 794534,
+ "cut_inputs": [
+  "Metallic"
+ ],
  "facing": {
   "from": "manifest",
   "deg": 0.0
@@ -19,18 +22,25 @@
  "open_edges_after_weld": 0,
  "cut_z_model": null,
  "faces_cut": 240553,
+ "facets_turned_to_surface": 53,
  "faces_part": 5034,
- "bake_s": 2.1,
+ "paint_samples": {
+  "ray": 18044,
+  "nearest": 1462,
+  "none": 630
+ },
  "bake_missed_pct": 0.0,
- "despeckled_faces": 114,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 155,
+ "despeckled_faces": 239,
  "classes_pct": {
-  "crimson": 68.1,
-  "cream": 11.9,
-  "black": 16.4,
-  "oxblood": 3.6
+  "crimson": 80.5,
+  "cream": 10.1,
+  "black": 8.5,
+  "oxblood": 1.0
  },
  "hair_faces_pct": 0.0,
- "ink_pct": 73.15,
+ "ink_pct": 0.0,
  "glow_pct": 0.0,
  "bbox": {
   "min": [
@@ -39,10 +49,10 @@
    0.8599933981895447
   ],
   "max": [
-   0.21504083275794983,
+   0.21505510807037354,
    0.224056676030159,
    1.5003620386123657
   ]
  },
- "total_s": 14.4
+ "total_s": 16.3
 }

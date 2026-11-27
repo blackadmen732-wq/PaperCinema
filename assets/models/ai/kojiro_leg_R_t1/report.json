@@ -2,6 +2,9 @@
  "id": "kojiro_leg_R_t1",
  "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
  "faces_raw": 794534,
+ "cut_inputs": [
+  "Metallic"
+ ],
  "facing": {
   "from": "manifest",
   "deg": 0.0
@@ -19,16 +22,23 @@
  "open_edges_after_weld": 0,
  "cut_z_model": null,
  "faces_cut": 91862,
+ "facets_turned_to_surface": 6,
  "faces_part": 2513,
- "bake_s": 1.9,
+ "paint_samples": {
+  "ray": 8857,
+  "nearest": 1006,
+  "none": 189
+ },
  "bake_missed_pct": 0.0,
- "despeckled_faces": 10,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 45,
+ "despeckled_faces": 12,
  "classes_pct": {
-  "oxblood": 77.6,
-  "black": 22.4
+  "oxblood": 79.9,
+  "black": 20.1
  },
  "hair_faces_pct": 0.0,
- "ink_pct": 90.94,
+ "ink_pct": 0.0,
  "glow_pct": 0.0,
  "bbox": {
   "min": [
@@ -37,10 +47,10 @@
    0.11999163031578064
   ],
   "max": [
-   0.0001385021605528891,
+   0.00013613914779853076,
    0.20232072472572327,
-   0.5600165724754333
+   0.5600089430809021
   ]
  },
- "total_s": 11.7
+ "total_s": 12.7
 }

@@ -2,6 +2,9 @@
  "id": "kojiro_sleeve_R_t1",
  "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
  "faces_raw": 794534,
+ "cut_inputs": [
+  "Metallic"
+ ],
  "facing": {
   "from": "manifest",
   "deg": 0.0
@@ -19,28 +22,35 @@
  "open_edges_after_weld": 0,
  "cut_z_model": null,
  "faces_cut": 72682,
+ "facets_turned_to_surface": 19,
  "faces_part": 2528,
- "bake_s": 1.8,
+ "paint_samples": {
+  "ray": 8927,
+  "nearest": 782,
+  "none": 403
+ },
  "bake_missed_pct": 0.0,
- "despeckled_faces": 0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 100,
+ "despeckled_faces": 8,
  "classes_pct": {
   "crimson": 99.6,
   "cream": 0.4
  },
  "hair_faces_pct": 0.0,
- "ink_pct": 78.26,
+ "ink_pct": 0.0,
  "glow_pct": 0.0,
  "bbox": {
   "min": [
    -0.4614708721637726,
    -0.1310543566942215,
-   0.919940710067749
+   0.9199488759040833
   ],
   "max": [
-   -0.19993774592876434,
+   -0.19980105757713318,
    0.14965490996837616,
    1.4385569095611572
   ]
  },
- "total_s": 10.4
+ "total_s": 11.7
 }

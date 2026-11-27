@@ -1,0 +1,56 @@
+{
+ "id": "musashi_leg_R",
+ "raw": "output/tripo/musashi-body-model-1.pbr.glb",
+ "faces_raw": 955774,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 1.8931638396811368,
+  "waist_centre_model": [
+   0.0022352011378816237,
+   -0.004285405146090026
+  ],
+  "height_m": 1.8918918918918919
+ },
+ "welded_verts": 24083,
+ "open_edges_after_weld": 0,
+ "cut_z_model": null,
+ "faces_cut": 137135,
+ "facets_turned_to_surface": 16,
+ "faces_part": 2515,
+ "paint_samples": {
+  "ray": 9633,
+  "nearest": 124,
+  "none": 304
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 75,
+ "despeckled_faces": 1,
+ "classes_pct": {
+  "hakama": 100.0,
+  "obi": 0.0
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.3640884459018707,
+   -0.20923669636249542,
+   0.11999931186437607
+  ],
+  "max": [
+   2.967565342260059e-05,
+   0.2920738458633423,
+   0.5600816607475281
+  ]
+ },
+ "total_s": 16.8
+}

@@ -101,8 +101,21 @@ def get(aid, res='2k', fmt=None, quiet=False):
             got[short] = os.path.relpath(p, REPO)
             if not quiet:
                 print(('downloaded ' if new else 'cached     ') + got[short], f'{f["size"] / 1e6:.1f} MB')
+    elif kind == 'models':
+        # glTF + its own textures, kept at the relative paths the .gltf names (textures/<id>_<map>_<res>.jpg)
+        r = res if res in files.get('gltf', {}) else '1k' if '1k' in files.get('gltf', {}) else next(iter(files['gltf']))
+        g = files['gltf'][r]['gltf']
+        p = os.path.join(d, f'{aid}_{r}.gltf')
+        new = download(g['url'], p)
+        for rel, inc in g.get('include', {}).items():
+            q = os.path.join(d, rel)
+            os.makedirs(os.path.dirname(q), exist_ok=True)
+            download(inc['url'], q)
+        got['gltf'] = os.path.relpath(p, REPO)
+        if not quiet:
+            print(('downloaded ' if new else 'cached     ') + got['gltf'], f'{len(g.get("include", {}))} files with it')
     else:
-        raise SystemExit(f'{aid}: type {kind} not supported (hdris, textures)')
+        raise SystemExit(f'{aid}: type {kind} not supported (hdris, textures, models)')
     meta = {'id': aid, 'name': info.get('name', aid), 'type': kind, 'authors': sorted(info.get('authors', {})),
             'licence': 'CC0', 'url': f'https://polyhaven.com/a/{aid}', 'res': res, 'files': got,
             'scale': info.get('scale'), 'dimensions_mm': info.get('dimensions'), 'categories': info.get('categories', [])}
@@ -137,9 +150,9 @@ def credits():
 def manifest_ids():
     M = json.load(open(MANIFEST))
     ids = {}
-    for group in ('textures', 'hdris'):
+    for group in ('textures', 'hdris', 'models'):
         for role, ent in M.get(group, {}).items():
-            ids.setdefault(ent['id'], ent.get('res', M.get('res', {}).get(group, '2k')))
+            ids.setdefault(ent['id'], ent.get('res', M.get('res', {}).get(group, '1k' if group == 'models' else '2k')))
     return ids
 
 

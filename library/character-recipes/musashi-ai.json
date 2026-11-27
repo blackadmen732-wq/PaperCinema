@@ -1,0 +1,18 @@
+{
+  "id": "musashi-ai",
+  "name": "Miyamoto Musashi - generated head and body sections test",
+  "extends": "musashi.json",
+  "note": "Musashi from ONE generated figure (library/ai-parts.json: the `musashi` body block + musashi_head_t1; Tripo text_to_image 5 + image_to_model 30 credits): head with face, hair and headband (baked paint, ink on the skin), torso, two sleeves, hakama top, two hakama legs, two feet, each bound like the folded part it replaces. The sheets come from the model's own paint (a near-black navy robe, a black obi at the waist), not the concept image. Kept from the folded library: the neck, the forearm under-sleeves, the hands and the sword, as on kojiro-ai2. A test recipe; production Musashi (musashi.json) is unchanged.",
+  "drop": ["face", "hair", "hat", "torso", "sleeve_upper", "sleeve_hanging", "thigh", "shin", "armor", "foot", "collar", "obi"],
+  "add": [
+    {"part": "musashi_head_t1"},
+    {"part": "musashi_torso"},
+    {"part": "musashi_sleeve_L"},
+    {"part": "musashi_sleeve_R"},
+    {"part": "musashi_hakama"},
+    {"part": "musashi_leg_L"},
+    {"part": "musashi_leg_R"},
+    {"part": "musashi_foot_L"},
+    {"part": "musashi_foot_R"}
+  ]
+}

@@ -39,3 +39,27 @@ The old mask was 0.258 m wide: cartoon-wide.
 | head shattered into spikes and holes | 30,724 open edges: the mesh is split along every UV seam; reducing a mesh full of borders fans to them | weld first (UVs per corner survive, the bake reads them) |
 | head looked down +X | the service's own frame | turn from the eye paint's direction (0.3 deg off +X), snapped to 90 deg |
 | centred 7 cm sideways | the light paint near the cut includes a collar the service added | centre on the eyes |
+| (Kojiro body) sleeve as a cone, sash on a hanger | a section alone gives the image model nothing to fold | one whole-body concept from TEXT (an image edit keeps the reference's toy proportions), then cut |
+| Tripo auto-rig unusable | generic bones, T-pose arm chains in the air, sleeves read as limbs | our own sections bound to our bones (below) |
+| (Musashi) 45-75% of every bake pure black | Tripo marked 77% of his paint as METAL (ORM blue, mean 0.705; Kojiro's 0.09 / 0.02) and a diffuse-colour bake is base x (1 - metallic) | `ai_part.py` cuts the Metallic and Transmission inputs before any bake |
+| 25% "black" even on the good Kojiro head | the bake's own *clear* painted the gaps between UV islands black, so they counted as misses and fed the ink mask | the target is filled magenta and `use_clear` is off: gaps = magenta = not counted (both heads now 0.0% black) |
+| 56% of Musashi's torso sorted as "obi" | the palette came from the CONCEPT (a mid navy robe); the model painted the robe near-black navy, nearer the obi's black | palette from the model's OWN paint (`AI_PART_DUMP=1` + k-means per section) and **zones**: the obi may only be at the waist (0.66-1.09 m) and on the sandal thongs |
+| flat skin shelf under Musashi's chin; then a 4 cm gap | a head cut 3 cm under the chin caught the collar; at the figure's own height the head sat above the folded neck | cut just under the chin, the cut to 1.51 m (the neck top) |
+
+## Body sections (one figure, cut, bound to our bones)
+`"kind": "body"` in `library/ai-parts.json` (expanded by `blender/character/ai_manifest.py`) turns ONE generated figure
+into the standard sections: torso, 2 sleeves, hakama top, 2 hakama legs, 2 feet (+ optional head). One fit for the
+whole figure (feet at 0, shoulder line at 1.40 m), then each section keeps its box in rig metres and is bound like
+the folded part it replaces (skinned across the same bones, or rigid on one). A section needs one sheet per facet,
+not a texture: each facet takes the paint of the OUTERMOST original surface over it (5 rays from outside, cut faces
+skipped), the nearest colour among the classes that section may contain, inside that class's zone.
+A face needs printed ink, so a head is cut from the same model in head mode (baked): `musashi_head_t1`.
+
+| character | recipe | parts | checks |
+|---|---|---|---|
+| Kojiro | `kojiro-ai2` | kojiro_head_t1 (own head model) + 8 kojiro_*_t1 | validator 152/152, 5-pose sweep |
+| Musashi | `musashi-ai` | musashi_head_t1 + 8 musashi_* from one figure (35 credits) | validator 152/152, 5-pose sweep `output/heads/poses-musashi-ai-*.png` |
+
+Kept from the folded library on both: neck, forearm under-sleeve (the hand floated off the cuff without it), hands
+(the sword grips swap them), sword. Known limits: a raised arm crumples the skinned sleeve; the forearm under-sleeve
+reads as a flat plank in a low dodge.

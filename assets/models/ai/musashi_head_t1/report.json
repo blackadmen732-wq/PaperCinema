@@ -1,0 +1,51 @@
+{
+ "id": "musashi_head_t1",
+ "raw": "output/tripo/musashi-body-model-1.pbr.glb",
+ "faces_raw": 955774,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "welded_verts": 24083,
+ "open_edges_after_weld": 0,
+ "cut_z_model": 0.3202983357429505,
+ "faces_cut": 62509,
+ "fit": {
+  "scale": 1.8933143416160836,
+  "centre_model_x": 0.009150166064500809,
+  "neck_model_y": -0.0033812851179391146,
+  "neck_light_x": 0.004473908804357052,
+  "neck_samples": 8182
+ },
+ "facets_turned_to_surface": 9,
+ "faces_part": 4014,
+ "bake_s": 2.9,
+ "bake_missed_pct": 33.33,
+ "bake_black_pct": 0.0,
+ "source_black_pct": 0.0,
+ "despeckled_faces": 78,
+ "classes_pct": {
+  "skin": 30.2,
+  "hair": 42.6,
+  "band": 27.2
+ },
+ "hair_faces_pct": 42.6,
+ "ink_pct": 31.07,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.18734097480773926,
+   -0.2058648020029068,
+   1.509986400604248
+  ],
+  "max": [
+   0.1871490329504013,
+   0.12553459405899048,
+   1.8500314950942993
+  ]
+ },
+ "total_s": 16.4
+}

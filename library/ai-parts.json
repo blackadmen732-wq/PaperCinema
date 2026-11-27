@@ -657,5 +657,324 @@
     },
     "rigid": true,
     "bone": "rfoot"
+  },
+  "musashi": {
+    "kind": "body",
+    "label": "Miyamoto Musashi (Tripo body t1)",
+    "raw": "output/tripo/musashi-body-model-1.pbr.glb",
+    "facing": "+x",
+    "head": false,
+    "source": {
+      "service": "Tripo API",
+      "concept": "text_to_image 5 credits: output/tripo/musashi-body-concept-1.image.png",
+      "model_task": "54a77931-ea38-4545-b48c-c10f1d145c43 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "colors": {
+      "robe": [
+        [
+          0.169,
+          0.184,
+          0.216
+        ],
+        [
+          0.122,
+          0.145,
+          0.176
+        ],
+        [
+          0.09,
+          0.106,
+          0.129
+        ],
+        [
+          0.161,
+          0.18,
+          0.208
+        ],
+        [
+          0.118,
+          0.133,
+          0.161
+        ]
+      ],
+      "under": [
+        [
+          0.812,
+          0.714,
+          0.525
+        ]
+      ],
+      "obi": [
+        [
+          0.106,
+          0.106,
+          0.106
+        ],
+        [
+          0.125,
+          0.114,
+          0.094
+        ],
+        [
+          0.078,
+          0.078,
+          0.078
+        ],
+        [
+          0.188,
+          0.165,
+          0.137
+        ],
+        [
+          0.165,
+          0.122,
+          0.082
+        ]
+      ],
+      "hakama": [
+        [
+          0.502,
+          0.333,
+          0.224
+        ],
+        [
+          0.435,
+          0.282,
+          0.18
+        ],
+        [
+          0.337,
+          0.216,
+          0.137
+        ],
+        [
+          0.216,
+          0.165,
+          0.122
+        ],
+        [
+          0.192,
+          0.137,
+          0.094
+        ],
+        [
+          0.455,
+          0.294,
+          0.192
+        ],
+        [
+          0.373,
+          0.235,
+          0.145
+        ],
+        [
+          0.278,
+          0.204,
+          0.141
+        ],
+        [
+          0.424,
+          0.322,
+          0.235
+        ]
+      ],
+      "tabi": [
+        [
+          0.741,
+          0.729,
+          0.714
+        ],
+        [
+          0.682,
+          0.671,
+          0.667
+        ]
+      ],
+      "straw": [
+        [
+          0.729,
+          0.584,
+          0.349
+        ],
+        [
+          0.6,
+          0.447,
+          0.224
+        ],
+        [
+          0.427,
+          0.286,
+          0.149
+        ]
+      ],
+      "skin": [
+        [
+          0.78,
+          0.624,
+          0.341
+        ],
+        [
+          0.863,
+          0.761,
+          0.584
+        ],
+        [
+          0.482,
+          0.408,
+          0.263
+        ]
+      ],
+      "hair": [
+        [
+          0.106,
+          0.102,
+          0.094
+        ],
+        [
+          0.255,
+          0.239,
+          0.212
+        ]
+      ],
+      "band": [
+        [
+          0.8,
+          0.8,
+          0.792
+        ],
+        [
+          0.624,
+          0.608,
+          0.58
+        ]
+      ]
+    },
+    "sheets": {
+      "robe": "card_indigo",
+      "under": "washi_natural",
+      "obi": "washi_sumi",
+      "hakama": "card_umber",
+      "tabi": "washi_bleached",
+      "straw": "washi_hat",
+      "skin": "washi_natural",
+      "hair": "washi_sumi",
+      "band": "washi_bleached"
+    },
+    "why": "the story bible (library/characters/musashi.json): slate indigo kosode, brown hakama, cream collar, white headband, wild hair; his chin sits at 82.6% of the figure (Kojiro 79%), so the head is cut from 1.53 m to keep the collar off the head bone",
+    "colors_from": "the 3D model's OWN paint (k-means per section of the facet paint, AI_PART_DUMP=1, 27 Nov), not the concept image: Tripo painted the robe a near-black navy, so concept colours sent 56% of the torso to \"obi\"",
+    "zones": {
+      "obi": [
+        {
+          "z": [
+            0.66,
+            1.09
+          ]
+        },
+        {
+          "z": [
+            -0.05,
+            0.16
+          ]
+        }
+      ]
+    },
+    "zones_why": "the black obi is a band at 0.98-1.08 m with its knot tails hanging to 0.69 m (plus the sandal thongs on the feet); anywhere else a black facet is a robe fold",
+    "head_why": "the face needs its paint baked (ink brows/eyes): musashi_head_t1 is the head-mode cut of this same model"
+  },
+  "musashi_head_t1": {
+    "label": "Miyamoto Musashi: head, face, hair, headband (cut from the Tripo body t1)",
+    "slot": "face",
+    "socket": "face",
+    "bone": "head",
+    "layer": 40,
+    "raw": "output/tripo/musashi-body-model-1.pbr.glb",
+    "facing": "+x",
+    "prepared": "assets/models/ai/musashi_head_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "text_to_image 5 credits: output/tripo/musashi-body-concept-1.image.png",
+      "model_task": "54a77931-ea38-4545-b48c-c10f1d145c43 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "cut": 0.8203,
+    "fit": {
+      "bottom_z": 1.51,
+      "height": 0.34,
+      "neck_xy": [
+        0.0,
+        0.0
+      ],
+      "why": "the same scale as his body sections (0.340 m kept = chin to crown at the figure's own scale); the cut sits just under the chin (at 1.53 m it caught the top of the collar and left a flat shelf under the chin), and the cut goes to 1.51 m, the top of the folded neck (at the figure's own 1.552 m the head floated 4 cm above it; 27 Nov)"
+    },
+    "faces": 4000,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "skin",
+        "rgb": [
+          [
+            0.78,
+            0.624,
+            0.341
+          ],
+          [
+            0.863,
+            0.761,
+            0.584
+          ],
+          [
+            0.482,
+            0.408,
+            0.263
+          ]
+        ]
+      },
+      {
+        "name": "hair",
+        "rgb": [
+          [
+            0.106,
+            0.102,
+            0.094
+          ],
+          [
+            0.255,
+            0.239,
+            0.212
+          ]
+        ]
+      },
+      {
+        "name": "band",
+        "rgb": [
+          [
+            0.8,
+            0.8,
+            0.792
+          ],
+          [
+            0.624,
+            0.608,
+            0.58
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "skin": "washi_natural",
+      "hair": "washi_sumi",
+      "band": "washi_bleached"
+    },
+    "ink": [
+      0.018,
+      0.016,
+      0.015
+    ],
+    "lantern": {
+      "skin": 0.4,
+      "hair": 0.0,
+      "band": 0.0
+    }
   }
 }

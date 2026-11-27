@@ -1353,8 +1353,9 @@ def load_ai_parts(path=AI_PARTS_FILE):
     """Register every prepared generated part in the manifest (entries whose <prepared>/part.glb exists)."""
     if not os.path.exists(path):
         return []
+    import ai_manifest                         # one-block "body" characters expand into their sections
     done = []
-    for pid, e in json.load(open(path)).items():
+    for pid, e in ai_manifest.load(path).items():
         if pid.startswith('_') or not isinstance(e, dict):
             continue
         if not os.path.exists(os.path.join(REPO, e['prepared'], 'part.glb')):

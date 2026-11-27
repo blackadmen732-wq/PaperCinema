@@ -2,6 +2,9 @@
  "id": "kojiro_hakama_t1",
  "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
  "faces_raw": 794534,
+ "cut_inputs": [
+  "Metallic"
+ ],
  "facing": {
   "from": "manifest",
   "deg": 0.0
@@ -23,28 +26,35 @@
  },
  "cut_z_model": null,
  "faces_cut": 177047,
+ "facets_turned_to_surface": 18,
  "faces_part": 3036,
- "bake_s": 2.1,
+ "paint_samples": {
+  "ray": 9618,
+  "nearest": 1761,
+  "none": 765
+ },
  "bake_missed_pct": 0.0,
- "despeckled_faces": 50,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 191,
+ "despeckled_faces": 148,
  "classes_pct": {
-  "oxblood": 78.9,
-  "black": 21.1
+  "oxblood": 88.3,
+  "black": 11.7
  },
  "hair_faces_pct": 0.0,
- "ink_pct": 89.45,
+ "ink_pct": 0.0,
  "glow_pct": 0.0,
  "bbox": {
   "min": [
-   -0.32018086314201355,
+   -0.320182740688324,
    -0.2172914296388626,
    0.5199891328811646
   ],
   "max": [
-   0.32000184059143066,
+   0.32000190019607544,
    0.23318566381931305,
-   0.9301154613494873
+   0.930122971534729
   ]
  },
- "total_s": 13.6
+ "total_s": 15.1
 }

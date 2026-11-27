@@ -38,7 +38,12 @@ from mathutils import Matrix, Vector
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 PID = ARGV[0] if ARGV else None
-MAN = json.load(open(os.path.join(REPO, 'library', 'ai-parts.json')))
+sys.path.insert(0, os.path.join(REPO, 'blender', 'character'))
+import ai_manifest  # noqa: E402   (expands one-block "body" characters into their sections)
+MAN = ai_manifest.load()
+if PID not in MAN:
+    raise SystemExit(f'{PID}: not in library/ai-parts.json (sections of a body are <body>_torso, <body>_sleeve_L, ...): '
+                     + ', '.join(sorted(MAN)))
 E = MAN[PID]
 OUT = os.path.join(REPO, E['prepared'])
 os.makedirs(OUT, exist_ok=True)
@@ -79,6 +84,18 @@ REP['faces_raw'] = len(hi.data.polygons)
 src_img = next(n.image for m in hi.data.materials if m and m.use_nodes for n in m.node_tree.nodes
                if n.type == 'TEX_IMAGE' and n.image and any(l.to_socket.name == 'Base Color' for l in n.outputs[0].links))
 log('raw', REP['faces_raw'], 'faces, paint', src_img.name, tuple(src_img.size))
+# we bake the PAINT, never the metal: a diffuse-colour bake is base colour x (1 - metallic), and a service can mark
+# cloth as metal (Musashi's Tripo body, 27 Nov: 77% of his ORM texels metallic > 0.5, mean 0.705 - Kojiro's 0.09):
+# his torso and head baked 45-75% black until this cut.
+for m in hi.data.materials:
+    bs = next((n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED'), None) if m and m.use_nodes else None
+    for sock in ('Metallic', 'Transmission Weight') if bs else ():
+        i = bs.inputs.get(sock)
+        if i is not None:
+            for l in list(i.links):
+                m.node_tree.links.remove(l)
+                REP.setdefault('cut_inputs', []).append(sock)
+            i.default_value = 0.0
 
 # ---------------------------------------------------------------- 1b which way does it face?
 # A service puts its model in its own frame (the first Kojiro head looked down +X; the rig faces -Y). The eyes
@@ -249,89 +266,203 @@ bpy.data.meshes.remove(old)
 bmx = bmesh.new()
 bmx.from_mesh(lo.data)
 bmesh.ops.triangulate(bmx, faces=[f for f in bmx.faces if len(f.verts) > 4])
-bmesh.ops.recalc_face_normals(bmx, faces=bmx.faces[:])
+# face direction: each reduced facet points the same way as the original surface under it (recalc_face_normals
+# only guesses from the shape, and a cut-up section is not a closed shape to guess from).
+from mathutils.bvhtree import BVHTree
+_hb = bmesh.new()
+_hb.from_mesh(hi.data)
+_tree = BVHTree.FromBMesh(_hb)
+_hb.faces.ensure_lookup_table()
+flipped_n = 0
+bmx.normal_update()
+for f in bmx.faces:
+    loc, nrm, idx, dist = _tree.find_nearest(f.calc_center_median())
+    if nrm is not None and f.normal.dot(nrm) < 0:
+        f.normal_flip()
+        flipped_n += 1
+_hb.free()
+REP['facets_turned_to_surface'] = flipped_n
 bmx.to_mesh(lo.data)
 bmx.free()
 REP['faces_part'] = len(lo.data.polygons)
 log('reduced to', REP['faces_part'], 'faces')
 
-# ---------------------------------------------------------------- 5 unwrap + bake the paint
-while lo.data.uv_layers:
-    lo.data.uv_layers.remove(lo.data.uv_layers[0])
-lo.data.uv_layers.new(name='paint')
-for o in bpy.context.view_layer.objects:
-    o.select_set(False)
-bpy.context.view_layer.objects.active = lo
-lo.select_set(True)
-bpy.ops.object.mode_set(mode='EDIT')
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004)
-bpy.ops.object.mode_set(mode='OBJECT')
-R = int(E.get('bake_res', 1024))
-img = bpy.data.images.new(PID + '_color', R, R, alpha=False)
-img.generated_color = (1, 0, 1, 1)                       # magenta = not reached by the bake
-bake_mat = bpy.data.materials.new('bake_target')
-bake_mat.use_nodes = True
-tn = bake_mat.node_tree.nodes.new('ShaderNodeTexImage')
-tn.image = img
-bake_mat.node_tree.nodes.active = tn
-lo.data.materials.clear()
-lo.data.materials.append(bake_mat)
-sc.render.engine = 'CYCLES'
-sc.cycles.device = 'CPU'
-sc.cycles.samples = 4
-hi.select_set(True)
-lo.select_set(True)
-bpy.context.view_layer.objects.active = lo
-sc.render.bake.use_pass_direct = False
-sc.render.bake.use_pass_indirect = False
-sc.render.bake.use_pass_color = True
-sc.render.bake.margin = 6
-tb = time.time()
-bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'}, use_selected_to_active=True,
-                    cage_extrusion=E.get('cage', 0.004), max_ray_distance=E.get('ray', 0.02), margin=6)
-REP['bake_s'] = round(time.time() - tb, 1)
-img.filepath_raw = os.path.join(OUT, 'color.png')
-img.file_format = 'PNG'
-img.save()
-log('baked %dx%d in %.1fs' % (R, R, REP['bake_s']))
+# ---------------------------------------------------------------- 5 paint for each reduced facet
+def outer_paint(lo_me):
+    """BODY sections: the paint on the OUTERMOST original surface over each reduced facet (5 points per facet).
+    A section only needs one sheet per facet, so it needs no unwrap and no bake: a ray comes in from outside the
+    section (away from its centre) and the first painted surface it meets is the one the camera sees. Cap faces
+    (the cut) are skipped. 1.5 s for a 5000-facet torso."""
+    from mathutils.bvhtree import BVHTree
+    hb = bmesh.new()
+    hb.from_mesh(hi.data)
+    bmesh.ops.triangulate(hb, faces=[f for f in hb.faces if len(f.verts) > 3])
+    hb.faces.ensure_lookup_table()
+    uvh = hb.loops.layers.uv.active
+    tree = BVHTree.FromBMesh(hb)
+    cen0 = sum((v.co for v in lo_me.vertices), Vector()) / max(1, len(lo_me.vertices))
+    # the faces that close the cut (holes_fill) have no paint of their own (their UVs are zero): never sample them
+    K = E['keep']
+    planes = [(i, val) for ax, i in (('x', 0), ('y', 1), ('z', 2)) for val in K.get(ax, [None, None]) if val is not None]
+    cap = [any(all(abs(l.vert.co[i] - val) < 1e-4 for l in f.loops) for i, val in planes) for f in hb.faces]
+    stats = {'ray': 0, 'nearest': 0, 'none': 0}
 
-# ---------------------------------------------------------------- 6 masks + classes
-px = np.empty(R * R * 4, np.float32)
-img.pixels.foreach_get(px)
-px = px.reshape(R, R, 4)[..., :3]
-missed = (px[..., 0] > 0.95) & (px[..., 1] < 0.05) & (px[..., 2] > 0.95)
-dark, glow = srgb_classes(px, E.get('dark_below', 0.3), E.get('glow') or {'min_sat': 2.0, 'hue': [0, 0]})
-dark &= ~missed
-glow &= ~missed
-REP['bake_missed_pct'] = round(100 * float(missed.mean()), 2)
+    def sample(p, n):
+        n = n if n.dot(p - cen0) >= 0 else -n           # outward = away from the section's centre
+        hit = tree.ray_cast(p + n * 0.25, -n, 0.6)
+        kind = 'ray'
+        if hit[0] is None or cap[hit[2]]:
+            hit, kind = tree.find_nearest(p), 'nearest'
+        loc, _, idx = hit[0], hit[1], hit[2]
+        if loc is None or idx is None or cap[idx]:
+            stats['none'] += 1
+            return None
+        stats[kind] += 1
+        f = hb.faces[idx]
+        a, b, c = (l.vert.co for l in f.loops)
+        ua, ub, uc = (l[uvh].uv for l in f.loops)
+        from mathutils.geometry import barycentric_transform
+        w = barycentric_transform(loc, a, b, c, Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1)))
+        u = ua * w.x + ub * w.y + uc * w.z
+        return paint[min(H - 1, max(0, int(u.y * H))), min(W - 1, max(0, int(u.x * W)))]
+    out = []
+    for p in lo_me.polygons:
+        vs = [lo_me.vertices[i].co for i in p.vertices]
+        pts = [p.center] + [p.center.lerp(v, 0.6) for v in vs]
+        out.append([q for q in (sample(Vector(x), p.normal.copy()) for x in pts) if q is not None])
+    hb.free()
+    REP['paint_samples'] = stats
+    return out
 
 
-def save_mask(m, name):
-    im = bpy.data.images.new(PID + '_' + name, R, R, alpha=False)
-    a = np.zeros((R, R, 4), np.float32)
-    a[..., 0] = a[..., 1] = a[..., 2] = m.astype(np.float32)
-    a[..., 3] = 1
-    im.pixels.foreach_set(a.ravel())
-    im.filepath_raw = os.path.join(OUT, name + '.png')
-    im.file_format = 'PNG'
-    im.save()
+if BODY:
+    FACE_PAINT = outer_paint(lo.data)
+    R = 1
+    px = np.zeros((1, 1, 3), np.float32)
+    missed = np.zeros((1, 1), bool)
+    dark = glow = np.zeros((1, 1), bool)
+    REP['bake_missed_pct'] = 0.0
+    REP['paint_source'] = 'outermost surface ray samples'
+    log('painted %d facets from the outermost surface' % len(FACE_PAINT))
+    if os.environ.get('AI_PART_DUMP'):                 # debug: the mean paint and centre of every facet
+        np.save(os.path.join(OUT, 'face_paint.npy'), np.array(
+            [list(np.mean(c, 0) if len(c) else [-1, -1, -1]) + list(lo.data.polygons[i].center)
+             for i, c in enumerate(FACE_PAINT)], np.float32))
+else:
+    while lo.data.uv_layers:
+        lo.data.uv_layers.remove(lo.data.uv_layers[0])
+    lo.data.uv_layers.new(name='paint')
+    for o in bpy.context.view_layer.objects:
+        o.select_set(False)
+    bpy.context.view_layer.objects.active = lo
+    lo.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project(angle_limit=math.radians(60), island_margin=0.004)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    R = int(E.get('bake_res', 1024))
+    img = bpy.data.images.new(PID + '_color', R, R, alpha=False)
+    # magenta = not reached by the bake (the gaps between UV islands too). The bake's own "clear" painted it black
+    # (27 Nov), so the gaps counted as a failed bake (25% on the good Kojiro head) and fed the ink mask.
+    img.pixels.foreach_set(np.tile(np.array([1, 0, 1, 1], np.float32), R * R))
+    bake_mat = bpy.data.materials.new('bake_target')
+    bake_mat.use_nodes = True
+    tn = bake_mat.node_tree.nodes.new('ShaderNodeTexImage')
+    tn.image = img
+    bake_mat.node_tree.nodes.active = tn
+    lo.data.materials.clear()
+    lo.data.materials.append(bake_mat)
+    sc.render.engine = 'CYCLES'
+    sc.cycles.device = 'CPU'
+    sc.cycles.samples = 4
+    hi.select_set(True)
+    lo.select_set(True)
+    bpy.context.view_layer.objects.active = lo
+    sc.render.bake.use_pass_direct = False
+    sc.render.bake.use_pass_indirect = False
+    sc.render.bake.use_pass_color = True
+    sc.render.bake.margin = 6
+    sc.render.bake.use_clear = False            # keep the magenta: "clear" paints the image black before baking
+    tb = time.time()
+    # reach: how far a ray from the reduced surface may travel to find the original (2 cm for a head).
+    CAGE, RAY = E.get('cage', 0.02 if BODY else 0.004), E.get('ray', 0.10 if BODY else 0.02)
+    bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'}, use_selected_to_active=True,
+                        cage_extrusion=CAGE, max_ray_distance=RAY, margin=6)
+    REP['bake_s'] = round(time.time() - tb, 1)
+    img.filepath_raw = os.path.join(OUT, 'color.png')
+    img.file_format = 'PNG'
+    img.save()
+    log('baked %dx%d in %.1fs' % (R, R, REP['bake_s']))
+
+    # ---------------------------------------------------------------- 6 masks + classes
+    px = np.empty(R * R * 4, np.float32)
+    img.pixels.foreach_get(px)
+    px = px.reshape(R, R, 4)[..., :3]
+    missed = (px[..., 0] > 0.95) & (px[..., 1] < 0.05) & (px[..., 2] > 0.95)
+    dark, glow = srgb_classes(px, E.get('dark_below', 0.3), E.get('glow') or {'min_sat': 2.0, 'hue': [0, 0]})
+    dark &= ~missed
+    glow &= ~missed
+    REP['bake_missed_pct'] = round(100 * float(missed.mean()), 2)
+    # a ray that finds nothing bakes pure black: measure it against the source paint, and refuse a bad bake
+    covered = ~missed
+    black = covered & (px.max(-1) < 0.02)
+    src_black = float((paint.max(-1) < 0.02).mean())
+    REP['bake_black_pct'] = round(100 * float(black.sum()) / max(1, int(covered.sum())), 2)
+    REP['source_black_pct'] = round(100 * src_black, 2)
+    log('bake: %.1f%% of covered texels pure black (source paint: %.1f%%), cage %.3f ray %.3f'
+        % (REP['bake_black_pct'], REP['source_black_pct'], CAGE, RAY))
+    if REP['bake_black_pct'] > max(8.0, 2.0 * REP['source_black_pct'] + 5.0):
+        raise SystemExit(f'{PID}: the bake missed: {REP["bake_black_pct"]}% black texels (the source paint has '
+                         f'{REP["source_black_pct"]}%). Rays that found nothing: raise "ray" / "cage" in the manifest entry.')
 
 
-if E.get('ink'):
+    def save_mask(m, name):
+        im = bpy.data.images.new(PID + '_' + name, R, R, alpha=False)
+        a = np.zeros((R, R, 4), np.float32)
+        a[..., 0] = a[..., 1] = a[..., 2] = m.astype(np.float32)
+        a[..., 3] = 1
+        im.pixels.foreach_set(a.ravel())
+        im.filepath_raw = os.path.join(OUT, name + '.png')
+        im.file_format = 'PNG'
+        im.save()
+
+
+if E.get('ink') and not BODY:
     save_mask(dark, 'ink')
-if E.get('glow'):
+if E.get('glow') and not BODY:
     save_mask(glow, 'glow')
-uv = lo.data.uv_layers['paint'].data
+uv = lo.data.uv_layers['paint'].data if not BODY else None
 PAL = E.get('palette')                 # [{name, rgb: [[r,g,b] sRGB 0..1, ...]}]: each facet takes the nearest
 if PAL:
     pal_c = np.array([c for e in PAL for c in e['rgb']], np.float32)
     pal_i = np.array([k for k, e in enumerate(PAL) for _ in e['rgb']])
 NAMES = [e['name'] for e in PAL] if PAL else ['skin', 'hair']
+ZONES = E.get('zones', {})              # class -> {'x'|'y'|'z': [lo, hi]} in rig metres (BODY sections)
+
+
+def in_zone(c, zone):
+    """zone: one box {'x'|'y'|'z': [lo, hi]} or a list of boxes (inside any one of them); none = anywhere"""
+    if not zone:
+        return True
+    return any(all(lo_ <= c[i] <= hi_ for ax, i in (('x', 0), ('y', 1), ('z', 2))
+                   for lo_, hi_ in [box.get(ax, [-1e9, 1e9])])
+               for box in (zone if isinstance(zone, list) else [zone]))
 cls = []
 for p in lo.data.polygons:
     if not BODY and p.center.z < E['fit']['bottom_z'] + 0.004 and p.normal.z < -0.7:   # the cap: in the collar
         cls.append(0)
+        continue
+    if BODY:
+        # zones: where on the body a class may be at all (rig metres). Colour alone cannot tell the darkest robe
+        # fold from a black obi (Musashi, 27 Nov: 56% of his torso came out "obi"); the obi is a band at the waist.
+        alw = np.array([in_zone(p.center, ZONES.get(n)) for n in NAMES])
+        if not alw.any():
+            alw[:] = True
+        far = np.where(alw[pal_i], 0.0, np.inf)
+        votes = np.zeros(len(PAL))
+        for col in FACE_PAINT[p.index]:
+            votes[pal_i[int((((pal_c - col) ** 2).sum(1) + far).argmin())]] += 1
+        cls.append(int(votes.argmax()) if votes.sum() else -1)      # -1: no paint found, takes the main sheet
         continue
     us = [uv[i].uv for i in range(p.loop_start, p.loop_start + p.loop_total)]
     c = sum(us, Vector((0, 0))) / len(us)
@@ -352,7 +483,9 @@ for p in lo.data.polygons:
         cls.append(1 if votes * 2 > len(samples) else 0)
 if BODY:
     # the faces that close a cut have no paint of their own: they take the section's main sheet
-    main = max(set(cls), key=cls.count)
+    main = max(set(cls) - {-1}, key=cls.count)
+    REP['unpainted_facets'] = cls.count(-1)
+    cls = [main if c == -1 else c for c in cls]
     K = E['keep']
     for k, p in enumerate(lo.data.polygons):
         for ax, i in (('x', 0), ('y', 1), ('z', 2)):

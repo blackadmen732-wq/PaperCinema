@@ -2,6 +2,9 @@
  "id": "kojiro_foot_R_t1",
  "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
  "faces_raw": 794534,
+ "cut_inputs": [
+  "Metallic"
+ ],
  "facing": {
   "from": "manifest",
   "deg": 0.0
@@ -19,17 +22,24 @@
  "open_edges_after_weld": 0,
  "cut_z_model": null,
  "faces_cut": 23164,
+ "facets_turned_to_surface": 0,
  "faces_part": 904,
- "bake_s": 1.3,
+ "paint_samples": {
+  "ray": 3530,
+  "nearest": 50,
+  "none": 36
+ },
  "bake_missed_pct": 0.0,
- "despeckled_faces": 49,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 9,
+ "despeckled_faces": 78,
  "classes_pct": {
-  "cream": 25.4,
-  "straw": 73.3,
-  "black": 1.2
+  "cream": 32.5,
+  "straw": 67.5,
+  "black": 0.0
  },
  "hair_faces_pct": 0.0,
- "ink_pct": 36.09,
+ "ink_pct": 0.0,
  "glow_pct": 0.0,
  "bbox": {
   "min": [
@@ -43,5 +53,5 @@
    0.15000583231449127
   ]
  },
- "total_s": 10.1
+ "total_s": 11.9
 }

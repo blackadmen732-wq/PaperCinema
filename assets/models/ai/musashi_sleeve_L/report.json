@@ -1,0 +1,60 @@
+{
+ "id": "musashi_sleeve_L",
+ "raw": "output/tripo/musashi-body-model-1.pbr.glb",
+ "faces_raw": 955774,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 1.8931638396811368,
+  "waist_centre_model": [
+   0.0022352011378816237,
+   -0.004285405146090026
+  ],
+  "height_m": 1.8918918918918919
+ },
+ "welded_verts": 24083,
+ "open_edges_after_weld": 0,
+ "islands": {
+  "found": 2,
+  "crumb_faces_removed": 1783
+ },
+ "cut_z_model": null,
+ "faces_cut": 129438,
+ "facets_turned_to_surface": 37,
+ "faces_part": 2514,
+ "paint_samples": {
+  "ray": 8257,
+  "nearest": 1540,
+  "none": 259
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 64,
+ "despeckled_faces": 11,
+ "classes_pct": {
+  "robe": 96.6,
+  "under": 3.4
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   0.19995757937431335,
+   -0.10937577486038208,
+   0.9199860095977783
+  ],
+  "max": [
+   0.5643450617790222,
+   0.1813843697309494,
+   1.5114390850067139
+  ]
+ },
+ "total_s": 16.6
+}
