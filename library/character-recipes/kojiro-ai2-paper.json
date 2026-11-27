@@ -1,0 +1,15 @@
+{
+  "id": "kojiro-ai2-paper",
+  "name": "Kojiro with the paper surface upgrade (test, 27 Nov)",
+  "extends": "kojiro-ai2.json",
+  "note": "TEST for Mark's paper-upgrade comparison: the same parts as kojiro-ai2; every fold sharper than 28 deg measured into the mesh, ink 3.5 mm wide in the valleys, a light edge on the ridges, a printed mottle, soft occlusion in the folds (paper_materials.paper_surface). Production Kojiro is unchanged. v2: the light edge is each paper's own colour lifted (not a fixed white), folds sharper than 36 deg only, ink 0.85, 3 mm.",
+  "surface": {
+    "angle": 36.0,
+    "ink": 0.85,
+    "width": 0.003,
+    "light": 0.55,
+    "mottle": 0.12,
+    "mottle_scale": 7.0,
+    "ao": 0.35
+  }
+}

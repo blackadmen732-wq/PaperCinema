@@ -1197,3 +1197,120 @@ def rain_material(name='LO_Rain'):
     T.link(mx.outputs['Shader'], out.inputs['Surface'])
     m.blend_method = 'BLEND' if hasattr(m, 'blend_method') else None
     return m
+
+
+# =========================================================================== the paper surface upgrade (27 Nov)
+# Mark's look board shows paper parts that read as DETAILED, and the one-arm test (27 Nov) measured why: not more
+# geometry (2500 -> 6000 faces looked the same at film distance) but the SURFACE: ink in the valleys of the folds,
+# a light edge where a fold turns to the light, a hand-printed unevenness in the colour. Bevel- and Pointiness-based
+# edge shading is Cycles-only and the films render in EEVEE, so the folds are measured once at build time and
+# written into the mesh; the shader draws a crisp line of a set WIDTH in metres along each sharp fold, in both engines.
+FL_BARY, FL_H, FL_KIND = 'fl_bary', 'fl_h', 'fl_kind'
+
+
+def add_fold_lines(obj, angle_deg=28.0):
+    """Triangulate obj's mesh and record its sharp folds for paper_surface(): per corner a barycentric unit vector
+    (interpolated across the face it is the distance to each edge, as a fraction of that corner's altitude), per
+    face the three altitudes (metres) of the corners whose OPPOSITE edge is a fold sharper than angle_deg (else 1e3:
+    no line), and what kind of fold it is (+1 a ridge, the paper turning away from you; -1 a valley)."""
+    import bmesh as _bm
+    me = obj.data
+    bm = _bm.new()
+    bm.from_mesh(me)
+    _bm.ops.triangulate(bm, faces=bm.faces[:])
+    bm.faces.ensure_lookup_table()
+    bm.normal_update()
+    cos_lim = math.cos(math.radians(angle_deg))
+    hvals, kvals, bary = [], [], []
+    for f in bm.faces:
+        ls = list(f.loops)
+        hs, ks = [], []
+        for k in range(3):
+            a, b = ls[(k + 1) % 3].vert, ls[(k + 2) % 3].vert          # the edge opposite corner k
+            e = next((ed for ed in f.edges if a in ed.verts and b in ed.verts), None)
+            other = [g for g in (e.link_faces if e else []) if g is not f]
+            h, kind = 1e3, 0.0
+            if other:
+                g = other[0]
+                if f.normal.dot(g.normal) < cos_lim:
+                    opp = next(v for v in g.verts if v is not a and v is not b)
+                    kind = -1.0 if f.normal.dot(opp.co - a.co) > 0 else 1.0     # neighbour above my plane: a valley
+                    ev = b.co - a.co
+                    L = ev.length
+                    if L > 1e-9:
+                        h = (ev.cross(ls[k].vert.co - a.co)).length / L          # corner k's altitude to that edge
+            hs.append(h)
+            ks.append(kind)
+        hvals += hs
+        kvals += ks
+        for k in range(3):
+            bary += [1.0 if j == k else 0.0 for j in range(3)]
+    bm.to_mesh(me)
+    bm.free()
+    for nm, dom, vals in ((FL_H, 'FACE', hvals), (FL_KIND, 'FACE', kvals), (FL_BARY, 'CORNER', bary)):
+        at = me.attributes.get(nm) or me.attributes.new(nm, 'FLOAT_VECTOR', dom)
+        at.data.foreach_set('vector', vals)
+    return sum(1 for v in kvals if v != 0.0) // 2
+
+
+def paper_surface(mat, ink=0.7, width=0.0035, light=0.3, mottle=0.12, mottle_scale=7.0, ao=0.35,
+                  ink_color=(0.035, 0.022, 0.018), light_color=(1.0, 0.93, 0.82)):
+    """Upgrade a paper material in place (mesh must carry add_fold_lines): ink along the valleys of the folds, a
+    light edge along the ridges, `width` metres wide, a printed mottle in the colour and soft occlusion in the folds.
+    Returns False if the material has no Principled BSDF to upgrade."""
+    if not mat or not mat.use_nodes or mat.get('pc_surface'):
+        return False
+    nt = mat.node_tree
+    bsdf = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+    if bsdf is None:
+        return False
+    T = _NT(nt)
+    bc = bsdf.inputs['Base Color']
+    src = bc.links[0].from_socket if bc.links else None
+    if src is None:
+        rgb = T.node('ShaderNodeRGB')
+        rgb.outputs[0].default_value = bc.default_value
+        src = rgb.outputs[0]
+
+    def attr(name):
+        a = T.node('ShaderNodeAttribute')
+        a.attribute_type = 'GEOMETRY'
+        a.attribute_name = name
+        return a.outputs['Vector']
+    d = T.node('ShaderNodeVectorMath')
+    d.operation = 'MULTIPLY'
+    T.link(attr(FL_BARY), d.inputs[0])
+    T.link(attr(FL_H), d.inputs[1])
+    dsep = T.node('ShaderNodeSeparateXYZ', Vector=d.outputs['Vector'])
+    ksep = T.node('ShaderNodeSeparateXYZ', Vector=attr(FL_KIND))
+    ink_m, light_m = None, None
+    for ax in ('X', 'Y', 'Z'):
+        mr = T.node('ShaderNodeMapRange', Value=dsep.outputs[ax])
+        mr.interpolation_type = 'SMOOTHSTEP'
+        mr.inputs['From Min'].default_value, mr.inputs['From Max'].default_value = 0.0, width
+        mr.inputs['To Min'].default_value, mr.inputs['To Max'].default_value = 1.0, 0.0
+        line = mr.outputs['Result']
+        valley = T.math('MAXIMUM', T.math('MULTIPLY', ksep.outputs[ax], -1.0), 0.0)
+        ridge = T.math('MAXIMUM', ksep.outputs[ax], 0.0)
+        iv, lv = T.math('MULTIPLY', line, valley), T.math('MULTIPLY', line, ridge)
+        ink_m = iv if ink_m is None else T.math('MAXIMUM', ink_m, iv)
+        light_m = lv if light_m is None else T.math('MAXIMUM', light_m, lv)
+    # mottle: the unevenness of a hand-printed, hand-dyed sheet
+    tc = T.node('ShaderNodeTexCoord')
+    nz = T.node('ShaderNodeTexNoise', Vector=tc.outputs['Object'])
+    nz.inputs['Scale'].default_value, nz.inputs['Detail'].default_value = mottle_scale, 3.0
+    mot = T.math('MULTIPLY_ADD', T.math('SUBTRACT', nz.outputs['Fac'], 0.5), 2.0 * mottle, 1.0)
+    occ = T.node('ShaderNodeAmbientOcclusion')
+    occ.inputs['Distance'].default_value = 0.05
+    occ.only_local = True
+    occ_k = T.math('MULTIPLY_ADD', T.math('SUBTRACT', occ.outputs['AO'], 1.0), ao, 1.0)
+    kv = T.math('MULTIPLY', mot, occ_k)
+    col = T.mix_rgb(1.0, src, T.node('ShaderNodeCombineXYZ', X=kv, Y=kv, Z=kv).outputs[0], blend='MULTIPLY')
+    col = T.mix_rgb(T.math('MULTIPLY', ink_m, ink), col, _rgba(ink_color))
+    # the light edge is the paper's OWN colour lifted toward its light (a fixed warm white drew white scratches on
+    # black hair, 27 Nov test): black paper gets a dark grey edge, crimson a pink one, cream a near-white one
+    lifted = T.mix_rgb(0.45, col, _rgba(light_color))
+    col = T.mix_rgb(T.math('MULTIPLY', light_m, light), col, lifted)
+    T.link(col, bc)
+    mat['pc_surface'] = 1
+    return True

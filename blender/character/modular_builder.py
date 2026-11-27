@@ -503,6 +503,20 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
     print('\n'.join(report))
     print(f'[builder] {name}: {len(built)} objects, {hidden} internal faces removed, '
           f'{sum(len(o.data.polygons) for o in built)} faces')
+    if recipe.get('surface'):
+        # the paper surface upgrade (paper_materials.paper_surface): folds measured into each mesh, then ink in the
+        # valleys, a light edge on the ridges, a printed mottle. Opt-in per recipe while it is tested (27 Nov).
+        S_ = dict(recipe['surface'])
+        ang = float(S_.pop('angle', 28.0))
+        n_folds, mats = 0, []
+        for ob in built:
+            if ob.type == 'MESH' and len(ob.data.polygons):
+                n_folds += pm.add_fold_lines(ob, ang)
+                mats += [s_.material for s_ in ob.material_slots if s_.material and s_.material not in mats]
+        # dark papers (sumi hair, charcoal) get no light edge: on spiky black hair every ridge drew a grey scratch
+        up = sum(1 for m_ in mats if pm.paper_surface(m_, **dict(S_, light=S_.get('light', 0.3) * (
+            0.0 if any(k_ in m_.name.lower() for k_ in ('sumi', 'charcoal', 'black')) else 1.0))))
+        print('[builder] %s: paper surface on %d materials, %d folds sharper than %.0f deg' % (name, up, n_folds, ang))
     return {'rig': rig, 'joints': rig.J, 'objects': built, 'collection': collection, 'recipe': recipe,
             'armature': rig.rig, 'bind': bind}
 
@@ -674,6 +688,10 @@ def main():
     if arg('still') or arg('turnaround'):
         studio(scene, arg('light', 'neutral'))
         render_settings(scene, arg('res', '420x740'), arg('samples', 24))
+        if (arg('engine') or '').lower() == 'eevee':        # the films' engine (render_engine.setup_render)
+            sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            from render_engine import setup_render
+            setup_render(scene, engine='eevee', samples=int(arg('samples', 24)))
         center, height = frame(ch['objects'])
         if arg('poses'):
             # a pose sweep (or a slash): one still per pose, same camera, so motion is the only variable
