@@ -2,6 +2,9 @@
 
 Read `AGENTS.md` first: it is the project guide for every AI assistant (map, commands, rules).
 Camera control: `docs/CAMERA.md`. Style and fight system: `docs/STYLE-AND-FIGHT-SYSTEM.md`.
+Making a shot (reference -> baked rig -> camera -> paper fire -> sound, one clock): start with
+`.claude/skills/pc-shot-production/SKILL.md`; it connects paper-cinema-skeleton-animation, pc-motion-import,
+pc-animated-camera, pc-paper-fire and pc-foley.
 
 ## graphify
 
