@@ -39,6 +39,7 @@ commercial use allowed, no attribution required; we credit the authors anyway). 
 | `sakura_bark` | Sakura Bark | texture | Charlotte Baglioni | CC0 | https://polyhaven.com/a/sakura_bark |
 | `tatami_mat` | Tatami Mat | texture | Charlotte Baglioni | CC0 | https://polyhaven.com/a/tatami_mat |
 | `tea_set_01` | Tea Set 01 | model | James Ray Cock, Jurita Burger, Rico Cilliers | CC0 | https://polyhaven.com/a/tea_set_01 |
+| `thatch_roof_angled` | Thatch Roof Angled | texture | Dimitrios Savva, Rob Tuytel | CC0 | https://polyhaven.com/a/thatch_roof_angled |
 | `tree_stump_01` | Tree Stump 01 | model | Rob Tuytel | CC0 | https://polyhaven.com/a/tree_stump_01 |
 | `white_plaster_02` | White Plaster 02 | texture | Rob Tuytel | CC0 | https://polyhaven.com/a/white_plaster_02 |
 | `wicker_basket_01` | Wicker Basket 01 | model | Kuutti Siitonen | CC0 | https://polyhaven.com/a/wicker_basket_01 |

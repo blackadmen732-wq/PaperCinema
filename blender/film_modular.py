@@ -211,7 +211,8 @@ for aid, rig in rigs.items():
     draw = None
     if aid in DRAWS:
         dd = DRAWS[aid]
-        K = KR.build('KATANA_' + aid, sc.collection, blade_len=float(dd.get('blade', 0.91)))
+        # draw.sword: a design in library/swords/ (its curve, handle, fittings, guard - generated or folded - and glow)
+        K = KR.build('KATANA_' + aid, sc.collection, blade_len=float(dd.get('blade', 0.91)), design=dd.get('sword'))
         fr_ = lambda t: int(round(float(t) * FPS)) + 1
         draw = SD.Draw(rig, K['sword'], K['saya'], float(dd.get('blade', 0.91)), grab=fr_(dd['grab']),
                        slide=fr_(dd['slide']), clear=fr_(dd['clear']), R=K['R'])

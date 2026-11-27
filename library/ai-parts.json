@@ -1741,5 +1741,119 @@
       ]
     },
     "shift_why": "the helmet's lowest edge is at 1.58 m on the figure and the folded neck tops out at ~1.52 m: 5.5 cm down seats it (validator joint_gap limit 4 cm)"
+  },
+  "tsuba_shiokaze_t1": {
+    "label": "Tsuba for Shiokaze: round dark iron, openwork sea waves, gold crests (research/katana-design.md)",
+    "slot": "accessory",
+    "socket": "hip_side.L",
+    "bone": "torso",
+    "kind_of": "sword fitting (blender/props/katana_real.py reads it; not worn)",
+    "raw": "output/tripo/board/model-tsuba.pbr.glb",
+    "prepared": "assets/models/ai/tsuba_shiokaze_t1",
+    "source": {
+      "service": "Tripo API",
+      "concept": "output/tripo/board/concept-tsuba.image.png (text_to_image, 5 credits)",
+      "model": "output/tripo/board/model-tsuba.pbr.glb (image_to_model v3.0-20250812, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "facing": "+x",
+    "fit": {
+      "mode": "box",
+      "rotate": [
+        180,
+        0,
+        -90
+      ],
+      "size": {
+        "y": 0.082
+      },
+      "squash": {
+        "x": 0.007
+      },
+      "anchor": {
+        "x": [
+          "min",
+          0.0
+        ],
+        "y": [
+          "mid",
+          0.0
+        ],
+        "z": [
+          "mid",
+          0.0
+        ]
+      },
+      "why": "in the SWORD's frame (guard at x 0, blade +x, edge -z as katana_real builds it): an 82 mm plate (the procedural guard is 82), 7 mm thick (the model was a 42%-deep puck), its face toward the blade, the narrow end of the blade hole toward the edge"
+    },
+    "faces": 3000,
+    "dark_below": 0.3,
+    "palette": [
+      {
+        "name": "iron",
+        "rgb": [
+          [
+            0.275,
+            0.275,
+            0.282
+          ],
+          [
+            0.373,
+            0.369,
+            0.361
+          ],
+          [
+            0.196,
+            0.196,
+            0.204
+          ]
+        ]
+      },
+      {
+        "name": "void",
+        "rgb": [
+          [
+            0.055,
+            0.055,
+            0.063
+          ],
+          [
+            0.11,
+            0.11,
+            0.118
+          ]
+        ]
+      },
+      {
+        "name": "gold",
+        "rgb": [
+          [
+            0.784,
+            0.647,
+            0.353
+          ],
+          [
+            0.882,
+            0.765,
+            0.471
+          ],
+          [
+            0.667,
+            0.529,
+            0.275
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "iron": "card_charcoal",
+      "void": "washi_sumi",
+      "gold": "card_gold"
+    },
+    "metals": {
+      "iron": "iron",
+      "void": "void",
+      "gold": "gold"
+    }
   }
 }

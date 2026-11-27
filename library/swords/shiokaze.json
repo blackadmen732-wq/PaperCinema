@@ -1,9 +1,10 @@
 {
-  "name": "Shiokaze 潮風", "type": "historical",
-  "blade": { "length": 0.91, "curve": 0.027, "steel": "polished" },
-  "tsuba": { "shape": "round", "cutout": "waves", "metal": "iron" },
-  "tsuka": { "length": 0.33, "wrap": "#17161b", "diamonds": "#e8e0cc", "fittings": "iron", "menuki": "gold" },
+  "name": "Shiokaze 潮風",
+  "type": "historical",
+  "blade": {"length": 0.91, "curve": 0.027, "steel": "polished"},
+  "tsuba": {"shape": "round", "cutout": "waves", "metal": "iron", "part": "tsuba_shiokaze_t1"},
+  "tsuka": {"length": 0.33, "wrap": "#17161b", "diamonds": "#e8e0cc", "fittings": "iron", "menuki": "gold"},
   "habaki": "copper",
-  "saya": { "color": "#0b0a0b", "finish": "lacquer", "cord": "#9e1f1c", "tip": "iron" },
+  "saya": {"color": "#0b0a0b", "finish": "lacquer", "cord": "#9e1f1c", "tip": "iron"},
   "glow": null
 }

@@ -2031,6 +2031,12 @@ def ganryujima(ctx, P, rnd):
                         ob.data.materials[i] = swap[m.name]
 
 
+# =========================================================================== the village pieces
+# minka, machiya, well, bamboo_fence, stall, nobori, chochin, ph_prop live in blender/sets/kit_village.py and
+# register into this same KIT (as `kit`, also when this file runs as a script)
+sys.modules.setdefault('kit', sys.modules[__name__])
+import kit_village  # noqa: E402,F401
+
 # =========================================================================== CLI: list the kit
 if __name__ == '__main__':
     print(describe())

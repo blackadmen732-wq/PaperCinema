@@ -1,0 +1,161 @@
+{
+ "name": "village-pieces",
+ "about": "every village kit piece in a row, daylight, for checking",
+ "seed": 3,
+ "clear": 0.5,
+ "polyhaven": true,
+ "lighting": {
+  "preset": "day"
+ },
+ "pieces": [
+  {
+   "kit": "ground",
+   "name": "g",
+   "params": {
+    "width": 60,
+    "depth": 30,
+    "key": "earth",
+    "bumps": 0.02
+   }
+  },
+  {
+   "kit": "minka",
+   "name": "minka_0",
+   "pos": [
+    -7,
+    6,
+    0
+   ],
+   "params": {}
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_1",
+   "pos": [
+    3.5,
+    6,
+    0
+   ],
+   "params": {}
+  },
+  {
+   "kit": "well",
+   "name": "well_2",
+   "pos": [
+    10.5,
+    2,
+    0
+   ],
+   "params": {}
+  },
+  {
+   "kit": "bamboo_fence",
+   "name": "bamboo_fence_3",
+   "pos": [
+    15.4,
+    2,
+    0
+   ],
+   "params": {
+    "length": 3.0
+   }
+  },
+  {
+   "kit": "stall",
+   "name": "stall_4",
+   "pos": [
+    20.400000000000002,
+    2,
+    0
+   ],
+   "params": {}
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_5",
+   "pos": [
+    24.200000000000003,
+    2,
+    0
+   ],
+   "params": {}
+  },
+  {
+   "kit": "ph_prop",
+   "name": "ph_prop_6",
+   "pos": [
+    27.000000000000004,
+    2,
+    0
+   ],
+   "params": {
+    "role": "barrel",
+    "count": 2,
+    "spread": 0.8
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "ph_prop_7",
+   "pos": [
+    30.200000000000006,
+    2,
+    0
+   ],
+   "params": {
+    "role": "basket",
+    "count": 2,
+    "spread": 0.6,
+    "faces": 900
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "ph_prop_8",
+   "pos": [
+    33.400000000000006,
+    2,
+    0
+   ],
+   "params": {
+    "role": "bucket"
+   }
+  }
+ ],
+ "marks": {
+  "MARK_center": {
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "face": [
+    0,
+    20
+   ]
+  }
+ },
+ "cameras": {
+  "CAM_row": {
+   "pos": [
+    -1,
+    -17,
+    4.5
+   ],
+   "look": [
+    1,
+    4,
+    2.2
+   ],
+   "lens": 26,
+   "note": "the whole row"
+  }
+ },
+ "preview_cams": [
+  "CAM_row"
+ ],
+ "render": {
+  "samples": 24,
+  "res": "1280x560"
+ }
+}

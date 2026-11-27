@@ -59,22 +59,110 @@ def _bumpy(m, scale, strength):
     return m
 
 
-def materials(cord=(0.006, 0.006, 0.008), sageo=(0.55, 0.05, 0.008), lacquer=(0.012, 0.011, 0.013)):
-    return {
-        'lacquer': _principled('kr_lacquer', lacquer, 0.16, coat=0.7),
-        'brass': _principled('kr_brass', (0.95, 0.60, 0.24), 0.28, metal=1.0),
-        'steel': _principled('kr_steel', (0.86, 0.87, 0.89), 0.09, metal=1.0),
-        'hamon': _principled('kr_hamon', (0.93, 0.94, 0.96), 0.40, metal=0.6),
-        'same': _bumpy(_principled('kr_samegawa', (0.90, 0.87, 0.80), 0.75), 900, 0.35),
-        'cord': _bumpy(_principled('kr_ito', cord, 0.8, spec=0.08), 400, 0.2),
-        'sageo': _bumpy(_principled('kr_sageo', sageo, 0.75, spec=0.12), 380, 0.3),
+def materials(cord=(0.006, 0.006, 0.008), sageo=(0.55, 0.05, 0.008), lacquer=(0.012, 0.011, 0.013), D=None):
+    """The sword's materials. D (a design, library/swords/<id>.json) recolours them: steel, wrap, ray skin,
+    fittings metal, habaki, scabbard colour and finish, cord, end cap, and a glow on the temper line."""
+    if not D:
+        return {
+            'lacquer': _principled('kr_lacquer', lacquer, 0.16, coat=0.7),
+            'brass': _principled('kr_brass', (0.95, 0.60, 0.24), 0.28, metal=1.0),
+            'steel': _principled('kr_steel', (0.86, 0.87, 0.89), 0.09, metal=1.0),
+            'hamon': _principled('kr_hamon', (0.93, 0.94, 0.96), 0.40, metal=0.6),
+            'same': _bumpy(_principled('kr_samegawa', (0.90, 0.87, 0.80), 0.75), 900, 0.35),
+            'cord': _bumpy(_principled('kr_ito', cord, 0.8, spec=0.08), 400, 0.2),
+            'sageo': _bumpy(_principled('kr_sageo', sageo, 0.75, spec=0.12), 380, 0.3),
+            'horn': _principled('kr_horn', (0.86, 0.82, 0.74), 0.35),
+        }
+    k = D['id']
+    tk, sy = D.get('tsuka', {}), D.get('saya', {})
+    metal = lambda nm, key: _principled(f'kr_{nm}_{key}', *METALS.get(key, METALS['brass']))
+    steel = STEELS.get(D.get('blade', {}).get('steel', 'polished'), STEELS['polished'])
+    matte = sy.get('finish') == 'matte'
+    M = {
+        'lacquer': _principled('kr_lacquer_' + k, hex_lin(sy.get('color', '#0b0a0b')), 0.7 if matte else 0.16,
+                               coat=0.0 if matte else 0.7),
+        'brass': metal('fittings', tk.get('fittings', 'brass')),
+        'habaki': metal('habaki', D.get('habaki', 'brass')),
+        'tip': metal('tip', sy.get('tip', 'iron')),
+        'steel': _principled('kr_steel_' + k, steel, 0.09, metal=1.0),
+        'hamon': _principled('kr_hamon_' + k, tuple(min(1.0, c * 1.08 + 0.04) for c in steel), 0.40, metal=0.6),
+        'same': _bumpy(_principled('kr_samegawa_' + k, hex_lin(tk.get('diamonds', '#e8e0cc')), 0.75), 900, 0.35),
+        'cord': _bumpy(_principled('kr_ito_' + k, hex_lin(tk.get('wrap', '#17161b')), 0.8, spec=0.08), 400, 0.2),
+        'sageo': _bumpy(_principled('kr_sageo_' + k, hex_lin(sy.get('cord', '#9e1f1c')), 0.75, spec=0.12), 380, 0.3),
         'horn': _principled('kr_horn', (0.86, 0.82, 0.74), 0.35),
     }
+    g = D.get('glow')
+    if g:                                   # a demonic blade: the temper line burns (emission on the hamon)
+        b = M['hamon'].node_tree.nodes['Principled BSDF']
+        b.inputs['Emission Color'].default_value = (*hex_lin(g['color']), 1)
+        b.inputs['Emission Strength'].default_value = float(g.get('strength', 2.0))
+    return M
 
 
-def tsuba_material(motif='seigaiha'):
-    """Dark iron with our motif inlaid in gold, from katana_hero's drawing (white = gold)."""
-    name = 'kr_tsuba_' + motif
+# a design's words -> base colour (linear), roughness, metallic
+METALS = {'iron': ((0.035, 0.032, 0.032), 0.48, 0.8), 'black': ((0.012, 0.012, 0.014), 0.35, 0.6),
+          'silver': ((0.80, 0.80, 0.82), 0.25, 1.0), 'gold': ((0.97, 0.64, 0.25), 0.25, 1.0),
+          'copper': ((0.93, 0.47, 0.30), 0.30, 1.0), 'brass': ((0.95, 0.60, 0.24), 0.28, 1.0)}
+STEELS = {'polished': (0.86, 0.87, 0.89), 'dark-blue': (0.30, 0.36, 0.48), 'black': (0.05, 0.05, 0.06)}
+
+
+def hex_lin(h):
+    """'#9e1f1c' -> linear rgb (the designs are written in sRGB hex, like the engine reads them)."""
+    h = h.lstrip('#')
+    c = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    return tuple(x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in c)
+
+
+def ai_fitting(part_id):
+    """A generated sword fitting (tools/ai_part.py with fit 'box' in the sword's frame: guard at x 0, blade +x) as
+    (bmesh, material). Metal shows its own paint, so the baked texture is the colour (the waves and the gold on a
+    tsuba are far finer than any facet), on a metallic, semi-polished surface."""
+    import os
+    d = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'models', 'ai', part_id)
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(d, 'part.glb'))
+    new = [o for o in bpy.data.objects if o not in before]
+    ob = next(o for o in new if o.type == 'MESH')
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bm.transform(ob.matrix_world)
+    for f in bm.faces:
+        f.material_index = 0
+    xs = [v.co.x for v in bm.verts]
+    ai_fitting.depth = max(xs) - min(xs)
+    for o in new:
+        bpy.data.objects.remove(o, do_unlink=True)
+    name = 'kr_ai_' + part_id
+    m = bpy.data.materials.get(name)
+    if m is None:
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        b = m.node_tree.nodes['Principled BSDF']
+        tex = m.node_tree.nodes.new('ShaderNodeTexImage')
+        tex.image = bpy.data.images.load(os.path.join(d, 'color.png'), check_existing=True)
+        m.node_tree.links.new(tex.outputs['Color'], b.inputs['Base Color'])
+        b.inputs['Metallic'].default_value = 0.85
+        b.inputs['Roughness'].default_value = 0.38
+    return bm, m
+
+
+ai_fitting.depth = 0.0
+
+
+def load_design(name):
+    """library/swords/<name>.json, with its id."""
+    import json
+    import os
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'library', 'swords', name + '.json')
+    d = json.load(open(p))
+    d['id'] = name
+    return d
+
+
+def tsuba_material(motif='seigaiha', base=None):
+    """Dark iron with our motif inlaid in gold, from katana_hero's drawing (white = gold). base: (rgb, rough,
+    metallic) of the plate (a design's tsuba metal); motif None = a plain plate."""
+    name = 'kr_tsuba_' + str(motif) + ('' if base is None else '_%x' % (abs(hash(base)) % 0xffff))
     m = bpy.data.materials.get(name)
     if m:
         return m
@@ -85,9 +173,13 @@ def tsuba_material(motif='seigaiha'):
     nt.nodes.clear()
     out = nt.nodes.new('ShaderNodeOutputMaterial')
     iron = nt.nodes.new('ShaderNodeBsdfPrincipled')
-    iron.inputs['Base Color'].default_value = (0.035, 0.032, 0.032, 1)
-    iron.inputs['Metallic'].default_value = 0.8
-    iron.inputs['Roughness'].default_value = 0.48
+    rgb, rough, met = base or METALS['iron']
+    iron.inputs['Base Color'].default_value = (*rgb, 1)
+    iron.inputs['Metallic'].default_value = met
+    iron.inputs['Roughness'].default_value = rough
+    if motif is None:                                   # a plain plate: no inlay
+        nt.links.new(iron.outputs[0], out.inputs['Surface'])
+        return m
     gold = nt.nodes.new('ShaderNodeBsdfPrincipled')
     gold.inputs['Base Color'].default_value = (0.97, 0.64, 0.25, 1)
     gold.inputs['Metallic'].default_value = 1.0
@@ -204,10 +296,17 @@ class _Kit:
 
 
 def build(name, coll, blade_len=0.72, handle=0.27, sori=0.018, motif='seigaiha', with_saya=True,
-          cord=(0.006, 0.006, 0.008), sageo=(0.55, 0.05, 0.008), lacquer=(0.012, 0.011, 0.013)):
+          cord=(0.006, 0.006, 0.008), sageo=(0.55, 0.05, 0.008), lacquer=(0.012, 0.011, 0.013), design=None):
     """Build the sword (and its scabbard). blade_len: from the guard to the tip, metres (a katana is about
-    0.70-0.75; Kojiro's Monohoshizao about 0.91 by tradition). sori: the curve's height over the blade."""
-    M = materials(cord, sageo, lacquer)
+    0.70-0.75; Kojiro's Monohoshizao about 0.91 by tradition). sori: the curve's height over the blade.
+    design: a sword design id (library/swords/<id>.json: shiokaze, yamikaze, byakko, kurenai-oni) or dict - its
+    curve, handle length, colours, guard shape and metal, scabbard finish and glow. The blade LENGTH stays the
+    caller's (the film's motion was authored for it)."""
+    D = load_design(design) if isinstance(design, str) else design
+    if D:
+        sori = float(D.get('blade', {}).get('curve', sori))
+        handle = float(D.get('tsuka', {}).get('length', handle))
+    M = materials(cord, sageo, lacquer, D)
     L = blade_len
     R = (L * L) / (8 * sori) + sori / 2 if sori > 0 else 0.0     # the circle through the blade's chord
     kit = _Kit(coll, R)
@@ -224,18 +323,26 @@ def build(name, coll, blade_len=0.72, handle=0.27, sori=0.018, motif='seigaiha',
         kit.helix(f'ito_a{k}', -LT + 0.02, -0.016, RY, RZ, turns, k * math.pi, 0.0105, M['cord'], sword)
         kit.helix(f'ito_b{k}', -LT + 0.02, -0.016, RY, RZ, -turns, k * math.pi + math.pi / 2, 0.0105, M['cord'],
                   sword, lift=0.0021)
-    kit.tube('kashira', -LT - 0.028, -LT + 0.004, RY * 1.08, RZ * 1.08, M['lacquer'], sword, segs=28)
+    kit.tube('kashira', -LT - 0.028, -LT + 0.004, RY * 1.08, RZ * 1.08, M['brass'] if D else M['lacquer'], sword, segs=28)
     kit.tube('kashira_ring', -LT, -LT + 0.006, RY * 1.12, RZ * 1.12, M['brass'], sword, segs=28)
     kit.tube('fuchi', -0.016, -0.0005, RY * 1.1, RZ * 1.1, M['brass'], sword, segs=28)
 
-    # ---- guard (tsuba): four lobes, our motif on both faces, brass rim
+    # ---- guard (tsuba): four lobes (or the design's shape), our motif on both faces, brass rim
     TR, T = 0.041, 0.006
+    shape = (D or {}).get('tsuba', {}).get('shape', 'mokko')
     bm = bmesh.new()
     n = 72
     outline = []
     for j in range(n):
         a = 2 * math.pi * j / n
-        rr = TR * (0.90 + 0.10 * abs(math.cos(2 * a)) ** 0.6) * (1 - 0.06 * (abs(math.sin(2 * a)) ** 8))
+        if shape == 'round':
+            rr = TR * 0.97
+        elif shape == 'square':                         # a square with softened corners (kaku-gata)
+            rr = TR * 0.86 / max(abs(math.cos(a)), abs(math.sin(a))) ** 0.85
+        elif shape == 'aori':                           # wider than tall, flattened top and bottom (aori-gata)
+            rr = TR * 1.0 / math.hypot(math.cos(a) / 1.0, math.sin(a) / 0.82) ** 1.0
+        else:                                           # mokko: four lobes
+            rr = TR * (0.90 + 0.10 * abs(math.cos(2 * a)) ** 0.6) * (1 - 0.06 * (abs(math.sin(2 * a)) ** 8))
         outline.append((rr * math.cos(a), rr * math.sin(a)))
     front = [bm.verts.new((T, y, z)) for y, z in outline]
     back = [bm.verts.new((0.0, y, z)) for y, z in outline]
@@ -248,7 +355,19 @@ def build(name, coll, blade_len=0.72, handle=0.27, sori=0.018, motif='seigaiha',
         for lp in f.loops:
             co = lp.vert.co
             lp[uv].uv = (0.5 + co.y / (2 * TR), 0.5 + co.z / (2 * TR))
-    kit.obj('tsuba', bm, [tsuba_material(motif), M['brass']], sword)
+    if D:
+        tb = D.get('tsuba', {})
+        tmat = tsuba_material(motif if tb.get('cutout', 'waves') != 'none' else None, METALS.get(tb.get('metal', 'iron')))
+    else:
+        tmat = tsuba_material(motif)
+    part = (D or {}).get('tsuba', {}).get('part')
+    if part:                        # a generated guard (library/ai-parts.json, fitted in this frame): it replaces the plate
+        bm.free()
+        bm, tmat = ai_fitting(part)
+        T = max(T, ai_fitting.depth)
+        kit.obj('tsuba', bm, [tmat], sword)
+    else:
+        kit.obj('tsuba', bm, [tmat, M['brass']], sword)
     kit.tube('seppa', T, T + 0.003, 0.021, 0.0105, M['brass'], sword, segs=20)
 
     # ---- the blade: habaki, then the full blade on the curve
@@ -257,7 +376,7 @@ def build(name, coll, blade_len=0.72, handle=0.27, sori=0.018, motif='seigaiha',
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.Translation((T + 0.019, 0, 0)) @
                           Matrix.Diagonal((0.032, TH * 1.9, W * 1.12, 1)))
-    kit.obj('habaki', bm, M['brass'], sword)
+    kit.obj('habaki', bm, M.get('habaki', M['brass']), sword)
     KISS = 0.055                                          # the point's length
 
     def sect(x, side):
@@ -299,7 +418,7 @@ def build(name, coll, blade_len=0.72, handle=0.27, sori=0.018, motif='seigaiha',
     LS = L + 0.035
     kit.tube('koiguchi', 0.0, 0.022, SY * 1.06, SZ * 1.04, M['horn'], saya, segs=28, rings=1)
     kit.tube('saya', 0.022, LS - 0.03, SY, SZ, M['lacquer'], saya, segs=28, rings=40, taper=0.88, caps=False)
-    kit.tube('kojiri', LS - 0.03, LS, SY * 0.9, SZ * 0.9, M['horn'], saya, segs=28, rings=2, taper=0.8)
+    kit.tube('kojiri', LS - 0.03, LS, SY * 0.9, SZ * 0.9, M.get('tip', M['horn']), saya, segs=28, rings=2, taper=0.8)
     xk = 0.09
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.Translation((xk, 0.0, -SZ - 0.004)) @

@@ -257,16 +257,21 @@ if BOX:
     else:
         si = 'xyz'.index(sax)
         s = size / float(mx[si] - mn[si])
+    # squash: one axis to its own size after the fit (a service made a 7 mm sword guard as a 42%-deep puck)
+    Sv = [s, s, s]
+    for ax, val in F.get('squash', {}).items():
+        j = 'xyz'.index(ax)
+        Sv[j] = val / float(mx[j] - mn[j])
     t = [0.0, 0.0, 0.0]
     for ax, (where, val) in F['anchor'].items():
         j = 'xyz'.index(ax)
         if where == 'eyes' and eye_c is None:
             raise SystemExit(f'{PID}: anchor "eyes" needs glow paint (give "glow")')
         ref = {'min': mn[j], 'max': mx[j], 'mid': (mn[j] + mx[j]) / 2}.get(where, eye_c[j] if eye_c is not None else 0)
-        t[j] = val - s * float(ref)
-    hi.data.transform(Matrix.Translation(t) @ Matrix.Scale(s, 4))
-    REP['fit'] = {'mode': 'box', 'scale': s, 'size_m': [round(float(x) * s, 4) for x in (mx - mn)],
-                  'eyes': [round(float(eye_c[j]) * s + t[j], 4) for j in range(3)] if eye_c is not None else None}
+        t[j] = val - Sv[j] * float(ref)
+    hi.data.transform(Matrix.Translation(t) @ Matrix.Diagonal((*Sv, 1.0)))
+    REP['fit'] = {'mode': 'box', 'scale': s, 'size_m': [round(float(x) * Sv[i], 4) for i, x in enumerate(mx - mn)],
+                  'eyes': [round(float(eye_c[j]) * Sv[j] + t[j], 4) for j in range(3)] if eye_c is not None else None}
     log('box fit: scale %.4f, size %s m, eyes at %s' % (s, REP['fit']['size_m'], REP['fit']['eyes']))
 elif HEAD:
     uvl = hi.data.uv_layers.active.data
@@ -447,6 +452,24 @@ else:
     dark &= ~missed
     glow &= ~missed
     REP['bake_missed_pct'] = round(100 * float(missed.mean()), 2)
+    # color.png is used AS a texture by metal fittings (katana_real.ai_fitting): the magenta gaps must not bleed
+    # into tiny UV islands, so they are filled from their neighbours (16 rings) before the file is written again
+    fill, hole = px.copy(), missed.copy()
+    for _ in range(16):
+        if not hole.any():
+            break
+        acc, cnt = np.zeros_like(fill), np.zeros(hole.shape, np.float32)
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            ok_ = np.roll(~hole, (dy, dx), (0, 1))
+            acc += np.roll(fill, (dy, dx), (0, 1)) * ok_[..., None]
+            cnt += ok_
+        grow = hole & (cnt > 0)
+        fill[grow] = acc[grow] / cnt[grow][:, None]
+        hole &= ~grow
+    a4 = np.ones((R, R, 4), np.float32)
+    a4[..., :3] = fill
+    img.pixels.foreach_set(a4.ravel())
+    img.save()
     # a ray that finds nothing bakes pure black: measure it against the source paint, and refuse a bad bake
     covered = ~missed
     black = covered & (px.max(-1) < 0.02)

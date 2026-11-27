@@ -1,0 +1,1048 @@
+{
+ "name": "edo-village",
+ "about": "An Edo-period village street at night (the look board's night duel): a gravel road between thatched minka and two-storey machiya, a plaza with a well under a pine, market stalls, red and indigo banners, stone and paper lanterns, cherry trees at the street ends, petals and ground fog under the moon. Duel line along X on the road; CAM_medium looks north (+Y) at the plaza.",
+ "seed": 11,
+ "clear": 1.8,
+ "polyhaven": true,
+ "lighting": {
+  "preset": "night",
+  "sun": {
+   "elev": 30,
+   "az": 35,
+   "color": [
+    0.55,
+    0.66,
+    1.0
+   ],
+   "energy": 0.8,
+   "angle": 1.2
+  },
+  "sky": {
+   "type": "night",
+   "zenith": [
+    0.004,
+    0.007,
+    0.02
+   ],
+   "horizon": [
+    0.03,
+    0.04,
+    0.065
+   ],
+   "stars": 1.0,
+   "strength": 1.0
+  },
+  "exposure": 0.9,
+  "bloom": 0.8,
+  "vignette": 0.45,
+  "fighter": {
+   "key": {
+    "offset": [
+     -1.6,
+     2.6,
+     2.6
+    ],
+    "energy": 18,
+    "color": [
+     1.0,
+     0.72,
+     0.45
+    ],
+    "size": 1.4
+   },
+   "fill": {
+    "offset": [
+     2.6,
+     1.8,
+     1.3
+    ],
+    "energy": 4,
+    "color": [
+     0.6,
+     0.7,
+     1.0
+    ],
+    "size": 2.0
+   },
+   "rim": {
+    "offset": [
+     0.8,
+     -2.8,
+     2.8
+    ],
+    "energy": 60,
+    "color": [
+     0.55,
+     0.68,
+     1.0
+    ],
+    "size": 0.7
+   }
+  },
+  "pieces": [
+   {
+    "kit": "moon",
+    "name": "moon",
+    "params": {
+     "elev": 33,
+     "az": -20,
+     "size": 3.0,
+     "strength": 8.0
+    }
+   },
+   {
+    "kit": "fog",
+    "name": "fog",
+    "pos": [
+     0,
+     15,
+     0
+    ],
+    "params": {
+     "size": [
+      90,
+      90,
+      30
+     ],
+     "density": 0.022,
+     "height": 5.0,
+     "noise": 0.45,
+     "noise_scale": 0.08,
+     "color": [
+      0.75,
+      0.8,
+      0.92
+     ],
+     "anisotropy": 0.5
+    }
+   }
+  ]
+ },
+ "materials": {
+  "window_glow": {
+   "strength": 7.0
+  },
+  "gravel": {
+   "color": [
+    0.16,
+    0.15,
+    0.135
+   ],
+   "scale": 18.0
+  }
+ },
+ "pieces": [
+  {
+   "kit": "moon",
+   "name": "moon",
+   "params": {
+    "elev": 30,
+    "az": 35,
+    "size": 3.0,
+    "strength": 8.0
+   }
+  },
+  {
+   "kit": "fog",
+   "name": "fog",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "params": {
+    "size": [
+     110,
+     110,
+     30
+    ],
+    "density": 0.018,
+    "height": 5.0,
+    "noise": 0.45,
+    "noise_scale": 0.08,
+    "color": [
+     0.72,
+     0.78,
+     0.92
+    ],
+    "anisotropy": 0.5
+   }
+  },
+  {
+   "kit": "ground",
+   "name": "earth",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "params": {
+    "width": 120,
+    "depth": 120,
+    "key": "earth",
+    "bumps": 0.03,
+    "res": 60
+   }
+  },
+  {
+   "kit": "ground",
+   "name": "road",
+   "pos": [
+    0,
+    0,
+    0.01
+   ],
+   "params": {
+    "width": 60,
+    "depth": 7.0,
+    "key": "gravel",
+    "bumps": 0.008,
+    "res": 40
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_a",
+   "pos": [
+    -17.6,
+    8.5,
+    0
+   ],
+   "params": {
+    "width": 5.4,
+    "depth": 9.0,
+    "door_side": 1
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_b",
+   "pos": [
+    -11.9,
+    8.5,
+    0
+   ],
+   "params": {
+    "width": 5.0,
+    "depth": 9.0,
+    "h1": 2.8,
+    "h2": 2.0,
+    "door_side": -1,
+    "noren": "cloth_red"
+   }
+  },
+  {
+   "kit": "minka",
+   "name": "minka_a",
+   "pos": [
+    -4.0,
+    8.9,
+    0
+   ],
+   "params": {
+    "width": 9.0,
+    "depth": 6.5
+   }
+  },
+  {
+   "kit": "bamboo_fence",
+   "name": "yard_fence_l",
+   "pos": [
+    -7.25,
+    4.6,
+    0
+   ],
+   "params": {
+    "length": 3.5,
+    "height": 1.05,
+    "style": "yotsume"
+   }
+  },
+  {
+   "kit": "bamboo_fence",
+   "name": "yard_fence_r",
+   "pos": [
+    -0.75,
+    4.6,
+    0
+   ],
+   "params": {
+    "length": 3.5,
+    "height": 1.05,
+    "style": "yotsume"
+   }
+  },
+  {
+   "kit": "well",
+   "name": "well",
+   "pos": [
+    4.6,
+    6.8,
+    0
+   ]
+  },
+  {
+   "kit": "pine",
+   "name": "plaza_pine",
+   "pos": [
+    7.6,
+    9.6,
+    0
+   ],
+   "params": {
+    "height": 6.5,
+    "spread": 4.0,
+    "lean": 14,
+    "lean_dir": -120
+   }
+  },
+  {
+   "kit": "toro",
+   "name": "plaza_toro",
+   "pos": [
+    2.2,
+    5.4,
+    0
+   ],
+   "params": {
+    "height": 2.0,
+    "energy": 14.0
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_c",
+   "pos": [
+    11.6,
+    8.5,
+    0
+   ],
+   "params": {
+    "width": 5.6,
+    "depth": 9.0,
+    "door_side": 1
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_d",
+   "pos": [
+    17.4,
+    8.5,
+    0
+   ],
+   "params": {
+    "width": 5.2,
+    "depth": 9.0,
+    "h1": 3.0,
+    "h2": 2.3,
+    "door_side": -1,
+    "noren": "cloth_red"
+   }
+  },
+  {
+   "kit": "bamboo_fence",
+   "name": "fence_n_back",
+   "pos": [
+    3.2,
+    12.6,
+    0
+   ],
+   "params": {
+    "length": 9.0,
+    "height": 1.8,
+    "style": "kenninji"
+   }
+  },
+  {
+   "kit": "minka",
+   "name": "minka_b",
+   "pos": [
+    -15.2,
+    -9.0,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 8.5,
+    "depth": 6.5,
+    "lit": 0.6
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_e",
+   "pos": [
+    -7.4,
+    -8.5,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 5.4,
+    "depth": 9.0,
+    "door_side": -1
+   }
+  },
+  {
+   "kit": "stall",
+   "name": "stall_1",
+   "pos": [
+    -2.6,
+    -4.7,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 2.4
+   }
+  },
+  {
+   "kit": "stall",
+   "name": "stall_2",
+   "pos": [
+    1.6,
+    -4.7,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 2.2,
+    "noren": "cloth_red",
+    "goods": "noren_indigo"
+   }
+  },
+  {
+   "kit": "machiya",
+   "name": "machiya_f",
+   "pos": [
+    7.2,
+    -8.5,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 5.6,
+    "depth": 9.0,
+    "h2": 2.4,
+    "door_side": 1
+   }
+  },
+  {
+   "kit": "minka",
+   "name": "minka_c",
+   "pos": [
+    15.6,
+    -9.0,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 9.5,
+    "depth": 7.0,
+    "lit": 0.4
+   }
+  },
+  {
+   "kit": "bamboo_fence",
+   "name": "fence_s",
+   "pos": [
+    -11.3,
+    -4.6,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "length": 2.2,
+    "height": 1.6,
+    "style": "kenninji"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_0",
+   "pos": [
+    -9.2,
+    3.6,
+    0
+   ],
+   "rot": 0,
+   "params": {
+    "key": "noren_indigo"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_1",
+   "pos": [
+    -3.0,
+    -3.7,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "key": "cloth_red"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_2",
+   "pos": [
+    3.4,
+    3.6,
+    0
+   ],
+   "rot": 0,
+   "params": {
+    "key": "cloth_red"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_3",
+   "pos": [
+    9.0,
+    -3.7,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "key": "noren_indigo"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_4",
+   "pos": [
+    -14.5,
+    3.6,
+    0
+   ],
+   "rot": 0,
+   "params": {
+    "key": "cloth_red"
+   }
+  },
+  {
+   "kit": "nobori",
+   "name": "nobori_5",
+   "pos": [
+    14.0,
+    3.6,
+    0
+   ],
+   "rot": 0,
+   "params": {
+    "key": "cloth_red"
+   }
+  },
+  {
+   "kit": "toro",
+   "name": "toro_0",
+   "pos": [
+    -6.0,
+    3.35,
+    0
+   ],
+   "params": {
+    "height": 1.9,
+    "energy": 12.0
+   }
+  },
+  {
+   "kit": "toro",
+   "name": "toro_1",
+   "pos": [
+    6.6,
+    -3.4,
+    0
+   ],
+   "params": {
+    "height": 1.9,
+    "energy": 12.0
+   }
+  },
+  {
+   "kit": "toro",
+   "name": "toro_2",
+   "pos": [
+    -12.6,
+    -3.4,
+    0
+   ],
+   "params": {
+    "height": 1.9,
+    "energy": 12.0
+   }
+  },
+  {
+   "kit": "toro",
+   "name": "toro_3",
+   "pos": [
+    13.0,
+    3.35,
+    0
+   ],
+   "params": {
+    "height": 1.9,
+    "energy": 12.0
+   }
+  },
+  {
+   "kit": "cherry",
+   "name": "cherry_w",
+   "pos": [
+    -23.5,
+    5.5,
+    0
+   ],
+   "params": {
+    "height": 6.0,
+    "spread": 5.0
+   }
+  },
+  {
+   "kit": "cherry",
+   "name": "cherry_e",
+   "pos": [
+    23.0,
+    -5.5,
+    0
+   ],
+   "params": {
+    "height": 5.5,
+    "spread": 4.5
+   }
+  },
+  {
+   "kit": "cherry",
+   "name": "cherry_plaza",
+   "pos": [
+    9.8,
+    5.2,
+    0
+   ],
+   "params": {
+    "height": 4.8,
+    "spread": 3.6
+   }
+  },
+  {
+   "kit": "treeline",
+   "name": "trees_n",
+   "pos": [
+    0,
+    22,
+    0
+   ],
+   "params": {
+    "width": 80,
+    "depth": 8,
+    "count": 36
+   }
+  },
+  {
+   "kit": "treeline",
+   "name": "trees_s",
+   "pos": [
+    0,
+    -24,
+    0
+   ],
+   "rot": 180,
+   "params": {
+    "width": 80,
+    "depth": 8,
+    "count": 30
+   }
+  },
+  {
+   "kit": "particles",
+   "name": "petals",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "params": {
+    "kind": "petals",
+    "area": [
+     24,
+     14,
+     6
+    ],
+    "count": 420
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "barrels_a",
+   "pos": [
+    -15.3,
+    3.6,
+    0
+   ],
+   "params": {
+    "role": "barrel",
+    "count": 2,
+    "spread": 0.7,
+    "faces": 1200
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "buckets_well",
+   "pos": [
+    4.6,
+    5.4,
+    0
+   ],
+   "params": {
+    "role": "bucket",
+    "count": 2,
+    "spread": 0.9,
+    "faces": 900
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "baskets_stall",
+   "pos": [
+    -2.6,
+    -3.55,
+    0
+   ],
+   "params": {
+    "role": "basket",
+    "count": 3,
+    "spread": 1.1,
+    "faces": 900
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "baskets_stall2",
+   "pos": [
+    1.6,
+    -3.55,
+    0
+   ],
+   "params": {
+    "role": "basket_b",
+    "count": 2,
+    "spread": 0.9,
+    "faces": 900
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "crates_c",
+   "pos": [
+    13.9,
+    3.7,
+    0
+   ],
+   "params": {
+    "role": "crate",
+    "count": 3,
+    "spread": 0.9,
+    "faces": 600
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "bench_minka",
+   "pos": [
+    -4.0,
+    4.1,
+    0
+   ],
+   "params": {
+    "role": "bench",
+    "faces": 900,
+    "jitter": 4
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "stools_stall",
+   "pos": [
+    0.0,
+    -3.4,
+    0
+   ],
+   "params": {
+    "role": "stool",
+    "count": 2,
+    "spread": 0.6,
+    "faces": 600
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "pots_e",
+   "pos": [
+    -5.2,
+    -3.65,
+    0
+   ],
+   "params": {
+    "role": "pot",
+    "count": 2,
+    "spread": 0.5,
+    "faces": 900
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "stump_minka",
+   "pos": [
+    -9.6,
+    6.0,
+    0
+   ],
+   "params": {
+    "role": "stump",
+    "faces": 1500
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "axe_minka",
+   "pos": [
+    -9.35,
+    6.05,
+    0.42
+   ],
+   "params": {
+    "role": "axe",
+    "faces": 400,
+    "jitter": 30
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "broom_b",
+   "pos": [
+    -10.0,
+    3.75,
+    0
+   ],
+   "params": {
+    "role": "broom",
+    "faces": 500,
+    "jitter": 10
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "rocks_plaza",
+   "pos": [
+    6.4,
+    5.6,
+    0
+   ],
+   "params": {
+    "role": "rocks_moss",
+    "faces": 1500,
+    "jitter": 90
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "barrels_f",
+   "pos": [
+    9.6,
+    -3.7,
+    0
+   ],
+   "params": {
+    "role": "barrels",
+    "faces": 1500,
+    "jitter": 20
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "grass_n",
+   "pos": [
+    0.5,
+    4.4,
+    0
+   ],
+   "params": {
+    "role": "grass",
+    "count": 8,
+    "spread": 6.0,
+    "faces": 800
+   }
+  },
+  {
+   "kit": "ph_prop",
+   "name": "ferns_s",
+   "pos": [
+    -11.0,
+    -4.2,
+    0
+   ],
+   "params": {
+    "role": "fern",
+    "count": 4,
+    "spread": 2.0,
+    "faces": 800
+   }
+  }
+ ],
+ "marks": {
+  "MARK_hero": {
+   "pos": [
+    -1.8,
+    0,
+    0
+   ],
+   "face": [
+    1.8,
+    0
+   ],
+   "role": "hero, facing the foe (+X)"
+  },
+  "MARK_foe": {
+   "pos": [
+    1.8,
+    0,
+    0
+   ],
+   "face": [
+    -1.8,
+    0
+   ],
+   "role": "foe, facing the hero (-X)"
+  },
+  "MARK_center": {
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "face": [
+    0,
+    20
+   ],
+   "role": "midpoint of the duel line on the road; the 180-degree line is X"
+  },
+  "MARK_well": {
+   "pos": [
+    4.6,
+    5.2,
+    0
+   ],
+   "face": [
+    0,
+    -5
+   ],
+   "role": "by the well, facing the street"
+  }
+ },
+ "cameras": {
+  "CAM_wide": {
+   "pos": [
+    -15.5,
+    -1.9,
+    1.65
+   ],
+   "look": [
+    6.0,
+    0.6,
+    2.3
+   ],
+   "lens": 24,
+   "note": "down the street from the west: both rows of houses, banners, the fighters mid-frame"
+  },
+  "CAM_medium": {
+   "pos": [
+    0.6,
+    -7.2,
+    1.35
+   ],
+   "look_mark": "MARK_center",
+   "look_z": 1.7,
+   "lens": 30,
+   "fstop": 4.0,
+   "focus": "MARK_center",
+   "note": "both fighters full body, the minka, the plaza and the well behind"
+  },
+  "CAM_low": {
+   "pos": [
+    -1.0,
+    -3.4,
+    0.3
+   ],
+   "look": [
+    0,
+    8,
+    4.2
+   ],
+   "lens": 20,
+   "fstop": 0,
+   "note": "heroic low angle: fighters against the thatch, the pine and the moon"
+  },
+  "CAM_rev": {
+   "pos": [
+    0.4,
+    6.2,
+    1.5
+   ],
+   "look": [
+    0,
+    -6,
+    1.7
+   ],
+   "lens": 28,
+   "fstop": 4.0,
+   "focus": "MARK_center",
+   "note": "reverse: the stalls and the south row behind the fighters"
+  },
+  "CAM_hero_ots": {
+   "pos": [
+    -2.7,
+    -1.0,
+    1.72
+   ],
+   "look": [
+    1.8,
+    0,
+    1.45
+   ],
+   "lens": 50,
+   "fstop": 2.8,
+   "focus": "MARK_foe",
+   "note": "over the hero's shoulder"
+  },
+  "CAM_foe_ots": {
+   "pos": [
+    2.7,
+    -1.0,
+    1.72
+   ],
+   "look": [
+    -1.8,
+    0,
+    1.45
+   ],
+   "lens": 50,
+   "fstop": 2.8,
+   "focus": "MARK_hero",
+   "note": "over the foe's shoulder"
+  }
+ },
+ "preview_cams": [
+  "CAM_wide",
+  "CAM_medium",
+  "CAM_low"
+ ],
+ "render": {
+  "samples": 32,
+  "res": "540x960",
+  "volume_step_rate": 4.0
+ }
+}

@@ -1,293 +1,297 @@
 {
- "about": "Poly Haven (CC0) assets by role for the Blender sets. tools/polyhaven.py sync downloads them to assets/polyhaven/<id>/; blender/world/paper_materials.py (ph_* helpers) mixes the textures into the SET MATERIALS and blender/sets/build_set.py lights the world with the HDRIs when a set has \"polyhaven\": true. Texture fields: tile = metres one texture repeat covers, detail = how much of the photo's light/dark pattern multiplies the procedural colour (0..1), tint = how far the colour moves toward the photo's hue (0..1; low keeps the set palette), bump = displacement weight added to the procedural bump, rough = how much the photo's roughness variation is added, ao = crevice darkening from the AO map, grain = object axis the photo's V direction follows on side faces (wood grain, bark, culms). HDRI fields: gain = ambient relative to the procedural sky it replaces for lighting (1.0 = same mean radiance, measured by a tiny equirect render; or ambient = an absolute mean radiance; the camera still sees the procedural sky), reflect = how much of the HDRI glossy rays see (default 0.25, so water still mirrors the visible sky), clamp = brightest value kept as a multiple of the mean (removes the photographed sun so the set's own sun / moon lamp casts the only hard shadow), sat = saturation, match = how far the photo's overall colour is pulled to the procedural sky's average colour (default 0.7: the set keeps its art-directed mood, the photo adds directional variation), rot = extra yaw in degrees after the brightest spot is turned to the set's sun azimuth. Models (glTF, 1k) by role: village props placed by the kit (ph_prop), turned to the paper family on load.",
- "res": {
-  "textures": "1k",
-  "hdris": "2k"
- },
- "textures": {
-  "stone": {
-   "id": "rock_01",
-   "res": "2k",
-   "tile": 1.6,
-   "detail": 0.75,
-   "tint": 0.2,
-   "bump": 0.55,
-   "rough": 0.5,
-   "ao": 0.5
+  "about": "Poly Haven (CC0) assets by role for the Blender sets. tools/polyhaven.py sync downloads them to assets/polyhaven/<id>/; blender/world/paper_materials.py (ph_* helpers) mixes the textures into the SET MATERIALS and blender/sets/build_set.py lights the world with the HDRIs when a set has \"polyhaven\": true. Texture fields: tile = metres one texture repeat covers, detail = how much of the photo's light/dark pattern multiplies the procedural colour (0..1), tint = how far the colour moves toward the photo's hue (0..1; low keeps the set palette), bump = displacement weight added to the procedural bump, rough = how much the photo's roughness variation is added, ao = crevice darkening from the AO map, grain = object axis the photo's V direction follows on side faces (wood grain, bark, culms). HDRI fields: gain = ambient relative to the procedural sky it replaces for lighting (1.0 = same mean radiance, measured by a tiny equirect render; or ambient = an absolute mean radiance; the camera still sees the procedural sky), reflect = how much of the HDRI glossy rays see (default 0.25, so water still mirrors the visible sky), clamp = brightest value kept as a multiple of the mean (removes the photographed sun so the set's own sun / moon lamp casts the only hard shadow), sat = saturation, match = how far the photo's overall colour is pulled to the procedural sky's average colour (default 0.7: the set keeps its art-directed mood, the photo adds directional variation), rot = extra yaw in degrees after the brightest spot is turned to the set's sun azimuth. Models (glTF, 1k) by role: village props placed by the kit (ph_prop), turned to the paper family on load.",
+  "res": {
+    "textures": "1k",
+    "hdris": "2k"
   },
-  "stone_rough": {
-   "id": "rock_face_03",
-   "tile": 2.0,
-   "detail": 0.7,
-   "tint": 0.15,
-   "bump": 0.65,
-   "rough": 0.5,
-   "ao": 0.6
+  "textures": {
+    "stone": {
+      "id": "rock_01",
+      "res": "2k",
+      "tile": 1.6,
+      "detail": 0.75,
+      "tint": 0.2,
+      "bump": 0.55,
+      "rough": 0.5,
+      "ao": 0.5
+    },
+    "stone_rough": {
+      "id": "rock_face_03",
+      "tile": 2.0,
+      "detail": 0.7,
+      "tint": 0.15,
+      "bump": 0.65,
+      "rough": 0.5,
+      "ao": 0.6
+    },
+    "plaster": {
+      "id": "white_plaster_02",
+      "res": "2k",
+      "tile": 2.0,
+      "detail": 0.4,
+      "tint": 0.1,
+      "bump": 0.35,
+      "rough": 0.4,
+      "ao": 0.3
+    },
+    "wood": {
+      "id": "rough_wood",
+      "tile": 1.2,
+      "detail": 0.5,
+      "tint": 0.15,
+      "bump": 0.45,
+      "rough": 0.5,
+      "ao": 0.25,
+      "grain": "axis"
+    },
+    "wood_floor": {
+      "id": "oak_veneer_01",
+      "tile": 1.4,
+      "detail": 0.55,
+      "tint": 0.2,
+      "bump": 0.2,
+      "rough": 0.6,
+      "ao": 0.0,
+      "grain": "axis"
+    },
+    "roof_tiles": {
+      "id": "roof_09",
+      "tile": 2.4,
+      "detail": 0.35,
+      "tint": 0.05,
+      "bump": 0.15,
+      "rough": 0.5,
+      "ao": 0.3
+    },
+    "gravel": {
+      "id": "ganges_river_pebbles",
+      "res": "2k",
+      "tile": 1.5,
+      "detail": 0.9,
+      "tint": 0.35,
+      "bump": 0.9,
+      "rough": 0.6,
+      "ao": 0.8
+    },
+    "sand": {
+      "id": "coast_sand_01",
+      "tile": 2.5,
+      "detail": 0.75,
+      "tint": 0.3,
+      "bump": 0.7,
+      "rough": 0.5,
+      "ao": 0.5
+    },
+    "earth": {
+      "id": "rocky_trail",
+      "tile": 2.0,
+      "detail": 0.8,
+      "tint": 0.35,
+      "bump": 0.8,
+      "rough": 0.5,
+      "ao": 0.6
+    },
+    "forest_floor": {
+      "id": "forest_leaves_02",
+      "tile": 2.0,
+      "detail": 0.85,
+      "tint": 0.45,
+      "bump": 0.8,
+      "rough": 0.5,
+      "ao": 0.6
+    },
+    "bamboo": {
+      "id": "bamboo_veneer",
+      "tile": 0.6,
+      "detail": 0.5,
+      "tint": 0.05,
+      "bump": 0.25,
+      "rough": 0.4,
+      "ao": 0.0,
+      "grain": "Z"
+    },
+    "bark": {
+      "id": "pine_bark",
+      "tile": 1.0,
+      "detail": 0.8,
+      "tint": 0.35,
+      "bump": 0.8,
+      "rough": 0.4,
+      "ao": 0.6,
+      "grain": "Z"
+    },
+    "bark_cherry": {
+      "id": "sakura_bark",
+      "tile": 1.0,
+      "detail": 0.75,
+      "tint": 0.35,
+      "bump": 0.6,
+      "rough": 0.4,
+      "ao": 0.5,
+      "grain": "Z"
+    },
+    "tatami": {
+      "id": "tatami_mat",
+      "tile": 1.0,
+      "detail": 0.55,
+      "tint": 0.25,
+      "bump": 0.3,
+      "rough": 0.4,
+      "ao": 0.0,
+      "grain": "axis"
+    },
+    "thatch": {
+      "id": "thatch_roof_angled",
+      "note": "minka roofs (village kit): straw thatch, angled bundles"
+    }
   },
-  "plaster": {
-   "id": "white_plaster_02",
-   "res": "2k",
-   "tile": 2.0,
-   "detail": 0.4,
-   "tint": 0.1,
-   "bump": 0.35,
-   "rough": 0.4,
-   "ao": 0.3
+  "hdris": {
+    "night": {
+      "id": "kloppenheim_02_puresky",
+      "gain": 1.0,
+      "clamp": 12,
+      "sat": 0.8
+    },
+    "dusk": {
+      "id": "qwantani_dusk_2_puresky",
+      "gain": 1.2,
+      "clamp": 30,
+      "sat": 1.0
+    },
+    "dawn": {
+      "id": "kloppenheim_06_puresky",
+      "gain": 1.0,
+      "clamp": 30,
+      "sat": 1.0,
+      "reflect": 0.0
+    },
+    "day": {
+      "id": "kloofendal_48d_partly_cloudy_puresky",
+      "gain": 1.0,
+      "clamp": 6,
+      "sat": 1.0
+    },
+    "overcast": {
+      "id": "overcast_soil_puresky",
+      "gain": 1.0,
+      "clamp": 6,
+      "sat": 0.9
+    },
+    "forest": {
+      "id": "rainforest_trail",
+      "gain": 1.0,
+      "clamp": 6,
+      "sat": 1.0
+    }
   },
-  "wood": {
-   "id": "rough_wood",
-   "tile": 1.2,
-   "detail": 0.5,
-   "tint": 0.15,
-   "bump": 0.45,
-   "rough": 0.5,
-   "ao": 0.25,
-   "grain": "axis"
-  },
-  "wood_floor": {
-   "id": "oak_veneer_01",
-   "tile": 1.4,
-   "detail": 0.55,
-   "tint": 0.2,
-   "bump": 0.2,
-   "rough": 0.6,
-   "ao": 0.0,
-   "grain": "axis"
-  },
-  "roof_tiles": {
-   "id": "roof_09",
-   "tile": 2.4,
-   "detail": 0.35,
-   "tint": 0.05,
-   "bump": 0.15,
-   "rough": 0.5,
-   "ao": 0.3
-  },
-  "gravel": {
-   "id": "ganges_river_pebbles",
-   "res": "2k",
-   "tile": 1.5,
-   "detail": 0.9,
-   "tint": 0.35,
-   "bump": 0.9,
-   "rough": 0.6,
-   "ao": 0.8
-  },
-  "sand": {
-   "id": "coast_sand_01",
-   "tile": 2.5,
-   "detail": 0.75,
-   "tint": 0.3,
-   "bump": 0.7,
-   "rough": 0.5,
-   "ao": 0.5
-  },
-  "earth": {
-   "id": "rocky_trail",
-   "tile": 2.0,
-   "detail": 0.8,
-   "tint": 0.35,
-   "bump": 0.8,
-   "rough": 0.5,
-   "ao": 0.6
-  },
-  "forest_floor": {
-   "id": "forest_leaves_02",
-   "tile": 2.0,
-   "detail": 0.85,
-   "tint": 0.45,
-   "bump": 0.8,
-   "rough": 0.5,
-   "ao": 0.6
-  },
-  "bamboo": {
-   "id": "bamboo_veneer",
-   "tile": 0.6,
-   "detail": 0.5,
-   "tint": 0.05,
-   "bump": 0.25,
-   "rough": 0.4,
-   "ao": 0.0,
-   "grain": "Z"
-  },
-  "bark": {
-   "id": "pine_bark",
-   "tile": 1.0,
-   "detail": 0.8,
-   "tint": 0.35,
-   "bump": 0.8,
-   "rough": 0.4,
-   "ao": 0.6,
-   "grain": "Z"
-  },
-  "bark_cherry": {
-   "id": "sakura_bark",
-   "tile": 1.0,
-   "detail": 0.75,
-   "tint": 0.35,
-   "bump": 0.6,
-   "rough": 0.4,
-   "ao": 0.5,
-   "grain": "Z"
-  },
-  "tatami": {
-   "id": "tatami_mat",
-   "tile": 1.0,
-   "detail": 0.55,
-   "tint": 0.25,
-   "bump": 0.3,
-   "rough": 0.4,
-   "ao": 0.0,
-   "grain": "axis"
+  "models": {
+    "bucket": {
+      "id": "wooden_bucket_01",
+      "res": "1k"
+    },
+    "bucket_b": {
+      "id": "wooden_bucket_02",
+      "res": "1k"
+    },
+    "barrel": {
+      "id": "Barrel_01",
+      "res": "1k"
+    },
+    "barrels": {
+      "id": "wooden_barrels_01",
+      "res": "1k"
+    },
+    "basket": {
+      "id": "wicker_basket_01",
+      "res": "1k"
+    },
+    "basket_b": {
+      "id": "wicker_basket_02",
+      "res": "1k"
+    },
+    "lantern": {
+      "id": "wooden_lantern_01",
+      "res": "1k"
+    },
+    "crate": {
+      "id": "wooden_crate_01",
+      "res": "1k"
+    },
+    "ladder": {
+      "id": "wooden_ladder",
+      "res": "1k"
+    },
+    "stool": {
+      "id": "wooden_stool_01",
+      "res": "1k"
+    },
+    "stool_folding": {
+      "id": "folding_wooden_stool",
+      "res": "1k"
+    },
+    "axe": {
+      "id": "wooden_axe",
+      "res": "1k"
+    },
+    "stump": {
+      "id": "tree_stump_01",
+      "res": "1k"
+    },
+    "broom": {
+      "id": "wooden_broom",
+      "res": "1k"
+    },
+    "bench": {
+      "id": "painted_wooden_bench",
+      "res": "1k"
+    },
+    "pot": {
+      "id": "ceramic_pot",
+      "res": "1k"
+    },
+    "vase": {
+      "id": "ceramic_vase_01",
+      "res": "1k"
+    },
+    "tea_table": {
+      "id": "chinese_tea_table",
+      "res": "1k"
+    },
+    "stool_cn": {
+      "id": "chinese_stool",
+      "res": "1k"
+    },
+    "screen": {
+      "id": "chinese_screen_panels",
+      "res": "1k"
+    },
+    "tea_set": {
+      "id": "tea_set_01",
+      "res": "1k"
+    },
+    "bowl": {
+      "id": "wooden_bowl_01",
+      "res": "1k"
+    },
+    "plate": {
+      "id": "carved_wooden_plate",
+      "res": "1k"
+    },
+    "rocks_moss": {
+      "id": "rock_moss_set_01",
+      "res": "1k"
+    },
+    "fern": {
+      "id": "fern_02",
+      "res": "1k"
+    },
+    "grass": {
+      "id": "grass_medium_01",
+      "res": "1k"
+    },
+    "pier": {
+      "id": "modular_wooden_pier",
+      "res": "1k"
+    }
   }
- },
- "hdris": {
-  "night": {
-   "id": "kloppenheim_02_puresky",
-   "gain": 1.0,
-   "clamp": 12,
-   "sat": 0.8
-  },
-  "dusk": {
-   "id": "qwantani_dusk_2_puresky",
-   "gain": 1.2,
-   "clamp": 30,
-   "sat": 1.0
-  },
-  "dawn": {
-   "id": "kloppenheim_06_puresky",
-   "gain": 1.0,
-   "clamp": 30,
-   "sat": 1.0,
-   "reflect": 0.0
-  },
-  "day": {
-   "id": "kloofendal_48d_partly_cloudy_puresky",
-   "gain": 1.0,
-   "clamp": 6,
-   "sat": 1.0
-  },
-  "overcast": {
-   "id": "overcast_soil_puresky",
-   "gain": 1.0,
-   "clamp": 6,
-   "sat": 0.9
-  },
-  "forest": {
-   "id": "rainforest_trail",
-   "gain": 1.0,
-   "clamp": 6,
-   "sat": 1.0
-  }
- },
- "models": {
-  "bucket": {
-   "id": "wooden_bucket_01",
-   "res": "1k"
-  },
-  "bucket_b": {
-   "id": "wooden_bucket_02",
-   "res": "1k"
-  },
-  "barrel": {
-   "id": "Barrel_01",
-   "res": "1k"
-  },
-  "barrels": {
-   "id": "wooden_barrels_01",
-   "res": "1k"
-  },
-  "basket": {
-   "id": "wicker_basket_01",
-   "res": "1k"
-  },
-  "basket_b": {
-   "id": "wicker_basket_02",
-   "res": "1k"
-  },
-  "lantern": {
-   "id": "wooden_lantern_01",
-   "res": "1k"
-  },
-  "crate": {
-   "id": "wooden_crate_01",
-   "res": "1k"
-  },
-  "ladder": {
-   "id": "wooden_ladder",
-   "res": "1k"
-  },
-  "stool": {
-   "id": "wooden_stool_01",
-   "res": "1k"
-  },
-  "stool_folding": {
-   "id": "folding_wooden_stool",
-   "res": "1k"
-  },
-  "axe": {
-   "id": "wooden_axe",
-   "res": "1k"
-  },
-  "stump": {
-   "id": "tree_stump_01",
-   "res": "1k"
-  },
-  "broom": {
-   "id": "wooden_broom",
-   "res": "1k"
-  },
-  "bench": {
-   "id": "painted_wooden_bench",
-   "res": "1k"
-  },
-  "pot": {
-   "id": "ceramic_pot",
-   "res": "1k"
-  },
-  "vase": {
-   "id": "ceramic_vase_01",
-   "res": "1k"
-  },
-  "tea_table": {
-   "id": "chinese_tea_table",
-   "res": "1k"
-  },
-  "stool_cn": {
-   "id": "chinese_stool",
-   "res": "1k"
-  },
-  "screen": {
-   "id": "chinese_screen_panels",
-   "res": "1k"
-  },
-  "tea_set": {
-   "id": "tea_set_01",
-   "res": "1k"
-  },
-  "bowl": {
-   "id": "wooden_bowl_01",
-   "res": "1k"
-  },
-  "plate": {
-   "id": "carved_wooden_plate",
-   "res": "1k"
-  },
-  "rocks_moss": {
-   "id": "rock_moss_set_01",
-   "res": "1k"
-  },
-  "fern": {
-   "id": "fern_02",
-   "res": "1k"
-  },
-  "grass": {
-   "id": "grass_medium_01",
-   "res": "1k"
-  },
-  "pier": {
-   "id": "modular_wooden_pier",
-   "res": "1k"
-  }
- }
 }
