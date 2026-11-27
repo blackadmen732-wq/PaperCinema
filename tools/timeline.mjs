@@ -86,7 +86,7 @@ function PAGE_SAMPLE({ frames, sub, bones, wantSub }) {
     const st = P.stage(t) ?? {};
     camera.updateMatrixWorld(true);
     const F = { t: r(t), tb: r(st.tb ?? t), rate: st.rate ?? 1, shot: st.shot ?? null, mode: st.mode ?? null,
-      impactFrame: !!st.impactFrame,
+      impactFrame: !!st.impactFrame, focusOn: st.focusOn ?? null,
       cam: [...camera.position.toArray(), ...camera.quaternion.toArray(), camera.fov].map(r), actors: {}, props: [] };
     for (const id of ids) {
       const c = cast[id];
@@ -306,13 +306,20 @@ export async function exportTimeline(filmPath, o = {}) {
   } else if (META?.beats?.length || film.camera?.length) {
     const beats = META?.beats ?? film.camera.map((b) => ({ t: b.t ?? 0, rig: b.rig, cut: !!b.cut, note: b.note }));
     shots = beats.map((b, i) => ({ id: `B${i + 1}`, name: b.note ?? null, start: b.t, end: beats[i + 1]?.t ?? DUR,
-      f0: Math.round(b.t * FPS), f1: Math.round((beats[i + 1]?.t ?? DUR) * FPS) - 1,
+      // the engine switches beat on the first frame whose time is >= the beat time (beatAt: t >= b.t), so that frame
+      // is the cut: ceil, not round (round put the cut one frame early whenever a beat fell past half a frame)
+      f0: Math.ceil(b.t * FPS - 1e-6), f1: Math.ceil((beats[i + 1]?.t ?? DUR) * FPS - 1e-6) - 1,
       camera: { kind: 'beat', rig: b.rig ?? null }, cutIn: !!b.cut }));
   }
   const cuts = shots.filter((s) => s.cutIn).map((s) => s.f0);
 
   // ---------- camera track (frame-sampled), with focal length and focus distance ----------
   const focusOf = (F) => {
+    const chestD = (id) => { const p = F.actors[id]?.bones?.[BONES.indexOf('chest')]; return p ? vlen(vsub(p.slice(0, 3), F.cam.slice(0, 3))) : null; };
+    if (F.focusOn) {                                       // rack focus (film.cameraMoves "rack"): from one actor to another
+      const a = chestD(F.focusOn.from ?? F.focusOn.to), b = chestD(F.focusOn.to);
+      if (a !== null && b !== null) return +(a + (b - a) * F.focusOn.k).toFixed(4);
+    }
     const names = ids.filter((id) => !F.actors[id]?.hidden);
     const pts = names.map((id) => F.actors[id].bones[BONES.indexOf('chest')]).filter(Boolean);
     if (!pts.length) return null;
@@ -323,7 +330,8 @@ export async function exportTimeline(filmPath, o = {}) {
     const shot = shots.find((s) => F.f >= s.f0 && F.f <= s.f1) ?? null;
     const row = {
       f: F.f, t: F.t, tb: F.tb, rate: F.rate, shot: shot?.id ?? null, cut: cuts.includes(F.f), impactFrame: F.impactFrame,
-      camera: { pos: F.cam.slice(0, 3), rot: F.cam.slice(3, 7), fov: F.cam[7], focal_mm: focalOf(F.cam[7]), focus_m: focusOf(F), aperture: film.camera?.aperture ?? 2.8 },
+      camera: { pos: F.cam.slice(0, 3), rot: F.cam.slice(3, 7), fov: F.cam[7], focal_mm: focalOf(F.cam[7]), focus_m: focusOf(F), focus_on: F.focusOn?.k >= 0.5 ? F.focusOn.to : (F.focusOn?.from ?? null),
+        aperture: film.cameraOpts?.aperture ?? (Array.isArray(film.camera) ? null : film.camera?.aperture) ?? 2.8 },
       actors: {}, props: F.props,
     };
     for (const id of ids) {

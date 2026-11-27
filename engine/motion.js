@@ -25,6 +25,7 @@ import { clamp, bladeSeg, closestSegSeg, RATE } from './combat.js';
 import { createFX, fxAt } from './fx.js';
 import { analyseGround, groundCues, makeDust, makeGroundMarks, makeContactShadows, makeAfterimages } from './groundfx.js';
 import { installAudit } from './audit-hooks.js';
+import { makeCameraMoves } from './camfx.js';
 
 const params = new URLSearchParams(location.search);
 const film = await (await fetch(params.get('film') ?? '/film/motion-test.json')).json();
@@ -448,6 +449,10 @@ const camPath = [];
   }
 }
 const HITS_F = [...contactsF, ...IMPACTS_F];
+// event-driven camera moves (engine/camfx.js): crash zoom, whip pan, Dutch tilt, breathing, shake, rack focus
+const CAMFX = makeCameraMoves(film.cameraMoves, { filmOf: R.filmOf, contacts: contactsF,
+  cuts: SOLVER2 ? BEATS.filter((b) => b.cut && b.t > 0).map((b) => b.t) : [] });
+let camFocus = null;                                       // { from, to, k } from a rack-focus move (exported per frame)
 function placeCamera(t) {
   const x = clamp(t * RATE, 0, camPath.length - 1), i = Math.floor(x), k = x - i, a = camPath[i], b = camPath[Math.min(i + 1, camPath.length - 1)];
   const cutHere = a.beat !== b.beat && BEATS[b.beat].cut && SOLVER2;   // never blend across a hard cut
@@ -458,7 +463,12 @@ function placeCamera(t) {
   camera.updateProjectionMatrix();
   camera.up.set(0, 1, 0);
   camera.lookAt(look);
-  camera.rotateZ(((roll + a.roll) * Math.PI) / 180);
+  const mv = CAMFX.at(t);
+  if (mv.fovMul !== 1) { camera.fov = clamp(camera.fov * mv.fovMul, 4, 100); camera.updateProjectionMatrix(); }
+  camera.rotateY((-mv.yaw * Math.PI) / 180);                // + yaw = the view swings right
+  camera.rotateX((mv.pitch * Math.PI) / 180);
+  camera.rotateZ(((roll + a.roll + mv.roll) * Math.PI) / 180);
+  camFocus = mv.focusOn;
 }
 
 // ---------- 5. EFFECTS: light smear, sparks, shock rings (engine/combat.js); dust, contact shadows, afterimages
@@ -512,7 +522,7 @@ function stage(t) {
   const fl = Math.max(SPARKS.update(s), SPARKS2.update(s));  // sparks + flash light
   flashEl.style.opacity = impactFrame ? 0 : Math.min(0.35, fl * 0.3);
   fadeEl.style.opacity = clamp(Math.max(FADE.in > 0 ? 1 - t / FADE.in : 0, FADE.out > 0 ? (t - (DUR - FADE.out)) / FADE.out : 0), 0, 1);
-  return { s, tb, impactFrame };
+  return { s, tb, impactFrame, focusOn: camFocus };
 }
 window.renderAt = (t) => {
   const { tb, impactFrame } = stage(t);
@@ -537,7 +547,7 @@ installAudit({
     effects: { ground: GROUND_ON, contactShadow: !!SHADOWS, afterimage: !!GHOSTS, smear: (film.effects?.ribbon?.style ?? 'light'), fx: !!FX } },
   stage(t) {
     const st = stage(t), b = beatAt(t);
-    return { tb: st.tb, shot: b.i, cut: false, rate: R.rateAt(t), impactFrame: st.impactFrame, smear: RIB.level,
+    return { tb: st.tb, shot: b.i, cut: false, rate: R.rateAt(t), impactFrame: st.impactFrame, smear: RIB.level, focusOn: camFocus,
       subjects: (b.who ? [b.who] : b.subjects ?? ids).filter((id) => cast[id] && !cast[id].hidden) };
   },
 });

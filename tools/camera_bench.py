@@ -227,6 +227,16 @@ def operators(P):
     return cams
 
 
+def kuroko_cams(P):
+    """The production camera module (engine/kuroko.js) on the same flight, run in Node (tools/camera_bench_kuroko.mjs)."""
+    src = os.path.join(OUT, 'ball-for-kuroko.json')
+    dst = os.path.join(OUT, 'kuroko-cams.json')
+    json.dump({'fps': FPS, 'ball': P.tolist(), 'dashes': [{'start_s': ts, 'dur_s': d} for ts, d in DASHES]}, open(src, 'w'))
+    subprocess.run(['node', os.path.join(REPO, 'tools', 'camera_bench_kuroko.mjs'), src, dst], check=True, cwd=REPO)
+    return {k: [(np.array(c['pos']), np.array(c['target']), float(c['lens'])) for c in seq]
+            for k, seq in json.load(open(dst)).items()}
+
+
 # ------------------------------------------------------------------ measure
 def measure(P, cams):
     V = np.gradient(P, axis=0) * FPS
@@ -286,6 +296,7 @@ def solve():
     os.makedirs(OUT, exist_ok=True)
     P = path()
     cams = operators(P)
+    cams.update(kuroko_cams(P))
     rows, scores = measure(P, cams)
     bench = {'fps': FPS, 'n': N, 'ball_r': BALL_R, 'boxes': BOXES, 'ball': P.tolist(),
              'dashes': [{'start_s': ts, 'dur_s': d, 'start_frame': ts * FPS + 1} for ts, d in DASHES],

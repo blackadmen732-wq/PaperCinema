@@ -8,6 +8,9 @@ Read pc-shot-production and pc-camera. Reuse the existing shot library and tools
 ## Where this lives in the repo (checked 27 Nov 2026)
 
 - Scoring cameras on the same flight: `tools/camera_bench.py` (in frame, 9-ray visibility vs the set, readable size, turn
-  jerk, lead room; locked / naive / chase / operator) + `blender/bench/camera_bench_render.py`. KUROKO is not in the bench
-  yet: add it as a fifth operator before trusting a KUROKO shot on these numbers.
+  jerk, lead room; locked / naive / chase / operator / kuroko-frame / kuroko-track) + `blender/bench/camera_bench_render.py`.
+  KUROKO runs through `tools/camera_bench_kuroko.mjs`.
+- Anime accents on events (crash zoom, whip pan, Dutch, breathing, shake, rack focus): `film.cameraMoves`
+  (`engine/camfx.js`); depth of field and motion blur: `film.effects.dof` / `motionBlur`; ink frame, flash, speed lines:
+  `tools/post_fx.py`. All in `docs/CAMERA.md` §9, proof film `film/kojiro-exchange-cams.json`.
 - Locked vs eased tracking on one bake: `blender/bench/toss_bench.py` (`--cam locked|tracking`).

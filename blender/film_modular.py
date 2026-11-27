@@ -214,6 +214,27 @@ if flag('report'):
     for line in PB.report(BAKE, len(FRAMES)):
         print(line)
 
+# ---------------------------------------------------------------- lens: depth of field and motion blur
+# film.effects.dof: true | f-stop number (true = the timeline's aperture, 2.8 by default); --no-dof turns it off.
+# film.effects.motionBlur: shutter in frames (0.5 = a 180-degree shutter); --no-blur turns it off.
+# Both used to stop at the timeline: it exported focus_m and aperture on every frame and nothing read them.
+_EFX = TL.get('effects') or {}
+_DOF = bool(_EFX.get('dof')) and not flag('no-dof')
+if _DOF:
+    cd.dof.use_dof = True
+    _ap = _EFX['dof'] if isinstance(_EFX.get('dof'), (int, float)) and not isinstance(_EFX.get('dof'), bool) else \
+        ((FRAMES[0].get('camera') or {}).get('aperture') or 2.8)
+    cd.dof.aperture_fstop = float(_ap)
+_BLUR = float(_EFX.get('motionBlur') or 0) if not flag('no-blur') else 0.0
+if _BLUR > 0:
+    sc.render.use_motion_blur = True
+    sc.render.motion_blur_shutter = _BLUR
+    # the shutter OPENS on the frame: a cut frame samples only the new shot, the frame before it only the old one
+    sc.render.motion_blur_position = 'START'
+_CUTS = {r['f'] for r in FRAMES if r.get('cut')}
+print('[lens] dof %s · motion blur %s · %d cut(s)' % (('f/%.1f' % cd.dof.aperture_fstop) if _DOF else 'off',
+                                                   ('%.2f frame' % _BLUR) if _BLUR else 'off', len(_CUTS)))
+
 for i in range(f0, f1 + 1):
     fr = FRAMES[i]
     bpy.context.scene.frame_set(i + 1)      # ABSOLUTE timeline frame, 1-based
@@ -234,6 +255,9 @@ for i in range(f0, f1 + 1):
         cam.keyframe_insert('location')
         cam.keyframe_insert('rotation_quaternion')
         cd.keyframe_insert('lens')
+        if _DOF and c.get('focus_m'):                           # depth of field / rack focus, keyed from the timeline
+            cd.dof.focus_distance = float(c['focus_m'])
+            cd.dof.keyframe_insert('focus_distance')
 
 if flag('mannequin'):
     import swords as _SWm                                       # noqa: E402
@@ -252,6 +276,15 @@ for ob in [e for r in rigs.values() for e in r.J.values()] + [r.rig for r in rig
     for fc in getattr(act, 'fcurves', []):
         for kp in fc.keyframe_points:
             kp.interpolation = 'LINEAR'
+# A hard cut: the camera key on the frame BEFORE the cut holds (CONSTANT) until the cut frame, so neither motion
+# blur nor a sub-frame sample ever sees the camera flying from one set-up to the next.
+for ob in (cam, cd):                                           # cd carries lens and focus distance
+    ad = getattr(ob, 'animation_data', None)
+    act = getattr(ad, 'action', None) if ad else None
+    for fc in (act.fcurves if act else []):
+        for kp in fc.keyframe_points:
+            if int(round(kp.co.x)) in _CUTS:        # Blender frame n = timeline frame n-1: the last frame of the old shot
+                kp.interpolation = 'CONSTANT'
 
 # ---------------------------------------------------------------- the paper slash
 # blender/world/slash_fx.py has had a finished slash in it for weeks and no film ever had one,

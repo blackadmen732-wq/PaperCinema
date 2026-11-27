@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import { RIG_TYPES, FEELS, BEHAVIOURS } from './kuroko.js';
 import { expandMoves, loadClipsSync } from './moves.js';
+import { MOVES as CAM_MOVES } from './camfx.js';
 
 const filmPath = process.argv[2] ?? 'film/ganryujima.json';
 const errors = [], warnings = [];
@@ -84,6 +85,17 @@ shots.forEach((s, i) => {
 });
 if (shots.length && Math.abs(prevEnd - D) > 1e-6) warn('shots', `last shot ends at ${prevEnd}s but duration is ${D}s`);
 
+const PERFS0 = film.performances ?? {};
+// --- event-driven camera moves (film.cameraMoves, engine/camfx.js)
+(film.cameraMoves ?? []).forEach((m, i) => {
+  const w = `cameraMoves[${i}]`;
+  if (!CAM_MOVES.includes(m.move)) err(w, `move must be one of ${CAM_MOVES.join(', ')} (got ${JSON.stringify(m.move)})`);
+  if (m.t === undefined && m.act === undefined && m.at !== 'contact') err(w, 'needs a time: t (film), act (action) or at: "contact"');
+  if (m.move === 'rack' && !PERFS0[m.to]) err(w, `rack "to" must name a performer (known: ${Object.keys(PERFS0).join(', ')})`);
+  if (m.move === 'crash' && m.zoom !== undefined && (!isNum(m.zoom) || m.zoom < 1.05 || m.zoom > 4)) err(w, 'zoom = how many times closer (1.05–4)');
+  if (m.move === 'whip' && film.cameraOpts?.solver !== 2) warn(w, 'a whip pan belongs on a hard cut ("cut": true needs cameraOpts.solver: 2)');
+});
+
 // --- motion-page camera beats (film.camera, engine/motion.js)
 const PERFS = film.performances ?? {};
 if (film.camera !== undefined) {
@@ -100,6 +112,7 @@ if (film.camera !== undefined) {
       for (const k of ['size', 'size0', 'size1']) if (b[k] !== undefined && (!isNum(b[k]) || b[k] < 0.08 || b[k] > 4)) err(w, `${k} = the fraction of the frame height the subject fills (0.08–4; 0.6 = full figure with air)`);
       if (b.screen && (!Array.isArray(b.screen) || b.screen.some((v) => !isNum(v) || v < 0.1 || v > 0.9))) err(w, 'screen must be [sx, sy] between 0.1 and 0.9 (0.5, 0.5 = centre)');
       if (b.basis && !['world', 'facing', 'target'].includes(b.basis)) err(w, 'basis must be world, facing or target');
+      if (b.basis === 'target' && !PERFS[b.target ?? (b.subjects ?? [])[1]]) err(w, 'basis "target" needs "target" (or a second subject) naming a performer');
       if (b.cut && film.cameraOpts?.solver !== 2) warn(w, '"cut" needs cameraOpts.solver: 2');
     }
     if (['face', 'slide'].includes(b.rig) && !PERFS[b.who]) err(w, `"who" must name a performer (known: ${Object.keys(PERFS).join(', ')})`);

@@ -256,9 +256,22 @@ print(len(m), ' '.join(map(str,m[:10])))")
 [ "${MISSING%% *}" = 0 ] || die "step 5 render: $MISSING (frames missing from $FR; first ones listed)"
 echo "$WANT/$WANT frames"
 
+# 5b: the impact effects the browser draws on top of the camera (ink frame, flash, chromatic split, speed lines,
+# vignette) put back on the Blender frames, on the bake's contact frame (tools/post_fx.py, docs/CAMERA.md §9).
+# Only when the film asks for it (film.effects.postFx: true); the raw frames stay untouched in $FR.
+ENC="$FR"
+if python3 -c "import json,sys;sys.exit(0 if (json.load(open('$FILM')).get('effects') or {}).get('postFx') else 1)"; then
+  step "5b/9 impact effects on the frames"
+  # the contact measured on the FINAL bake (the one the slash and the sound are synced to)
+  python3 tools/bake_events.py "$NAME" || echo "  (no bake contact: the effects use the timeline's impact frames only)"
+  python3 tools/post_fx.py --timeline "output/$NAME.timeline.json" --frames "$FR" --events "output/$NAME.bake-events.json" \
+    --out "$FR-fx" || die "step 5b: tools/post_fx.py failed (see above)."
+  ENC="$FR-fx"
+fi
+
 step "6/9 encode"
-FIRST=$(basename "$(ls "$FR"/f*.png | head -1)" .png); FIRST=${FIRST#f}
-ffmpeg -loglevel error -y -framerate "$FPS" -start_number "$((10#$FIRST))" -i "$FR/f%04d.png" \
+FIRST=$(basename "$(ls "$ENC"/f*.png | head -1)" .png); FIRST=${FIRST#f}
+ffmpeg -loglevel error -y -framerate "$FPS" -start_number "$((10#$FIRST))" -i "$ENC/f%04d.png" \
   -c:v libx264 -preset medium -crf 17 -pix_fmt yuv420p -movflags +faststart "output/$NAME.mp4" \
   || die "step 6 encode: ffmpeg could not build output/$NAME.mp4 from $FR."
 
@@ -286,7 +299,8 @@ else
 fi
 
 step "8/9 sound"
-node engine/sound.mjs --film "$FILM" --video "output/$NAME.mp4" --out "output/$NAME-final.mp4" \
+EVARG=(); [ -s "output/$NAME.bake-events.json" ] && [ "output/$NAME.bake-events.json" -nt "output/$NAME.bake.json" ] && EVARG=(--events "output/$NAME.bake-events.json")
+node engine/sound.mjs --film "$FILM" --video "output/$NAME.mp4" --out "output/$NAME-final.mp4" "${EVARG[@]+"${EVARG[@]}"}" \
   || die "step 8 sound: engine/sound.mjs failed (see above)."
 [ -s "output/$NAME-final.mp4" ] || die "step 8 sound: output/$NAME-final.mp4 was not written."
 

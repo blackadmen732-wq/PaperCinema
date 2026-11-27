@@ -214,3 +214,55 @@ move with the ramps (`output/<film>.events.json` carries the table as `warp`).
 
 Check every camera with `node tools/audit.mjs film/<name>.json` (`AUDIT.md`): it measures visibility, size, lead
 room, blockers, lens-in-geometry, pops and the share of slow motion.
+
+## 9. Camera moves on events, lens effects in Blender, impact effects on the frames (27 Nov 2026)
+**What reaches the final Blender video** (measured on `film/dash-test.json` and `film/kojiro-exchange-cams.json`):
+the timeline exports the live three.js camera AFTER every move below, and `blender/film_modular.py` keys it every
+frame through `qcam`, so the path, cuts, the impact punch (zoom kick, shake, roll) and every `cameraMoves` entry are
+in the render with the same numbers (f31 of dash-test: 38.4 mm, +2.16° roll in both). Effects drawn only in the
+browser (bloom, speed lines, CA flash, glints, ink impact frame, white flash, sparks, ribbons, dust) are NOT; the
+ink frame, flash, CA and speed lines are put back on the Blender frames by `tools/post_fx.py`.
+
+**`film.cameraMoves`** (`engine/camfx.js`, applied in `placeCamera` after the spring and the punch):
+```json
+"cameraMoves": [
+  { "move": "rack",   "t": 0.9,  "dur": 0.35, "from": "target", "to": "hero" },
+  { "move": "whip",   "t": 1.4,  "dur": 0.14, "deg": 40, "dir": 1 },
+  { "move": "crash",  "t": 1.44, "zoom": 1.35, "in": 0.06, "hold": 0.18, "out": 0.3 },
+  { "move": "dutch",  "t": 1.46, "deg": 7, "in": 0.08, "hold": 0.3, "out": 0.25 },
+  { "move": "breath", "t": 1.95, "until": 3.0, "amp": 0.35 },
+  { "move": "shake",  "t": 2.4,  "amp": 1.2, "dur": 0.35 }
+]
+```
+| move | what it does |
+|---|---|
+| `crash` | crash zoom: the lens snaps in by `zoom` over `in` s, holds, eases back over `out` (0 = stays until the cut) |
+| `whip` | whip pan THROUGH a cut: swings `deg` away in the last `dur`/2 before `t`, arrives from the other side after. Put `t` on a beat with `"cut": true` |
+| `dutch` | roll to `deg`, hold, back |
+| `breath` | a breathing handheld operator between `t` and `until` (`amp` degrees) |
+| `shake` | a sharp decaying shake on a frame that is not a blade contact (contacts already shake) |
+| `rack` | rack focus from actor `from` to actor `to` over `dur` (exported as `frames[].camera.focus_m` / `focus_on`) |
+
+Time: `t` (film s), `act` (action time, follows the ramps) or `"at": "contact"` (the ENGINE's first blade contact; when
+only the final bake has the contact, copy its `t` from `output/<film>.bake-events.json`). A move ends at the next hard
+cut (whip and rack excepted; `"across": true` keeps it). `node engine/validate.mjs` checks every entry.
+
+**Lens in Blender** (`film.effects`): `"dof": 4.0` (f-stop; `true` = the timeline's aperture, `cameraOpts.aperture`)
+keys the focus distance every frame; `"motionBlur": 0.5` (shutter in frames, 180°). Motion blur opens ON the frame
+(`START`) and the camera key before each cut is CONSTANT, so a cut never smears two set-ups together. `--no-dof` /
+`--no-blur` turn them off for a run. The cut frame is the first frame at or after the beat time (`tools/timeline.mjs`;
+it used to round, which put cuts one frame early).
+
+**Impact effects on the frames** (`tools/post_fx.py`, step 5b of `tools/film.sh` when `film.effects.postFx` is true):
+the hit frames are the final bake's contact plus every timeline `impactFrame`. Hit frame = one ink frame (black ink on
+washi); then a white flash over 3 frames, a red/blue split over 2, speed lines for 4 frames after the hit and on any
+frame where the lens zooms faster than 2.5 mm/frame; a soft vignette (`effects.vignette`, 0.25). It writes
+`fx.json` (what landed where).
+
+**Multi-camera = beats with `"cut": true`.** There is one Blender camera; each beat is a set-up and the cut switches the
+key, so only the live camera ever renders. Proof: `film/kojiro-exchange-cams.json` (wide → medium with a rack focus →
+whip pan into the impact close-up with crash zoom + Dutch on the contact → breathing wide recovery).
+
+**KUROKO on the camera bench** (`tools/camera_bench.py solve`, via `tools/camera_bench_kuroko.mjs`): `engine/kuroko.js`
+films the bench ball and is scored with the other operators. The look point now has feed-forward (`rig.feedForward`,
+1 by default, 0 = the old lag) and lead room scales with the shot: kuroko-frame went 67.8 → 82.4 (operator 81.2).

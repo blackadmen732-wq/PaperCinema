@@ -46,7 +46,8 @@ export const BEHAVIOURS = {
   // Fast blade → look leans toward the swing.
   whip: (s) => { const k = smooth01((s.armMax - 6) / 8); return { look: mul(s.attackDir, 0.25 * k) }; },
   // Lead room: frame ahead of whoever is moving.
-  lead: (s) => ({ look: mul(s.moveDir, clamp(s.speedMax * 0.12, 0, 0.35)) }),
+  // (cap scales with the shot: 0.35 m was nothing in a wide frame; ~12% of the camera distance keeps the room visible)
+  lead: (s) => ({ look: mul(s.moveDir, clamp(s.speedMax * 0.12, 0, Math.max(0.35, 0.12 * (s.dist ?? 3)))) }),
 };
 export const DEFAULT_BEHAVIOURS = ['reveal', 'push', 'jump', 'dutch', 'lead'];
 // Impulses (added AFTER the spring so hits land on their exact frame): impact punch-in + recoil.
@@ -188,7 +189,7 @@ function rigTarget(rig, t, ctx, shot) {
 function applyBehaviours(rig, target, t, ctx, ids) {
   const names = rig.behaviours ?? DEFAULT_BEHAVIOURS;
   if (!names.length) return { ...target, roll: rig.roll ?? 0 };
-  const s = signals(ctx, t + LOOKAHEAD, ids);
+  const s = { ...signals(ctx, t + LOOKAHEAD, ids), dist: target.dist };
   let dist = 1, fov = 0, up = 0, roll = rig.roll ?? 0, look = [0, 0, 0];
   for (const n of names) {
     const m = BEHAVIOURS[n](s);
@@ -231,16 +232,22 @@ export function makeKuroko(opts) {
     const want = Math.max(0, stepOf(t));
     if (!st || st.k > want) {                                         // start of shot: 1 s pre-roll so it opens settled
       const x0 = pack(target(shot, shot.start - 1));
-      st = { k: -240, x: x0, v: x0.map(() => 0) };
+      st = { k: -240, x: x0, v: x0.map(() => 0), g: x0, gv: x0.map(() => 0) };
     }
+    const ff = shot.rig.feedForward ?? 1;                             // 0 = the old lagging look point
     while (st.k < want) {                                             // fixed-step spring integration
       st.k++;
       const tt = shot.start + st.k * H;
       const goal = pack(target(shot, tt));
+      for (let i = 0; i < goal.length; i++) st.gv[i] += ((goal[i] - st.g[i]) / H - st.gv[i]) * 0.08;   // smoothed goal speed
+      st.g = goal;
       for (let i = 0; i < st.x.length; i++) {
         const wi = i >= 3 && i < 6 ? w * 1.5 : w;                    // look point 1.5× stiffer: subject never slides out
         const zi = i >= 6 ? 1 : z;                                    // fov and roll never overshoot
-        const a = wi * wi * (goal[i] - st.x[i]) - 2 * zi * wi * st.v[i];
+        // feed-forward on the LOOK point: a spring chasing a moving goal trails it by speed × 2ζ/ω (2 m at 30 m/s on
+        // a dolly). An operator who knows the choreography aims where the subject IS; the body still lags (weight).
+        const gi = i >= 3 && i < 6 ? goal[i] + ff * st.gv[i] * (2 * zi / wi) : goal[i];
+        const a = wi * wi * (gi - st.x[i]) - 2 * zi * wi * st.v[i];
         st.v[i] += a * H;
         st.x[i] += st.v[i] * H;
       }
