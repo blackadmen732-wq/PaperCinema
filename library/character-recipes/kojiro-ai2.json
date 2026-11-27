@@ -1,0 +1,43 @@
+{
+  "id": "kojiro-ai2",
+  "name": "Sasaki Kojiro - generated body sections test",
+  "extends": "kojiro-ai.json",
+  "note": "Kojiro with the generated head (kojiro_head_t1) AND a generated body cut into sections (library/ai-parts.json: kojiro_*_t1, one Tripo figure, one fit): torso, two sleeves, hakama top, two hakama legs, two feet. Each section is bound like the folded part it replaces (skinned across the same bones, or rigid on one). Kept from the folded library: the neck, the hands (the sword grips swap them) and the sword. A test recipe; production Kojiro is unchanged. The folded forearm stays: it is the cream kosode under-sleeve between the haori cuff (0.92 m) and the wrist (0.80 m); without it the hand floated away from the cuff in reaching poses (27 Nov pose sweep).",
+  "drop": [
+    "torso",
+    "sleeve_upper",
+    "sleeve_hanging",
+    "thigh",
+    "shin",
+    "armor",
+    "foot",
+    "collar",
+    "obi"
+  ],
+  "add": [
+    {
+      "part": "kojiro_torso_t1"
+    },
+    {
+      "part": "kojiro_sleeve_L_t1"
+    },
+    {
+      "part": "kojiro_sleeve_R_t1"
+    },
+    {
+      "part": "kojiro_hakama_t1"
+    },
+    {
+      "part": "kojiro_leg_L_t1"
+    },
+    {
+      "part": "kojiro_leg_R_t1"
+    },
+    {
+      "part": "kojiro_foot_L_t1"
+    },
+    {
+      "part": "kojiro_foot_R_t1"
+    }
+  ]
+}

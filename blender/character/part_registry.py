@@ -1317,10 +1317,11 @@ def _ai_part(pid, e):
         sheets = P['sheets']
         mats = []
         lantern = P.get('lantern') or {}
+        paint_on = P.get('paint_on') or ['skin']
         for nm in names:
             k = float(lantern.get(nm, 0.0))                    # the inner lantern through this sheet (mask: 1.0)
             m = ctx.mat(sheets.get(nm, sheets.get('skin', 'washi_natural')), glow=ctx.lit(k) if k > 0 else None)
-            if nm == 'skin' and (P.get('ink') or P.get('glow')):
+            if nm in paint_on and (P.get('ink') or P.get('glow')):
                 painted = bpy.data.materials.get(m.name + '_paint_' + pid)   # m.name carries the glow tag
                 if painted is None:
                     painted = m.copy()
@@ -1338,10 +1339,14 @@ def _ai_part(pid, e):
         # the geometry is already in rest space at its socket (tools/ai_part.py fitted it): no socket offset
         return ctx.add(pid, bm, mats, thickness=0.0, rim_mat=False)
     _built.__doc__ = e.get('label', pid)
-    part(pid, slot=e['slot'], socket=e['socket'], bone=e.get('bone'), rigid=True, size=(1.0, 1.0),
-         layer=e.get('layer'), material=e.get('sheets', {}).get('skin', 'washi_natural'), tags=('ai',),
+    # rigid: one bone (a head, a hat, a foot). Otherwise skinned across `bones` by the builder exactly like the
+    # folded sleeves and hakama (inverse distance to the bones' rest segments); 'l' bones mirror on a .R socket.
+    rigid = bool(e.get('rigid', True))
+    part(pid, slot=e['slot'], socket=e['socket'], bone=e.get('bone'), bones=None if rigid else e.get('bones'),
+         rigid=rigid, size=(1.0, 1.0), layer=e.get('layer'),
+         material=next(iter(e.get('sheets', {}).values()), 'washi_natural'), tags=('ai',),
          prepared=e['prepared'], sheets=e.get('sheets', {'skin': 'washi_natural'}), ink=e.get('ink'),
-         glow=e.get('glow'), lantern=e.get('lantern'))(_built)
+         glow=e.get('glow'), lantern=e.get('lantern'), paint_on=e.get('paint_on'))(_built)
 
 
 def load_ai_parts(path=AI_PARTS_FILE):

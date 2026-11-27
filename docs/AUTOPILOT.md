@@ -19,8 +19,8 @@ a full village... make it fight good, a system for groundbreaking sound and cool
 ## Queue (top = next)
 | # | item | done when | status |
 |---|---|---|---|
-| 1 | **Bending AI body**: whole Kojiro from one text concept (realistic proportions, rest pose) -> 3D -> Tripo auto-rig (mixamo) -> driven by our rig -> paper look; sections cut from it later | it bends in the 5-pose sweep and the draw without tearing; side by side with today's Kojiro | in progress: concept + model + rig done (kojiro-body-rig-1.glb) |
-| 2 | **Kojiro outfit set from one concept** (consistent style): kimono torso, sleeves, hakama legs, obi, sandals, hands; rigid pieces on one bone, bending pieces skinned | `kojiro-ai` wears AI pieces in every slot that passes; pose sweep + validator + film frames checked | open |
+| 1 | **Bending AI body**: whole Kojiro from one text concept (realistic proportions, rest pose) -> 3D -> Tripo auto-rig (mixamo) -> driven by our rig -> paper look; sections cut from it later | it bends in the 5-pose sweep and the draw without tearing; side by side with today's Kojiro | **done (sections, not Tripo's rig)**: Tripo's auto-rig was unusable (T-pose arm chains sticking out in the air, sleeves read as limbs) so the body is cut into 8 sections bound to OUR bones (tools/ai_part.py fit.mode body + keep boxes + per-section palettes): kojiro-ai2 bends through the 5-pose sweep (output/heads/poses-ai2-v2.png), validator 152/152 |
+| 2 | **Kojiro outfit set from one concept** (consistent style): kimono torso, sleeves, hakama legs, obi, sandals, hands; rigid pieces on one bone, bending pieces skinned | `kojiro-ai` wears AI pieces in every slot that passes; pose sweep + validator + film frames checked | mostly done: `kojiro-ai2` = AI head + torso, 2 sleeves, hakama top, 2 legs, 2 feet; folded neck, forearm under-sleeves, hands, sword kept. Left: film frames |
 | 3 | **Rigid library pieces like the look board**: kasa, hood, 2 kabuto helmets, 2 oni masks, fan, armour (do, sode, kote) | each prepared, in the catalogue sheet, on a test recipe | open |
 | 4 | **Musashi from the same pieces** (his head + mix of the set) | `musashi-ai` recipe renders and passes the validator | open |
 | 5 | **Katana variants** (AI fittings on the procedural blade; the draw still works) | draw film frames checked frame by frame | open |
@@ -29,6 +29,8 @@ a full village... make it fight good, a system for groundbreaking sound and cool
 | 8 | **Fight + sound**: bake events for footsteps/landings feed the mixer and camera; better anticipation/impact timing | an exchange on the village set with synced foley, watched frame by frame | open |
 
 ## Log
+- 27 Nov 08:10-08:40 UTC: body concept from TEXT (image edits kept the toy proportions), 3D 30, rig 25 (unusable),
+  8 sections prepared (~10 s each), kojiro-ai2 152/152. Balance 785.
 - 27 Nov 07:13-08:10 UTC: section-by-section images came out plain (a cone sleeve, a hanger): switched item 1 to
   whole body -> rig -> sections. Tripo spend so far 215 credits incl. 100 LOST (4 rig jobs queued by a bad probe,
   ids not captured); balance 785. Item 6 done (levelled fight ground + stage handle + ground report).

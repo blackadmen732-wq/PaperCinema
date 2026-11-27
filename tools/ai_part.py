@@ -105,9 +105,12 @@ def poly_paint(me):
     return cen.reshape(-1, 3), paint[yi, xi]
 
 
-cen, pp = poly_paint(hi.data)
-_, eyes = srgb_classes(pp, E['dark_below'], E['glow'])
 FACING = {'+x': 0.0, '+y': 90.0, '-x': 180.0, '-y': -90.0}
+if E.get('facing'):
+    cen, eyes = None, np.zeros(0, bool)
+else:
+    cen, pp = poly_paint(hi.data)
+    _, eyes = srgb_classes(pp, E.get('dark_below', 0.3), E['glow'])
 if E.get('facing'):
     ang = FACING[E['facing']]
     REP['facing'] = {'from': 'manifest', 'deg': ang}
@@ -121,12 +124,26 @@ else:
 turn = math.radians(-90.0 - ang)                   # bring the face round to -Y, the rig's front
 hi.data.transform(Matrix.Rotation(turn, 4, 'Z'))
 log('facing %s -> turned %.0f deg so the face looks down -Y' % (REP['facing'], math.degrees(turn)))
-eye_x = float((np.array(Matrix.Rotation(turn, 3, 'Z')) @ cen[eyes].mean(0))[0]) if eyes.sum() else None
+eye_x = float((np.array(Matrix.Rotation(turn, 3, 'Z')) @ cen[eyes].mean(0))[0]) if cen is not None and eyes.sum() else None
 
 # ---------------------------------------------------------------- 2 cut
+BODY = E['fit'].get('mode') == 'body'
 zs = [v.co.z for v in hi.data.vertices]
 z0, z1 = min(zs), max(zs)
-zc = z0 + E['cut'] * (z1 - z0)
+if BODY:
+    # one fit for the whole figure (every section of one body shares it): feet to z 0, the shoulder line
+    # (fit.shoulder_frac of the height) to fit.shoulder_z, centred on the waist band
+    zsh = z0 + E['fit']['shoulder_frac'] * (z1 - z0)
+    sb = E['fit']['shoulder_z'] / (zsh - z0)
+    band = [v.co for v in hi.data.vertices if z0 + 0.45 * (z1 - z0) < v.co.z < z0 + 0.55 * (z1 - z0)]
+    bcx = sum(c.x for c in band) / len(band)
+    bcy = sum(c.y for c in band) / len(band)
+    hi.data.transform(Matrix.Scale(sb, 4) @ Matrix.Translation((-bcx, -bcy, -z0)))
+    REP['fit'] = {'mode': 'body', 'scale': sb, 'waist_centre_model': [bcx, bcy], 'height_m': (z1 - z0) * sb}
+    log('body fit: scale %.4f, figure %.3f m tall, waist centre (%.3f, %.3f)' % (sb, (z1 - z0) * sb, bcx, bcy))
+    zc = None
+else:
+    zc = z0 + E['cut'] * (z1 - z0)
 bm = bmesh.new()
 bm.from_mesh(hi.data)
 # weld the texture seams first: a generated mesh is split into loose islands along every UV seam (30,724 open
@@ -136,8 +153,46 @@ nv = len(bm.verts)
 bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-6 * (z1 - z0))
 REP['welded_verts'] = nv - len(bm.verts)
 REP['open_edges_after_weld'] = sum(1 for e in bm.edges if e.is_boundary)
-bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
-                       plane_co=(0, 0, zc), plane_no=(0, 0, 1), clear_inner=True)
+if BODY:
+    # keep: the section's box in rig metres; each bound is one plane, everything outside it is cut away
+    K = E['keep']
+    for ax, i in (('x', 0), ('y', 1), ('z', 2)):
+        lo_, hi_ = K.get(ax, [None, None])
+        for val, sign in ((lo_, 1), (hi_, -1)):
+            if val is None:
+                continue
+            co_ = [0.0, 0.0, 0.0]
+            no_ = [0.0, 0.0, 0.0]
+            co_[i] = val
+            no_[i] = sign
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
+                                   plane_co=co_, plane_no=no_, clear_inner=True)
+else:
+    bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
+                           plane_co=(0, 0, zc), plane_no=(0, 0, 1), clear_inner=True)
+# a cut can leave loose crumbs of the neighbouring section: keep the islands that hold most of the faces
+islands, seen = [], set()
+for f in bm.faces:
+    if f.index in seen:
+        continue
+    stack, isl = [f], []
+    seen.add(f.index)
+    while stack:
+        g = stack.pop()
+        isl.append(g)
+        for e in g.edges:
+            for h in e.link_faces:
+                if h.index not in seen:
+                    seen.add(h.index)
+                    stack.append(h)
+    islands.append(isl)
+bm.faces.index_update()
+if len(islands) > 1:
+    big = max(len(i) for i in islands)
+    crumbs = [f for isl in islands if len(isl) < E.get('min_island_frac', 0.02) * big for f in isl]
+    if crumbs:
+        bmesh.ops.delete(bm, geom=crumbs, context='FACES')
+    REP['islands'] = {'found': len(islands), 'crumb_faces_removed': len(crumbs)}
 open_edges = [e for e in bm.edges if len(e.link_faces) == 1]
 capped = bmesh.ops.holes_fill(bm, edges=open_edges, sides=0)['faces']
 bmesh.ops.triangulate(bm, faces=capped)
@@ -145,34 +200,38 @@ bm.to_mesh(hi.data)
 bm.free()
 REP['cut_z_model'] = zc
 REP['faces_cut'] = len(hi.data.polygons)
-log('welded %d seam vertices (%d open edges left); cut at %.3f (%.1f%% of the height): %d faces, %d cap faces'
-    % (REP['welded_verts'], REP['open_edges_after_weld'], zc, 100 * E['cut'], REP['faces_cut'], len(capped)))
+log('welded %d seam vertices (%d open edges left); kept %d faces, %d cap faces'
+    % (REP['welded_verts'], REP['open_edges_after_weld'], REP['faces_cut'], len(capped)))
+if not REP['faces_cut']:
+    raise SystemExit(f'{PID}: the keep box / cut left nothing')
 
 # ---------------------------------------------------------------- 4 fit (computed on the full-detail copy)
-uvl = hi.data.uv_layers.active.data
-band_top = zc + 0.03 * (z1 - z0)
-pts = []
-for p in hi.data.polygons:
-    c = p.center
-    if c.z > band_top or abs(p.normal.z) > 0.8:          # near the cut, and not a cap face
-        continue
-    u, v = uvl[p.loop_start].uv
-    px = paint[min(H - 1, max(0, int(v * H))), min(W - 1, max(0, int(u * W)))]
-    if 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2] >= E['dark_below']:
-        pts.append(c.copy())
-if not pts:
-    raise SystemExit(f'{PID}: no light paint just above the cut: is `cut` below the neck?')
-neck = sum(pts, Vector()) / len(pts)
-# side to side: the middle of the eyes (a face is symmetric; the bounding box is not - hair hangs to one side and
-# a collar the service added pulls the light paint near the cut sideways). Front to back: the neck.
-xs = [v.co.x for v in hi.data.vertices]
-cx = eye_x if eye_x is not None else (min(xs) + max(xs)) / 2
-s = E['fit']['height'] / (z1 - zc)
-nx, ny = E['fit'].get('neck_xy', [0.0, 0.0])
-M = Matrix.Translation((nx, ny, E['fit']['bottom_z'])) @ Matrix.Scale(s, 4) @ Matrix.Translation((-cx, -neck.y, -zc))
-hi.data.transform(M)
-REP['fit'] = {'scale': s, 'centre_model_x': cx, 'neck_model_y': neck.y, 'neck_light_x': neck.x, 'neck_samples': len(pts)}
-log('fit: scale %.4f, centre x %.3f, neck y %.3f (light paint near the cut centres at x %.3f)' % (s, cx, neck.y, neck.x))
+# fitted once for the whole body before the cut (BODY); a head is fitted here, from its own cut and eyes
+if not BODY:
+    uvl = hi.data.uv_layers.active.data
+    band_top = zc + 0.03 * (z1 - z0)
+    pts = []
+    for p in hi.data.polygons:
+        c = p.center
+        if c.z > band_top or abs(p.normal.z) > 0.8:          # near the cut, and not a cap face
+            continue
+        u, v = uvl[p.loop_start].uv
+        px = paint[min(H - 1, max(0, int(v * H))), min(W - 1, max(0, int(u * W)))]
+        if 0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2] >= E['dark_below']:
+            pts.append(c.copy())
+    if not pts:
+        raise SystemExit(f'{PID}: no light paint just above the cut: is `cut` below the neck?')
+    neck = sum(pts, Vector()) / len(pts)
+    # side to side: the middle of the eyes (a face is symmetric; the bounding box is not - hair hangs to one side and
+    # a collar the service added pulls the light paint near the cut sideways). Front to back: the neck.
+    xs = [v.co.x for v in hi.data.vertices]
+    cx = eye_x if eye_x is not None else (min(xs) + max(xs)) / 2
+    s = E['fit']['height'] / (z1 - zc)
+    nx, ny = E['fit'].get('neck_xy', [0.0, 0.0])
+    M = Matrix.Translation((nx, ny, E['fit']['bottom_z'])) @ Matrix.Scale(s, 4) @ Matrix.Translation((-cx, -neck.y, -zc))
+    hi.data.transform(M)
+    REP['fit'] = {'scale': s, 'centre_model_x': cx, 'neck_model_y': neck.y, 'neck_light_x': neck.x, 'neck_samples': len(pts)}
+    log('fit: scale %.4f, centre x %.3f, neck y %.3f (light paint near the cut centres at x %.3f)' % (s, cx, neck.y, neck.x))
 
 # ---------------------------------------------------------------- 3 reduce a copy
 lo = hi.copy()
@@ -242,7 +301,7 @@ px = np.empty(R * R * 4, np.float32)
 img.pixels.foreach_get(px)
 px = px.reshape(R, R, 4)[..., :3]
 missed = (px[..., 0] > 0.95) & (px[..., 1] < 0.05) & (px[..., 2] > 0.95)
-dark, glow = srgb_classes(px, E['dark_below'], E['glow'])
+dark, glow = srgb_classes(px, E.get('dark_below', 0.3), E.get('glow') or {'min_sat': 2.0, 'hue': [0, 0]})
 dark &= ~missed
 glow &= ~missed
 REP['bake_missed_pct'] = round(100 * float(missed.mean()), 2)
@@ -259,22 +318,47 @@ def save_mask(m, name):
     im.save()
 
 
-save_mask(dark, 'ink')
-save_mask(glow, 'glow')
+if E.get('ink'):
+    save_mask(dark, 'ink')
+if E.get('glow'):
+    save_mask(glow, 'glow')
 uv = lo.data.uv_layers['paint'].data
+PAL = E.get('palette')                 # [{name, rgb: [[r,g,b] sRGB 0..1, ...]}]: each facet takes the nearest
+if PAL:
+    pal_c = np.array([c for e in PAL for c in e['rgb']], np.float32)
+    pal_i = np.array([k for k, e in enumerate(PAL) for _ in e['rgb']])
+NAMES = [e['name'] for e in PAL] if PAL else ['skin', 'hair']
 cls = []
 for p in lo.data.polygons:
-    if p.center.z < E['fit']['bottom_z'] + 0.004 and p.normal.z < -0.7:   # the cap: hidden in the collar
+    if not BODY and p.center.z < E['fit']['bottom_z'] + 0.004 and p.normal.z < -0.7:   # the cap: in the collar
         cls.append(0)
         continue
     us = [uv[i].uv for i in range(p.loop_start, p.loop_start + p.loop_total)]
     c = sum(us, Vector((0, 0))) / len(us)
-    votes = 0
     samples = [c] + [c.lerp(u, 0.6) for u in us]
-    for q in samples:
-        x, y = min(R - 1, max(0, int(q.x * R))), min(R - 1, max(0, int(q.y * R)))
-        votes += 1 if dark[y, x] else 0
-    cls.append(1 if votes * 2 > len(samples) else 0)
+    if PAL:
+        votes = np.zeros(len(PAL))
+        for q in samples:
+            x, y = min(R - 1, max(0, int(q.x * R))), min(R - 1, max(0, int(q.y * R)))
+            if missed[y, x]:
+                continue
+            votes[pal_i[int(((pal_c - px[y, x]) ** 2).sum(1).argmin())]] += 1
+        cls.append(int(votes.argmax()))
+    else:
+        votes = 0
+        for q in samples:
+            x, y = min(R - 1, max(0, int(q.x * R))), min(R - 1, max(0, int(q.y * R)))
+            votes += 1 if dark[y, x] else 0
+        cls.append(1 if votes * 2 > len(samples) else 0)
+if BODY:
+    # the faces that close a cut have no paint of their own: they take the section's main sheet
+    main = max(set(cls), key=cls.count)
+    K = E['keep']
+    for k, p in enumerate(lo.data.polygons):
+        for ax, i in (('x', 0), ('y', 1), ('z', 2)):
+            for val in K.get(ax, [None, None]):
+                if val is not None and abs(p.normal[i]) > 0.95 and abs(p.center[i] - val) < 0.004:
+                    cls[k] = main
 # despeckle: any island of one sheet smaller than `min_island` facets (default 10) joins the sheet around it - a
 # light chip inside the hair (an ear tip poking through), a dark chip on a cheek. Real regions (an ear, a lock, the
 # eyes, which sit inside the face) are bigger and stay.
@@ -307,15 +391,16 @@ for _ in range(2):
                 cls[i] = new
             flipped += len(isl)
 REP['despeckled_faces'] = flipped
-REP['hair_faces_pct'] = round(100 * sum(cls) / len(cls), 1)
+REP['classes_pct'] = {NAMES[k]: round(100 * cls.count(k) / len(cls), 1) for k in range(len(NAMES))}
+REP['hair_faces_pct'] = REP['classes_pct'].get('hair', 0.0)
 REP['ink_pct'] = round(100 * float(dark.mean()), 2)
 REP['glow_pct'] = round(100 * float(glow.mean()), 3)
-log('classes: %.1f%% hair facets; ink %.2f%% of texels, glow %.3f%%, bake missed %.2f%%'
-    % (REP['hair_faces_pct'], REP['ink_pct'], REP['glow_pct'], REP['bake_missed_pct']))
+log('classes %s; ink %.2f%% of texels, glow %.3f%%, bake missed %.2f%%'
+    % (REP['classes_pct'], REP['ink_pct'], REP['glow_pct'], REP['bake_missed_pct']))
 
 # ---------------------------------------------------------------- write the part
 lo.data.materials.clear()
-for nm in ('skin', 'hair'):
+for nm in NAMES:
     lo.data.materials.append(bpy.data.materials.new(nm))
 for p, c in zip(lo.data.polygons, cls):
     p.material_index = c

@@ -1,5 +1,5 @@
 {
-  "_about": "Generated parts (Tripo, TRELLIS, ...) as DATA. Each entry is prepared once by tools/ai_part.py (raw model -> cut, fitted, reduced, painted paper part in <prepared>/) and registered automatically by blender/character/part_registry.py as a rigid part a recipe can name. Rigid only: a generated mesh is one fused shell, so it is a hat, a head, a mask, a plate, a prop - never a body that bends. cut = keep above this fraction of the model height; fit = where the cut plane goes in the rig (bottom_z, metres), how tall the kept piece is (height, metres) and where the neck skin is centred (neck_xy); faces = facets after reduction; dark_below = sRGB luminance under which paint counts as dark (hair sheet, ink); glow = which paint glows. lantern = how much of the character's inner glow comes through each sheet (the folded mask takes 1.0; ink blocks it).",
+  "_about": "Generated parts (Tripo, TRELLIS, ...) as DATA. Each entry is prepared once by tools/ai_part.py (raw model -> cut, fitted, reduced, painted paper part in <prepared>/) and registered automatically by blender/character/part_registry.py as a rigid part a recipe can name. Rigid only: a generated mesh is one fused shell, so it is a hat, a head, a mask, a plate, a prop - never a body that bends. cut = keep above this fraction of the model height; fit = where the cut plane goes in the rig (bottom_z, metres), how tall the kept piece is (height, metres) and where the neck skin is centred (neck_xy); faces = facets after reduction; dark_below = sRGB luminance under which paint counts as dark (hair sheet, ink); glow = which paint glows. lantern = how much of the character's inner glow comes through each sheet (the folded mask takes 1.0; ink blocks it). Body sections (fit.mode 'body'): one fit for the whole generated figure, then `keep` = the section's box in rig metres, `palette` = the paint colours it may contain (nearest wins), `rigid`/`bones` = bound like the folded part it replaces.",
   "kojiro_head_t1": {
     "label": "Sasaki Kojiro: head, face and hair (Tripo test 1)",
     "slot": "face",
@@ -53,5 +53,609 @@
       "skin": 0.4,
       "hair": 0.0
     }
+  },
+  "kojiro_torso_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro torso: haori body, kosode, obi (Tripo body t1)",
+    "slot": "torso",
+    "socket": "chest",
+    "prepared": "assets/models/ai/kojiro_torso_t1",
+    "keep": {
+      "x": [
+        -0.215,
+        0.215
+      ],
+      "z": [
+        0.86,
+        1.5
+      ]
+    },
+    "faces": 5000,
+    "palette": [
+      {
+        "name": "crimson",
+        "rgb": [
+          [
+            0.745,
+            0.216,
+            0.137
+          ],
+          [
+            0.635,
+            0.18,
+            0.114
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      },
+      {
+        "name": "oxblood",
+        "rgb": [
+          [
+            0.435,
+            0.192,
+            0.18
+          ],
+          [
+            0.314,
+            0.129,
+            0.125
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "crimson": "washi_crimson",
+      "cream": "washi_natural",
+      "black": "washi_sumi",
+      "oxblood": "card_oxblood"
+    },
+    "rigid": false,
+    "bones": [
+      "hips",
+      "torso",
+      "upper"
+    ]
+  },
+  "kojiro_sleeve_L_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro left haori sleeve, shoulder to cuff (Tripo body t1)",
+    "slot": "sleeve_upper",
+    "socket": "shoulder.L",
+    "prepared": "assets/models/ai/kojiro_sleeve_L_t1",
+    "keep": {
+      "x": [
+        0.2,
+        0.75
+      ],
+      "z": [
+        0.92,
+        1.55
+      ]
+    },
+    "faces": 2500,
+    "palette": [
+      {
+        "name": "crimson",
+        "rgb": [
+          [
+            0.745,
+            0.216,
+            0.137
+          ],
+          [
+            0.635,
+            0.18,
+            0.114
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "crimson": "washi_crimson",
+      "cream": "washi_natural"
+    },
+    "rigid": false,
+    "bones": [
+      "lS",
+      "lT"
+    ]
+  },
+  "kojiro_sleeve_R_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro right haori sleeve, shoulder to cuff (Tripo body t1)",
+    "slot": "sleeve_upper",
+    "socket": "shoulder.R",
+    "prepared": "assets/models/ai/kojiro_sleeve_R_t1",
+    "keep": {
+      "x": [
+        -0.75,
+        -0.2
+      ],
+      "z": [
+        0.92,
+        1.55
+      ]
+    },
+    "faces": 2500,
+    "palette": [
+      {
+        "name": "crimson",
+        "rgb": [
+          [
+            0.745,
+            0.216,
+            0.137
+          ],
+          [
+            0.635,
+            0.18,
+            0.114
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "crimson": "washi_crimson",
+      "cream": "washi_natural"
+    },
+    "rigid": false,
+    "bones": [
+      "lS",
+      "lT"
+    ]
+  },
+  "kojiro_hakama_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro hakama: waist and skirt above the split (Tripo body t1)",
+    "slot": "armor",
+    "socket": "obi",
+    "prepared": "assets/models/ai/kojiro_hakama_t1",
+    "keep": {
+      "x": [
+        -0.32,
+        0.32
+      ],
+      "z": [
+        0.52,
+        0.93
+      ]
+    },
+    "faces": 3000,
+    "palette": [
+      {
+        "name": "oxblood",
+        "rgb": [
+          [
+            0.435,
+            0.192,
+            0.18
+          ],
+          [
+            0.314,
+            0.129,
+            0.125
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "oxblood": "card_oxblood",
+      "black": "washi_sumi"
+    },
+    "rigid": false,
+    "bones": [
+      "hips",
+      "lthigh",
+      "rthigh"
+    ],
+    "layer": 52
+  },
+  "kojiro_leg_L_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro hakama left leg below the split (Tripo body t1)",
+    "slot": "shin",
+    "socket": "knee.L",
+    "prepared": "assets/models/ai/kojiro_leg_L_t1",
+    "keep": {
+      "x": [
+        0.0,
+        0.4
+      ],
+      "z": [
+        0.12,
+        0.56
+      ]
+    },
+    "faces": 2500,
+    "palette": [
+      {
+        "name": "oxblood",
+        "rgb": [
+          [
+            0.435,
+            0.192,
+            0.18
+          ],
+          [
+            0.314,
+            0.129,
+            0.125
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "oxblood": "card_oxblood",
+      "black": "washi_sumi"
+    },
+    "rigid": false,
+    "bones": [
+      "lthigh",
+      "lshin",
+      "hips"
+    ]
+  },
+  "kojiro_leg_R_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro hakama right leg below the split (Tripo body t1)",
+    "slot": "shin",
+    "socket": "knee.R",
+    "prepared": "assets/models/ai/kojiro_leg_R_t1",
+    "keep": {
+      "x": [
+        -0.4,
+        0.0
+      ],
+      "z": [
+        0.12,
+        0.56
+      ]
+    },
+    "faces": 2500,
+    "palette": [
+      {
+        "name": "oxblood",
+        "rgb": [
+          [
+            0.435,
+            0.192,
+            0.18
+          ],
+          [
+            0.314,
+            0.129,
+            0.125
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "oxblood": "card_oxblood",
+      "black": "washi_sumi"
+    },
+    "rigid": false,
+    "bones": [
+      "lthigh",
+      "lshin",
+      "hips"
+    ]
+  },
+  "kojiro_foot_L_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro left tabi and sandal (Tripo body t1)",
+    "slot": "foot",
+    "socket": "ankle.L",
+    "prepared": "assets/models/ai/kojiro_foot_L_t1",
+    "keep": {
+      "x": [
+        0.0,
+        0.35
+      ],
+      "z": [
+        -0.02,
+        0.15
+      ]
+    },
+    "faces": 900,
+    "palette": [
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      },
+      {
+        "name": "straw",
+        "rgb": [
+          [
+            0.659,
+            0.494,
+            0.349
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "cream": "washi_bleached",
+      "straw": "washi_hat",
+      "black": "washi_sumi"
+    },
+    "rigid": true,
+    "bone": "lfoot"
+  },
+  "kojiro_foot_R_t1": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "Kojiro right tabi and sandal (Tripo body t1)",
+    "slot": "foot",
+    "socket": "ankle.R",
+    "prepared": "assets/models/ai/kojiro_foot_R_t1",
+    "keep": {
+      "x": [
+        -0.35,
+        0.0
+      ],
+      "z": [
+        -0.02,
+        0.15
+      ]
+    },
+    "faces": 900,
+    "palette": [
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      },
+      {
+        "name": "straw",
+        "rgb": [
+          [
+            0.659,
+            0.494,
+            0.349
+          ]
+        ]
+      },
+      {
+        "name": "black",
+        "rgb": [
+          [
+            0.165,
+            0.129,
+            0.129
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "cream": "washi_bleached",
+      "straw": "washi_hat",
+      "black": "washi_sumi"
+    },
+    "rigid": true,
+    "bone": "rfoot"
   }
 }
