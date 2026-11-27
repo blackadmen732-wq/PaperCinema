@@ -113,7 +113,7 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
     garment = {a.aid: BC.BodyCapsules(a.rig) for a in actors}
     sleeves = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'tamoto_wide'] for a in actors}
     aprons = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'hakama_apron'] for a in actors}
-    rec = {a.aid: {'J': [], 'sword': [], 'saya': [], 'grip': [], 'segs': [], 'ground': []} for a in actors}
+    rec = {a.aid: {'J': [], 'sword': [], 'saya': [], 'grip': [], 'segs': [], 'ground': [], 'base': []} for a in actors}
     chk = {a.aid: {'blade/body': [], 'blade/garment': [], 'arm.R/body': [], 'arm.L/body': [],
                    'sleeve-paper.R/body': [], 'sleeve-paper.L/body': [], 'hakama-apron/legs': [], 'grip_rel': [], 'phase': []}
            for a in actors}
@@ -125,6 +125,7 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
             if not act or act.get('hidden') or not isinstance(act.get('pose'), dict):
                 rec[a.aid]['J'].append(None)
                 rec[a.aid]['ground'].append(None)
+                rec[a.aid]['base'].append(None)
                 continue
             # the body follows the terrain under it (a film is blocked on flat ground at z 0): the pose's height is
             # raised or lowered to the set's ground under the character's centre, cast from 1 m up so an eave or a
@@ -165,6 +166,7 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
             # feet on the ground: the pose's leg solver works in the character's own frame (see Rig.ground_feet)
             lifted = a.rig.ground_feet(ground=ground_at or 0.0, base=base)
             rec[a.aid]['ground'].append(dict(getattr(a.rig, 'foot_ground', {})))   # per foot: the ground it stands on
+            rec[a.aid]['base'].append(round(base, 4))       # the terrain under the body: its weapon and the camera follow
             if lifted:
                 chk[a.aid].setdefault('feet_lifted', []).append((f, lifted))
             if a.springs:

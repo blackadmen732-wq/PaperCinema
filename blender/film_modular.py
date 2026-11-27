@@ -309,17 +309,33 @@ for i in range(f0, f1 + 1):
     fr = FRAMES[i]
     bpy.context.scene.frame_set(i + 1)      # ABSOLUTE timeline frame, 1-based
     PB.apply(BAKE, i, PACT)                 # joints, deform bones, real sword + scabbard, hands: from the bake
+    # the terrain each body was put on (production_bake: the set's ground under it; 0 on the film's flat ground)
+    _base = {_a: ((BAKE['actors'].get(_a) or {}).get('base') or [None] * (i + 1))[i] or 0.0 for _a in rigs}
     for _aid, _sw in swords.items():
         _act = fr['actors'].get(_aid)
         if _act and _act.get('weapon'):
             _w = _act['weapon']
-            _sw.location = v3(_w[:3])
+            _sw.location = v3(_w[:3]) + Vector((0.0, 0.0, _base.get(_aid, 0.0)))   # in the hands on a slope too
             _sw.rotation_quaternion = q3(_w[3:7])
             _sw.keyframe_insert('location')
             _sw.keyframe_insert('rotation_quaternion')
     c = fr.get('camera')
     if c and not arg('lookat'):
         cam.location = v3(c['pos'])
+        # the camera was designed on flat ground: on a slope it rises or sinks with the fighters, the nearer one
+        # counting most (an over-the-shoulder follows the shoulder): weights 1 / distance^2 to each body
+        if any(abs(v) > 0.003 for v in _base.values()):
+            _ws = 0.0
+            _sh = 0.0
+            for _aid, _b in _base.items():
+                _pa = (fr['actors'].get(_aid) or {}).get('pose')
+                if not isinstance(_pa, dict):
+                    continue
+                _d2 = max(0.25, (cam.location - Vector((float(_pa.get('x', 0)), -float(_pa.get('z', 0)), cam.location.z))).length_squared)
+                _ws += 1.0 / _d2
+                _sh += _b / _d2
+            if _ws > 0:
+                cam.location.z += _sh / _ws
         cam.rotation_quaternion = qcam(c['rot'])
         cd.lens = c.get('focal_mm', 40)
         cam.keyframe_insert('location')
