@@ -46,6 +46,26 @@ def main(clip, film, hitstop=0):
           '%.4f s -> offset %+.1f ms (%+.2f frames) %s' % (
               os.path.basename(clip), t_c, t_c * fps + 1, first_frame, (first_frame - 1) / fps, t_audio, off * 1000,
               off * fps, 'PASS (within one frame)' if abs(off * fps) <= 1.0 else 'FAIL'))
+    # every footfall / skid / landing cue (tools/bake_events.py ground events): its own clip, found near its time
+    bad = 0
+    for cue in ev.get('cues', []):
+        if not cue['id'].split('-')[0] in ('step', 'skid', 'land') or not os.path.exists(cue.get('file', '')):
+            continue
+        cl, _ = audio(cue['file'])
+        cl = cl[: int(0.04 * sr)]
+        lo, hi = int(max(0, cue['t'] - 0.2) * sr), int((cue['t'] + 0.2) * sr)
+        seg = mix[lo:hi + len(cl)]
+        if len(seg) < len(cl) or not np.any(cl):
+            continue
+        c = np.correlate(seg - seg.mean(), cl - cl.mean(), mode='valid')
+        n = np.sqrt(np.convolve(seg ** 2, np.ones(len(cl)), mode='valid')) * np.linalg.norm(cl) + 1e-12
+        r = c / n
+        k = int(np.argmax(r))
+        o = (lo + k) / sr - cue['t']
+        ok = abs(o * fps) <= 1.0
+        bad += 0 if ok else 1
+        print('[sync]   %-22s cue %.3f s, found %+.1f ms (%+.2f frames, match %.2f) %s' % (
+            cue['id'], cue['t'], o * 1000, o * fps, float(r[k]), 'PASS' if ok else 'FAIL'))
     return off
 
 
