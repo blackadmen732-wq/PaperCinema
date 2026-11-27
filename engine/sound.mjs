@@ -18,6 +18,13 @@ const filmPath = opt('film', 'film/ganryujima.json');
 const film = JSON.parse(fs.readFileSync(filmPath, 'utf8'));
 const base = path.basename(filmPath, '.json');
 const video = opt('video', `output/${base}.mp4`);
+// The output is as long as the VIDEO when the video is longer than the film (a hit-stop cut adds frames): cutting
+// at film.duration dropped the last frames of a 3-frame hit-stop clip.
+let DUR = film.duration;
+try {
+  const vd = parseFloat(String(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', video])));
+  if (vd > DUR) DUR = vd;
+} catch { /* no video yet: film.duration */ }
 const out = opt('out', `output/${base}-sound.mp4`);
 const dir = 'assets/sfx';
 fs.mkdirSync(dir, { recursive: true });
@@ -213,7 +220,7 @@ const TARGET = +opt('lufs', -14), CEIL = +opt('peak', -1);
 // that, so aim it 0.5 dB under the ceiling and the finished file measures at or below it.
 const CEIL_LIN = (10 ** ((CEIL - 0.5) / 20)).toFixed(4);
 const chain = (gain, meter) => `${mixIn}amix=inputs=${nIn}:normalize=0:dropout_transition=0,` +
-  `afade=t=out:st=${film.duration - 1.5}:d=1.5,volume=${gain.toFixed(2)}dB,` +
+  `afade=t=out:st=${DUR - 1.5}:d=1.5,volume=${gain.toFixed(2)}dB,` +
   `alimiter=level=false:limit=${CEIL_LIN}${meter ? ',ebur128=peak=true' : ''}[mix]`;
 // spawnSync, not a shell: the filter graph is full of single quotes (the dip expressions) and no amount of
 // shell quoting survives that.
@@ -227,7 +234,7 @@ const ff = (a) => {
 };
 const measure = (gain) => {
   const txt = ff(['-hide_banner', '-nostats', '-y', ...inputs, '-filter_complex', filters.concat(chain(gain, true)).join(';'),
-    '-map', '[mix]', '-t', String(film.duration), '-f', 'null', '-']);
+    '-map', '[mix]', '-t', String(DUR), '-f', 'null', '-']);
   const g = (re) => { const m = txt.match(re); return m ? parseFloat(m[1]) : NaN; };
   return { lufs: g(/Integrated loudness:\s+I:\s+(-?[\d.]+)/), tp: g(/True peak:\s*\n\s*Peak:\s+(-?[\d.]+)/) };
 };
@@ -244,6 +251,6 @@ if (gain) {
   gain = corr;
 }
 ff(['-y', '-loglevel', 'error', ...inputs, '-filter_complex', filters.concat(chain(gain, false)).join(';'),
-  '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(film.duration), out]);
+  '-map', '0:v', '-map', '[mix]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-t', String(DUR), out]);
 console.log(`\nwrote ${out} with ${placed.length}/${(film.sounds ?? []).length + autoCues.length + voiceCues.length} sounds` +
   `${voiceCues.length ? ` (${voiceCues.length} voice lines)` : ''}. Credits: ${creditsPath}`);

@@ -153,41 +153,64 @@ def swing_arc(S, a, b):
                          for i in range(len(pts) - 1))}
 
 
-def add_slashes(tl, fps, f0, f1, slash_fx, collection=None, min_speed=5.0, hold=6):
-    """Put a slash on every real swing inside [f0, f1]. Returns what it made."""
+def add_slashes(tl, fps, f0, f1, slash_fx, collection=None, min_speed=5.0, hold=6, contact=None):
+    """Put a slash on every real swing inside [f0, f1]. Returns what it made.
+
+    contact (from output/<film>.bake-events.json, the SAME event the mixer uses): {'t', 'striker', 'blocker'}.
+    The striker's swing that reaches the contact is cut off at the contact (a blocked blade leaves no trail
+    past the block) and the blocker's own weapon movement gets no cut trail."""
     made = []
     for meta in tl.get('actors', []):
         aid = meta['id']
         if meta.get('hidden'):
             continue
+        if contact and aid == contact.get('blocker'):
+            continue
         blade = (meta.get('weapon') or {}).get('bladeLen', 0.91)
         S = blade_samples(tl, aid, blade)
-        for a, b in find_swings(S, min_speed=min_speed, fps=fps):
-            arc = swing_arc(S, a, b)
-            if not arc:
-                continue
-            start_f = int(round(arc['t0'] * fps))
-            end_f = int(round(arc['t1'] * fps)) + hold
-            if end_f < f0 or start_f > f1:
-                continue
-            r = slash_fx.make_slash(
-                name=f'SLASH_{aid}_{start_f}',
-                center=tuple(arc['centre']),
-                radius=arc['radius'],
-                sweep=abs(arc['sweep']),
-                thickness=min(0.26, 0.10 + arc['radius'] * 0.10),
-                colour='crimson' if meta.get('demonic') else 'amber',
-                demonic=bool(meta.get('demonic')),
-                frame_start=max(1, start_f + 1),
-                frame_end=end_f + 1,
-                start_angle=arc['start'],
-                clockwise=arc['sweep'] < 0,
-                strength=min(1.6, 0.6 + arc['speed'] / 25.0),
-                collection=collection)
-            # make_slash orients the arc from pitch/tilt/yaw; the plane was MEASURED, so the fitted
-            # basis replaces those Euler angles outright.
-            r['root'].rotation_euler = arc['basis'].to_euler('XYZ')
-            made.append({'actor': aid, 'f0': start_f, 'f1': end_f,
-                         'sweep': round(arc['sweep'], 1), 'radius': round(arc['radius'], 2),
-                         'speed': round(arc['speed'], 1)})
+        if contact and aid == contact.get('striker'):
+            tc = contact['t']
+            before = [x for x in S if x['t'] <= tc + 1e-6]
+            after = [x for x in S if x['t'] > tc + 1e-6]
+            if before and after and before[-1]['t'] < tc - 1e-6:
+                # end the trail EXACTLY at the contact: one sample interpolated at t_c (the blade is at full speed
+                # there - 2.8 -> 20 m/s in the last frame - so cutting at the last whole frame left no trail at all)
+                a_, b_ = before[-1], after[0]
+                u = (tc - a_['t']) / (b_['t'] - a_['t'])
+                before.append({'t': tc, 'guard': a_['guard'].lerp(b_['guard'], u), 'tip': a_['tip'].lerp(b_['tip'], u)})
+            S = before                                   # (a later swing of the striker is a separate pass below)
+            later = [x for x in after if x['t'] > tc + 0.5]
+        else:
+            later = []
+        for S in ([S, later] if later else [S]):
+          for a, b in find_swings(S, min_speed=(min(min_speed, 2.5) if (contact and aid == contact.get('striker') and S and S[-1]['t'] <= contact['t'] + 1e-6) else min_speed),
+                                  min_frames=(1 if (contact and aid == contact.get('striker')) else 3), fps=fps):
+              arc = swing_arc(S, a, b)
+              if not arc:
+                  print(f'[slash] {aid}: swing {S[a]["t"]:.3f}-{S[b]["t"]:.3f} s is not an arc (no trail)')
+                  continue
+              start_f = int(round(arc['t0'] * fps))
+              end_f = int(round(arc['t1'] * fps)) + hold
+              if end_f < f0 or start_f > f1:
+                  continue
+              r = slash_fx.make_slash(
+                  name=f'SLASH_{aid}_{start_f}',
+                  center=tuple(arc['centre']),
+                  radius=arc['radius'],
+                  sweep=abs(arc['sweep']),
+                  thickness=min(0.26, 0.10 + arc['radius'] * 0.10),
+                  colour='crimson' if meta.get('demonic') else 'amber',
+                  demonic=bool(meta.get('demonic')),
+                  frame_start=max(1, start_f + 1),
+                  frame_end=end_f + 1,
+                  start_angle=arc['start'],
+                  clockwise=arc['sweep'] < 0,
+                  strength=min(1.6, 0.6 + arc['speed'] / 25.0),
+                  collection=collection)
+              # make_slash orients the arc from pitch/tilt/yaw; the plane was MEASURED, so the fitted
+              # basis replaces those Euler angles outright.
+              r['root'].rotation_euler = arc['basis'].to_euler('XYZ')
+              made.append({'actor': aid, 'f0': start_f, 'f1': end_f,
+                           'sweep': round(arc['sweep'], 1), 'radius': round(arc['radius'], 2),
+                           'speed': round(arc['speed'], 1)})
     return made

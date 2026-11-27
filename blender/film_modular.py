@@ -285,8 +285,14 @@ if not flag('no-slash'):
         sys.path.insert(0, os.path.join(HERE, 'world'))
         import slash_fx
         import slash_from_blade as SB
+        _ev_p = os.path.join(REPO, 'output', FILM + '.bake-events.json')
+        _ev = json.load(open(_ev_p)) if os.path.exists(_ev_p) else None
+        _contact = None
+        if _ev and _ev.get('contact', {}).get('touch'):
+            _contact = {'t': _ev['contact']['t'], 'striker': _ev.get('striker'), 'blocker': _ev.get('blocker')}
+            print(f"[film] slash cut at the bake contact: frame {_ev['contact']['subframe']} (t {_ev['contact']['t']} s)")
         cuts = SB.add_slashes(TL, FPS, f0, f1, slash_fx,
-                              min_speed=float(arg('slash-speed', 5.0)))
+                              min_speed=float(arg('slash-speed', 5.0)), contact=_contact)
         for c in cuts:
             print(f"[film] slash {c['actor']} f{c['f0']}-{c['f1']}  {c['sweep']:+.0f} deg  "
                   f"r={c['radius']} m  {c['speed']} m/s")
