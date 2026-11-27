@@ -223,6 +223,17 @@ in the render with the same numbers (f31 of dash-test: 38.4 mm, +2.16° roll in 
 browser (bloom, speed lines, CA flash, glints, ink impact frame, white flash, sparks, ribbons, dust) are NOT; the
 ink frame, flash, CA and speed lines are put back on the Blender frames by `tools/post_fx.py`.
 
+**Correction (27 Nov pm): the same focal length was not the same picture.** The timeline's lens is defined on a 24 mm
+sensor fitted vertically (`tools/timeline.mjs` SENSOR); `film_modular.py` keyed that focal length on Blender's default
+36 mm AUTO sensor, which in a portrait frame fits the HEIGHT, so every film rendered 1.5x wider than designed (beach
+f31: Kojiro filled 27-79% of the frame height; the design and `tools/shot_framing.py` assume 15-94%). The film camera
+now has `sensor_fit VERTICAL`, `sensor_height 24`. Films rendered before that commit are wider than their design.
+
+**Hit-stop** (`film.effects.hitStop`, frames): `tools/post_fx.py` holds the contact (ink / negative strobe), moves the
+frames after it and writes the stop into the bake events, every later cue shifted with it. **Landings** bump the
+picture for 5 frames. **Sound in the picture**: every bake cue is panned by its source's place across the rendered
+frame and softened with distance (`tools/bake_events.py` Ears; steps, skids and landings come from the bake's ankles).
+
 **`film.cameraMoves`** (`engine/camfx.js`, applied in `placeCamera` after the spring and the punch):
 ```json
 "cameraMoves": [
