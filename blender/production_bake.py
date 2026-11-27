@@ -75,18 +75,45 @@ class Actor:
         self.caps, self.corr = caps, {}
 
 
+def ground_sampler(sc, skip):
+    """The walkable surface under a point, world metres: the highest UP-facing hit of a ray cast down from z_from onto
+    every visible mesh that is not a character, a weapon, the sea or the sky (the same meshes tools' ground report
+    measures against). None when nothing is under it. Without a set there is nothing: the film's own ground, z 0."""
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    obs = [o for o in sc.objects if o.type == 'MESH' and o not in skip and o.visible_get() and len(o.data.polygons)
+           and not o.name.startswith(('SEA', 'SKY', 'PC_', 'MARK_', 'KATANA_', 'BOKKEN_')) and not o.get('pc_internal')
+           and not (o.parent and o.parent.name.startswith(('KATANA_', 'BOKKEN_')))]
+    trees = [(o.matrix_world.copy(), o.matrix_world.inverted(), BVHTree.FromObject(o, dg)) for o in obs]
+    if not trees:
+        return None
+
+    def at(x, y, z_from):
+        best = None
+        for M, Mi, t in trees:
+            hit = t.ray_cast(Mi @ Vector((x, y, z_from)), (Mi.to_3x3() @ Vector((0, 0, -1))).normalized(), 50.0)
+            if hit[0] is not None and (M.to_3x3() @ hit[1]).normalized().z > 0.5:
+                z = (M @ hit[0]).z
+                if best is None or z > best:
+                    best = z
+        return best
+    return at
+
+
 def solve(TL, actors, fps, checks=True, body_shrink=0.035):
     """Run every frame of the timeline in order through the passes; return the bake dict."""
     import body_capsules as BC
     import sword_draw as SD
     sc = bpy.context.scene
+    ground_at = ground_sampler(sc, {o for a in actors for o in a.objects})
+    last_g = {a.aid: 0.0 for a in actors}             # each body casts from 1 m above ITS last ground (a hillside)
     frames = TL['frames']
     out = {'fps': fps, 'n': len(frames), 'actors': {}, 'checks': {}}
     body = {a.aid: BC.BodyCapsules(a.rig, shrink=body_shrink) for a in actors}
     garment = {a.aid: BC.BodyCapsules(a.rig) for a in actors}
     sleeves = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'tamoto_wide'] for a in actors}
     aprons = {a.aid: [o for o in a.objects if o.get('pc_recipe') == 'hakama_apron'] for a in actors}
-    rec = {a.aid: {'J': [], 'sword': [], 'saya': [], 'grip': [], 'segs': []} for a in actors}
+    rec = {a.aid: {'J': [], 'sword': [], 'saya': [], 'grip': [], 'segs': [], 'ground': []} for a in actors}
     chk = {a.aid: {'blade/body': [], 'blade/garment': [], 'arm.R/body': [], 'arm.L/body': [],
                    'sleeve-paper.R/body': [], 'sleeve-paper.L/body': [], 'hakama-apron/legs': [], 'grip_rel': [], 'phase': []}
            for a in actors}
@@ -97,7 +124,21 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
             act = fr['actors'].get(a.aid)
             if not act or act.get('hidden') or not isinstance(act.get('pose'), dict):
                 rec[a.aid]['J'].append(None)
+                rec[a.aid]['ground'].append(None)
                 continue
+            # the body follows the terrain under it (a film is blocked on flat ground at z 0): the pose's height is
+            # raised or lowered to the set's ground under the character's centre, cast from 1 m up so an eave or a
+            # counter above is never taken for the floor; the feet settle on their own ground below
+            base = 0.0
+            if ground_at is not None:
+                _p = act['pose']
+                _g = ground_at(float(_p.get('x', 0.0)), -float(_p.get('z', 0.0)), last_g[a.aid] + 1.0)
+                if _g is not None:
+                    last_g[a.aid] = _g
+                if _g is not None and abs(_g) > 0.003:
+                    base = _g
+                    act = dict(act, pose=dict(_p, y=float(_p.get('y', 0.0)) + _g))
+                    chk[a.aid].setdefault('terrain', []).append((f, round(_g, 3)))
             if a.draw:
                 phase = a.draw.step(f, dict(act['pose']))
             else:
@@ -122,7 +163,8 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                             pose[k] += v
                     a.rig.pose(pose)
             # feet on the ground: the pose's leg solver works in the character's own frame (see Rig.ground_feet)
-            lifted = a.rig.ground_feet()
+            lifted = a.rig.ground_feet(ground=ground_at or 0.0, base=base)
+            rec[a.aid]['ground'].append(dict(getattr(a.rig, 'foot_ground', {})))   # per foot: the ground it stands on
             if lifted:
                 chk[a.aid].setdefault('feet_lifted', []).append((f, lifted))
             if a.springs:
@@ -149,6 +191,9 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
         out['checks'][a.aid] = chk[a.aid]
         if a.springs is not None:
             chk[a.aid]['cloth_lag'] = {j: [r[0] for r in rows] for j, rows in a.springs.log.items()}
+        if chk[a.aid].get('terrain'):
+            _t = [g for _f, g in chk[a.aid]['terrain']]
+            print('[bake] %s body on the terrain on %d frames: ground %.3f..%.3f m' % (a.aid, len(_t), min(_t), max(_t)))
         if chk[a.aid].get('feet_lifted'):
             print('[bake] %s feet put back on the ground on %d frames (cm): %s' % (
                 a.aid, len(chk[a.aid]['feet_lifted']), chk[a.aid]['feet_lifted'][:8]))

@@ -221,6 +221,11 @@ else
   "$B" -b -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --bake-only "${SETARG[@]+"${SETARG[@]}"}" \
     > "output/$NAME-bake.log" 2>&1 || { tail -25 "output/$NAME-bake.log"; die "step 5 bake: the production bake failed (output/$NAME-bake.log)."; }
   grep -E "^\[(bake|check)\]" "output/$NAME-bake.log" | sed 's/^/  /'
+  # the contact measured on THIS bake, before any worker starts: the workers cut the paper-fire slash at it
+  # (film_modular reads output/$NAME.bake-events.json). Written only after the render, a first run had no contact
+  # and its slash ran through the block, a re-run used the previous run's (27 Nov: village vs beach)
+  python3 tools/bake_events.py "$NAME" > "output/$NAME-events.log" 2>&1 \
+    || echo "  (no bake contact yet: the slash follows the whole blade path)"
   PLAN=$(python3 "$R/tools/render_plan.py" "$FR" "$FA" "$FB" "$W") \
     || die "step 5 render: could not work out which frames are missing from $FR."
   TODO=$(echo "$PLAN" | head -1)

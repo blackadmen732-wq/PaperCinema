@@ -220,19 +220,25 @@ class Rig:
         self.sync_bones()
         return p
 
-    def ground_feet(self, ground=0.0, rest=0.04, tol=0.004):
+    def ground_feet(self, ground=0.0, rest=0.04, tol=0.004, base=0.0):
         """After pose(): an ankle under the world ground is put back ON it by re-solving that leg - the hip swing
         and the knee - with the hip where the pose left it, the ankle at the same place across the ground, and the
         foot turned back so the sole keeps its angle. pose() solves the legs in the character's own frame, so a
         lean or a drop of the whole body carried a foot into the sand (27 Nov: Kojiro's right foot 8.3 cm deep for
         6 frames of the lunge; tools/bake_events.py reports these as 'sink'). Returns {side: cm lifted}."""
         J, out = self.J, {}
+        self.foot_ground = {}                               # the ground used under each foot (the bake records it)
         for s in ('r', 'l'):
             foot, th, sh = J[s + 'foot'], J[s + 'thigh'], J[s + 'shin']
             a0 = foot.matrix_world.translation.copy()
-            want = ground + rest
-            if a0.z >= want - tol:
-                continue
+            gz = ground(a0.x, a0.y, a0.z + 0.4) if callable(ground) else ground
+            if gz is None:
+                gz = base
+            self.foot_ground[s] = round(float(gz), 4)
+            want = gz + rest
+            planted = a0.z <= base + rest + 0.02            # on its own ground in the pose (base: the ground it was posed on)
+            if a0.z >= want - tol and not (planted and a0.z > want + tol):
+                continue                                    # on or above its ground, or a raised foot over a dip
             hip = th.matrix_world.translation.copy()
             flat = Vector((a0.x - hip.x, a0.y - hip.y, 0.0))
             fwd = flat.normalized() if flat.length > 1e-4 else Vector((0.0, -1.0, 0.0))

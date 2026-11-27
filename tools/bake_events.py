@@ -125,27 +125,35 @@ def ground_events(bake, fps):
     segment, world metres). The ground under a foot is the height its ankle rests at most of the time (the 20th
     percentile: the lowest point is no ground - a lunge pushed Kojiro's right ankle 8 cm into the sand, 27 Nov, and
     that dip read as a footstep). A foot PLANTS when its ankle comes down within 2.5 cm of that rest height after
-    rising 6 cm above it (sub-frame time from the crossing); a planted foot still moving > 0.8 m/s SKIDS (once per
+    rising 4.5 cm above it (sub-frame time from the crossing); a planted foot still moving > 0.8 m/s SKIDS (once per
     plant); the first plant after both feet were up together for 3+ frames is a LANDING; an ankle more than 3 cm
     under its rest height is a SINK (the foot inside the ground: a motion defect, reported, never a sound)."""
     out = []
     for aid, A in bake['actors'].items():
         segs = A.get('segs') or []
         feet = {}
+        G = A.get('ground') or []                 # per frame {'l': z, 'r': z}: the terrain the bake put each foot on
+        world = {}
         for side in ('L', 'R'):
-            P = []
-            for s_ in segs:
+            P, Wp = [], []
+            for i_, s_ in enumerate(segs):
                 d = {n: b for n, a, b, r in (s_ or [])}
-                P.append(d.get('shin.' + side))
+                p_ = d.get('shin.' + side)
+                g_ = (G[i_] or {}).get(side.lower()) if i_ < len(G) else None
+                Wp.append(p_)
+                if p_ is not None and g_ is not None:      # heights above THIS foot's ground: a slope is flat to it
+                    p_ = [p_[0], p_[1], p_[2] - g_ + 0.04]
+                P.append(p_)
             if sum(1 for p in P if p) > 3:
                 feet[side] = P
+                world[side] = Wp
         if not feet:
             continue
         state = {}
         for side, P in feet.items():
             zs = sorted(p[2] for p in P if p)
             g = zs[int(0.2 * (len(zs) - 1))]
-            state[side] = {'g': g, 'up': (P[0] or [0, 0, g])[2] > g + 0.06, 'plant': 0, 'skid': False, 'sink': None}
+            state[side] = {'g': g, 'up': (P[0] or [0, 0, g])[2] > g + 0.045, 'plant': 0, 'skid': False, 'sink': None}
         air = 0
         for i in range(1, len(segs)):
             ups = []
@@ -154,7 +162,7 @@ def ground_events(bake, fps):
                 if not p or not q:
                     ups.append(st['up'])
                     continue
-                plant, lift = st['g'] + 0.025, st['g'] + 0.06
+                plant, lift = st['g'] + 0.025, st['g'] + 0.045      # a step on a slope lifts ~5 cm off its own sand
                 vh = math.hypot(p[0] - q[0], p[1] - q[1]) * fps
                 if p[2] < st['g'] - 0.03:                                  # inside the ground
                     if st['sink'] is None:
@@ -171,13 +179,13 @@ def ground_events(bake, fps):
                     vz = (q[2] - p[2]) * fps
                     kind = 'land' if air >= 3 else 'step'
                     out.append({'t': round(t, 4), 'frame': round(i + k, 2), 'actor': aid, 'foot': side, 'kind': kind,
-                                'down_mps': round(vz, 2), 'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in p]})
+                                'down_mps': round(vz, 2), 'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in world[side][i]]})
                     st.update(up=False, plant=i, skid=False)
                 elif not st['up'] and p[2] >= lift:
                     st['up'] = True
                 elif not st['up'] and not st['skid'] and vh > 0.8 and st['plant'] is not None and i - st['plant'] >= 1:
                     out.append({'t': round(i / fps, 4), 'frame': i + 1, 'actor': aid, 'foot': side, 'kind': 'skid',
-                                'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in p]})
+                                'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in world[side][i]]})
                     st['skid'] = True
                 ups.append(st['up'])
             air = air + 1 if ups and all(ups) else 0
