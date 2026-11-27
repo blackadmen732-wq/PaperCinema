@@ -321,8 +321,12 @@
   },
   "stage": {
     "mark": "MARK_shore",
-    "turn": 0
+    "turn": 0,
+    "offset": [
+      -4.0,
+      4.4
+    ]
   },
   "note_lens": "27 Nov pm: re-rendered with the timeline lens (24 mm vertical sensor; the earlier frames were 1.5x wide), Musashi on his generated body (musashi-ai) with the generated oar bokken, the hit-stop on",
-  "note_item11": "staged at MARK_shore (6, -9) off the levelled fight zone: the sand slopes under the fighters"
+  "note_item11": "staged 4 m along and 4.4 m up the beach from MARK_shore (stage.offset), above the reach of the waves: Kojiro on the top of the bank (~0.94 m), Musashi 2.5 m down the slope (~0.63 m). The first staging (27 Nov, at the mark itself) put Musashi in the shallows, 0.32-0.36 m deep: the bake's sea check now warns about that"
 }

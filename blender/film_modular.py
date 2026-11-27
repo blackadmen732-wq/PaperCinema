@@ -108,8 +108,21 @@ if arg('set'):
                 _o.parent = _hdl
                 _o.matrix_parent_inverse = Matrix()
                 _o.matrix_world = _mw
+        # stage.offset [dx, dy] (set metres from the mark): the action stands that far from the mark, on the ground
+        # there (a slope above the waterline, a spot by a building) without a new mark in the set
+        _spot = _mk.location.copy()
+        _off = _stage.get('offset')
+        if _off:
+            _spot.x += float(_off[0])
+            _spot.y += float(_off[1])
+            _gs = PB.ground_sampler(bpy.context.scene, set())
+            _gz = _gs(_spot.x, _spot.y, _mk.location.z + 30.0) if _gs else None
+            if _gz is not None:
+                _spot.z = _gz
+            print('[stage] offset %s from %s: the action stands at (%.2f, %.2f), ground %.3f m'
+                  % (list(_off), _mk.name, _spot.x, _spot.y, _spot.z))
         _M = (Matrix.Translation((_cx, _cy, 0.0)) @ Matrix.Rotation(math.radians(float(_stage.get('turn', 0.0))), 4, 'Z')
-              @ Matrix.Translation(-_mk.location))
+              @ Matrix.Translation(-_spot))
         _hdl.matrix_world = _M
         bpy.context.view_layer.update()
         print('[stage] %s moved under the action centre (%.2f, %.2f): set shifted by %s, turned %.0f deg'
@@ -305,6 +318,62 @@ _CUTS = {r['f'] for r in FRAMES if r.get('cut')}
 print('[lens] dof %s · motion blur %s · %d cut(s)' % (('f/%.1f' % cd.dof.aperture_fstop) if _DOF else 'off',
                                                    ('%.2f frame' % _BLUR) if _BLUR else 'off', len(_CUTS)))
 
+# ---------------------------------------------------------------- the camera on terrain (autopilot item 13)
+# The timeline's camera is composed on flat ground (z 0 under everyone). On a set's terrain each body stands on its
+# own ground (production_bake 'base'), so the camera rises or sinks with the shot's SUBJECTS (the camera beat's
+# `subjects`: the mean of their ground) and the designed framing holds. And it never ends up under the sand or the
+# sea at its own spot: there it is raised to a clearance and turned (pitch only) so the subjects' centre stays on the
+# same point of the screen. 27 Nov: weighting by distance to every body sank the IMPACT camera into the shallows (a
+# black frame) and dropped the MEDIUM on Kojiro by Musashi's slope (his head cut off).
+_CAM_BEATS = sorted([b for b in (FILMJ.get('camera') or []) if isinstance(b, dict) and 't' in b], key=lambda b: float(b['t']))
+_CAM_SKIP = set(char_meshes) | {o for _r in swords.values() for o in [_r] + list(_r.children_recursive)}
+_cam_ground = PB.ground_sampler(sc, _CAM_SKIP) if arg('set') else None
+_cam_sea0 = PB.sea_sampler(sc) if arg('set') else None                # the sea as built (one BVH, cheap)
+_cam_sea = PB.sea_sampler(sc, live=True) if arg('set') else None       # this frame's waves: only for a low camera
+_cam_log = []
+
+
+def _beat_subjects(tb):
+    """The subjects of the camera beat on screen at body time tb (a later beat without subjects keeps the shot's)."""
+    subj = None
+    for b in _CAM_BEATS:
+        if float(b['t']) > tb + 1e-6:
+            break
+        if b.get('subjects'):
+            subj = b['subjects']
+    return subj
+
+
+def _terrain_camera(i, fr, c, base):
+    subj = [s for s in (_beat_subjects(float(fr.get('tb', fr.get('t', 0.0)))) or []) if s in base]
+    if not subj:
+        subj = [s for s in base if isinstance((fr['actors'].get(s) or {}).get('pose'), dict)]
+    if subj:
+        cam.location.z += sum(base[s] for s in subj) / len(subj)
+    if _cam_ground is None and _cam_sea is None:
+        return
+    x, y = cam.location.x, cam.location.y
+    # the first up-facing surface below a point 1 m over the lens (so a pine canopy high above is not the floor)
+    g = _cam_ground(x, y, cam.location.z + 1.0) if _cam_ground else None
+    s = _cam_sea0(x, y) if _cam_sea0 else None
+    if s is not None and cam.location.z < s + 1.5:
+        s = _cam_sea(x, y)                                  # near the water: the surface of this frame
+    floor = max([v for v in (g, s) if v is not None], default=None)
+    need = min(0.3, max(0.05, float(c['pos'][1])))          # a camera designed lower than 0.3 m keeps its own height
+    if floor is None or cam.location.z >= floor + need:
+        return
+    P = Vector((0.0, 0.0, 0.0))
+    for s_ in subj:
+        p_ = fr['actors'][s_]['pose']
+        P += Vector((float(p_.get('x', 0.0)), -float(p_.get('z', 0.0)), base[s_] + 1.0))   # chest height
+    P /= max(1, len(subj))
+    was = cam.location.copy()
+    cam.location.z = floor + need
+    d0, d1 = P - was, P - cam.location
+    if subj and d0.length > 1e-3 and d1.length > 1e-3:
+        cam.rotation_quaternion = d0.normalized().rotation_difference(d1.normalized()) @ cam.rotation_quaternion
+    _cam_log.append((i + 1, round(cam.location.z - was.z, 3), 'sea' if s is not None and floor == s else 'ground'))
+
 for i in range(f0, f1 + 1):
     fr = FRAMES[i]
     bpy.context.scene.frame_set(i + 1)      # ABSOLUTE timeline frame, 1-based
@@ -322,21 +391,8 @@ for i in range(f0, f1 + 1):
     c = fr.get('camera')
     if c and not arg('lookat'):
         cam.location = v3(c['pos'])
-        # the camera was designed on flat ground: on a slope it rises or sinks with the fighters, the nearer one
-        # counting most (an over-the-shoulder follows the shoulder): weights 1 / distance^2 to each body
-        if any(abs(v) > 0.003 for v in _base.values()):
-            _ws = 0.0
-            _sh = 0.0
-            for _aid, _b in _base.items():
-                _pa = (fr['actors'].get(_aid) or {}).get('pose')
-                if not isinstance(_pa, dict):
-                    continue
-                _d2 = max(0.25, (cam.location - Vector((float(_pa.get('x', 0)), -float(_pa.get('z', 0)), cam.location.z))).length_squared)
-                _ws += 1.0 / _d2
-                _sh += _b / _d2
-            if _ws > 0:
-                cam.location.z += _sh / _ws
         cam.rotation_quaternion = qcam(c['rot'])
+        _terrain_camera(i, fr, c, _base)                       # the shot's subjects' ground, clear of sand and sea
         cd.lens = c.get('focal_mm', 40)
         cam.keyframe_insert('location')
         cam.keyframe_insert('rotation_quaternion')
@@ -344,6 +400,54 @@ for i in range(f0, f1 + 1):
         if _DOF and c.get('focus_m'):                           # depth of field / rack focus, keyed from the timeline
             cd.dof.focus_distance = float(c['focus_m'])
             cd.dof.keyframe_insert('focus_distance')
+if _cam_log:
+    print('[camera] raised clear of the %s on %d frame(s) (frame, metres): %s' % (
+        '/'.join(sorted({k for _f, _d, k in _cam_log})), len(_cam_log), [(f_, d_) for f_, d_, _k in _cam_log[:12]]))
+
+if flag('camera-report'):
+    # What the camera sees, frame by frame, measured without a render: its height over the sand / sea under it, the
+    # object in the centre of the frame, and where a 9 x 16 grid of rays lands (a character, the set, the sea, the sky).
+    # A frame whose grid is mostly 'set' at a short distance is a camera inside or behind something (27 Nov: f50 of
+    # the shore film was the dark side of a sand bank seen from the water).
+    _cm = set(char_meshes)
+    _rows = []
+    for i in range(f0, f1 + 1, int(arg('camera-step', 1))):
+        sc.frame_set(i + 1)
+        _dg = bpy.context.evaluated_depsgraph_get()
+        _M = cam.matrix_world.copy()
+        _o = _M.translation.copy()
+        _tr, _br, _bl, _tl = cam.data.view_frame(scene=sc)
+        _cnt = {'cast': 0, 'set': 0, 'sea': 0, 'sky': 0}
+        _near = 0
+        _centre = None
+        for gy in range(17):
+            for gx in range(9):
+                u, v = (gx + 0.5) / 9, (gy + 0.5) / 17
+                _p = (_bl.lerp(_tl, v)).lerp(_br.lerp(_tr, v), u)
+                _d = (_M.to_3x3() @ _p).normalized()
+                hit, loc, _n, _ix, ob, _mx = sc.ray_cast(_dg, _o, _d, distance=500.0)
+                k = 'sky' if not hit or ob.name.startswith('SKY') else 'cast' if ob in _cm else 'sea' if ob.name.startswith('SEA') else 'set'
+                _cnt[k] += 1
+                if hit and k == 'set' and (loc - _o).length < 1.0:
+                    _near += 1
+                if gx == 4 and gy == 8:
+                    _centre = (ob.name if hit else 'sky', round((loc - _o).length, 2) if hit else None)
+        _g = _cam_ground(_o.x, _o.y, _o.z + 1.0) if _cam_ground else None
+        _s = _cam_sea(_o.x, _o.y) if _cam_sea else None
+        _fl = max([v for v in (_g, _s) if v is not None], default=None)
+        _n = sum(_cnt.values())
+        _row = {'frame': i + 1, 'cam': [round(v, 3) for v in _o], 'clearance': None if _fl is None else round(_o.z - _fl, 3),
+                'over': None if _fl is None else ('sea' if _s is not None and _fl == _s else 'ground'),
+                'centre': _centre, 'grid': {k: round(v / _n, 3) for k, v in _cnt.items()}, 'set_within_1m': round(_near / _n, 3)}
+        _rows.append(_row)
+        print('[camera-report] f%d cam %s clearance %s over %s · centre %s · cast %.0f%% set %.0f%% sea %.0f%% sky %.0f%%'
+              ' · set within 1 m %.0f%%' % (_row['frame'], _row['cam'], _row['clearance'], _row['over'], _centre,
+                                          100 * _row['grid']['cast'], 100 * _row['grid']['set'], 100 * _row['grid']['sea'],
+                                          100 * _row['grid']['sky'], 100 * _row['set_within_1m']))
+    json.dump({'film': FILM, 'set': arg('set'), 'rows': _rows},
+              open(os.path.join(REPO, 'output', FILM + '.camera-report.json'), 'w'), indent=1)
+    if flag('camera-report-only'):
+        raise SystemExit(0)
 
 if flag('ground-report'):
     # Feet against the set's ground, frame by frame, measured (no render): the gap between each ankle joint and the
@@ -354,6 +458,8 @@ if flag('ground-report'):
     _ground = [o for o in bpy.data.objects if o.type == 'MESH' and o not in _char_objs and o.visible_get()
                and not o.name.startswith(('SEA', 'SKY', 'PC_', 'MARK_')) and len(o.data.polygons)]
     _trees = [(o, BVHTree.FromObject(o, _dg)) for o in _ground]
+    _sea_at = PB.sea_sampler(sc, live=True)                              # a foot under the sea surface is 'wet' (staged in the water)
+    _wet = []
     rows = []
     for i in range(f0, f1 + 1, int(arg('ground-step', 1))):
         sc.frame_set(i + 1)
@@ -372,8 +478,15 @@ if flag('ground-report'):
                             if best is None or abs(p.z - gz) < abs(p.z - best):
                                 best = gz
                 _row[f'{_aid}.{_ft}'] = None if best is None else round(p.z - best, 4)
+                _sz = _sea_at(p.x, p.y) if _sea_at else None
+                if _sz is not None and _sz > p.z + 0.02:
+                    _row[f'{_aid}.{_ft}.wet'] = round(_sz - p.z, 3)
+                    _wet.append(_sz - p.z)
         rows.append(_row)
-    _gaps = [v for r in rows for k, v in r.items() if k != 'frame' and v is not None]
+    _gaps = [v for r in rows for k, v in r.items() if k != 'frame' and not k.endswith('.wet') and v is not None]
+    if _wet:
+        print('[ground] WARNING %d foot samples are UNDER THE SEA surface (up to %.2f m deep): the film is staged in the '
+              'water (film.stage) - only right for a wading shot' % (len(_wet), max(_wet)))
     _out = os.path.join(REPO, 'output', FILM + '.ground.json')
     json.dump({'set': arg('set'), 'rows': rows}, open(_out, 'w'), indent=1)
     if _gaps:

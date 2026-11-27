@@ -100,12 +100,45 @@ def ground_sampler(sc, skip):
     return at
 
 
+def sea_sampler(sc, live=False):
+    """The sea surface over a point (the highest hit on a SEA mesh from above), world metres; None where there is no
+    sea. The ground sampler ignores the sea (a fighter stands on the sand under it), so this is how a body that was
+    staged into the water is found: 27 Nov, the shore film put Musashi in the shallows and every foot check passed.
+    The near sea is an Ocean modifier that GENERATES its mesh (the base mesh has no faces), so the evaluated mesh is
+    what counts; live=True rebuilds it on each new frame (the waves move: a low camera needs the surface of ITS frame)."""
+    from mathutils.bvhtree import BVHTree
+    obs = [o for o in sc.objects if o.type == 'MESH' and o.name.startswith('SEA') and o.visible_get()]
+    if not obs:
+        return None
+    cache = {}
+
+    def trees_now():
+        f = sc.frame_current if live else None
+        if cache.get('f', 'none') != f:
+            dg = bpy.context.evaluated_depsgraph_get()
+            cache['f'] = f
+            cache['t'] = [(o.matrix_world.copy(), o.matrix_world.inverted(), BVHTree.FromObject(o, dg)) for o in obs]
+        return cache['t']
+
+    def at(x, y):
+        best = None
+        for M, Mi, t in trees_now():
+            hit = t.ray_cast(Mi @ Vector((x, y, 60.0)), (Mi.to_3x3() @ Vector((0, 0, -1))).normalized(), 200.0)
+            if hit[0] is not None:
+                z = (M @ hit[0]).z
+                if best is None or z > best:
+                    best = z
+        return best
+    return at
+
+
 def solve(TL, actors, fps, checks=True, body_shrink=0.035):
     """Run every frame of the timeline in order through the passes; return the bake dict."""
     import body_capsules as BC
     import sword_draw as SD
     sc = bpy.context.scene
     ground_at = ground_sampler(sc, {o for a in actors for o in a.objects})
+    sea_at = sea_sampler(sc)
     last_g = {a.aid: 0.0 for a in actors}             # each body casts from 1 m above ITS last ground (a hillside)
     frames = TL['frames']
     out = {'fps': fps, 'n': len(frames), 'actors': {}, 'checks': {}}
@@ -140,6 +173,10 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                     base = _g
                     act = dict(act, pose=dict(_p, y=float(_p.get('y', 0.0)) + _g))
                     chk[a.aid].setdefault('terrain', []).append((f, round(_g, 3)))
+                if sea_at is not None:
+                    _s = sea_at(float(_p.get('x', 0.0)), -float(_p.get('z', 0.0)))
+                    if _s is not None and _s > base + 0.05:     # standing in the water (the ground is under the sea)
+                        chk[a.aid].setdefault('wet', []).append((f, round(_s - base, 3)))
             if a.draw:
                 phase = a.draw.step(f, dict(act['pose']))
             else:
@@ -196,6 +233,11 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
         if chk[a.aid].get('terrain'):
             _t = [g for _f, g in chk[a.aid]['terrain']]
             print('[bake] %s body on the terrain on %d frames: ground %.3f..%.3f m' % (a.aid, len(_t), min(_t), max(_t)))
+        if chk[a.aid].get('wet'):
+            _w = chk[a.aid]['wet']
+            print('[bake] WARNING %s stands IN THE SEA on %d frames (f%d-f%d, water up to %.2f m deep): restage the film '
+                  '(film.stage mark / offset / turn) unless it is a wading shot' % (
+                      a.aid, len(_w), _w[0][0], _w[-1][0], max(d for _f, d in _w)))
         if chk[a.aid].get('feet_lifted'):
             print('[bake] %s feet put back on the ground on %d frames (cm): %s' % (
                 a.aid, len(chk[a.aid]['feet_lifted']), chk[a.aid]['feet_lifted'][:8]))
