@@ -14,7 +14,7 @@
     0.66,
     1.0
    ],
-   "energy": 2.5,
+   "energy": 1.8,
    "angle": 1.2
   },
   "sky": {
@@ -32,7 +32,7 @@
    "stars": 1.0,
    "strength": 3.0
   },
-  "exposure": 2.2,
+  "exposure": 1.0,
   "bloom": 0.8,
   "vignette": 0.45,
   "fighter": {

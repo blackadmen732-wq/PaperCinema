@@ -161,11 +161,20 @@ for p in files:
     Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).save(os.path.join(OUT, os.path.basename(p)))
     if e:
         done.append({'frame': n, **e})
-# HIT-STOP (film.effects.hitStop = N frames): the picture freezes on the contact - ink, its negative, ink... - for N
+# HIT-STOP (film.effects.hitStop = {min, max} frames as the engine, or N): the picture freezes on the contact - ink, its negative, ink... - for N
 # frames, and everything after it moves N frames later. The events file is told (stops + every later cue shifted),
 # so the mixer keeps the sound locked to the picture: the contact transient stays ON the contact and the material
 # tail, which starts there, rings through the freeze (27 Nov: the Blender path had no hit-stop at all).
-HS = int(FX.get('hitStop', 0) or 0)
+HS = 0
+_hs = FX.get('hitStop')
+if isinstance(_hs, dict) and A.events and os.path.exists(A.events):
+    # the engine's contract (engine/combat.js): 2 + 2 x intensity frames, clamped to {min, max}; the intensity from
+    # the tip's speed at the contact on the final bake, (v - 3) / 17 as the engine reads its own contacts
+    _v = (json.load(open(A.events)).get('apex') or {}).get('mps', 0.0)
+    _I = max(0.0, min(1.0, (float(_v) - 3.0) / 17.0))
+    HS = int(max(_hs.get('min', 0), min(_hs.get('max', 0), round(2 + 2 * _I))))
+elif isinstance(_hs, (int, float)) and not isinstance(_hs, bool):
+    HS = int(_hs)
 if HS > 0 and hits and files:
     h = hits[0] + 1                                  # 1-based file number of the first frame that shows the contact
     src = os.path.join(OUT, 'f%04d.png' % h)

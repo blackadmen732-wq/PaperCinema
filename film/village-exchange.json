@@ -313,7 +313,10 @@
     "motionBlur": 0.5,
     "vignette": 0.25,
     "postFx": true,
-    "hitStop": 3
+    "hitStop": {
+      "min": 3,
+      "max": 4
+    }
   },
   "stage": {
     "mark": "MARK_center",
