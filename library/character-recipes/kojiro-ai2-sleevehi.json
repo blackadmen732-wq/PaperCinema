@@ -1,0 +1,11 @@
+{
+  "id": "kojiro-ai2-sleevehi",
+  "name": "Kojiro one-arm test (B) the body-cut right sleeve at 6000 faces",
+  "extends": "kojiro-ai2.json",
+  "note": "TEST for Mark's one-arm comparison; production Kojiro is unchanged. (B) the body-cut right sleeve at 6000 faces",
+  "add": [
+    {
+      "part": "kojiro_sleeve_R_hi"
+    }
+  ]
+}

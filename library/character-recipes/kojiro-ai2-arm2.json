@@ -1,0 +1,11 @@
+{
+  "id": "kojiro-ai2-arm2",
+  "name": "Kojiro one-arm test (C) the right arm made on its own (Mark, 27 Nov)",
+  "extends": "kojiro-ai2.json",
+  "note": "TEST for Mark's one-arm comparison; production Kojiro is unchanged. (C) the right arm made on its own (Mark, 27 Nov)",
+  "add": [
+    {
+      "part": "kojiro_arm_R_t2"
+    }
+  ]
+}

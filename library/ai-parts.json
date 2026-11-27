@@ -1928,5 +1928,159 @@
     "sheets": {
       "wood": "card_umber"
     }
+  },
+  "kojiro_sleeve_R_hi": {
+    "raw": "output/tripo/kojiro-body-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concept_task": "text_to_image (5 credits): output/tripo/kojiro-body-concept-3.image.png",
+      "model_task": "932f8eff-e1e4-41ac-8f67-2b9bcafc61a9 (image_to_model v3.0, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "fit": {
+      "mode": "body",
+      "shoulder_frac": 0.74,
+      "shoulder_z": 1.4,
+      "why": "one fit for the whole body: feet at 0, the shoulder line (74% of the figure) at 1.40 m; the obi then lands at ~0.93 and the chin at ~1.50, on the rig"
+    },
+    "label": "TEST (Mark's one-arm test, 27 Nov): Kojiro's right sleeve cut from the whole body as today, kept at 6000 faces instead of 2500",
+    "slot": "sleeve_upper",
+    "socket": "shoulder.R",
+    "prepared": "assets/models/ai/kojiro_sleeve_R_hi",
+    "keep": {
+      "x": [
+        -0.75,
+        -0.2
+      ],
+      "z": [
+        0.92,
+        1.55
+      ]
+    },
+    "faces": 6000,
+    "palette": [
+      {
+        "name": "crimson",
+        "rgb": [
+          [
+            0.745,
+            0.216,
+            0.137
+          ],
+          [
+            0.635,
+            0.18,
+            0.114
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "crimson": "washi_crimson",
+      "cream": "washi_natural"
+    },
+    "rigid": false,
+    "bones": [
+      "lS",
+      "lT"
+    ]
+  },
+  "kojiro_arm_R_t2": {
+    "label": "TEST (Mark's one-arm test, 27 Nov): Kojiro's right arm made ON ITS OWN (a kit-part concept from a crop of his body concept, then 3D), cut above its hand, fitted where the body-cut sleeve sits",
+    "raw": "output/tripo/arm/kojiro-arm-model-1.pbr.glb",
+    "facing": "+x",
+    "source": {
+      "service": "Tripo API",
+      "concepts": "output/tripo/arm/kojiro-arm-concept-1.image.png (5: drew a whole jacket), kojiro-arm-concept-2.image.png (5: a detached arm)",
+      "model": "output/tripo/arm/kojiro-arm-model-1.pbr.glb (image_to_model, 30 credits)",
+      "date": "2026-11-27"
+    },
+    "cut": 0.22,
+    "fit": {
+      "mode": "box",
+      "size": {
+        "z": 0.52
+      },
+      "anchor": {
+        "z": [
+          "max",
+          1.439
+        ],
+        "x": [
+          "mid",
+          -0.3306
+        ],
+        "y": [
+          "mid",
+          0.0093
+        ]
+      },
+      "why": "the same place as the body-cut sleeve (its measured bbox: x -0.461..-0.200, z 0.920..1.439); the service made it 1.0 m deep from one front view (a deep cone): its depth is squashed to the body-cut sleeve's 0.28 m",
+      "squash": {
+        "y": 0.28
+      }
+    },
+    "slot": "sleeve_upper",
+    "socket": "shoulder.R",
+    "prepared": "assets/models/ai/kojiro_arm_R_t2",
+    "faces": 6000,
+    "palette": [
+      {
+        "name": "crimson",
+        "rgb": [
+          [
+            0.745,
+            0.216,
+            0.137
+          ],
+          [
+            0.635,
+            0.18,
+            0.114
+          ],
+          [
+            0.518,
+            0.141,
+            0.094
+          ]
+        ]
+      },
+      {
+        "name": "cream",
+        "rgb": [
+          [
+            0.827,
+            0.757,
+            0.651
+          ]
+        ]
+      }
+    ],
+    "sheets": {
+      "crimson": "washi_crimson",
+      "cream": "washi_natural"
+    },
+    "rigid": false,
+    "bones": [
+      "lS",
+      "lT"
+    ],
+    "dark_below": 0.1
   }
 }
