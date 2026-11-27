@@ -46,6 +46,7 @@ python3 blender/sets/kit.py            # list every kit piece and its parameters
 | `dojo-interior` | Day interior, god rays through the barred window band, glowing shoji, dust | floor planks, room (posts, beams, ceiling, renji windows, shoji, alcove + scroll), dust air, motes | Shafts need the fog piece (`dust_air`) |
 | `bamboo-forest` | Morning mist, backlit canopy, shafts | forest floor, earth path, bamboo grove (520 culms, keeps the path clear), mossy toro, rocks, mist, motes | Duel line on Y (along the path) |
 | `ganryujima-beach` | Dawn over the strait | the `ganryujima` piece (port of `blender/world/build_world.py`) | Same marks and anchors as the v1 world; realistic sand, rocks, bark |
+| `edo-village` | Moonlit night street (the look board's night duel): blue sky, the moon over the plaza, warm lanterns, lit shoji | gravel road on earth, 6 machiya + 3 minka (thatch), well under a pine, 2 stalls, bamboo fences, 6 nobori, 5 toro, 3 cherry trees, 2 treelines, petals, ground fog, 15 Poly Haven prop groups (barrels, buckets, baskets, crates, bench, stools, pots, stump + axe, broom, mossy rocks, grass, ferns) | Duel line on X along the road; CAM_medium looks +Y at the minka and the moon. Nothing south of the road between x -3..4 (the medium shot's cone). `library/sets/village-pieces.json` = every village piece in a row, daylight |
 | `castle-skyline-2d5` | Dusk, paper-cut layers in haze | small 3D foreground (gravel, path, 2 toro, rocks, pine) + `layers` (trees, castle skyline with lit windows, trees, hills, mountains, clouds) | The 2.5D method of the reference videos: cards at real depths, so camera moves get parallax |
 
 ## 3. Write a new set (the JSON)
@@ -158,7 +159,19 @@ def lantern_post(ctx, P, rnd):
     ctx.light('POINT', (0, 0, P['height']), P['energy'], (1, 0.55, 0.2), name=ctx.info['name'] + '_flame')
 ```
 Helpers: `MB.box / cyl / stone / tube / grid / poly`, `tile_patch`, `hip_roof`, `gable_roof`, `stone_face`,
-`ishigaki_block`, `shoji_panels`, `beam_between`.
+`ishigaki_block`, `shoji_panels`, `beam_between`; village: `thatch_roof` (kit_village.py).
+
+**Village pieces** (`blender/sets/kit_village.py`, registered into the same KIT): `minka` (posts on foundation stones,
+earthen walls, doma, shoji bays, engawa, a thick steep straw hip roof with ridge sticks), `machiya` (lattice front,
+noren, tiled pent roof, clay-slat windows, tiled gable roof, a paper lantern that lights the street), `well`,
+`bamboo_fence` (`kenninji` / `yotsume`), `stall`, `nobori`, `chochin`, and `ph_prop`: a Poly Haven model
+(library/polyhaven.json "models") reduced to flat facets with its own photo textures, `count` copies scattered off
+the fight marks. New material keys: `thatch` (Poly Haven `thatch_roof_angled` photo layer), `thatch_dark`,
+`thatch_edge`, `noren_indigo`, `banner_white`.
+
+**Piece names are unique per set** (set pieces + `lighting.pieces`): `build_set.py` refuses a repeat, because a
+second piece of the same name replaces the first one's material (27 Nov: a castle lighting block copied into the
+village brought its own `fog`, which emptied the village fog's material and fogged the sky black).
 
 ## 5. Lighting presets
 
