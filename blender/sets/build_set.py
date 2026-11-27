@@ -561,6 +561,10 @@ def main():
     ctx.fight = list(ctx.clear)   # the fighter marks only (ctx.clear later also holds the camera spots, some in the sea)
     ctx.clear += [(c['pos'][0], c['pos'][1], 0.8) for c in S.get('cameras', {}).values()]     # never grow a culm through a lens
     counts = {}
+    _names = [sp.get('name', sp.get('kit')) for sp in S.get('pieces', []) + Lg.get('pieces', [])]
+    _dupes = sorted({n for n in _names if _names.count(n) > 1})
+    if _dupes:            # a second piece of the same name replaces the first one's material (pm.new_material): refuse
+        raise SystemExit(f'set {S.get("name")}: piece names used twice (set pieces + lighting.pieces): {_dupes}')
     for spec in S.get('pieces', []) + Lg.get('pieces', []):
         if flag('no-fog') and spec['kit'] in ('fog',):
             continue
