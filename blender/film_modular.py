@@ -431,8 +431,7 @@ def _tex_node(mat):
 
 
 def _paint_piece(o, spec, f_d):
-    import numpy as np
-    from PIL import Image as _PI, ImageDraw as _PD
+    import numpy as np                                  # (Blender's own Python has numpy, not PIL)
     mat = o.active_material
     tn = _tex_node(mat)
     if tn is None:
@@ -475,13 +474,28 @@ def _paint_piece(o, spec, f_d):
     piece = bpy.data.objects.new(o.name + '_piece', pm_)
     sc.collection.objects.link(piece)
     # the head's paint without the piece: the matched pixels inside the piece's UV islands -> `to`
-    mask = _PI.new('L', (W, H), 0)
-    dr = _PD.Draw(mask)
+    mk = np.zeros((H, W), dtype=bool)                   # the piece's UV islands, rasterized (fan triangles)
     for pi in keep:
-        p = me.polygons[pi]
-        dr.polygon([(uv[li].uv.x * W, uv[li].uv.y * H) for li in p.loop_indices], fill=255)
-    mk = np.asarray(mask.filter(__import__('PIL.ImageFilter', fromlist=['x']).MaxFilter(5))) > 0
-    sel = mk & match
+        pts = [(uv[li].uv.x * W, uv[li].uv.y * H) for li in me.polygons[pi].loop_indices]
+        for k in range(1, len(pts) - 1):
+            (ax, ay), (bx, by), (cx, cy) = pts[0], pts[k], pts[k + 1]
+            x0, x1 = max(0, int(min(ax, bx, cx))), min(W - 1, int(max(ax, bx, cx)) + 1)
+            y0, y1 = max(0, int(min(ay, by, cy))), min(H - 1, int(max(ay, by, cy)) + 1)
+            if x1 < x0 or y1 < y0:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            den = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+            if abs(den) < 1e-12:
+                continue
+            l1 = ((by - cy) * (gx - cx) + (cx - bx) * (gy - cy)) / den
+            l2 = ((cy - ay) * (gx - cx) + (ax - cx) * (gy - cy)) / den
+            inside = (l1 >= -0.02) & (l2 >= -0.02) & (1 - l1 - l2 >= -0.02)
+            mk[y0:y1 + 1, x0:x1 + 1] |= inside
+    grown = mk.copy()                                   # grow 2 texels (the bake's edge bleed)
+    for dy in (-2, -1, 0, 1, 2):
+        for dx in (-2, -1, 0, 1, 2):
+            grown |= np.roll(np.roll(mk, dy, 0), dx, 1)
+    sel = grown & match
     to = spec.get('to', [0.06, 0.06, 0.07])
     rp = px.copy()
     rp[sel, 0], rp[sel, 1], rp[sel, 2] = to[0], to[1], to[2]
