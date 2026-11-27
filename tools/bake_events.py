@@ -171,17 +171,45 @@ def ground_events(bake, fps):
                     vz = (q[2] - p[2]) * fps
                     kind = 'land' if air >= 3 else 'step'
                     out.append({'t': round(t, 4), 'frame': round(i + k, 2), 'actor': aid, 'foot': side, 'kind': kind,
-                                'down_mps': round(vz, 2), 'slide_mps': round(vh, 2)})
+                                'down_mps': round(vz, 2), 'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in p]})
                     st.update(up=False, plant=i, skid=False)
                 elif not st['up'] and p[2] >= lift:
                     st['up'] = True
                 elif not st['up'] and not st['skid'] and vh > 0.8 and st['plant'] is not None and i - st['plant'] >= 1:
                     out.append({'t': round(i / fps, 4), 'frame': i + 1, 'actor': aid, 'foot': side, 'kind': 'skid',
-                                'slide_mps': round(vh, 2)})
+                                'slide_mps': round(vh, 2), 'pos': [round(v, 3) for v in p]})
                     st['skid'] = True
                 ups.append(st['up'])
             air = air + 1 if ups and all(ups) else 0
     return sorted(out, key=lambda e: e['t'])
+
+
+class Ears:
+    """Where a sound sits in the picture: the timeline camera on that frame (as blender/film_modular.py places it,
+    with the timeline's 24 mm vertical sensor) seen from the source's world point. pan -1 (left) .. 1 (right), from
+    the point's place across the frame; a gentle distance gain (3 m = 1.0). A source behind the camera sits in the
+    middle, softer."""
+    BASIS = (0.7071067811865476, 0.7071067811865476, 0.0, 0.0)
+
+    def __init__(self, TL, F):
+        self.frames, self.fps = TL['frames'], TL['clock']['fps']
+        self.aspect = float(F.get('width', 1080)) / float(F.get('height', 1920))
+
+    def place(self, p, t):
+        fr = self.frames[max(0, min(len(self.frames) - 1, int(round(t * self.fps))))]
+        c = fr.get('camera')
+        if not c or p is None:
+            return 0.0, 1.0
+        C = (c['pos'][0], -c['pos'][2], c['pos'][1])
+        q = c['rot']
+        Q = qmul(self.BASIS, (q[3], q[0], q[1], q[2]))
+        d = qrot((Q[0], -Q[1], -Q[2], -Q[3]), sub(tuple(p), C))
+        dist = math.sqrt(sum(v * v for v in d))
+        g = max(0.55, min(1.15, (3.0 / max(0.3, dist)) ** 0.5))
+        if d[2] > -0.05:
+            return 0.0, g * 0.8
+        x = (d[0] / -d[2]) / (12.0 * self.aspect / float(c.get('focal_mm', 40)))
+        return round(max(-1.0, min(1.0, x)) * 0.8, 3), round(g, 3)
 
 
 def foley_cues(ground, sfx, lib):
@@ -367,6 +395,24 @@ def main(film):
     # the ground: every footfall, skid and landing on the same bake, as sound (and as camera bumps: tools/post_fx.py)
     ground = ground_events(bake, fps)
     layers += foley_cues(ground, sfx, lib)
+    # every sound where its source is in the picture (pan + distance), from the same bake and the rendered camera
+    ears = Ears(TL, F)
+    i_sl = max(0, min(len(sw) - 1, int(round(dr['slide'] * fps))))
+    saya = bake['actors'][hero].get('saya') or []
+    src = {'draw-scrape': tuple(saya[i_sl][:3]) if saya and saya[i_sl] else None,
+           'apex-whoosh': None, 'contact-transient': tuple(where), 'material-tail': tuple(where)}
+    ia = max(0, min(len(sw) - 1, int(round(apex[0]))))
+    if sw[ia]:
+        src['apex-whoosh'] = add(tuple(sw[ia][:3]), qrot(tuple(sw[ia][3:7]), (0.91, 0, 0)))
+    gpos = {('%s-%s' % (g['actor'], g['foot']), round(g['t'], 4)): g.get('pos') for g in ground}
+    for c in layers:
+        pt = src.get(c['id'])
+        if pt is None and '-' in c['id'] and c['id'].split('-')[0] in ('step', 'skid', 'land'):
+            parts = c['id'].split('-')
+            pt = next((v for (k, t_), v in gpos.items() if c['id'].startswith(parts[0] + '-' + k) and abs(t_ - c['t']) < 1e-3), None)
+        pan, g = ears.place(pt, c['t'])
+        c['pan'] = pan
+        c['gain'] = round(c['gain'] * g, 3)
     out = {'source': 'final bake (production_bake) - not the browser events file', 'striker': hero, 'blocker': foe,
            'film': film, 'fps': fps,
            'contact': {'frame': frame_c, 'subframe': round(tf_c + 1, 2), 't': round(t_c, 4), 'gap_cm': round(d_c * 100, 1),

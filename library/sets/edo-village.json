@@ -7,32 +7,32 @@
  "lighting": {
   "preset": "night",
   "sun": {
-   "elev": 24,
+   "elev": 26,
    "az": 8,
    "color": [
     0.55,
     0.66,
     1.0
    ],
-   "energy": 1.4,
+   "energy": 2.5,
    "angle": 1.2
   },
   "sky": {
    "type": "night",
    "zenith": [
-    0.012,
-    0.022,
-    0.06
+    0.014,
+    0.026,
+    0.07
    ],
    "horizon": [
-    0.05,
-    0.07,
-    0.13
+    0.06,
+    0.08,
+    0.15
    ],
    "stars": 1.0,
-   "strength": 1.5
+   "strength": 3.0
   },
-  "exposure": 1.6,
+  "exposure": 2.2,
   "bloom": 0.8,
   "vignette": 0.45,
   "fighter": {
@@ -129,6 +129,14 @@
     0.135
    ],
    "scale": 18.0
+  },
+  "earth": {
+   "color": [
+    0.08,
+    0.065,
+    0.05
+   ],
+   "moss": 0.5
   }
  },
  "pieces": [
@@ -136,7 +144,7 @@
    "kit": "moon",
    "name": "moon",
    "params": {
-    "elev": 24,
+    "elev": 26,
     "az": 8,
     "size": 3.2,
     "strength": 9.0
@@ -156,7 +164,7 @@
      110,
      30
     ],
-    "density": 0.01,
+    "density": 0.008,
     "height": 3.5,
     "noise": 0.45,
     "noise_scale": 0.08,
@@ -194,7 +202,7 @@
    ],
    "params": {
     "width": 60,
-    "depth": 7.0,
+    "depth": 9.0,
     "key": "gravel",
     "bumps": 0.008,
     "res": 40
@@ -633,13 +641,17 @@
    "name": "trees_n",
    "pos": [
     0,
-    22,
+    32,
     0
    ],
    "params": {
-    "width": 80,
+    "width": 90,
     "depth": 8,
-    "count": 36
+    "count": 40,
+    "height": [
+     6.0,
+     11.0
+    ]
    }
   },
   {
@@ -647,14 +659,18 @@
    "name": "trees_s",
    "pos": [
     0,
-    -24,
+    -34,
     0
    ],
    "rot": 180,
    "params": {
-    "width": 80,
+    "width": 90,
     "depth": 8,
-    "count": 30
+    "count": 34,
+    "height": [
+     6.0,
+     11.0
+    ]
    }
   },
   {
@@ -1046,5 +1062,6 @@
   "res": "540x960",
   "volume_step_rate": 4.0
  },
- "layout_why": "CAM_medium looks north from (0.6, -7.2): its cone is ~1.7 m wide 2.5 m in front of the lens, so nothing stands on the south side between x -3 and 4; the stalls are at the street ends (27 Nov: a stall filled the frame)"
+ "layout_why": "CAM_medium looks north from (0.6, -7.2): its cone is ~1.7 m wide 2.5 m in front of the lens, so nothing stands on the south side between x -3 and 4; the stalls are at the street ends (27 Nov: a stall filled the frame)",
+ "moon_why": "az 8 / elev 26: in CAM_medium and CAM_low above the plaza (ray-checked, 27 Nov: the old treeline and a machiya hid it)"
 }

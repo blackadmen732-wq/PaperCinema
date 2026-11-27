@@ -189,6 +189,11 @@ if not flag('no-sword'):
 
 # ---------------------------------------------------------------- camera
 cd = bpy.data.cameras.new('cam')
+# the timeline's lens contract (tools/timeline.mjs SENSOR): focal_mm = 12 / tan(fov / 2), a 24 mm sensor fitted
+# VERTICALLY. Blender's default (36 mm, AUTO = the long side, the height in portrait) rendered every film 1.5x wider
+# than the camera system designed it (27 Nov, beach f31: Kojiro filled 27-79% of the height; designed 15-94%).
+cd.sensor_fit = 'VERTICAL'
+cd.sensor_height = 24.0
 cam = bpy.data.objects.new('cam', cd)
 sc.collection.objects.link(cam)
 sc.camera = cam

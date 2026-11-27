@@ -181,6 +181,10 @@ placed.forEach(({ cue, f }, i) => {
   const rate = cue.rate && cue.rate !== 1 ? `asetrate=44100*${cue.rate},aresample=44100,` : '';
   filters.push(`[${i + 1}:a]${rate}atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${cue.bed ? 1.5 : 0.01},` +
     `afade=t=out:st=${(cue.len - fadeOut).toFixed(2)}:d=${fadeOut.toFixed(2)},volume=${cue.gain},` +
+    // pan: where the source is in the picture (tools/bake_events.py Ears), constant power, -1 left .. 1 right
+    (typeof cue.pan === 'number' && cue.pan !== 0
+      ? `pan=stereo|c0=${(Math.SQRT2 * Math.cos((cue.pan + 1) * Math.PI / 4)).toFixed(3)}*c0|c1=${(Math.SQRT2 * Math.sin((cue.pan + 1) * Math.PI / 4)).toFixed(3)}*c1,`
+      : '') +
     `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}` +
     `${DIPC && (cue.bed || cue.music || WHOOSH.test(cue.id)) ? ',' + DIPC : ''}[a${i}]`);
 });
