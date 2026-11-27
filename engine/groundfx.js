@@ -22,15 +22,25 @@ export function analyseGround({ fighters, dur, filmT = (x) => x, opts = {} }) {
   for (const f of fighters) {
     const S = [];
     for (let i = 0; i <= dur * HZ; i++) { const tb = i / HZ, p = f.motion(tb); S.push({ tb, x: p.x, y: p.y, z: p.z }); }
-    // speed over a 1/12 s window (keyed easing makes the instant speed lumpy; the feet do not care)
-    const N = HZ / 24;
-    S.forEach((s, i) => { const q = S[Math.max(0, i - N)], n = S[Math.min(S.length - 1, i + N)], dt = (n.tb - q.tb) || 1; s.vx = (n.x - q.x) / dt; s.vz = (n.z - q.z) / dt; s.v = Math.hypot(s.vx, s.vz); });
+    // speed over a 1/12 s window (keyed easing makes the instant speed lumpy; the feet do not care), inside one piece
+    // of continuity: a teleport at a cut (motion.cuts) is no dash (27 Nov: a dash burst, dust and a skid on the
+    // Episode 1 cut into the surf)
+    const N = HZ / 24, cuts = f.motion.cuts ?? [];
+    S.forEach((s) => { s.pc = cuts.reduce((k, [, b]) => k + (s.tb >= b - 1e-6 ? 1 : 0), 0); });
+    S.forEach((s, i) => {
+      let a = Math.max(0, i - N), b = Math.min(S.length - 1, i + N);
+      while (S[a].pc !== s.pc) a++;
+      while (S[b].pc !== s.pc) b--;
+      const q = S[a], n = S[b], dt = (n.tb - q.tb) || 1;
+      s.vx = (n.x - q.x) / dt; s.vz = (n.z - q.z) / dt; s.v = Math.hypot(s.vx, s.vz);
+    });
     tracks[f.id] = S;
     let dashing = false, peak = 0, air = false, top = 0, skidding = false, last = -1;
     const ev = (kind, s, extra = {}) => events.push({ kind, id: f.id, tb: +s.tb.toFixed(4), t: +filmT(s.tb).toFixed(4), pos: [s.x, s.z],
       dir: s.v > 0.01 ? [s.vx / s.v, s.vz / s.v] : [0, 1], speed: +s.v.toFixed(2), ...extra });
     for (let i = 1; i < S.length; i++) {
       const s = S[i], p = S[i - 1], grounded = s.y < 0.03;
+      if (s.pc !== p.pc) { dashing = skidding = false; air = !grounded; top = s.y; continue; }   // a cut: a new start
       if (!air && !grounded) { air = true; top = 0; ev('takeoff', p); }
       if (air) top = Math.max(top, s.y);
       if (air && grounded) { air = false; if (top > 0.12) ev('land', s, { height: +top.toFixed(2) }); }

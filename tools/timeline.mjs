@@ -139,9 +139,17 @@ function attackEvents(samples, actors, fps, on = 9, off = 6) {
   const ev = [];
   for (const a of actors) {
     const len = a.weapon?.bladeLen ?? 0.91;
-    const rows = samples.filter((s) => s.actors[a.id]?.weapon).map((s) => ({ t: s.t, tip: weaponTip(s.actors[a.id].weapon, len) }));
+    let lastRoot = null;                                // sub-frame samples carry the weapon only: the root carries over
+    const rows = samples.filter((s) => s.actors[a.id]?.weapon).map((s) => {
+      if (s.actors[a.id].root) lastRoot = s.actors[a.id].root;
+      return { t: s.t, tip: weaponTip(s.actors[a.id].weapon, len), root: lastRoot };
+    });
     let armed = true, start = null, peak = null, peakV = 0;
     for (let i = 1; i < rows.length; i++) {
+      // a teleport at a cut (the root half a metre or more in one sample) is no swing (27 Nov: a 328 m/s "attack" on the
+      // Episode 1 cut into the surf)
+      const r0 = rows[i - 1].root, r1 = rows[i].root;
+      if (r0 && r1 && Math.hypot(r1[0] - r0[0], r1[2] - r0[2]) >= 0.5) continue;
       const v = vlen(vsub(rows[i].tip, rows[i - 1].tip)) / Math.max(1e-4, rows[i].t - rows[i - 1].t);
       if (armed && v > on) { armed = false; start = rows[i - 1].t; peak = rows[i].t; peakV = v; }
       else if (!armed) {

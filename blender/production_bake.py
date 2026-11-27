@@ -353,7 +353,9 @@ def _check_frame(a, f, phase, body, garment, sleeves, chk, aprons=()):
         chk['grip_rel'].append((f, phase, [*loc], [*rot]))
 
 
-def report(bake, F):
+def report(bake, F, cuts=()):
+    """cuts: the frames (1-based) that start a new shot; a jolt across one is a teleport hidden by the cut, not a pop."""
+    cut_set = set(cuts)
     lines = []
     for aid, c in bake['checks'].items():
         for key in ('blade/body', 'blade/garment', 'arm.R/body', 'arm.L/body', 'sleeve-paper.R/body', 'sleeve-paper.L/body',
@@ -374,7 +376,8 @@ def report(bake, F):
         el = c.get('elbows', [])
         for k, side in ((1, 'R'), (2, 'L')):
             if len(el) > 2:
-                acc = [((Vector(el[i + 1][k]) - Vector(el[i][k])) - (Vector(el[i][k]) - Vector(el[i - 1][k]))).length * 100
+                acc = [0.0 if (el[i][0] in cut_set or el[i + 1][0] in cut_set) else
+                       ((Vector(el[i + 1][k]) - Vector(el[i][k])) - (Vector(el[i][k]) - Vector(el[i - 1][k]))).length * 100
                        for i in range(1, len(el) - 1)]
                 top = sorted(((v, el[i + 1][0]) for i, v in enumerate(acc)), reverse=True)[:3]
                 lines.append('[check] %s elbow.%s jolt (cm/frame^2): median %.1f, top %s' % (

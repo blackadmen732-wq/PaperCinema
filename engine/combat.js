@@ -130,8 +130,16 @@ export function analyse({ film, fighters, pose, fps, dur, armed = null, symmetri
     const d = !armed || armed(tb) ? cs.d : 9;
     samples.push({ tb, tipH: A.tip, tipF: B.tip, d, point: cs.c1.clone().lerp(cs.c2, 0.5), sH: cs.s, sF: cs.t, ...(symmetric ? { aH: A.a, aF: B.a } : {}) });
   }
-  const speed = (i, key) => i > 0 ? samples[i][key].distanceTo(samples[i - 1][key]) * RATE : 0;
-  samples.forEach((s, i) => { s.vH = speed(i, 'tipH'); s.vF = speed(i, 'tipF'); });
+  // a teleport at a cut (engine/figure.js: motion.cuts) is not blade speed: across one the tip keeps the speed it had
+  // (27 Nov: a whoosh sounded on the Episode 1 cut into the surf, the oar "swung" 2.7 m in a sample)
+  const cutsOf = (F) => (F?.motion?.cuts ?? []).map(([, b]) => b);
+  const cH = cutsOf(A0), cF = cutsOf(B0);
+  const across = (cs, i) => cs.some((b) => samples[i - 1].tb < b - 1e-6 && samples[i].tb >= b - 1e-6);
+  samples.forEach((s, i) => {
+    const pv = i > 0 ? samples[i - 1] : null;
+    s.vH = !pv ? 0 : across(cH, i) ? pv.vH : s.tipH.distanceTo(pv.tipH) * RATE;
+    s.vF = !pv ? 0 : across(cF, i) ? pv.vF : s.tipF.distanceTo(pv.tipF) * RATE;
+  });
   const contacts = [];
   const minV = film.effects?.contactMinSpeed ?? 0;      // slower touches (blades resting together) are not clashes
   const gap = film.effects?.contactGap ?? 0;

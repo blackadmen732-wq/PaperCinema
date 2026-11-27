@@ -310,7 +310,7 @@ if BAKE is None:
     print(f'[bake] solving {len(FRAMES)} frames once (draw: {sorted(DRAWS) or "none"}, springs: {not flag("stiff-cloth")})')
     BAKE = PB.solve(TL, PACT, FPS, checks=True)
     PB.save(BAKE, BAKE_PATH, _stamp)
-    for line in PB.report(BAKE, len(FRAMES)):
+    for line in PB.report(BAKE, len(FRAMES), cuts=[i_ + 1 for i_, fr_ in enumerate(FRAMES) if fr_.get('cut')]):
         print(line)
     print('[bake] ->', BAKE_PATH)
 else:
@@ -318,7 +318,7 @@ else:
 if flag('bake-only'):
     raise SystemExit(0)
 if flag('report'):
-    for line in PB.report(BAKE, len(FRAMES)):
+    for line in PB.report(BAKE, len(FRAMES), cuts=[i_ + 1 for i_, fr_ in enumerate(FRAMES) if fr_.get('cut')]):
         print(line)
 
 # ---------------------------------------------------------------- lens: depth of field and motion blur

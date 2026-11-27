@@ -264,8 +264,17 @@ function of `t` and a still matches the video):
    stride) of one point. That point is the **plant** — the middle of the run, so the body passes *over*
    the foot, and the foot lands *ahead* of a sprint and catches it.
 3. **Steps.** Between two plants the foot swings for `swing` (0.15 s) on an eased arc: lift, travel, land.
-   The two feet are staggered. A leap or a dash is one long arc instead, high enough that nothing
-   "planted" is ever racing along the ground.
+   A leap or a dash is one long arc instead, high enough that nothing "planted" is ever racing along the
+   ground. **A walk alternates**: the left foot never lifts within `gap` (0.04 s) of a right step; when its
+   lift would clash it moves to half a step period before the right foot's lift (the period measured from
+   the right foot's own steps, else the one its speed implies), keeping a plant at least `minContact`
+   (0.12 s) long. Before 27 Nov only the film's first step was staggered: after any hold both feet lifted
+   on the same frame and stayed in step, so Musashi hopped through both walks of Episode 1 (16 steps with
+   both feet off the ground). Measured after: 0 hops, the steps 0.37-0.40 s apart in the wade and
+   0.53-0.67 s in the walk-away.
+   **Cuts** (a teleport between two key pieces, `motion.cuts`): no contact, step, speed or smoothing
+   reaches across one, and the plan is never blended across it; the feet jump with the body on the cut
+   frame (before, the feet stayed at the boat and flew 2.5 m to the body over 5 frames).
 4. **Weight.** With the feet pinned the hips are no longer free:
    · **reach** — a pinned foot further from its hip than the leg is long forces the hips to **drop**
      (`crouch`), so a long stride sinks the body by itself;
@@ -284,8 +293,10 @@ node tools/footslide.mjs film/dash-test.json            # every performer, a sec
 node tools/footslide.mjs film/dash-test.json --json
 ```
 
-It poses the real rig in Node (leg IK included) and measures, with the same definition as the studio
-audit's rule A1: a foot is **planted** when the root is on the ground (y ≤ 0.03 m) and the foot joint is
+It also reports the **gait**: steps per foot and how many times both feet are off the ground together
+while walking (a hop; leaps, lunges and cuts are not counted). It poses the real rig in Node (leg IK
+included) and measures, with the same definition as the studio audit's rule A1 (a cut is skipped: the
+feet jump with the body): a foot is **planted** when the root is on the ground (y ≤ 0.03 m) and the foot joint is
 low (y ≤ 0.12 m); **slide** is how far a planted foot travels horizontally between two frames while
 moving faster than 1 m/s. The audit flags a run of such frames that adds up to more than 0.4 m.
 
