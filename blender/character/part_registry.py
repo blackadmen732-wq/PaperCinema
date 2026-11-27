@@ -1316,10 +1316,12 @@ def _ai_part(pid, e):
         bm, names = _glb_bmesh(os.path.join(d, 'part.glb'))
         sheets = P['sheets']
         mats = []
+        lantern = P.get('lantern') or {}
         for nm in names:
-            m = ctx.mat(sheets.get(nm, sheets.get('skin', 'washi_natural')))
+            k = float(lantern.get(nm, 0.0))                    # the inner lantern through this sheet (mask: 1.0)
+            m = ctx.mat(sheets.get(nm, sheets.get('skin', 'washi_natural')), glow=ctx.lit(k) if k > 0 else None)
             if nm == 'skin' and (P.get('ink') or P.get('glow')):
-                painted = bpy.data.materials.get(m.name + '_paint_' + pid)
+                painted = bpy.data.materials.get(m.name + '_paint_' + pid)   # m.name carries the glow tag
                 if painted is None:
                     painted = m.copy()
                     painted.name = m.name + '_paint_' + pid
@@ -1339,7 +1341,7 @@ def _ai_part(pid, e):
     part(pid, slot=e['slot'], socket=e['socket'], bone=e.get('bone'), rigid=True, size=(1.0, 1.0),
          layer=e.get('layer'), material=e.get('sheets', {}).get('skin', 'washi_natural'), tags=('ai',),
          prepared=e['prepared'], sheets=e.get('sheets', {'skin': 'washi_natural'}), ink=e.get('ink'),
-         glow=e.get('glow'))(_built)
+         glow=e.get('glow'), lantern=e.get('lantern'))(_built)
 
 
 def load_ai_parts(path=AI_PARTS_FILE):

@@ -406,9 +406,19 @@ def add_paint(m, *, uv_map='', ink=None, glow=None):
         t.interpolation = 'Linear'
         L.new(uv.outputs['UV'], t.inputs['Vector'])
         return t
+    lanterns = [n for n in N if n.type == 'EMISSION']      # the sheet's own inner glow, from paper_material(glow=)
     if ink:
         img, rgb = ink
         t = tex(img)
+        # ink stops the lantern: printed lines stay dark when the sheet is lit from inside
+        for em in lanterns:
+            k0 = em.inputs['Strength'].default_value
+            inv = N.new('ShaderNodeMath')
+            inv.operation = 'MULTIPLY_ADD'               # (ink * -k0) + k0 = k0 * (1 - ink)
+            L.new(t.outputs['Color'], inv.inputs[0])
+            inv.inputs[1].default_value = -k0
+            inv.inputs[2].default_value = k0
+            L.new(inv.outputs[0], em.inputs['Strength'])
         mix = N.new('ShaderNodeMix')
         mix.data_type = 'RGBA'
         L.new(t.outputs['Color'], mix.inputs[0])

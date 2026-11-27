@@ -185,7 +185,10 @@ else
   # the timeline is hashed WITHOUT its "generated" block: that holds the export time, so hashing the file itself
   # made every re-run look changed and threw away every frame (27 Nov: a 30-minute re-render for a post-FX tweak)
   TLHASH=$(python3 -c "import json,hashlib;t=json.load(open('output/$NAME.timeline.json'));t.pop('generated',None);print(hashlib.sha256(json.dumps(t,sort_keys=True).encode()).hexdigest())")
-  STAMP=$( { echo "$TLHASH"; sha256sum blender/*.py blender/*/*.py library/sets/*.json 2>/dev/null \
+  # ...and everything else a frame is made of: recipes, paper sheets, generated parts (a recipe change used to
+  # reuse the old frames silently)
+  STAMP=$( { echo "$TLHASH"; sha256sum blender/*.py blender/*/*.py library/sets/*.json library/character-recipes/*.json \
+             library/paper-materials/*.json library/ai-parts.json assets/models/ai/*/* 2>/dev/null \
              | awk '{print $1}'; echo "res=$RES samples=$SAMPLES set=$SET engine=${PC_ENGINE:-}"; } | sha256sum | cut -c1-16)
   if [ -f "$FR/.render-inputs" ] && [ "$(cat "$FR/.render-inputs")" != "$STAMP" ]; then
     echo "  the render inputs changed since the frames in $FR were made: dropping $(ls "$FR"/f*.png 2>/dev/null | wc -l) stale frame(s)"
