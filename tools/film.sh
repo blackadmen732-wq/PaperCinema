@@ -157,7 +157,7 @@ if [ -n "$SET" ]; then
     [ -f "library/sets/$SET.json" ] || die "unknown set '$SET': no output/sets/$SET.blend and no library/sets/$SET.json (have: $(cd library/sets && ls *.json | sed 's/.json//' | tr '\n' ' '))"
     step "4b/9 build the set $SET"
     [ -x "$B" ] || die "the set $SET is not built yet and there is no Blender at $B to build it with"
-    nice -n 10 "$B" -b -t 2 -P blender/sets/build_set.py -- --set "$SET" --out "$BLEND" || die "step 4b: building the set $SET failed."
+    nice -n 10 "$B" -b --python-exit-code 1 -t 2 -P blender/sets/build_set.py -- --set "$SET" --out "$BLEND" || die "step 4b: building the set $SET failed."
   fi
   [ -f "$BLEND" ] || die "step 4b: $BLEND was not written."
   SETARG=(--set "$BLEND")
@@ -218,7 +218,7 @@ else
   # THE BAKE FIRST, once, in this process: the draw, grips, boundary and cloth are solved over the whole
   # timeline and saved (output/$NAME.bake.json, written atomically). The parallel workers below only READ it;
   # without this step each worker would solve it again at the same time.
-  "$B" -b -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --bake-only "${SETARG[@]+"${SETARG[@]}"}" \
+  "$B" -b --python-exit-code 1 -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --bake-only "${SETARG[@]+"${SETARG[@]}"}" \
     > "output/$NAME-bake.log" 2>&1 || { tail -25 "output/$NAME-bake.log"; die "step 5 bake: the production bake failed (output/$NAME-bake.log)."; }
   grep -E "^\[(bake|check)\]" "output/$NAME-bake.log" | sed 's/^/  /'
   # the contact measured on THIS bake, before any worker starts: the workers cut the paper-fire slash at it
@@ -240,7 +240,7 @@ else
     for runs in $(echo "$PLAN" | tail -n +2 | tr ' ' ','); do
       i=$((i + 1)); LOG="output/$NAME-render-w$i.log"; LOGS="$LOGS $LOG"
       ( rc=0; for r in $(echo "$runs" | tr ',' ' '); do
-          nice -n 10 "$B" -b -t "$T" -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --frames "$r" \
+          nice -n 10 "$B" -b --python-exit-code 1 -t "$T" -P blender/film_modular.py -- --film "$NAME" --out "$FR/" --frames "$r" \
             --res "$RES" --samples "$SAMPLES" "${SETARG[@]+"${SETARG[@]}"}" || rc=1
         done; exit $rc ) > "$LOG" 2>&1 &
       PIDS="$PIDS $!"

@@ -506,7 +506,7 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
     if recipe.get('surface'):
         # the paper surface upgrade (paper_materials.paper_surface): folds measured into each mesh, then ink in the
         # valleys, a light edge on the ridges, a printed mottle. Opt-in per recipe while it is tested (27 Nov).
-        S_ = dict(recipe['surface'])
+        S_ = {k_: v_ for k_, v_ in recipe['surface'].items() if k_ != 'note'}     # a note documents, it is no input
         ang = float(S_.pop('angle', 28.0))
         n_folds, mats = 0, []
         for ob in built:
