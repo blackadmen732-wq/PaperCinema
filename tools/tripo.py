@@ -12,6 +12,7 @@ TRIPO_API_KEY; the default placeholder is overwritten by the proxy.
                                   [--faces 8000] [--hd] [--quad] [--parts]                    (3D model)
     python3 tools/tripo.py model  --prompt "..." --out ...                                     (text to 3D)
     python3 tools/tripo.py fetch  <task_id> --out output/tripo/<name>                          (re-download)
+    python3 tools/tripo.py rig    <model task_id> --out output/tripo/<name> [--spec mixamo] [--version ...]
 
 Every finished task appends {task, type, params, credits, balance_before, balance_after, files} to
 output/tripo/ledger.jsonl, so the cost of every part is a number. A task polls until it is done (or --timeout).
@@ -143,7 +144,7 @@ def run(task, out, timeout):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['balance', 'upload', 'image', 'model', 'fetch'])
+    ap.add_argument('cmd', choices=['balance', 'upload', 'image', 'model', 'fetch', 'rig'])
     ap.add_argument('arg', nargs='?')
     ap.add_argument('--prompt')
     ap.add_argument('--negative')
@@ -158,6 +159,7 @@ def main():
     ap.add_argument('--no-texture', action='store_true')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--timeout', type=int, default=900)
+    ap.add_argument('--spec', default='mixamo', help='rig: bone naming (mixamo, tripo, ...)')
     a = ap.parse_args()
     if a.cmd == 'balance':
         print(balance())
@@ -175,6 +177,12 @@ def main():
             task = {'type': 'text_to_image', 'prompt': a.prompt}
         if a.negative:
             task['negative_prompt'] = a.negative
+        if a.version:
+            task['model_version'] = a.version
+        run(task, a.out, a.timeout)
+    elif a.cmd == 'rig':
+        # auto-rig a finished model task: skeleton + skin weights (bone names per --spec), as GLB
+        task = {'type': 'animate_rig', 'original_model_task_id': a.arg, 'out_format': 'glb', 'spec': a.spec}
         if a.version:
             task['model_version'] = a.version
         run(task, a.out, a.timeout)

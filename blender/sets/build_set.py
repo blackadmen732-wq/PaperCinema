@@ -558,6 +558,7 @@ def main():
     marks = make_marks(scene, colls['MARKS'], S.get('marks', {}), S.get('clear', 1.6))
     ctx = kit.Ctx(scene, colls['SET'], seed=seed, materials=S.get('materials', {}))
     ctx.clear = [(m.location.x, m.location.y, S.get('clear', 1.6)) for n, m in marks.items() if n in ('MARK_hero', 'MARK_foe', 'MARK_center')]
+    ctx.fight = list(ctx.clear)   # the fighter marks only (ctx.clear later also holds the camera spots, some in the sea)
     ctx.clear += [(c['pos'][0], c['pos'][1], 0.8) for c in S.get('cameras', {}).values()]     # never grow a culm through a lens
     counts = {}
     for spec in S.get('pieces', []) + Lg.get('pieces', []):

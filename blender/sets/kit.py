@@ -120,6 +120,7 @@ class Ctx:
         self._mats = {}
         self.root = None
         self.clear = []          # [(x, y, r)] world-space zones kept free of scattered props (fighter marks)
+        self.fight = []          # [(x, y, r)] the fighter marks alone: ground pieces level the terrain there
         self.lights = []
         self.info = {}
 
@@ -1995,6 +1996,9 @@ def ganryujima(ctx, P, rnd):
     the paper sun. `realistic` swaps sand, rocks and bark for the textured set materials. World coordinates."""
     ctx.info.update(ctx.scene.get('set_sun', {}))
     bw = _bw(ctx, P)
+    # level the sand under the fighter marks (ctx.clear: the set's MARK_hero / MARK_foe / MARK_center zones)
+    bw.FLAT[:] = [(x, y, r) for x, y, r in getattr(ctx, 'fight', [])] if P.get('flatten', True) else []
+    bw._FLAT_Z.clear()
     before = set(bpy.data.objects)
     if P['paper_sun']:
         d = bw.sun_dir() * 3200.0

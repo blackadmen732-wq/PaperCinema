@@ -22,7 +22,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Quaternion, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -84,6 +84,36 @@ if arg('set'):
     # A built set (docs/SETS.md). The timeline's world coordinates are kept as they are; the set is
     # expected to be built around the same origin the films use.
     bpy.ops.wm.open_mainfile(filepath=os.path.abspath(arg('set')))
+    # STAGE (27 Nov): the set comes to the actors. Films are blocked around their own origin on flat ground; a
+    # set has its fight on marks somewhere on its terrain (the beach: MARK_center at (0, -3.2), sand at +0.96 m,
+    # so the fighters were buried 1.46 m). Every root object of the set is parented to one handle, and the handle
+    # moves the set's mark (film.stage.mark, default MARK_center) under the film's action centre at ground 0,
+    # turned by film.stage.turn degrees. A handle, not object by object, so animated set pieces keep working.
+    _film_json = {}
+    try:
+        _film_json = json.load(open(os.path.join(REPO, TL['film']['path'])))
+    except Exception:
+        pass
+    _stage = _film_json.get('stage') or {}
+    _mk = bpy.data.objects.get(_stage.get('mark', 'MARK_center'))
+    if _mk is not None and _stage.get('mark') != 'none':
+        _roots = [A['root'] for A in TL['frames'][0]['actors'].values() if A.get('root') and not A.get('hidden')]
+        _cx = sum(r[0] for r in _roots) / max(1, len(_roots))
+        _cy = sum(-r[2] for r in _roots) / max(1, len(_roots))
+        _hdl = bpy.data.objects.new('SET_STAGE', None)
+        bpy.context.scene.collection.objects.link(_hdl)
+        for _o in list(bpy.data.objects):
+            if _o.parent is None and _o is not _hdl and _o.users_scene:
+                _mw = _o.matrix_world.copy()
+                _o.parent = _hdl
+                _o.matrix_parent_inverse = Matrix()
+                _o.matrix_world = _mw
+        _M = (Matrix.Translation((_cx, _cy, 0.0)) @ Matrix.Rotation(math.radians(float(_stage.get('turn', 0.0))), 4, 'Z')
+              @ Matrix.Translation(-_mk.location))
+        _hdl.matrix_world = _M
+        bpy.context.view_layer.update()
+        print('[stage] %s moved under the action centre (%.2f, %.2f): set shifted by %s, turned %.0f deg'
+              % (_mk.name, _cx, _cy, tuple(round(v, 3) for v in (_M @ Vector((0, 0, 0)))), float(_stage.get('turn', 0.0))))
 else:
     bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene
@@ -264,6 +294,45 @@ for i in range(f0, f1 + 1):
         if _DOF and c.get('focus_m'):                           # depth of field / rack focus, keyed from the timeline
             cd.dof.focus_distance = float(c['focus_m'])
             cd.dof.keyframe_insert('focus_distance')
+
+if flag('ground-report'):
+    # Feet against the set's ground, frame by frame, measured (no render): the gap between each ankle joint and the
+    # surface under it. Planted feet should sit at the ankle's rest height (~0.02 m); below 0 = buried.
+    from mathutils.bvhtree import BVHTree
+    _dg = bpy.context.evaluated_depsgraph_get()
+    _char_objs = {o for o in char_meshes}
+    _ground = [o for o in bpy.data.objects if o.type == 'MESH' and o not in _char_objs and o.visible_get()
+               and not o.name.startswith(('SEA', 'SKY', 'PC_', 'MARK_')) and len(o.data.polygons)]
+    _trees = [(o, BVHTree.FromObject(o, _dg)) for o in _ground]
+    rows = []
+    for i in range(f0, f1 + 1, int(arg('ground-step', 1))):
+        sc.frame_set(i + 1)
+        _row = {'frame': i}
+        for _aid, _rig in rigs.items():
+            for _ft in ('lfoot', 'rfoot'):
+                p = _rig.J[_ft].matrix_world.translation
+                best = None
+                for _o, _t in _trees:
+                    inv = _o.matrix_world.inverted()
+                    for d in ((0, 0, -1), (0, 0, 1)):
+                        o_l = inv @ (p + Vector((0, 0, 0.6 if d[2] < 0 else -0.6)))
+                        hit = _t.ray_cast(o_l, (inv.to_3x3() @ Vector(d)).normalized(), 3.0)
+                        if hit[0] is not None:
+                            gz = (_o.matrix_world @ hit[0]).z
+                            if best is None or abs(p.z - gz) < abs(p.z - best):
+                                best = gz
+                _row[f'{_aid}.{_ft}'] = None if best is None else round(p.z - best, 4)
+        rows.append(_row)
+    _gaps = [v for r in rows for k, v in r.items() if k != 'frame' and v is not None]
+    _out = os.path.join(REPO, 'output', FILM + '.ground.json')
+    json.dump({'set': arg('set'), 'rows': rows}, open(_out, 'w'), indent=1)
+    if _gaps:
+        print('[ground] %d foot samples: gap min %.3f m, median %.3f m, max %.3f m; buried (<-0.01): %d -> %s'
+              % (len(_gaps), min(_gaps), sorted(_gaps)[len(_gaps) // 2], max(_gaps), sum(1 for g in _gaps if g < -0.01), _out))
+    else:
+        print('[ground] no ground found under the feet ->', _out)
+    if flag('ground-report-only'):
+        raise SystemExit(0)
 
 if flag('mannequin'):
     import swords as _SWm                                       # noqa: E402

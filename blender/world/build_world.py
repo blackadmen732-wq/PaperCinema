@@ -229,7 +229,34 @@ def island_radius(theta, r):
 ISL_PH = [rng('shore').uniform(0, 6.28) for _ in range(4)]
 
 
+# Fight zones: [(x, y, r)] levelled to ONE height (the mean of the raw sand at their centres), blending back into the
+# dunes over FLAT_FALLOFF metres. The 'ganryujima' kit piece fills it from the set's fighter marks. Without it the
+# duel beach sloped 5-14 degrees under the marks (27 Nov), so a foot on the sand was either buried or floating.
+FLAT = []
+FLAT_FALLOFF = 2.5
+_FLAT_Z = []
+
+
+def flat_weight(x, y):
+    """0 = untouched dune, 1 = inside a levelled fight zone."""
+    w = 0.0
+    for fx, fy, fr in FLAT:
+        t = 1.0 - min(1.0, max(0.0, (math.hypot(x - fx, y - fy) - fr) / FLAT_FALLOFF))
+        w = max(w, t * t * (3 - 2 * t))
+    return w
+
+
 def island_height(x, y):
+    """Height of the sand: the raw dunes, levelled inside the fight zones (FLAT)."""
+    h = _raw_island_height(x, y)
+    if FLAT:
+        if not _FLAT_Z:
+            _FLAT_Z.append(sum(_raw_island_height(fx, fy) for fx, fy, _ in FLAT) / len(FLAT))
+        h += (_FLAT_Z[0] - h) * flat_weight(x, y)
+    return h
+
+
+def _raw_island_height(x, y):
     """Height of the sand at (x, y): plateau, gentle duel beach on -Y, under water past the shoreline."""
     dx, dy = (x - ISLAND_C.x) / ISLAND_AX[0], (y - ISLAND_C.y) / ISLAND_AX[1]
     theta = math.atan2(dy, dx)
@@ -258,7 +285,7 @@ def build_island():
             y = ISLAND_C.y + ISLAND_AX[1] * k * math.sin(th)
             if i:
                 x += r.uniform(-0.25, 0.25); y += r.uniform(-0.25, 0.25)
-            z = island_height(x, y) + (r.uniform(-0.05, 0.05) if i else 0)
+            z = island_height(x, y) + (r.uniform(-0.05, 0.05) * (1.0 - flat_weight(x, y)) if i else 0)
             row.append(bm.verts.new((x, y, z)))
         grid.append(row)
     for j in range(segs):
