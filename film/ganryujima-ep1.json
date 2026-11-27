@@ -767,17 +767,17 @@
    "subjects": [
     "hero"
    ],
-   "az0": 112,
-   "az1": 104,
-   "elev": 4,
-   "size": 0.52,
+   "az0": -26,
+   "az1": -32,
+   "elev": 6,
+   "size": 0.4,
    "screen": [
-    0.64,
-    0.6
+    0.55,
+    0.62
    ],
    "fov": 36,
    "feel": "dolly",
-   "note": "S4 THE THROW: the scabbard arcs out over the sea"
+   "note": "S4 THE THROW: from the sea side, the scabbard flies up over us against the glow (black lacquer vanished against the dark south)"
   },
   {
    "t": 27.95,
