@@ -105,6 +105,117 @@ def onset(path, thresh_db=-30):
     return 0.0
 
 
+def onsets(path, thresh_db=-24, gap=0.18):
+    """Every onset in a file (seconds): a 5 ms window crossing thresh_db (relative to the peak) after at least `gap`
+    s quieter than it - the single steps inside a recording of several."""
+    a, sr = pcm(path)
+    peak = max(1, max(abs(v) for v in a))
+    lim = peak * 10 ** (thresh_db / 20)
+    w, out, quiet = int(sr * 0.005), [], gap
+    for i in range(0, len(a) - w, w):
+        loud = max(abs(v) for v in a[i:i + w]) >= lim
+        if loud and quiet >= gap:
+            out.append(i / sr)
+        quiet = 0.0 if loud else quiet + w / sr
+    return out
+
+
+def ground_events(bake, fps):
+    """Footfalls, skids and landings of every actor, read off the FINAL bake's ankles (the end of each shin
+    segment, world metres). The ground under a foot is the height its ankle rests at most of the time (the 20th
+    percentile: the lowest point is no ground - a lunge pushed Kojiro's right ankle 8 cm into the sand, 27 Nov, and
+    that dip read as a footstep). A foot PLANTS when its ankle comes down within 2.5 cm of that rest height after
+    rising 6 cm above it (sub-frame time from the crossing); a planted foot still moving > 0.8 m/s SKIDS (once per
+    plant); the first plant after both feet were up together for 3+ frames is a LANDING; an ankle more than 3 cm
+    under its rest height is a SINK (the foot inside the ground: a motion defect, reported, never a sound)."""
+    out = []
+    for aid, A in bake['actors'].items():
+        segs = A.get('segs') or []
+        feet = {}
+        for side in ('L', 'R'):
+            P = []
+            for s_ in segs:
+                d = {n: b for n, a, b, r in (s_ or [])}
+                P.append(d.get('shin.' + side))
+            if sum(1 for p in P if p) > 3:
+                feet[side] = P
+        if not feet:
+            continue
+        state = {}
+        for side, P in feet.items():
+            zs = sorted(p[2] for p in P if p)
+            g = zs[int(0.2 * (len(zs) - 1))]
+            state[side] = {'g': g, 'up': (P[0] or [0, 0, g])[2] > g + 0.06, 'plant': 0, 'skid': False, 'sink': None}
+        air = 0
+        for i in range(1, len(segs)):
+            ups = []
+            for side, P in feet.items():
+                st, p, q = state[side], P[i], P[i - 1]
+                if not p or not q:
+                    ups.append(st['up'])
+                    continue
+                plant, lift = st['g'] + 0.025, st['g'] + 0.06
+                vh = math.hypot(p[0] - q[0], p[1] - q[1]) * fps
+                if p[2] < st['g'] - 0.03:                                  # inside the ground
+                    if st['sink'] is None:
+                        st['sink'] = {'t': round(i / fps, 4), 'frame': i + 1, 'actor': aid, 'foot': side, 'kind': 'sink',
+                                      'depth_cm': 0.0, 'frames': 0}
+                        out.append(st['sink'])
+                    st['sink']['depth_cm'] = round(max(st['sink']['depth_cm'], (st['g'] - p[2]) * 100), 1)
+                    st['sink']['frames'] += 1
+                else:
+                    st['sink'] = None
+                if st['up'] and p[2] <= plant:
+                    k = (q[2] - plant) / max(1e-6, q[2] - p[2])            # where between the frames it crossed
+                    t = (i - 1 + max(0.0, min(1.0, k))) / fps
+                    vz = (q[2] - p[2]) * fps
+                    kind = 'land' if air >= 3 else 'step'
+                    out.append({'t': round(t, 4), 'frame': round(i + k, 2), 'actor': aid, 'foot': side, 'kind': kind,
+                                'down_mps': round(vz, 2), 'slide_mps': round(vh, 2)})
+                    st.update(up=False, plant=i, skid=False)
+                elif not st['up'] and p[2] >= lift:
+                    st['up'] = True
+                elif not st['up'] and not st['skid'] and vh > 0.8 and st['plant'] is not None and i - st['plant'] >= 1:
+                    out.append({'t': round(i / fps, 4), 'frame': i + 1, 'actor': aid, 'foot': side, 'kind': 'skid',
+                                'slide_mps': round(vh, 2)})
+                    st['skid'] = True
+                ups.append(st['up'])
+            air = air + 1 if ups and all(ups) else 0
+    return sorted(out, key=lambda e: e['t'])
+
+
+def foley_cues(ground, sfx, lib):
+    """Sound for every ground event: footsteps cut one by one out of a recording (round robin, so two steps in a row
+    never repeat), a skid drag, a landing thud; louder for a harder footfall."""
+    src = os.path.join(lib, 'steps-in.mp3')
+    starts = onsets(src)[:6] or [onset(src)]
+    steps = []
+    for k, st in enumerate(starts):
+        f = os.path.join(sfx, 'step%d.wav' % k)
+        cut(src, f, max(0.0, st - 0.005), 0.28)
+        steps.append(f)
+    cut(os.path.join(lib, 'skid-dust.mp3'), os.path.join(sfx, 'skid.wav'), onset(os.path.join(lib, 'skid-dust.mp3')), 0.5)
+    cut(os.path.join(lib, 'land-thud.mp3'), os.path.join(sfx, 'land.wav'), onset(os.path.join(lib, 'land-thud.mp3')), 0.6)
+    cues, n = [], 0
+    for e in ground:
+        if e['kind'] == 'sink':
+            continue
+        if e['kind'] == 'step':
+            g = 0.22 + min(0.3, 0.12 * e.get('down_mps', 0) + 0.05 * e.get('slide_mps', 0))
+            cues.append({'id': 'step-%s-%s-%d' % (e['actor'], e['foot'], n), 'file': steps[n % len(steps)], 't': e['t'],
+                         'len': 0.28, 'gain': round(g, 2), 'why': 'footfall on the bake (%s %s foot)' % (e['actor'], e['foot'])})
+            n += 1
+        elif e['kind'] == 'skid':
+            cues.append({'id': 'skid-%s-%s-%.2f' % (e['actor'], e['foot'], e['t']), 'file': os.path.join(sfx, 'skid.wav'),
+                         't': e['t'], 'len': 0.5, 'gain': round(min(0.6, 0.2 + 0.1 * e['slide_mps']), 2),
+                         'why': 'planted foot still sliding %.1f m/s' % e['slide_mps']})
+        else:
+            cues.append({'id': 'land-%s-%.2f' % (e['actor'], e['t']), 'file': os.path.join(sfx, 'land.wav'), 't': e['t'],
+                         'len': 0.6, 'gain': round(min(1.0, 0.45 + 0.15 * e.get('down_mps', 0)), 2),
+                         'why': 'landing after %s was airborne' % e['actor']})
+    return cues
+
+
 def cut(src, dst, start, length):
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', '%.4f' % start, '-t', '%.4f' % length, '-i', src,
                     '-ac', '2', '-ar', '44100', dst], check=True)
@@ -253,18 +364,27 @@ def main(film):
         whoosh = {'id': 'apex-whoosh', 'file': cached, 't': round(apex[0] / fps - 0.2, 4), 'len': 0.6, 'gain': 0.5,
                   'why': whoosh['why'] + ' (cached earshot render, apex at 0.2 s)'}
     layers.insert(1, whoosh)
+    # the ground: every footfall, skid and landing on the same bake, as sound (and as camera bumps: tools/post_fx.py)
+    ground = ground_events(bake, fps)
+    layers += foley_cues(ground, sfx, lib)
     out = {'source': 'final bake (production_bake) - not the browser events file', 'striker': hero, 'blocker': foe,
            'film': film, 'fps': fps,
            'contact': {'frame': frame_c, 'subframe': round(tf_c + 1, 2), 't': round(t_c, 4), 'gap_cm': round(d_c * 100, 1),
                        'where': [round(v, 3) for v in where], 'touch': bool(first)},
            'apex': {'frame': round(apex[0] + 1, 2), 't': round(apex[0] / fps, 4), 'mps': round(apex[1], 1)},
            'draw': {'slide': dr['slide'], 'clear': dr['clear']},
-           'cues': layers, 'contacts': [round(t_c, 4)], 'impacts': [], 'stops': []}
+           'cues': layers, 'contacts': [round(t_c, 4)], 'impacts': [], 'stops': [], 'ground': ground}
     path = os.path.join(REPO, 'output', film + '.bake-events.json')
     json.dump(out, open(path, 'w'), indent=1)
     print('[events] ->', path)
     for c in layers:
         print('[events]   %-18s t=%.3f s (frame %.2f)  %s' % (c['id'], c['t'], c['t'] * fps + 1, c['why']))
+    kinds = {k: sum(1 for e in ground if e['kind'] == k) for k in ('step', 'skid', 'land', 'sink')}
+    print('[events] ground: %d steps, %d skids, %d landings' % (kinds['step'], kinds['skid'], kinds['land']))
+    for e in ground:
+        if e['kind'] == 'sink':
+            print('[events] ! %s %s foot INSIDE the ground from frame %d for %d frames, %.1f cm deep (no foot IK yet)'
+                  % (e['actor'], e['foot'], e['frame'], e['frames'], e['depth_cm']))
 
 
 if __name__ == '__main__':

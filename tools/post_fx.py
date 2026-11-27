@@ -51,6 +51,13 @@ if A.events and os.path.exists(A.events):
     elif c.get('frame') is not None:
         hits = sorted(set(hits) | {int(c['frame'])})
 cuts = {r['f'] for r in F if r.get('cut')}
+# landings (bake-events.json "ground", tools/bake_events.py): the camera takes the weight - a vertical bump that
+# dies in 5 frames, stronger for a harder landing; never across a cut
+lands = []
+if A.events and os.path.exists(A.events):
+    for g in json.load(open(A.events)).get('ground') or []:
+        if g.get('kind') == 'land':
+            lands.append((math.ceil(g['frame'] - 1 - 1e-6), min(1.0, 0.4 + 0.15 * g.get('down_mps', 0))))
 focal = [r['camera']['focal_mm'] for r in F]
 plan = {}
 for i, r in enumerate(F):
@@ -69,6 +76,10 @@ for i, r in enumerate(F):
             e['ca'] = 6 - 2 * d
         if 0 <= d <= 4:
             e['speed'] = max(e.get('speed', 0), 1 - d / 5)
+    for lf, k in lands:
+        d = f - lf
+        if 0 <= d <= 4 and not any(lf < c <= f for c in cuts):
+            e['bump'] = e.get('bump', 0.0) + k * (1, -0.55, 0.3, -0.15, 0.06)[d]
     plan[f] = e
 VIG = float(FX.get('vignette', 0.25))
 
@@ -104,6 +115,15 @@ def speed_lines(im, k, seed):
     return Image.fromarray((a_ * (1 - m) + 245 * m).astype(np.uint8))
 
 
+def bump(im, k):
+    """The frame pushed down (k > 0) or up by k x 1.6% of its height, zoomed 3% so no edge shows."""
+    w, h = im.size
+    z = 1.03
+    dy = k * 0.016 * h
+    return im.transform((w, h), Image.AFFINE, (1 / z, 0, w * (1 - 1 / z) / 2, 0, 1 / z, h * (1 - 1 / z) / 2 - dy / z),
+                        resample=Image.BICUBIC)
+
+
 def ca(im, px):
     r, g, b = im.split()
     return Image.merge('RGB', (r.transform(im.size, Image.AFFINE, (1, 0, -px, 0, 1, 0)), g,
@@ -118,6 +138,8 @@ for p in files:
     f = n - 1
     e = plan.get(f, {})
     im = Image.open(p).convert('RGB')
+    if e.get('bump'):
+        im = bump(im, e['bump'])
     if e.get('ink'):
         im = ink(im)
     if e.get('ca'):

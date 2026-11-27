@@ -220,6 +220,57 @@ class Rig:
         self.sync_bones()
         return p
 
+    def ground_feet(self, ground=0.0, rest=0.04, tol=0.004):
+        """After pose(): an ankle under the world ground is put back ON it by re-solving that leg - the hip swing
+        and the knee - with the hip where the pose left it, the ankle at the same place across the ground, and the
+        foot turned back so the sole keeps its angle. pose() solves the legs in the character's own frame, so a
+        lean or a drop of the whole body carried a foot into the sand (27 Nov: Kojiro's right foot 8.3 cm deep for
+        6 frames of the lunge; tools/bake_events.py reports these as 'sink'). Returns {side: cm lifted}."""
+        J, out = self.J, {}
+        for s in ('r', 'l'):
+            foot, th, sh = J[s + 'foot'], J[s + 'thigh'], J[s + 'shin']
+            a0 = foot.matrix_world.translation.copy()
+            want = ground + rest
+            if a0.z >= want - tol:
+                continue
+            hip = th.matrix_world.translation.copy()
+            flat = Vector((a0.x - hip.x, a0.y - hip.y, 0.0))
+            fwd = flat.normalized() if flat.length > 1e-4 else Vector((0.0, -1.0, 0.0))
+            goal = Vector((a0.x, a0.y, want))
+
+            def resid():
+                bpy.context.view_layer.update()
+                a = foot.matrix_world.translation
+                return Vector(((a.z - goal.z), (a - goal).dot(fwd)))
+            x0 = Vector((th.rotation_euler[0], sh.rotation_euler[0]))
+            x = x0.copy()
+            for _ in range(8):
+                th.rotation_euler[0], sh.rotation_euler[0] = x
+                r = resid()
+                if r.length < 0.002:
+                    break
+                cols = []
+                for k in range(2):
+                    xe = x.copy()
+                    xe[k] += 1e-3
+                    th.rotation_euler[0], sh.rotation_euler[0] = xe
+                    cols.append((resid() - r) / 1e-3)
+                a11, a21, a12, a22 = cols[0][0], cols[0][1], cols[1][0], cols[1][1]
+                det = a11 * a22 - a12 * a21
+                if abs(det) < 1e-9:
+                    break
+                dx = Vector(((a22 * r[0] - a12 * r[1]) / det, (-a21 * r[0] + a11 * r[1]) / det))
+                if dx.length > 0.35:
+                    dx *= 0.35 / dx.length
+                x -= dx
+            th.rotation_euler[0], sh.rotation_euler[0] = x
+            foot.rotation_euler[0] -= (x[0] - x0[0]) + (x[1] - x0[1])
+            bpy.context.view_layer.update()
+            out[s] = round((foot.matrix_world.translation.z - a0.z) * 100, 1)
+        if out:
+            self.sync_bones()
+        return out
+
     def _hang_sleeves(self, p):
         """Aim each sleeve bone at the ground, pushed outward as the arm rises.
 

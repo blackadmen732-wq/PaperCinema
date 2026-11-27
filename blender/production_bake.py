@@ -121,6 +121,10 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                         for k, v in corr.items():
                             pose[k] += v
                     a.rig.pose(pose)
+            # feet on the ground: the pose's leg solver works in the character's own frame (see Rig.ground_feet)
+            lifted = a.rig.ground_feet()
+            if lifted:
+                chk[a.aid].setdefault('feet_lifted', []).append((f, lifted))
             if a.springs:
                 a.springs.step()
             bpy.context.view_layer.update()
@@ -145,6 +149,9 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
         out['checks'][a.aid] = chk[a.aid]
         if a.springs is not None:
             chk[a.aid]['cloth_lag'] = {j: [r[0] for r in rows] for j, rows in a.springs.log.items()}
+        if chk[a.aid].get('feet_lifted'):
+            print('[bake] %s feet put back on the ground on %d frames (cm): %s' % (
+                a.aid, len(chk[a.aid]['feet_lifted']), chk[a.aid]['feet_lifted'][:8]))
         if a.draw is not None:
             chk[a.aid]['blade_turned_out'] = {str(k): v for k, v in sorted(a.draw.pushed.items())}
             print('[bake] %s blade turned out of the body on frames %s' % (a.aid, chk[a.aid]['blade_turned_out']))
