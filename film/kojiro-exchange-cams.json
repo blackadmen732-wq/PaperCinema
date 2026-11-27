@@ -175,16 +175,16 @@
    "az0": 25,
    "az1": 31,
    "elev": 5,
-   "size": 0.5,
+   "size": 0.42,
    "screen": [
-    0.5,
+    0.66,
     0.55
    ],
    "fov": 34,
    "feel": "dolly",
    "ease": "linear",
    "guard": false,
-   "note": "WIDE: over Musashi's shoulder onto Kojiro, both fighters and the space between them"
+   "note": "WIDE: over Musashi's shoulder onto Kojiro, both fighters and the space between (framing sweep: 24/24 frames both inside, >= 0.30 apart)"
   },
   {
    "t": 0.8,
@@ -218,40 +218,41 @@
    ],
    "basis": "target",
    "target": "hero",
-   "az0": 166,
-   "az1": 169,
+   "az0": 150,
+   "az1": 152,
    "elev": -4,
-   "size": 0.75,
+   "size": 0.6,
    "screen": [
-    0.62,
+    0.72,
     0.55
    ],
    "fov": 40,
    "feel": "locked",
    "guard": false,
-   "note": "IMPACT: over Musashi's shoulder onto Kojiro's cut (angle chosen by a sweep: 165-195 keeps both chests in frame, 180 hides Kojiro behind Musashi); arrives by a whip pan, crash zoom + Dutch on the contact"
+   "note": "IMPACT: over Musashi's shoulder onto Kojiro's cut, Musashi on the right third, Kojiro clear on the left (sweep: 15/16 frames, >= 0.45 apart); arrives by a whip pan, crash zoom + Dutch on the contact"
   },
   {
    "t": 1.95,
    "cut": true,
    "rig": "compose",
-   "subjects": [
-    "hero",
-    "target"
-   ],
-   "az0": 12,
-   "az1": 20,
    "elev": 7,
-   "size0": 0.46,
-   "size1": 0.42,
+   "size0": 0.38,
+   "size1": 0.35,
    "screen": [
-    0.5,
+    0.36,
     0.55
    ],
    "fov": 34,
    "feel": "handheld",
    "guard": false,
-   "note": "RECOVERY: back wide, breathing handheld, drifting out as they settle"
+   "note": "RECOVERY: wide from Musashi's side, Kojiro on the left third, breathing handheld drifting out (sweep: 31/31 frames, >= 0.30 apart)",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "target",
+   "target": "target",
+   "az0": -20,
+   "az1": -24
   }
  ],
  "fade": {

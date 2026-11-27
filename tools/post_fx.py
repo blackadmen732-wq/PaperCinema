@@ -46,7 +46,9 @@ INK = np.array([18, 16, 20], np.float32)
 hits = sorted({r['f'] for r in F if r.get('impactFrame')})
 if A.events and os.path.exists(A.events):
     c = (json.load(open(A.events)).get('contact') or {})
-    if c.get('frame') is not None:
+    if c.get('subframe') is not None:                 # the first frame that SHOWS the contact (44.75 -> 45), the
+        hits = sorted(set(hits) | {math.ceil(c['subframe'] - 1e-6)})   # frame tools/av_sync_check.py measures from
+    elif c.get('frame') is not None:
         hits = sorted(set(hits) | {int(c['frame'])})
 cuts = {r['f'] for r in F if r.get('cut')}
 focal = [r['camera']['focal_mm'] for r in F]
