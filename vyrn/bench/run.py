@@ -64,22 +64,35 @@ def main():
     swells = [e['t0'] for e in vid.events(types=['sound.swell'])]
     pairs, miss, extra = match_times(cues, ons, 0.05)
     err = [abs(f - t) * 1000 for t, f in pairs]
-    decoys = tl['truth']['decoys']
+    decoys = tl.get('truth', {}).get('decoys', [])
     R['sound'] = {'cues': len(cues), 'onsets': len(ons), 'hit': len(pairs), 'missed': [round(m, 3) for m in miss],
                   'false_hits': [round(x, 3) for x in extra], 'mae_ms': round(float(np.mean(err)), 2) if err else None,
                   'max_ms': round(float(np.max(err)), 2) if err else None,
                   'decoys': len(decoys), 'decoys_labelled_swell': sum(1 for d in decoys if any(-0.05 <= s - d <= 0.25 for s in swells)),
                   'decoys_counted_as_hits': sum(1 for d in decoys if any(-0.05 <= o - d <= 0.25 for o in extra))}
 
-    # ---- the planted sync fault ----
-    txt, data = query.sync(vid, tl_path, tol=0.15, visual=True)
-    late = tl['truth']['sound_late']
-    flagged = [r for r in data['rows'] if r.get('offset_ms') is not None and abs(r['offset_ms']) > 1000 / (2 * fps)]
-    hit = [r for r in flagged if r.get('why') == late['event']]
-    R['sync_fault'] = {'planted': f"{late['event']} +{late['seconds'] * 1000:.0f} ms",
-                       'found': [f"{r['why']} {r['offset_ms']:+.0f} ms" for r in flagged],
-                       'correct': bool(hit) and len(flagged) == 1,
-                       'measured_ms': hit[0]['offset_ms'] if hit else None}
+    # ---- the planted sync fault (synthetic scene only) and the independent check against the picture ----
+    late = tl.get('truth', {}).get('sound_late')
+    if late:
+        txt, data = query.sync(vid, tl_path, tol=0.15, visual=True)
+        flagged = [r for r in data['rows'] if r.get('offset_ms') is not None and abs(r['offset_ms']) > 1000 / (2 * fps)]
+        hit = [r for r in flagged if r.get('why') == late['event']]
+        R['sync_fault'] = {'planted': f"{late['event']} +{late['seconds'] * 1000:.0f} ms",
+                           'found': [f"{r['why']} {r['offset_ms']:+.0f} ms" for r in flagged],
+                           'correct': bool(hit) and len(flagged) == 1,
+                           'measured_ms': hit[0]['offset_ms'] if hit else None}
+    vt, vd = query.verify(vid, tl_path, tol=0.1)
+    R['verify'] = vt.splitlines()
+    # ---- what kind of sound: thuds vs footstep sounds, ringing vs clashes ----
+    oev = vid.events(types=['sound.onset'])
+    thud = [e['t0'] for e in oev if str(e['data'].get('guess', '')).startswith('thud')]
+    ring = [e['t0'] for e in oev if str(e['data'].get('guess', '')).startswith('ringing')]
+    fs_t = [e['t'] for e in tl['events'] if e['type'] == 'footstep']
+    cl_t = [e['t'] for e in tl['events'] if e['type'] in ('blade-contact', 'impact')]
+    p1, m1, x1 = match_times(fs_t, thud, 0.1)
+    p2, m2, x2 = match_times(cl_t, ring, 0.1)
+    R['sound_kinds'] = {'footsteps_heard_as_thud': f'{len(p1)}/{len(fs_t)}', 'thuds_not_footsteps': len(x1),
+                        'clashes_heard_as_ringing': f'{len(p2)}/{len(cl_t)}', 'ringing_not_clash': len(x2)}
     vtxt, vdata = query.sync(vid, tol=0.15)
     R['sync_visual_only'] = vtxt.splitlines()[:6]
 
@@ -91,6 +104,11 @@ def main():
                     'false': [round(x, 3) for x in extra],
                     'note': 'blade contacts with a hit-stop freeze the picture; the final impact has no hit-stop'}
 
+    fa = [e['t0'] for e in vid.events(types=['av.impact'])]
+    pairs, miss, extra = match_times(ti, fa, 1.01 / fps)
+    R['impacts_av'] = {'truth': len(ti), 'found': len(fa), 'hit': len(pairs), 'missed': [round(m, 3) for m in miss],
+                       'false': [round(x, 3) for x in extra], 'note': 'picture freeze + sound hit, fused'}
+
     # ---- tracking: each actor's projected box vs the best video track box, per frame ----
     W, H = tl['film']['width'], tl['film']['height']
     ents = [e['id'] for e in vid.entities()]
@@ -100,8 +118,8 @@ def main():
         ns = {r['f']: r for r in nat.samples(actor)}
         ious, ids, switches, last = [], [], 0, None
         for f, r in ns.items():
-            if r['x'] is None:
-                continue
+            if r['x'] is None or not r['visible']:
+                continue        # only grade frames where the actor is actually on screen
             nb = (r['x'], r['y'], r['w'], r['h'])
             best, bid = 0.0, None
             for e in ents:
@@ -124,6 +142,9 @@ def main():
     fsteps = [e['t'] for e in tl['events'] if e['type'] == 'footstep']
     vfoot = [e['t0'] for e in vid.events(types=['contact.foot-ground'])]
     pairs, miss, extra = match_times(fsteps, vfoot, 2.01 / fps)
+    fav = [e['t0'] for e in vid.events(types=['av.footstep'])]
+    pa, ma, xa = match_times(fsteps, fav, 2.01 / fps)
+    R['footsteps_av'] = {'found': len(fav), 'hit_within_2_frames': len(pa), 'false': len(xa)}
     R['footsteps'] = {'truth': len(fsteps), 'found': len(vfoot), 'hit_within_2_frames': len(pairs),
                       'false': len(extra), 'mean_abs_frames': round(float(np.mean([abs(f - t) * fps for t, f in pairs])), 2) if pairs else None}
 

@@ -12,6 +12,70 @@ def _conf(c):
     return '' if c is None or c >= 0.999 else f' ~{c:.2f}'
 
 
+LOW_CONF = 0.6
+
+
+def inspect(st, ref, width=240):
+    """the targeted look: one PNG strip of the frames before, at and after an event (or a time), cropped to the
+    entities it involves when they are known. Made once and cached; an agent opens it only when the numbers are
+    not enough (a low-confidence event, a disagreement, a question about appearance)."""
+    m = st.media()
+    src = m['stats'].get('render') or m['source']
+    if src.endswith('.json'):
+        return 'no picture: native (data) source; ingest with --render <video> to inspect', None
+    fps = m['fps']
+    ev = None
+    try:
+        t = float(ref)
+    except ValueError:
+        evs = [e for e in st.events() if e['id'] == ref]
+        if not evs:
+            return f'no event {ref}', None
+        ev = evs[0]; t = ev['t0']
+    f = int(round(t * fps))
+    key = f'strip_{f}_{ev["id"] if ev else "t"}_{width}'
+    row = st.q('SELECT path FROM evidence WHERE key=?', key)
+    if row and os.path.exists(row[0][0]):
+        return row[0][0], {'frames': [f - 1, f, f + 1]}
+    box = None
+    ents = (ev or {}).get('entities') or []
+    boxes = []
+    for e in ents:
+        r = st.samples(e, f, f)
+        if r and r[0]['x'] is not None:
+            boxes.append((r[0]['x'], r[0]['y'], r[0]['x'] + r[0]['w'], r[0]['y'] + r[0]['h']))
+    if boxes:
+        x0 = max(0, min(b[0] for b in boxes) - 0.05); y0 = max(0, min(b[1] for b in boxes) - 0.05)
+        x1 = min(1, max(b[2] for b in boxes) + 0.05); y1 = min(1, max(b[3] for b in boxes) + 0.05)
+        box = [x0, y0, x1, y1]
+    d = os.path.join(cache_dir(), m['id']); os.makedirs(d, exist_ok=True)
+    out = os.path.join(d, f'ev_{key}.png')
+    vf = [f'select=between(n\\,{max(0, f - 1)}\\,{f + 1})']
+    if box:
+        vf.append(f'crop=iw*{box[2] - box[0]:.4f}:ih*{box[3] - box[1]:.4f}:iw*{box[0]:.4f}:ih*{box[1]:.4f}')
+    vf += [f'scale={width}:-2', 'tile=3x1']
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', src, '-vf', ','.join(vf), '-frames:v', '1', out],
+                   check=True)
+    st.db.execute('INSERT OR REPLACE INTO evidence VALUES (?,?,?,?,?,?,?)',
+                  (key, f, f / fps, 'strip', json.dumps(box), out, os.path.getsize(out)))
+    st.commit()
+    return out, {'frames': [f - 1, f, f + 1], 'box': box}
+
+
+def _look(st, evs, limit=3):
+    """confidence-based fallback: for the lowest-confidence events in an answer, point at a picture to check"""
+    low = sorted([e for e in evs if e['conf'] is not None and e['conf'] < LOW_CONF and
+                  not e['type'].startswith('sound') and e['source'] != 'engine'], key=lambda e: e['conf'])[:limit]
+    lines = []
+    for e in low:
+        try:
+            p, _ = inspect(st, e['id'])
+            lines.append(f"  check {e['id']} (conf {e['conf']:.2f}): {p}")
+        except Exception as ex:          # no picture available: say so, do not fail the answer
+            lines.append(f"  check {e['id']} (conf {e['conf']:.2f}): no picture ({ex.__class__.__name__})")
+    return lines
+
+
 def summary(st):
     m = st.media()
     ents = st.entities()
@@ -83,6 +147,7 @@ def window(st, t0, t1):
     rel = st.q('SELECT a,b,kind,t0,t1,value,conf FROM relations WHERE t1>=? AND t0<=? ORDER BY t0', t0, t1)
     for a, b, k, r0, r1, v, c in rel:
         lines.append(f'  {a}~{b} {k} {_fmt_t(r0)}-{_fmt_t(r1)} (min {v:.2f}){_conf(c)}')
+    lines += _look(st, evs)
     return '\n'.join(lines), {'events': evs, 'motion': mot, 'relations': rel}
 
 
@@ -94,8 +159,13 @@ def when(st, pattern, entity=None):
     if not evs:
         types2 = ['%' + pattern + '%']
         evs = st.events(types=types2)
-    txt = f'{pattern}: ' + (', '.join(f"{_fmt_t(e['t0'])}{_conf(e['conf'])}" for e in evs) if evs else 'none found')
-    return txt, evs
+    def label(e):
+        g = e['data'].get('guess')
+        o = e['data'].get('offset_ms')
+        return (f" {g.split(' ')[0]}" if g else '') + (f' sound {o:+.0f}ms' if o is not None else '')
+    txt = f'{pattern}: ' + (', '.join(f"{_fmt_t(e['t0'])}{label(e)}{_conf(e['conf'])}" for e in evs) if evs else 'none found')
+    look = _look(st, evs)
+    return txt + ('\n' + '\n'.join(look) if look else ''), evs
 
 
 def track(st, entity, t0=None, t1=None, step=4, joint=None):
@@ -176,6 +246,50 @@ def _expected_from(path):
             exp.append({'id': p.get('cue', p.get('id', '')), 't': t, 'what': p.get('sound', p.get('pick', '')),
                         'why': p.get('cue')})
     return exp
+
+
+SOUNDING = ('blade-contact', 'impact', 'footstep', 'ground', 'paper-cut')
+
+
+def verify(st, truth, tol=0.1):
+    """independent sync check: the measured sound of a FINAL render against the film's own picture events
+    (blade contacts, impacts, footsteps, ground hits, paper cuts) from its timeline. It ignores the cue list and
+    Sonic's picks entirely, so a cue placed at the wrong time is caught instead of being taken as the reference.
+    Reports per event type, the overall offset (a whole track shifted) and the outliers."""
+    j = json.load(open(truth, encoding='utf-8'))
+    fps = st.media()['fps']
+    ons = st.events(types=['sound.onset'])
+    rows, used = [], set()
+    for e in sorted(j.get('events', []), key=lambda e: e['t']):
+        if e['type'] not in SOUNDING:
+            continue
+        c = [o for o in ons if abs(o['t0'] - e['t']) <= tol and o['id'] not in used]
+        if c:
+            o = min(c, key=lambda o: abs(o['t0'] - e['t'])); used.add(o['id'])
+            rows.append({'id': e['id'], 'type': e['type'], 't': e['t'], 'onset': o['t0'],
+                         'offset_ms': round((o['t0'] - e['t']) * 1000, 1)})
+        else:
+            rows.append({'id': e['id'], 'type': e['type'], 't': e['t'], 'onset': None, 'offset_ms': None})
+    m = [r for r in rows if r['offset_ms'] is not None]
+    half = 1000 / (2 * fps)
+    lines = [f'picture events with a sound in {os.path.basename(truth)} vs onsets measured in the render: '
+             f'{len(m)}/{len(rows)} heard within {tol * 1000:.0f} ms']
+    if m:
+        offs = sorted(r['offset_ms'] for r in m)
+        med = offs[len(offs) // 2]
+        lines.append(f'  overall offset {med:+.1f} ms (median); mean |offset| {sum(abs(x) for x in offs) / len(offs):.1f} ms')
+    by = {}
+    for r in rows:
+        k = by.setdefault(r['type'], [0, 0]); k[0] += 1; k[1] += r['offset_ms'] is not None
+    lines.append('  by type: ' + ', '.join(f'{k} {v[1]}/{v[0]}' for k, v in by.items()))
+    for r in m:
+        if abs(r['offset_ms']) > half:
+            lines.append(f"  {r['id']} at {_fmt_t(r['t'])}: sound {'late' if r['offset_ms'] > 0 else 'early'} by {abs(r['offset_ms']):.0f} ms")
+    silent = [r for r in rows if r['offset_ms'] is None]
+    if silent:
+        lines.append('  no sound heard for: ' + ', '.join(f"{r['id']}@{r['t']:.2f}" for r in silent[:10])
+                     + (f' (+{len(silent) - 10} more)' if len(silent) > 10 else ''))
+    return '\n'.join(lines), {'rows': rows, 'unexplained': [o['t0'] for o in ons if o['id'] not in used]}
 
 
 def sync(st, expect=None, tol=0.1, visual=None):

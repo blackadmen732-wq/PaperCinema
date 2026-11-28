@@ -2,7 +2,7 @@
 import json, os, resource, time
 from vyrn.store import Store, cache_dir, sha256_file, save_index, load_index
 
-VERSION = {'native': 1, 'video': 1, 'audio': 1, 'fuse': 1}
+VERSION = {'native': 1, 'video': 2, 'audio': 2, 'fuse': 2}
 
 
 def _has_cv2():
@@ -84,8 +84,21 @@ def fuse(st, tol=0.15):
                       'offset_ms': round((o['t0'] - e['t0']) * 1000, 1)},
                      round(min(e['conf'], o['conf']), 3), 'freeze+onset', 'vyrn.fuse')
         n += 1
+    # footsteps: a foot planting in the picture and a thud in the sound within 0.1 s are one footstep
+    m = 0
+    thuds = [o for o in ons if o['id'] not in used and str(o['data'].get('guess', '')).startswith('thud')]
+    for e in st.events(types=['contact.foot-ground']):
+        c = [o for o in thuds if abs(o['t0'] - e['t0']) <= 0.1 and o['id'] not in used]
+        if not c:
+            continue
+        o = min(c, key=lambda o: abs(o['t0'] - e['t0']))
+        used.add(o['id'])
+        st.put_event(f'av.footstep.{m:02d}', 'av.footstep', e['t0'], None, e['f'], e['entities'],
+                     {'picture': e['id'], 'sound': o['id'], 'offset_ms': round((o['t0'] - e['t0']) * 1000, 1)},
+                     round(max(e['conf'], o['conf']), 3), 'foot-plant+thud', 'vyrn.fuse')
+        m += 1
     st.commit()
-    return n
+    return n + m
 
 
 def export_events(st, path):

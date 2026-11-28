@@ -7,7 +7,9 @@
   track <media> <entity> [--from t] [--to t] [--step n] [--joint name]   how something moved
   relation <media> <a> <b> [--from t] [--to t]                     distance / overlap between two entities
   sync <media> [--expect timeline.json|sonic.json] [--visual] [--tol s]   is the sound in sync
+  verify <media> --truth timeline.json [--tol s]                   independent sync: rendered sound vs the film's picture events
   evidence <media> <t> [--entity id] [--width px]                  one frame or crop as a PNG path (look only if needed)
+  inspect <media> <event-id|t>                                     3-frame strip around an event (low-confidence answers list these)
   list                                                             everything processed so far
   backends                                                         every stage's default and alternatives, with licences
 
@@ -27,7 +29,7 @@ def main(argv=None):
     ap.add_argument('--render'); ap.add_argument('--entity'); ap.add_argument('--joint')
     ap.add_argument('--from', dest='t0', type=float); ap.add_argument('--to', dest='t1', type=float)
     ap.add_argument('--step', type=int, default=4); ap.add_argument('--expect'); ap.add_argument('--visual', action='store_true')
-    ap.add_argument('--tol', type=float, default=0.1); ap.add_argument('--width', type=int, default=320)
+    ap.add_argument('--tol', type=float, default=0.1); ap.add_argument('--truth'); ap.add_argument('--width', type=int, default=320)
     a = ap.parse_args(argv)
     c, x = a.cmd, a.args
     if c == 'ingest':
@@ -58,12 +60,18 @@ def main(argv=None):
         txt, data = query.relation(st, x[1], x[2], a.t0, a.t1)
     elif c == 'sync':
         txt, data = query.sync(st, a.expect, a.tol, a.visual)
+    elif c == 'verify':
+        if not a.truth:
+            ap.error('verify needs --truth <timeline.json>')
+        txt, data = query.verify(st, a.truth, a.tol)
+    elif c == 'inspect':
+        txt, data = query.inspect(st, x[1])
     elif c == 'evidence':
         txt, data = query.evidence(st, float(x[1]), a.entity, width=a.width)
     else:
         ap.error(f'unknown command {c}')
     print(json.dumps(data, default=str, ensure_ascii=False) if a.json else txt)
-    if c == 'sync':
+    if c in ('sync', 'verify'):
         rows = data['rows']
         half = 1000 / (2 * st.media()['fps'])
         if any(r['offset_ms'] is None or abs(r['offset_ms']) > half for r in rows):

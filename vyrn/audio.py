@@ -68,7 +68,33 @@ def onsets(x, sr=SR, k=2.0, delta=0.02, min_gap=0.06):
         conf = float(np.clip((flux[i] - thr[i]) / (thr[i] + 1e-9), 0, 1) * 0.5 + np.clip(rise / 30, 0, 1) * 0.5)
         # a hit has a sharp attack; a whoosh or a swell rises over tens of milliseconds
         kind = 'hit' if attack <= 0.040 else 'swell'
-        out.append({'t': round(t, 4), 'tc': tc, 'kind': kind, 'attack_ms': round(attack * 1000, 1),
+        # what kind of hit: power spectral centroid of the first 50 ms and the time to fall 30 dB below the peak
+        i0 = a + j
+        w50 = x[i0:i0 + int(0.05 * sr)]
+        if w50.size > 64:
+            sp = np.abs(np.fft.rfft(w50 * np.hanning(w50.size)))
+            fr = np.fft.rfftfreq(w50.size, 1 / sr)
+            pw = sp * sp           # power-weighted, so the room-noise floor does not pull the centroid up
+            centroid = float((pw * fr).sum() / (pw.sum() + 1e-9))
+        else:
+            centroid = 0.0
+        pk_i = a + p
+        k10 = int(0.01 * sr)
+        tail = np.convolve(env[pk_i:pk_i + int(1.0 * sr)], np.ones(k10) / k10, mode='valid')
+        below = np.nonzero(tail < (tail[0] if tail.size else 0) * 0.0316)[0] if tail.size else np.array([])
+        decay = (below[0] if below.size else tail.size) / sr
+        if kind == 'swell':
+            guess = 'whoosh/swell'
+        elif centroid < 150:
+            guess = 'thud (step, landing, body)'
+        elif decay >= 0.2:
+            guess = 'ringing (metal, clash)'
+        elif centroid < 500:
+            guess = 'thud (step, landing, body)'
+        else:
+            guess = 'hit'
+        out.append({'t': round(t, 4), 'tc': tc, 'kind': kind, 'guess': guess, 'centroid_hz': round(centroid),
+                    'decay_ms': round(decay * 1000), 'attack_ms': round(attack * 1000, 1),
                     'strength_db': round(float(rise), 1), 'flux': round(float(flux[i]), 3), 'conf': round(conf, 3)})
     hop10 = int(sr * 0.01)
     m = x[: x.size // hop10 * hop10].reshape(-1, hop10)
@@ -88,7 +114,8 @@ def ingest(path, store, sha):
     for i, o in enumerate(ons):
         typ = 'sound.onset' if o['kind'] == 'hit' else 'sound.swell'
         store.put_event(f'{typ}.{i:03d}', typ, o['t'], None, None, [],
-                        {'strength_db': o['strength_db'], 'attack_ms': o['attack_ms'], 'flux': o['flux']},
+                        {'guess': o['guess'], 'centroid_hz': o['centroid_hz'], 'decay_ms': o['decay_ms'],
+                         'strength_db': o['strength_db'], 'attack_ms': o['attack_ms'], 'flux': o['flux']},
                         o['conf'], 'spectral-flux', 'vyrn.audio')
     store.commit()
     return {'audio': True, 'onsets': len(ons), 'seconds': round(x.size / SR, 3)}

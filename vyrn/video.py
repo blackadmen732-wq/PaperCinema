@@ -23,7 +23,7 @@ try:
 except ImportError:          # cuts and audio still work; foreground and tracking need OpenCV
     cv2 = None
 
-AW = 160            # analysis width (px)
+AW = int(os.environ.get('VYRN_AW', 160))     # analysis width (px)
 
 
 def probe(path):
@@ -58,16 +58,36 @@ def hist(fr):
 
 
 def detect_cuts(frames, fps):
+    """hard cuts from colour-histogram jumps with an adaptive threshold. A run of 1-3 jumping frames is one
+    change; the cut is placed at the FIRST frame of the run (a cut often smears over two frames in a render).
+    A run whose picture comes back afterwards is a flash (an ink impact frame, a white hit frame), not a cut;
+    a run longer than 3 frames is a whip or a fast move unless one jump is very large.
+    Returns ([(frame, score, confidence)], per-frame distance, [flash frames])."""
     hs = [hist(f) for f in frames]
-    d = np.array([0.0] + [0.5 * np.abs(hs[i] - hs[i - 1]).sum() / 3 * 3 for i in range(1, len(hs))])
-    cuts = []
+    n = len(hs)
+    dist = lambda a, b: 0.5 * float(np.abs(hs[a] - hs[b]).sum())
+    d = np.array([0.0] + [dist(i, i - 1) for i in range(1, n)])
     w = max(3, int(fps))
-    for i in range(1, len(d)):
-        local = np.median(d[max(1, i - w):i + w + 1])
-        thr = max(0.12, 4 * local)
-        if d[i] > thr and d[i] == d[max(1, i - 2):i + 3].max():
-            cuts.append((i, float(d[i]), float(min(1.0, (d[i] - thr) / thr + 0.5))))
-    return cuts, d
+    thr = np.array([max(0.12, 4 * np.median(d[max(1, i - w):i + w + 1])) for i in range(n)])
+    above = d > thr
+    cuts, flashes = [], []
+    i = 1
+    while i < n:
+        if not above[i]:
+            i += 1; continue
+        j = i
+        while j + 1 < n and above[j + 1]:
+            j += 1
+        peak = float(d[i:j + 1].max())
+        after = range(j + 1, min(n, j + 5))
+        back = min((dist(i - 1, k) for k in after), default=1.0)
+        if back < 0.5 * peak:
+            flashes.append(i)
+        elif j - i <= 2 or peak > 0.5:
+            c = float(min(1.0, (peak - thr[i]) / thr[i] + 0.5))
+            cuts.append((i, peak, c))
+        i = j + 1
+    return cuts, d, flashes
 
 
 def camera_motion(gray):
@@ -308,48 +328,97 @@ def merge_tracks(tracks):
     return out
 
 
-def foot_contacts(t, masks, fps, scale):
-    """footsteps from a blob: the lowest 12 % of the box split into left/right parts; a part that moved sideways
-    and then holds still for 2 frames at the bottom has planted"""
-    ev = []
-    hist_x = {}
+def dense_flow(gray, bounds):
+    """Farneback dense optical flow between consecutive frames of the same shot (OpenCV, Apache-2.0), float16"""
+    n = len(gray)
+    flows = [None] * n
+    starts = set(bounds)
+    for i in range(1, n):
+        if i in starts:
+            continue
+        flows[i] = cv2.calcOpticalFlowFarneback(gray[i - 1], gray[i], None, 0.5, 3, 13, 3, 5, 1.1, 0).astype(np.float16)
+    return flows
+
+
+def articulation(t, masks, flows):
+    """per frame: how much the subject changes shape, camera-independent. Optical flow inside the subject's mask
+    minus its own median flow: a camera move, a pan or the whole body sliding moves every pixel alike and cancels;
+    limbs and blades moving relative to the body do not. Unit: px/frame, divided by the subject's height in px."""
+    out = {}
     for f in sorted(t.rows):
+        fl = flows[f] if f < len(flows) else None
+        if fl is None:
+            continue
+        x, y, w, h = [int(round(v)) for v in t.rows[f][0]]
+        m = masks[f][max(0, y):y + h, max(0, x):x + w].astype(bool)
+        if m.sum() < 8:
+            continue
+        F = fl[max(0, y):y + h, max(0, x):x + w][m].astype(np.float32)
+        med = np.median(F, axis=0)
+        out[f] = float(np.abs(F - med).sum(axis=1).mean()) / max(8.0, h) * 40
+    return out
+
+
+def foot_contacts(t, masks, flows, fps):
+    """footsteps from pixels: the lowest 15 % of the subject's mask is split into parts (feet). Each part's median
+    optical flow is compared with the flow of the ground right around it (not the camera's global pan, so parallax
+    and pans cancel). A foot that moved relative to the ground and then holds still for 2 frames has planted.
+    Returns [(frame, confidence)]."""
+    ev = []
+    feet = {}          # frame -> list of (x_centre, rel_speed px/frame)
+    hs = []
+    for f in sorted(t.rows):
+        fl = flows[f] if f < len(flows) else None
+        if fl is None:
+            continue
         box, conf, merged = t.rows[f]
-        if merged:
-            continue
         x, y, w, h = [int(round(v)) for v in box]
-        band = masks[f][max(0, y + int(h * 0.88)):y + h, max(0, x):x + w]
-        if band.size == 0:
+        hs.append(h)
+        y0 = y + int(h * 0.85)
+        band = masks[f][max(0, y0):y + h, max(0, x):x + w]
+        if band.size == 0 or band.sum() < 3:
             continue
-        cols = np.nonzero(band.any(axis=0))[0]
-        if cols.size == 0:
-            continue
-        # split the band's columns into runs: each run is a foot (or two feet together)
-        runs = np.split(cols, np.nonzero(np.diff(cols) > 1)[0] + 1)
-        cx = sorted((r.mean() + x) for r in runs if r.size >= 1)
-        hist_x[f] = cx
-    fs = sorted(hist_x)
-    if len(fs) < 4:
+        # the ground around the feet: unmasked pixels in a slightly wider band
+        gy0, gy1 = max(0, y0 - 2), min(masks[f].shape[0], y + h + max(2, h // 10))
+        gx0, gx1 = max(0, x - w // 2), min(masks[f].shape[1], x + w + w // 2)
+        gm = masks[f][gy0:gy1, gx0:gx1] == 0
+        G = fl[gy0:gy1, gx0:gx1][gm].astype(np.float32)
+        ground = np.median(G, axis=0) if G.size else np.zeros(2, np.float32)
+        n_, lab = cv2.connectedComponents(band.astype(np.uint8))
+        parts = []
+        for j in range(1, n_):
+            ys, xs = np.nonzero(lab == j)
+            if xs.size < 2:
+                continue
+            F = fl[max(0, y0) + ys, max(0, x) + xs].astype(np.float32)
+            rel = float(np.linalg.norm(np.median(F, axis=0) - ground))
+            parts.append((x + xs.mean(), rel, conf))
+        if parts:
+            feet[f] = parts
+    if len(feet) < 4:
         return ev
-    # per frame: the speed of the fastest foot (px/frame), from the nearest-neighbour match of foot centres
-    sp = {}
-    for a, b in zip(fs, fs[1:]):
-        if b - a != 1:
-            continue
-        pa, pb = hist_x[a], hist_x[b]
-        if not pa or not pb:
-            continue
-        sp[b] = max(min(abs(p - q) for q in pa) for p in pb)
-    moving_thr = 0.9 * scale
-    still_thr = 0.35 * scale
-    last_move = -99
-    for f in sorted(sp):
-        if sp[f] > moving_thr:
-            last_move = f
-        elif sp[f] < still_thr and f - last_move <= 3 and sp.get(f + 1, 0) < still_thr:
-            ev.append((f, float(np.clip(1 - sp[f] / still_thr, 0.2, 0.9))))
-            last_move = -99
-    return ev
+    H = float(np.median(hs))
+    move_thr, still_thr = 0.025 * H, 0.009 * H
+    # follow each foot by nearest x between frames; a planted event fires once per stride
+    tracks = []        # [last_f, x, history of rel speeds, armed]
+    for f in sorted(feet):
+        for (fx, rel, conf) in feet[f]:
+            best = None
+            for tr in tracks:
+                if 0 < f - tr[0] <= 2 and abs(tr[1] - fx) < max(3, 0.12 * H) and (best is None or abs(tr[1] - fx) < abs(best[1] - fx)):
+                    best = tr
+            if best is None:
+                best = [f, fx, [], False, conf]; tracks.append(best)
+            best[0], best[1] = f, fx
+            best[2].append(rel)
+            hist = best[2]
+            if rel > move_thr:
+                best[3] = True                      # armed: it swung
+            elif best[3] and len(hist) >= 2 and hist[-1] < still_thr and hist[-2] < still_thr * 1.5:
+                c = float(np.clip(0.5 + 0.5 * (1 - hist[-1] / still_thr), 0.3, 0.9)) * (0.6 if conf < 1 else 1.0)
+                ev.append((f - 1, round(c, 3)))      # the first still frame is the contact
+                best[3] = False
+    return sorted(set(ev))
 
 
 def ingest(path, store, media_id, sha, cache, verbose=False):
@@ -366,7 +435,9 @@ def ingest(path, store, media_id, sha, cache, verbose=False):
                     stats={})
 
     from vyrn import backends
-    cuts, cutd = backends.stage('cuts')(frames, fps)
+    cuts, cutd, *rest = backends.stage('cuts')(frames, fps)
+    for k, f in enumerate(rest[0] if rest else []):
+        store.put_event(f'flash.{k:02d}', 'flash', f / fps, None, f, [], {}, 0.8, 'hist32x3', 'vyrn.video')
     store.put_signal('cut.score', fps, cutd, 'hist L1', 'hist32x3')
     for k, (f, s, c) in enumerate(cuts):
         store.put_event(f'cut.{k:02d}', 'cut', f / fps, None, f, [], {'score': round(s, 3)}, c, 'hist32x3', 'vyrn.video')
@@ -393,8 +464,8 @@ def ingest(path, store, media_id, sha, cache, verbose=False):
         m_static = foreground(frames, s0, s1 - 1, zero)
         m_pan = foreground(frames, s0, s1 - 1, off) if np.abs(off[s0:s1]).max() > 0.5 else m_static
         fs_ = float(np.mean([m.mean() for m in m_static.values()])); fp_ = float(np.mean([m.mean() for m in m_pan.values()]))
-        masks = m_pan if fp_ < fs_ else m_static
-        shots[-1]['background'] = 'aligned' if fp_ < fs_ else 'static'
+        masks, mode = (m_pan, 'aligned') if fp_ < fs_ else (m_static, 'static')
+        shots[-1]['background'] = mode
         masks_all.update(masks)
         tracks += track_shot(frames, masks, s0, s1 - 1, si, min_area)
         for i in range(s0 + 1, s1):
@@ -409,29 +480,14 @@ def ingest(path, store, media_id, sha, cache, verbose=False):
                 energy[i] = float((d > 12).mean()) * fg.mean()
     tracks = merge_tracks(tracks)
     store.put_signal('motion.energy', fps, energy, 'changed foreground share', 'framediff')
-    # subject motion: inside each track's box, aligned on the box itself, so camera moves and parallax cancel and
-    # only the subject's own change of shape remains (what a hit-stop freezes)
+    # subject motion, camera-independent: optical flow inside each subject minus its own median flow
+    flows = dense_flow(gray, bounds)
     senergy = np.zeros(n)
     for t in tracks:
-        fs = sorted(t.rows)
-        for a_, b_ in zip(fs, fs[1:]):
-            if b_ - a_ != 1:
-                continue
-            (xa, ya, wa, ha), _, ma = t.rows[a_]; (xb, yb, wb, hb), _, mb = t.rows[b_]
-            w_, h_ = int(min(wa, wb)), int(min(ha, hb))
-            if w_ < 4 or h_ < 4:
-                continue
-            ca = (int(xa + wa / 2 - w_ / 2), int(ya + ha / 2 - h_ / 2)); cb = (int(xb + wb / 2 - w_ / 2), int(yb + hb / 2 - h_ / 2))
-            pa = gray[a_][max(0, ca[1]):ca[1] + h_, max(0, ca[0]):ca[0] + w_]
-            pb = gray[b_][max(0, cb[1]):cb[1] + h_, max(0, cb[0]):cb[0] + w_]
-            hh, ww = min(pa.shape[0], pb.shape[0]), min(pa.shape[1], pb.shape[1])
-            if hh < 4 or ww < 4:
-                continue
-            mk = masks_all[b_][max(0, cb[1]):cb[1] + hh, max(0, cb[0]):cb[0] + ww].astype(bool)
-            if mk.sum() < 8:
-                continue
-            senergy[b_] += float((np.abs(pa[:hh, :ww] - pb[:hh, :ww]) > 12)[mk].mean())
-    store.put_signal('motion.subject', fps, senergy, 'changed share of subject boxes (summed)', 'box-aligned framediff')
+        for f, v in articulation(t, masks_all, flows).items():
+            senergy[f] += v
+    store.put_signal('motion.subject', fps, senergy, 'articulation px/frame per 40 px of subject height (summed)',
+                     'farneback flow minus subject median')
     energy = senergy
 
     # ---- entities and samples ----
@@ -475,30 +531,41 @@ def ingest(path, store, media_id, sha, cache, verbose=False):
                                            'box-iou')
                     run = [f] if ok else []
 
-    # ---- motion freeze: a hit-stop or an impact stop (fast motion, then near nothing for >= 2 frames) ----
+    # ---- motion freeze: a hit-stop or an impact stop. The subject's articulation collapses after fast motion.
+    # Thresholds adapt per shot: under a moving camera the floor is not zero (parallax, compression), so "frozen"
+    # means near the shot's own floor (10th percentile) and well below the motion just before.
     k = 0
-    for i in range(3, n - 2):
-        before = energy[i - 3:i].max()
-        if before > 0 and energy[i] < 0.2 * before and energy[i + 1] < 0.2 * before and \
-                not any(b in (i, i - 1, i + 1) for b in bounds[1:-1]) and energy[i - 1] >= 0.2 * before:
-            c = float(np.clip(1 - energy[i] / (0.2 * before), 0.3, 0.95))
-            j = i
-            while j + 1 < n and energy[j + 1] < 0.2 * before:
-                j += 1
-            # t0 = the impact (the last frame that still moved), t1 = the last frozen frame
-            store.put_event(f'motion.freeze.{k:02d}', 'motion.freeze', (i - 1) / fps, j / fps, i - 1, [],
-                            {'energy_before': round(float(before), 4), 'energy_after': round(float(energy[i]), 4),
-                             'impact_t': round((i - 1) / fps, 4)},
-                            c, 'framediff', 'vyrn.video')
-            k += 1
+    for s0, s1 in zip(bounds, bounds[1:]):
+        seg = energy[s0 + 1:s1]
+        nz = seg[seg > 0]
+        if nz.size < 6:
+            continue
+        floor = float(np.percentile(nz, 10))
+        frozen = lambda i, before: energy[i] < 0.25 * before and energy[i] <= 1.3 * floor
+        i = s0 + 4
+        while i < s1 - 1:
+            before = energy[i - 3:i].max()
+            if before >= 2.5 * max(floor, 1e-6) and frozen(i, before) and frozen(i + 1, before) and not frozen(i - 1, before):
+                j = i
+                while j + 1 < s1 and frozen(j + 1, before):
+                    j += 1
+                c = float(np.clip(1 - energy[i] / max(1e-6, 0.25 * before), 0.3, 0.95))
+                # t0 = the impact (the last frame that still moved), t1 = the last frozen frame
+                store.put_event(f'motion.freeze.{k:02d}', 'motion.freeze', (i - 1) / fps, j / fps, i - 1, [],
+                                {'energy_before': round(float(before), 4), 'energy_after': round(float(energy[i]), 4),
+                                 'shot_floor': round(floor, 4), 'impact_t': round((i - 1) / fps, 4)},
+                                c, 'articulation-collapse', 'vyrn.video')
+                k += 1
+                i = j + 1
+            else:
+                i += 1
 
     # ---- foot contacts ----
     k = 0
     for t in tracks:
-        hs = np.median([t.rows[f][0][3] for f in t.rows])
-        for f, c in foot_contacts(t, masks_all, fps, scale=max(1.0, hs / 40)):
+        for f, c in foot_contacts(t, masks_all, flows, fps):
             store.put_event(f'contact.foot-ground.{k:03d}', 'contact.foot-ground', f / fps, None, f, [t.id],
-                            {'rule': 'bottom band stops moving'}, c, 'light/foot-band', 'vyrn.video')
+                            {'rule': 'foot part stops relative to the ground'}, c, 'flow/foot-vs-ground', 'vyrn.video')
             k += 1
     store.put_media(id=media_id, kind='video', source=path, sha256=sha, fps=fps, duration=info['duration'],
                     frames=n, width=info['width'], height=info['height'],

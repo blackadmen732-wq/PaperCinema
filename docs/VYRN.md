@@ -32,7 +32,9 @@ python3 -m vyrn track <media> hero --joint foot.L         # native: one joint, s
 python3 -m vyrn relation <media> obj.01 obj.03            # distance and overlap between two entities
 python3 -m vyrn sync <media>                              # picture impacts vs sound onsets: which sound is off, by how much
 python3 -m vyrn sync final.mp4 --expect output/x.timeline.json --visual   # final mix vs the engine's events
+python3 -m vyrn verify final.mp4 --truth output/x.timeline.json   # independent: heard sound vs the film's PICTURE events
 python3 -m vyrn evidence <media> 3.08 --entity obj.01     # one cached PNG crop; look at it only if needed
+python3 -m vyrn inspect <media> motion.freeze.02          # a 3-frame strip around an event (cached)
 python3 -m vyrn backends                                  # every stage's default and alternatives, with licences
 python3 -m vyrn.bench.synth && python3 -m vyrn.bench.run output/vyrn-bench/duel   # the benchmark
 ```
@@ -84,11 +86,25 @@ with the cues, which is the independent peak-sync check Sonic needs, without a s
 5. **Identity:** constant-velocity prediction + IoU tracking with gap bridging; when two subjects merge into one
    blob, each pixel goes to the track whose colour histogram explains it best (back-projection); across a cut or a
    long occlusion, tracks are re-joined by colour similarity, so a fighter keeps one id through the edit.
-6. **Motion:** subject motion measured inside each track's own box (camera moves cancel); a collapse after fast
-   motion is a `motion.freeze` (hit-stop / impact), timed at the last moving frame.
+6. **Motion:** Farneback optical flow inside each subject minus that subject's own median flow ("articulation"):
+   a pan, a dolly or the whole body sliding moves every pixel alike and cancels; limbs and blades do not. A collapse
+   after fast motion, down to the shot's own noise floor, is a `motion.freeze` (hit-stop / impact), timed at the
+   last moving frame.
+6b. **Feet:** the lowest 15 % of each subject is split into parts; each part's flow is compared with the flow of the
+   ground right around it, so pans and parallax cancel. A part that swung and then holds still for 2 frames has
+   planted (`contact.foot-ground`). A plant and a thud within 0.1 s become an `av.footstep`.
 7. **Sound:** SuperFlux-style spectral flux with an adaptive threshold, then each onset refined in the waveform to
    the attack (10 % of the rise); the 10→90 % rise time separates hits (`sound.onset`) from whooshes (`sound.swell`).
+   Each hit also gets a `guess` from its power spectral centroid and its 30 dB decay: `thud` (step, landing, body),
+   `ringing` (metal, clash) or `hit`. Tuned on one scene, so treat it as a hint; Sonic's catalogue knows its own
+   sounds exactly.
 8. **Fusion:** a freeze and a hit within 150 ms become one `av.impact` carrying the offset (sound late or early).
+9. **Confidence fallback:** `window` and `when` list, under the answer, a cached 3-frame picture strip for each
+   event below confidence 0.6 (up to 3). The agent opens a picture only when the numbers are unsure.
+10. **Independent sync:** `verify --truth` compares the sound measured in a final render with the film's own
+   picture events (contacts, impacts, footsteps, ground hits, paper cuts), not with the cue list, so a cue placed at
+   the wrong time is caught rather than used as the reference. It reports the overall offset (a shifted track),
+   per-type coverage, outliers and silent events; exit 1 when something is off.
 
 Neural models are slots, not dependencies: a stage is replaced with `VYRN_CUTS`, `VYRN_CAMERA` or `VYRN_ONSETS`
 naming a function with the default's signature, and `vyrn/bench/run.py` grades it on the same scene.
@@ -152,7 +168,15 @@ sound deliberately 83 ms late**). Full results: `vyrn/bench/RESULTS.md`. Headlin
   context added, 5 k output, 26 s; with frame extraction 8 calls, 35 k added, 17 k output, 90 s. VYRN answered 4 of
   5 correctly (footstep counting is the gap), frame extraction 5 of 5.
 
-## Limits (v0.1)
+## Limits (measured on a real film, `vyrn/bench/RESULTS.md` v0.2)
+
+- **For Paper Cinema's own films, use the native input.** On `dash-test` (follow camera, large subject) the pixel
+  path keeps the hero's identity but its boxes are poor (IoU 0.33) and impacts come out as flashes, not freezes.
+  The pixel path is for videos that have no timeline: references, other people's films, a render to verify.
+- **Next backend for subjects:** SAM 2.1 (Apache-2.0) through the `objects` slot; a follow camera needs
+  segmentation, not background subtraction.
+
+## Older limits (v0.1)
 
 - **Moving camera + impacts:** a hit-stop under a moving camera is not detected (the camera keeps moving through the
   freeze); per-subject optical flow or a tracker backend is the fix.
