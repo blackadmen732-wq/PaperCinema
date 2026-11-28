@@ -11,6 +11,11 @@ same code with its own library and its own vocab.
 
 Benchmark (real numbers, before and after): `docs/SONIC-BENCHMARK.md`.
 
+**Where the code lives.** The library is the standalone package `packages/sonic/` (it imports nothing from Paper
+Cinema, ships its own vocab copy, and has its own CLI that reads and writes aethern-event/1; see its README).
+`engine/sonic.mjs` is Paper Cinema's adapter: it points the package at `assets/sfx`, `library/sonic-vocab.json`
+and `.cache/sonic`, and reads Paper Cinema's older cue ids. Everything that imported `engine/sonic.mjs` still does.
+
 ## Commands
 
 ```bash
