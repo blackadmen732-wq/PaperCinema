@@ -122,8 +122,8 @@ closest local catalog sound by the words of its query stands in, or the cue is s
 
 With Sonic on, `engine/sound.mjs` also writes `output/<film>.sonic.events.jsonl`, one object per line in the shared
 format agreed with VYRN (`docs/VYRN.md`): `{ id: "sonic.pick.NN", type: "sonic.pick", t, t1, source: "sonic",
-method: "catalog-pick", conf, entities, data: { cue, kind, sound, was, start, fallback } }`, where `t` is the event's
-moment. `output/<film>.sonic.json` rows carry `peakAt`, which `vyrn sync --expect` reads.
+method: "catalog-pick", conf, entities, data: { cue, kind, aim, sound, was, start, fallback } }`, where `t` is the event's
+moment and `aim` says what lands on it: `onset` (a hit) or `peak` (a whoosh, whose attack starts 0.1–0.2 s earlier). `output/<film>.sonic.json` rows carry `peakAt`, which `vyrn sync --expect` reads.
 
 ## Next (not built)
 - Learned tags (a CLAP-style audio model) only if the word and measurement tags prove too coarse: it would be the

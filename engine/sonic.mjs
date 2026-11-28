@@ -408,7 +408,7 @@ export function applyToCues(cues, o = {}) {
     const lead = r.spec.align === 'onset' ? r.sound.m.onsetT : r.spec.align === 'peak' ? (r.sound.m.peakTPlay ?? r.sound.m.peakT) : null;
     if (lead != null && ev.peakAt != null) t = Math.max(0, ev.peakAt - lead / (c.rate ?? 1));   // a rate plays the file faster: its peak comes sooner
     report.push({ id: c.id, kind: ev.kind, was: c.earshot ? `earshot:${c.earshot}` : c.sfx, now: r.sound.id, score: r.score, of: r.alternatives, t: r3(t),
-      ...(ev.peakAt != null ? { peakAt: ev.peakAt } : {}), who: ev.who ?? null,
+      ...(ev.peakAt != null ? { peakAt: ev.peakAt } : {}), aim: r.spec.align ?? null, who: ev.who ?? null,   // aim: what lands on peakAt (onset | peak)
       ...(r.fallback ? { fallback: r.fallback } : {}), why: r.why.join(' ') });
     Object.assign(c, { file, sfx: r.sound.id, t: r3(t), gain: r3(gain), sonic: { id: r.sound.id, score: r.score, event: ev, bank: r.sound.bank ?? null } });
     if (c.earshot) { delete c.earshot; delete c.apex; c.len = Math.min(c.len ?? r.sound.m.dur, r.sound.m.dur); if (c.rate == null) c.rate = 1; }
@@ -426,7 +426,7 @@ export function sharedEvents(report) {
   return report.filter((r) => r.now).map((r, i) => ({
     id: `sonic.pick.${String(i + 1).padStart(2, '0')}`, type: 'sonic.pick', t: r.peakAt ?? r.t, t1: null, source: 'sonic', method: 'catalog-pick',
     conf: +Math.max(0, Math.min(1, 0.5 + r.score / 4)).toFixed(2), entities: r.who ? [r.who] : [],
-    data: { cue: r.id, kind: r.kind, sound: r.now, was: r.was, start: r.t, fallback: r.fallback ?? null },
+    data: { cue: r.id, kind: r.kind, aim: r.aim ?? null, sound: r.now, was: r.was, start: r.t, fallback: r.fallback ?? null },
   }));
 }
 
