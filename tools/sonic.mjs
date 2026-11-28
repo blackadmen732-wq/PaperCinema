@@ -36,7 +36,8 @@ const readJSON = (f, d) => { try { return JSON.parse(fs.readFileSync(f, 'utf8'))
 try {
   if (cmd === 'scan') {
     const { stats } = scan({ ...cfg, fresh: flags.fresh });
-    out(`${stats.files} sounds → ${cfg.catalog} (${stats.measured} measured, ${stats.cached} from cache) in ${stats.ms} ms`);
+    out(`${stats.files} sounds → ${cfg.catalog} (${stats.measured} measured, ${stats.cached} from cache) in ${stats.ms} ms` +
+      Object.entries(stats.banks).map(([b, v]) => v.available ? `\n  bank ${b} ${v.version}: ${v.count} sounds` : `\n  bank ${b}: tool not installed, kept ${v.kept} earlier records`).join(''));
   } else if (cmd === 'query' || cmd === 'q') {
     const cat = loadCatalog(cfg.catalog);
     const hits = query(cat, rest, { sort: flags.sort, limit: flags.limit ? +flags.limit : 10 });
@@ -51,9 +52,9 @@ try {
     for (const t of parseQuery(kv)) ev[t.key] = Number.isFinite(+t.val) ? +t.val : t.val;
     const state = { recent: {} }, n = +(flags.n ?? 1), rows = [];
     for (let i = 0; i < n; i++) { const r = pick(cat, vocab, { ...ev, seed: `${flags.seed ?? 'cli'}:${i}` }, state); if (r) rows.push(r); }
-    if (!rows.length) out('no sound fits this event');
+    if (!rows.length) out('no sound fits this event (the engine would keep its own sound)');
     else if (flags.json) out(rows.map((r) => ({ id: r.sound.id, file: r.sound.file, score: r.score, of: r.alternatives, why: r.why })));
-    else out(rows.map((r) => `${brief(r.sound)}  score ${r.score} (1 of ${r.alternatives})`).join('\n'));
+    else out(rows.map((r) => `${brief(r.sound)}  score ${r.score} (1 of ${r.alternatives})${r.fallback ? `  fallback: ${r.fallback}` : ''}`).join('\n'));
   } else if (cmd === 'show') {
     const s = loadCatalog(cfg.catalog).sounds.find((x) => x.id === rest[0]);
     if (!s) throw new Error(`no sound "${rest[0]}" (try: node tools/sonic.mjs query id~${rest[0] ?? ''})`);

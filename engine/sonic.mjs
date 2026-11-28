@@ -14,7 +14,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
-export const ANALYZER = 'sonic-analyzer/1';          // bump when the measurements change: the cache re-measures
+export const ANALYZER = 'sonic-analyzer/4';       // bump when the measurements change: the cache re-measures. /4: + onsetT
 export const SCHEMA = 'sonic-catalog/1';
 export const DEFAULTS = {
   roots: ['assets/sfx'],
@@ -22,6 +22,8 @@ export const DEFAULTS = {
   overrides: 'assets/sfx/sonic.tags.json',
   credits: 'assets/sfx/credits.json',
   vocab: 'library/sonic-vocab.json',
+  banks: ['earshot'],                                 // sound banks rendered by a tool, catalogued when the tool is installed
+  cache: '.cache/sonic',                              // renders of bank sounds (not committed; rebuilt on demand)
 };
 const AUDIO = /\.(mp3|wav|ogg|flac|m4a|aac|opus)$/i;
 const SR = 22050;
@@ -70,6 +72,24 @@ export function measure(file) {
   const peakEnv = env[pi], thr = peakEnv * 0.1;          // -20 dB below the loudest 10 ms
   let a0 = pi; while (a0 > 0 && env[a0 - 1] > thr) a0--;
   let d1 = pi; while (d1 < env.length - 1 && env[d1 + 1] > thr) d1++;
+  // PEAK TIME at 1 ms steps: the loudest 5 ms (what tools/sonic_verify.mjs measures in a finished mix). peakTPlay is
+  // the same with a 10 ms fade-in applied, because engine/sound.mjs fades every one-shot in over 10 ms: a sound whose
+  // transient sits in its first 10 ms (a clash) is heard peaking later, on its ring. Alignment uses peakTPlay.
+  // ONSET (onsetT): the first moment the sound comes within 6 dB of its loudest, also with the 10 ms fade. A hit is
+  // aligned by its onset: a low thud's "loudest 5 ms" is just one crest of its wave, anywhere in a long plateau.
+  const env5 = (fade) => {
+    const w = Math.round(SR / 200), nf = Math.round(fade * SR), out = [];
+    for (let k = 0; ; k++) {
+      const i0 = Math.round(k * SR / 1000); if (i0 >= n) break; let s2 = 0;
+      for (let j = 0; j < w && i0 + j < n; j++) { const g = i0 + j < nf ? (i0 + j) / nf : 1; s2 += (x[i0 + j] * g) ** 2; }
+      out.push(Math.sqrt(s2 / w));
+    }
+    return out;
+  };
+  const e0 = env5(0), eP = env5(0.01);
+  const argmax = (e) => e.reduce((b, v, i) => (v > e[b] ? i : b), 0);
+  const peakT = argmax(e0) / 1000, peakTPlay = argmax(eP) / 1000;
+  const onsetT = eP.findIndex((v) => v >= eP[argmax(eP)] * 0.5) / 1000;
   // spectrum: 2048-point frames, energy-weighted average over the first 20 s
   const N = 2048, hop = 1024, lim = Math.min(n, 20 * SR), win = new Float32Array(N).map((_, i) => 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)));
   const avg = new Float64Array(N / 2); let wsum = 0, flatSum = 0, flatW = 0;
@@ -102,7 +122,7 @@ export function measure(file) {
   const intensity = clamp(0.7 * clamp((bodyDb + 32) / 24) + 0.3 * sharpness);
   return {
     dur: r3(dur), peakDb: +peakDb.toFixed(1), rmsDb: +rmsDb.toFixed(1), bodyDb: +bodyDb.toFixed(1), crest: +crest.toFixed(1),
-    peakT: r3(pi / 100), attack: r3(attack), decay: r3(decay), centroid: Math.round(centroid),
+    peakT: r3(peakT), peakTPlay: r3(peakTPlay), onsetT: r3(onsetT), attack: r3(attack), decay: r3(decay), centroid: Math.round(centroid),
     low: r3(lowR), high: r3(tot ? high / tot : 0), zcr: r3(zc / dur / SR), flatness: r3(flatness),
     brightness: r3(brightness), weight: r3(weight), intensity: r3(intensity),
     sharpness: r3(sharpness), tonal: r3(clamp(1 - flatness / 0.1)),
@@ -148,6 +168,28 @@ function creditFor(id, credits) {
   return null;
 }
 
+// ---------- BANKS: sounds made by a tool on request (Earshot: 252 code-made sounds, MIT, vendor/MANIFEST.json) ----------
+// A bank sound has no file in the repo. Its record keys on (bank version, id), its audio is rendered once into the
+// cache to be measured and played, and the bank's own stated peak time is kept (bankPeak) to check the analyzer.
+function earshotList() {
+  const r = spawnSync('earshot', ['sfx', 'list'], { encoding: 'utf8' });
+  if (r.error || r.status !== 0) return null;
+  const lines = r.stdout.split('\n');
+  const version = (lines[0].match(/in the bank (\S+)/) ?? [])[1] ?? 'unknown';
+  const sounds = lines.map((l) => l.match(/^(\S+\/\S+)\s+([\d.]+)\s+([\d.]+)\s+(.*)$/)).filter(Boolean)
+    .map(([, id, dur, peak, rest]) => { const [kinds, knobs = ''] = rest.split('|'); return { id, dur: +dur, peak: +peak, kinds: kinds.trim(), knobs: knobs.trim() }; });
+  return { version, sounds };
+}
+/** The cached render of a bank sound at its own length (rendered now if missing). Returns the path, or null. */
+export function bankFile(bank, id, dur, cache = DEFAULTS.cache) {
+  if (bank !== 'earshot') return null;
+  const f = path.join(cache, 'earshot', `${id.replace(/[^a-z0-9.-]+/gi, '_')}-${dur}.wav`);
+  if (fs.existsSync(f)) return f;
+  fs.mkdirSync(path.dirname(f), { recursive: true });
+  const r = spawnSync('earshot', ['sfx', 'render', id, '-o', f, '--dur', String(dur), '--sr', '44100'], { encoding: 'utf8' });
+  return r.status === 0 && fs.existsSync(f) ? f : null;
+}
+
 /**
  * Build or refresh the catalog. Unchanged files (same content hash, same analyzer) keep their measurements;
  * tags are always recomputed (cheap), so a vocabulary or override edit applies at once.
@@ -177,9 +219,36 @@ export function scan(o = {}) {
     if (Object.keys(ov).length) rec.edited = true;
     sounds.push(rec);
   }
-  const catalog = { schema: SCHEMA, analyzer: ANALYZER, vocab: cfg.vocab, roots: cfg.roots, count: sounds.length, sounds };
-  if (o.write !== false) fs.writeFileSync(cfg.catalog, JSON.stringify(catalog, null, 1) + '\n');
-  return { catalog, stats: { files: sounds.length, measured, cached, ms: Date.now() - t0 } };
+  const banks = {};
+  if ((cfg.banks ?? []).includes('earshot')) {
+    const L = earshotList();
+    const prev = (readJSON(cfg.catalog, { sounds: [] }).sounds ?? []).filter((x) => x.bank === 'earshot');
+    if (!L) {                                         // tool missing: keep what an earlier scan measured, say so
+      banks.earshot = { available: false, kept: prev.length };
+      sounds.push(...prev);
+    } else {
+      banks.earshot = { available: true, version: L.version, count: L.sounds.length };
+      for (const b of L.sounds) {
+        const hash = crypto.createHash('sha1').update(`earshot ${L.version} ${b.id} ${b.dur}`).digest('hex').slice(0, 16);
+        let m = old[hash]?.analyzer === ANALYZER ? (old[hash].measured ?? old[hash].m) : null;
+        if (m) cached++;
+        else { const f = bankFile('earshot', b.id, b.dur, cfg.cache); if (!f) continue; m = measure(f); measured++; }
+        const id = `earshot:${b.id}`;
+        const tags = tagsFor(m, [b.id, b.kinds.replace(/[.,]/g, ' ')], vocab);
+        const ov = overrides[id] ?? {};
+        for (const [k, v] of Object.entries(ov)) if (k in tags || Array.isArray(v)) tags[k] = Array.isArray(v) ? v : [v];
+        const rec = { id, file: null, bank: 'earshot', earshot: b.id, hash, analyzer: ANALYZER, source: 'earshot-bank', license: 'MIT',
+          bankPeak: b.peak, apex: /apex/.test(b.knobs), m, tags };
+        for (const k of ['weight', 'intensity', 'brightness', 'sharpness', 'tonal']) if (typeof ov[k] === 'number') { rec.measured ??= m; rec.m = { ...rec.m, [k]: ov[k] }; }
+        if (Object.keys(ov).length) rec.edited = true;
+        sounds.push(rec);
+      }
+    }
+  }
+  const catalog = { schema: SCHEMA, analyzer: ANALYZER, vocab: cfg.vocab, roots: cfg.roots, banks, count: sounds.length, sounds };
+  // one record per line: a re-scan that changes one sound changes one line of the diff
+  if (o.write !== false) fs.writeFileSync(cfg.catalog, JSON.stringify({ ...catalog, sounds: [] }).replace(/"sounds":\[\]/, '"sounds":[\n' + sounds.map((x) => JSON.stringify(x)).join(',\n') + '\n]') + '\n');
+  return { catalog, stats: { files: sounds.length, measured, cached, banks, ms: Date.now() - t0 } };
 }
 
 export function loadCatalog(file = DEFAULTS.catalog) {
@@ -189,7 +258,7 @@ export function loadCatalog(file = DEFAULTS.catalog) {
 }
 
 // ---------- QUERY: "material=steel action=impact dur<0.5 weight>=0.6 id~clash" ----------
-const NUM = new Set(['dur', 'peakDb', 'rmsDb', 'bodyDb', 'crest', 'peakT', 'attack', 'decay', 'centroid', 'low', 'high', 'zcr', 'flatness', 'brightness', 'weight', 'intensity', 'sharpness', 'tonal']);
+const NUM = new Set(['dur', 'peakDb', 'rmsDb', 'bodyDb', 'crest', 'peakT', 'peakTPlay', 'onsetT', 'attack', 'decay', 'centroid', 'low', 'high', 'zcr', 'flatness', 'brightness', 'weight', 'intensity', 'sharpness', 'tonal']);
 export function parseQuery(q) {
   const terms = Array.isArray(q) ? q : String(q).trim().split(/\s+/).filter(Boolean);
   return terms.map((t) => {
@@ -240,8 +309,23 @@ export function pick(cat, vocab, event, state = {}) {
   const spec = vocab.events?.[event.kind];
   if (!spec) return null;
   const need = Object.entries(spec.need ?? {});
-  const pool = cat.sounds.filter((s) => need.every(([f, v]) => (s.tags[f] ?? []).includes(v))
+  const exclude = state.exclude ?? new Set();
+  const banned = Object.entries(spec.avoid ?? {});
+  let pool = cat.sounds.filter((s) => !exclude.has(s.id) && need.every(([f, v]) => (s.tags[f] ?? []).includes(v))
+    && !banned.some(([f, vs]) => (s.tags[f] ?? []).some((v) => [].concat(vs).includes(v)))
     && (spec.minDur == null || s.m.dur >= spec.minDur) && (spec.maxDur == null || s.m.dur <= spec.maxDur));
+  // MATCHED FACETS ARE HARD: a wood clash plays a wood sound. When the library has none, the vocab's fallback list
+  // says what may stand in (wood → steel); when nothing may, there is no pick and the engine's own sound stays.
+  // (Before this, a mismatch only cost score, so a paper clash quietly played a body fall.)
+  const fallback = [];
+  for (const f of spec.match ?? []) if (event[f] != null) {
+    const exact = pool.filter((s) => (s.tags[f] ?? []).includes(event[f]));
+    if (exact.length) { pool = exact; continue; }
+    const alts = vocab.fallback?.[f]?.[event[f]] ?? [];
+    const alt = alts.map((a) => [a, pool.filter((s) => (s.tags[f] ?? []).includes(a))]).find(([, p]) => p.length);
+    if (!alt) return null;
+    pool = alt[1]; fallback.push(`${f} ${event[f]}→${alt[0]}`);
+  }
   if (!pool.length) return null;
   const scored = pool.map((s) => {
     let score = 0; const why = [];
@@ -270,7 +354,7 @@ export function pick(cat, vocab, event, state = {}) {
   if (wider.length) near = wider;
   const choice = near[Math.floor(hash01(event.seed ?? JSON.stringify(event)) * near.length) % near.length];
   recent.push(choice.s.id);
-  return { sound: choice.s, score: choice.score, why: choice.why, alternatives: near.length, spec };
+  return { sound: choice.s, score: choice.score, why: choice.why, alternatives: near.length, spec, fallback: fallback.join(', ') || null };
 }
 
 /**
@@ -304,16 +388,68 @@ export function applyToCues(cues, o = {}) {
   for (const c of [...cues].sort((a, b) => a.t - b.t)) {
     const ev = eventOfCue(c);
     if (!ev || (kinds && !kinds.has(ev.kind))) continue;
-    const r = pick(cat, vocab, { ...ev, seed: `${o.seed ?? ''}:${c.id}` }, state);
-    if (!r) continue;
+    // a bank sound plays from its cached render; if it cannot be rendered (tool missing), choose again without it
+    let r = null, file = null;
+    state.exclude = new Set();
+    for (let tries = 0; tries < 4; tries++) {
+      r = pick(cat, vocab, { ...ev, seed: `${o.seed ?? ''}:${c.id}` }, state);
+      if (!r) break;
+      file = r.sound.bank ? bankFile(r.sound.bank, r.sound.earshot, r.sound.m.dur, o.cache) : r.sound.file;
+      if (file) break;
+      state.recent[ev.kind].pop(); state.exclude.add(r.sound.id); r = null;
+    }
+    if (!r) { report.push({ id: c.id, kind: ev.kind, was: c.earshot ? `earshot:${c.earshot}` : c.sfx, now: null, kept: true, why: 'no sound of this material (or a fallback) in the catalog: the engine sound stays' }); continue; }
     const was = c.earshot ? null : byId[c.sfx];
     let gain = c.gain ?? 1;
     if (o.matchLevel !== false && was) gain *= 10 ** (clamp(was.m.rmsDb - r.sound.m.rmsDb, -9, 9) / 20);
     let t = c.t;
-    if (r.spec.align === 'peak' && ev.peakAt != null) t = Math.max(0, ev.peakAt - r.sound.m.peakT / (c.earshot ? 1 : (c.rate ?? 1)));   // a rate plays the file faster: its peak comes sooner
-    report.push({ id: c.id, kind: ev.kind, was: c.earshot ? `earshot:${c.earshot}` : c.sfx, now: r.sound.id, score: r.score, of: r.alternatives, t: r3(t), why: r.why.join(' ') });
-    Object.assign(c, { file: r.sound.file, sfx: r.sound.id, t: r3(t), gain: r3(gain), sonic: { id: r.sound.id, score: r.score, event: ev } });
+    // align: "peak" puts the sound's loudest 5 ms on the event (a whoosh), "onset" puts the moment it comes within 6 dB
+    // of its loudest there (a hit); a rate plays the file faster, so its moments come sooner
+    const lead = r.spec.align === 'onset' ? r.sound.m.onsetT : r.spec.align === 'peak' ? (r.sound.m.peakTPlay ?? r.sound.m.peakT) : null;
+    if (lead != null && ev.peakAt != null) t = Math.max(0, ev.peakAt - lead / (c.rate ?? 1));   // a rate plays the file faster: its peak comes sooner
+    report.push({ id: c.id, kind: ev.kind, was: c.earshot ? `earshot:${c.earshot}` : c.sfx, now: r.sound.id, score: r.score, of: r.alternatives, t: r3(t),
+      ...(ev.peakAt != null ? { peakAt: ev.peakAt } : {}), who: ev.who ?? null,
+      ...(r.fallback ? { fallback: r.fallback } : {}), why: r.why.join(' ') });
+    Object.assign(c, { file, sfx: r.sound.id, t: r3(t), gain: r3(gain), sonic: { id: r.sound.id, score: r.score, event: ev, bank: r.sound.bank ?? null } });
     if (c.earshot) { delete c.earshot; delete c.apex; c.len = Math.min(c.len ?? r.sound.m.dur, r.sound.m.dur); if (c.rate == null) c.rate = 1; }
   }
   return report;
 }
+
+/**
+ * The shared timestamped-event format (agreed with VYRN, docs/VYRN.md and docs/SONIC.md): one JSON object per line,
+ * { id, type, t, t1?, source, method, conf, entities, data }, a superset of the timeline's events. Sonic writes one
+ * "sonic.pick" per cue it chose a sound for, at the moment the sound is aimed at (the event's peak), so VYRN (or any
+ * tool) can check the finished mix against it without knowing Sonic.
+ */
+export function sharedEvents(report) {
+  return report.filter((r) => r.now).map((r, i) => ({
+    id: `sonic.pick.${String(i + 1).padStart(2, '0')}`, type: 'sonic.pick', t: r.peakAt ?? r.t, t1: null, source: 'sonic', method: 'catalog-pick',
+    conf: +Math.max(0, Math.min(1, 0.5 + r.score / 4)).toFixed(2), entities: r.who ? [r.who] : [],
+    data: { cue: r.id, kind: r.kind, sound: r.now, was: r.was, start: r.t, fallback: r.fallback ?? null },
+  }));
+}
+
+/**
+ * A local stand-in for a sound that cannot be fetched (engine/sound.mjs, offline): the words of the cue's query and
+ * id become tags through the vocab, and the catalog sound that shares the most of them (playable file, long enough
+ * for a bed) wins; ties go to the closest length. null when nothing shares a tag.
+ */
+export function localStandIn(cue, o = {}) {
+  const cat = o.catalog ?? loadCatalog(o.catalogPath);
+  const vocab = o.vocab ?? readJSON(cat.vocab ?? DEFAULTS.vocab, { facets: {} });
+  const want = tagsFor({}, [cue.query, cue.id], vocab);
+  const len = cue.len ?? 1;
+  let best = null;
+  for (const s of cat.sounds) {
+    if (!s.file || !fs.existsSync(s.file)) continue;
+    if (cue.bed && s.m.dur < 4) continue;                       // a bed loops: it needs a long sound
+    let score = 0;
+    for (const f of ['material', 'action', 'environment', 'intent']) for (const v of want[f] ?? []) if ((s.tags[f] ?? []).includes(v)) score += f === 'action' ? 2 : 1;
+    if (!score) continue;
+    const fit = -Math.abs(Math.log((s.m.dur + 0.05) / (len + 0.05)));
+    if (!best || score > best.score || (score === best.score && fit > best.fit)) best = { s, score, fit };
+  }
+  return best?.s ?? null;
+}
+

@@ -35,12 +35,36 @@ function stats(file) {
   return { dur: d ? +d[1] * 3600 + +d[2] * 60 + +d[3] : 0, mean: num(/mean_volume: (-?[\d.]+) dB/), max: num(/max_volume: (-?[\d.]+) dB/) };
 }
 
+const OFFLINE = args.includes('--offline');
+const soundReport = { substituted: [], skipped: [] };
+async function standIn(cue, why) {
+  try {
+    const { localStandIn } = await import('./sonic.mjs');
+    const s = localStandIn(cue);
+    if (s) {
+      console.log(`! ${cue.id}: no file and no network (${why}): playing local "${s.id}" instead (closest match in the catalog)`);
+      soundReport.substituted.push({ id: cue.id, query: cue.query, with: s.id, why });
+      return s.file;
+    }
+  } catch (e) { why += `; catalog: ${e.message}`; }
+  console.log(`✗ ${cue.id}: no file and no network (${why}): skipped, the rest of the mix goes on`);
+  soundReport.skipped.push({ id: cue.id, query: cue.query, why });
+  return null;
+}
+
 async function find(cue) {
   if (cue.file) return fs.existsSync(cue.file) ? cue.file : (console.log(`✗ ${cue.id}: missing file ${cue.file}`), null);
   const file = path.join(dir, `${cue.id}.mp3`);
   if (fs.existsSync(file) && credits[cue.id] && !args.includes('--refresh')) return file;
-  const url = `https://api.openverse.org/v1/audio/?q=${encodeURIComponent(cue.query)}&license=cc0,by&page_size=20`;
-  const res = await (await fetch(url, { headers: UA })).json();
+  // OFFLINE (or Openverse down): this used to throw and stop the WHOLE mix over one missing sound. Now the cue is
+  // stood in for by the closest local sound from the Sonic catalog (by the words of its query and id), or skipped,
+  // and it is reported (output/<film>.sound-report.json). --offline skips the network on purpose.
+  const url = `${process.env.OPENVERSE_API ?? 'https://api.openverse.org'}/v1/audio/?q=${encodeURIComponent(cue.query)}&license=cc0,by&page_size=20`;
+  let res;
+  try {
+    if (OFFLINE) throw new Error('--offline');
+    res = await (await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) })).json();
+  } catch (e) { return standIn(cue, String(e.cause?.code ?? e.message)); }
   const cands = (res.results ?? []).filter((r) => r.duration && r.duration >= cue.min && r.duration <= cue.max && r.url);
   for (const r of cands.slice(0, 8)) {
     const raw = path.join(dir, `_cand.${(r.filetype || 'mp3').replace(/[^a-z0-9]/g, '')}`);
@@ -84,8 +108,12 @@ if (SONIC && autoCues.length) {
   const { applyToCues } = await import('./sonic.mjs');
   const so = typeof SONIC === 'object' ? SONIC : {};
   const report = applyToCues(autoCues, { kinds: so.kinds, matchLevel: so.matchLevel, seed: so.seed ?? base, catalogPath: so.catalog });
+  for (const c of autoCues) if (c.sonic?.bank === 'earshot') credits[c.sfx] = { title: c.sfx.slice(8), creator: 'Earshot sound bank (Leonxlnx/earshot)', license: 'MIT', source: 'https://github.com/Leonxlnx/earshot' };
   fs.mkdirSync('output', { recursive: true });
   fs.writeFileSync(`output/${base}.sonic.json`, JSON.stringify(report, null, 1));
+  // the same picks in the shared timestamped-event format (one per line), which VYRN and other tools read
+  const { sharedEvents } = await import('./sonic.mjs');
+  fs.writeFileSync(`output/${base}.sonic.events.jsonl`, sharedEvents(report).map((e) => JSON.stringify(e)).join('\n') + '\n');
   console.log(`+ sonic: ${report.length} automatic cue(s) chose their sound from the catalog → output/${base}.sonic.json`);
 }
 // film.autoSounds.whoosh.earshot: [ids] → automatic whooshes come from the Earshot bank, peak aimed at the blade's
@@ -164,6 +192,11 @@ for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
   if (f) placed.push({ cue, f });
 }
 fs.writeFileSync(creditsPath, JSON.stringify(credits, null, 2));
+if (soundReport.substituted.length || soundReport.skipped.length) {
+  fs.mkdirSync('output', { recursive: true });
+  fs.writeFileSync(`output/${base}.sound-report.json`, JSON.stringify(soundReport, null, 1));
+  console.log(`! ${soundReport.substituted.length} sound(s) stood in from the catalog, ${soundReport.skipped.length} skipped → output/${base}.sound-report.json`);
+}
 
 // PRE-HIT DIP (docs/STUDIO-STANDARD.md: a hit stands at least 9 dB above what comes just before it).
 // Every hit the eye sees (the events file's impacts and blade contacts) gets a hole punched in the bed and in

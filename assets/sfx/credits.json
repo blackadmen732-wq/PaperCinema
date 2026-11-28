@@ -386,5 +386,101 @@
     "creator": "Earshot sound bank (Leonxlnx/earshot)",
     "license": "MIT",
     "source": "https://github.com/Leonxlnx/earshot"
+  },
+  "paper/paper-fold": {
+    "title": "paper-fold",
+    "note": "a crease pressed flat: a short dense crackle over a soft press",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-unfold": {
+    "title": "paper-unfold",
+    "note": "a folded sheet opening: sparse crackle rising, a little air",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-crinkle": {
+    "title": "paper-crinkle",
+    "note": "a sheet handled and crinkled: medium crackle that comes and goes",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-crumple": {
+    "title": "paper-crumple",
+    "note": "a sheet balled up in a fist: long, coarse, dense, lower",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-tear-fast": {
+    "title": "paper-tear-fast",
+    "note": "a fast rip: a run of fractures sliding down in pitch",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-tear-slow": {
+    "title": "paper-tear-slow",
+    "note": "a slow tear: fibres giving in bursts",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-flutter": {
+    "title": "paper-flutter",
+    "note": "a loose sheet flapping in the air",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-slash": {
+    "title": "paper-slash",
+    "note": "a paper blade cutting the air: a swish with a dry crackle edge, loudest at 0.16 s",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-slide": {
+    "title": "paper-slide",
+    "note": "sheet over sheet: a smooth soft hiss",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-thump": {
+    "title": "paper-thump",
+    "note": "a folded paper body struck hard: a low card thump and a crackle of shards",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-tap": {
+    "title": "paper-tap",
+    "note": "a light knock on folded card",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
+  },
+  "paper/paper-shred": {
+    "title": "paper-shred",
+    "note": "paper shards bursting apart: many tiny crackles thinning out",
+    "creator": "Paper Cinema (synthesised in code, tools/paper_sfx.mjs)",
+    "license": "own",
+    "source": "synth",
+    "library": "PaperAcoustics"
   }
 }

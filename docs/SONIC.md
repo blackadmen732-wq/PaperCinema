@@ -24,6 +24,10 @@ node tools/sonic.mjs untag clap              # drop the hand edit
 node tools/sonic.mjs stats                   # how many sounds per tag: what the library has and what it lacks
 node tools/sonic.mjs schema                  # the record format, as JSON
 node tools/sonic_bench.mjs                   # the benchmark (writes output/sonic-bench/results.json)
+node tools/sonic_verify.mjs --probe          # timing checked in a finished mix (Sonic off and on)
+node tools/sonic_verify.mjs film/<name>.json # the same check on a real film after bash tools/film.sh
+node tools/paper_sfx.mjs                     # rebuild the PaperAcoustics sounds (deterministic)
+npm test                                     # the regression tests (tests/sonic.test.mjs)
 ```
 
 Add `--json` to any command for full records. Every query answer is one line per sound:
@@ -34,7 +38,8 @@ clash-steel  1.446s  w0.853 i0.736 b0.294  [steel,impact,heavy,transient,tonal,d
 (`w` weight, `i` intensity, `b` brightness, all 0..1; then material, action, size, texture.)
 
 **For agents:** run `query` or `pick` before reading any sound file, `credits.json` or ffmpeg output. The catalog
-already holds what those would tell you.
+already holds what those would tell you. Over MCP (registered in `.mcp.json`, `tools/sonic_mcp.mjs`, no dependencies):
+`sonic_query`, `sonic_pick`, `sonic_show`, `sonic_stats`; the answers are the same one-line rows.
 
 ## Query language
 
@@ -46,11 +51,13 @@ Number keys: every measured attribute below. `--sort <attr>` sorts high to low (
 
 | Field | Meaning |
 |---|---|
-| `id` | path under its root without the extension (`clash-steel`, `earshot/swish_blade-0.6-0.2`) |
+| `id` | path under its root without the extension (`clash-steel`, `paper/paper-tear-fast`), or `earshot:<bank id>` for a bank sound |
+| `bank`, `earshot`, `bankPeak`, `apex` | bank sounds only: the bank, its id, the peak time the bank states (used to check the analyzer), whether it takes an apex |
 | `file`, `hash` | the file, and the sha1 of its bytes (16 hex): the cache key |
 | `source`, `license` | `local`, `synth`, `earshot` or the credits source; licence from `credits.json` |
 | `m.dur peakDb rmsDb bodyDb crest` | length (s), peak, overall RMS, loudness of the active part (-20 dB window), peak-to-RMS |
-| `m.peakT attack decay` | seconds to the loudest 10 ms, from -20 dB up to it, from it down to -20 dB |
+| `m.peakT peakTPlay onsetT` | seconds to the loudest 5 ms; the same with the 10 ms fade-in `engine/sound.mjs` gives every one-shot; the first moment within 6 dB of the loudest (with the fade) |
+| `m.attack decay` | seconds from -20 dB up to the loudest 10 ms, and from it down to -20 dB |
 | `m.centroid low high flatness zcr` | spectral centroid (Hz), energy share under 250 Hz and over 4 kHz, spectral flatness, zero crossings |
 | `m.brightness weight intensity sharpness tonal` | the 0..1 scales everything is matched on (formulas in `engine/sonic.mjs` `measure`) |
 | `tags.material action environment intent` | from words in the name, credits title and search query (`library/sonic-vocab.json`) |
@@ -68,7 +75,9 @@ bonus (`prefer`, `match`, a name that contains the event's word), and which meas
 value computed from the event (`targets`, e.g. a clash's intensity 0..1 → sound intensity 0.3..0.95). Among the
 sounds close to the best score (`margin`), the most recent picks of the same kind are skipped (`variety`), then a
 seed from the cue id chooses, so the same film always gets the same mix. `align: "peak"` puts the sound's measured
-loudest moment on the event's moment (allowing for the cue's playback rate).
+loudest 5 ms on the event (a whoosh) and `align: "onset"` puts its onset there (a hit: a limiter flattens a hit's top and a low thud's loudest 5 ms is one crest of its wave), allowing for the cue's playback rate.
+
+**Matched facets are hard.** A wood clash plays a wood sound. If the catalog has none, `vocab.fallback` says what may stand in (wood → steel), and the report says it fell back. If nothing may, there is no pick and the engine's own sound plays. `avoid` keeps the Earshot bank's UI and synthetic sounds out of physical events.
 
 `engine/combat.js` and `engine/groundfx.js` now write an `event` on each automatic cue
 (`{ kind, material, intensity, speed, height, peakAt }`). Events files written before that still work: Sonic reads
@@ -96,14 +105,26 @@ to the version before Sonic (checked by `tools/sonic_bench.mjs`, which compares 
 - A word Sonic does not know: add it to a facet in `library/sonic-vocab.json`, run `scan`.
 - A wrong tag on one sound: `node tools/sonic.mjs tag <id> material=paper`.
 - A new kind of event: add it under `events` in the vocab; the engine only has to put `{ kind: "<it>" }` on the cue.
-- Earshot's 252-sound bank: rendered Earshot sounds in `assets/sfx/earshot/` are catalogued now; cataloguing the
-  whole bank needs the `earshot` tool installed (`node tools/vendor.mjs earshot`), which is not done yet.
+- **Earshot's 252-sound bank** is catalogued when the tool is installed (`node tools/vendor.mjs earshot && pip install ./vendor/earshot`).
+  Each bank sound is rendered once into `.cache/sonic/` (not committed) to be measured and played; if the tool is
+  missing, the catalog keeps the earlier records and a pick that cannot be rendered falls to the next best sound.
+- **PaperAcoustics** (`assets/sfx/paper/`, `tools/paper_sfx.mjs`): 12 paper sounds made in code (fold, unfold,
+  crinkle, crumple, fast and slow tear, flutter, slash, slide, thump, tap, shred) from three parts: crackle (random
+  fibre breaks), air, and a card body. Our own, no licence needed, the same bytes on every build.
+
+## Offline mixing
+
+A film cue whose file is not saved and cannot be fetched (no network, Openverse down) no longer stops the mix: the
+closest local catalog sound by the words of its query stands in, or the cue is skipped, and both are listed in
+`output/<film>.sound-report.json`. `--offline` skips the network on purpose.
+
+## Shared events (with VYRN and the shared core)
+
+With Sonic on, `engine/sound.mjs` also writes `output/<film>.sonic.events.jsonl`, one object per line in the shared
+format agreed with VYRN (`docs/VYRN.md`): `{ id: "sonic.pick.NN", type: "sonic.pick", t, t1, source: "sonic",
+method: "catalog-pick", conf, entities, data: { cue, kind, sound, was, start, fallback } }`, where `t` is the event's
+moment. `output/<film>.sonic.json` rows carry `peakAt`, which `vyrn sync --expect` reads.
 
 ## Next (not built)
-
-- Tag the whole Earshot bank (needs the tool installed); a paper sound set (folds, crinkle, tears): `stats` shows
-  `paper` has one sound.
-- An MCP server over `engine/sonic.mjs` (`scan`, `query`, `pick` are plain functions returning JSON, so the wrapper
-  is thin).
 - Learned tags (a CLAP-style audio model) only if the word and measurement tags prove too coarse: it would be the
   first non-local, non-deterministic step, so it waits for a measured need.

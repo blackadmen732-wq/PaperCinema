@@ -87,6 +87,8 @@ const tok = (s) => Math.round(s.length / 4);
 
 // ---------- the three runs, two set-ups ----------
 const runs = {};
+const creditsBefore = fs.readFileSync('assets/sfx/credits.json');   // a benchmark is not a film: put its credits back
+process.on('exit', () => fs.writeFileSync('assets/sfx/credits.json', creditsBefore));
 for (const [name, ff] of [['earshot', `${D}/fight.json`], ['plain', `${D}/fight-plain.json`]]) {
   runs[name] = { head: run(`${D}/sound-head.mjs`, ff, `${name}-head`), off: run('engine/sound.mjs', ff, `${name}-off`), sonic: run('engine/sound.mjs', ff, `${name}-sonic`, ['--sonic']) };
   const base = path.basename(ff, '.json');
@@ -109,7 +111,10 @@ const pearson = (xs, ys) => { const n = xs.length, mx = xs.reduce((a, b) => a + 
 function score(name, mode) {
   const P = played(name, mode);
   const of = (k) => P.filter((p) => p.c.event.kind === k);
-  const align = P.filter((p) => ['whoosh', 'clash', 'dash', 'land'].includes(p.c.event.kind)).map((p) => Math.abs(p.t + p.s.m.peakT / p.rate - p.c.event.peakAt) * 1000);
+  // the moment a sound lands, by the same rule for both runs: a hit by its onset, a whoosh by its loudest 5 ms (vocab align)
+  const V = JSON.parse(fs.readFileSync('library/sonic-vocab.json', 'utf8')).events;
+  const lead = (p) => (V[p.c.event.kind]?.align === 'onset' ? p.s.m.onsetT : p.s.m.peakTPlay);
+  const align = P.filter((p) => ['whoosh', 'clash', 'dash', 'land'].includes(p.c.event.kind)).map((p) => Math.abs(p.t + lead(p) / p.rate - p.c.event.peakAt) * 1000);
   const wh = of('whoosh'), cl = of('clash');
   let repeats = 0; for (let i = 1; i < wh.length; i++) if (wh[i].s.id === wh[i - 1].s.id && wh[i].c.event.peakAt - wh[i - 1].c.event.peakAt < 1.5) repeats++;
   return {
