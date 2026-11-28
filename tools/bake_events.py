@@ -164,6 +164,14 @@ def ground_events(bake, fps):
                     continue
                 plant, lift = st['g'] + 0.025, st['g'] + 0.045      # a step on a slope lifts ~5 cm off its own sand
                 vh = math.hypot(p[0] - q[0], p[1] - q[1]) * fps
+                if vh > 15.0:
+                    # a CUT (a teleport between two key pieces: more than 0.5 m in one frame at 30 fps): the foot is
+                    # simply somewhere else now. No skid, no step (28 Nov: Episode 1's cut from the boat to the beach
+                    # read as a planted foot skidding at 83 m/s and cued a skid sound on the cut)
+                    st['plant'] = i if not st['up'] else st['plant']
+                    st['skid'] = True                              # this plant has had its say
+                    ups.append(st['up'])
+                    continue
                 if p[2] < st['g'] - 0.03:                                  # inside the ground
                     if st['sink'] is None:
                         st['sink'] = {'t': round(i / fps, 4), 'frame': i + 1, 'actor': aid, 'foot': side, 'kind': 'sink',
