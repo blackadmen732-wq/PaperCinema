@@ -315,6 +315,13 @@ at 0.6 m/s, so a 0.3 s lunge is not a walk — the planner walks like a person; 
 | hips | box-smoothed drop | 3 cm taller, a capped-acceleration envelope (never higher than the legs reach), a firmer leg solve (soft IK from 0.98) |
 | above the legs | — | ±2.2 cm over the standing foot, the waist turns ±0.06 rad with the forward leg, the chest back 1.7×, the head stays ahead; each arm swings `gait.arms` × 0.32 rad |
 
+**Turning** (every film with `lockFeet`, fighter or walker): a planted foot keeps its own direction on the
+ground (`_feet.yr` / `yl`; the foot's y turn comes after its levelling turn, so it is a turn about the vertical)
+and the body twists over it, at most `footTwist` (60°); once the body has turned `turnStep` (50°) from where the
+foot was planted, the plant ends and the foot steps round to a new one. Before 28 Nov a planted foot turned with
+the body: a turn on the spot spun both feet 180° on the sand. Episode 1's 180° turn to the sea now takes five
+quick steps and no planted foot twists more than 52° against the body.
+
 Arms are opt-in per performer, because a hand that holds something must not swing:
 
 ```json
