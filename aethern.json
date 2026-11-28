@@ -452,5 +452,23 @@
  },
  "ledger": {
   "file": "library/promises.json"
- }
+ },
+ "capabilities": [
+  "packages/aethern/capabilities.json",
+  "vyrn/capabilities.json",
+  {
+   "file": "packages/sonic/capabilities.json",
+   "note": "Paper Cinema keeps its sounds in assets/sfx",
+   "args": [
+    "--catalog",
+    "assets/sfx/sonic.catalog.json",
+    "--vocab",
+    "library/sonic-vocab.json",
+    "--roots",
+    "assets/sfx",
+    "--cache",
+    ".cache/sonic"
+   ]
+  }
+ ]
 }

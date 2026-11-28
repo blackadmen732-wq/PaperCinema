@@ -45,6 +45,11 @@ Anything not written here (Python function names, module layout) is internal and
 | `events check FILE…` | text; exit 1 if any line is not a valid `aethern-event/2` or `/1` (bad JSON, non-finite numbers, missing ids, duplicate ids and bad evidence are named by line) |
 | `events merge FILE… [--out F] [--tol S] [--project P] [--media M]` | `aethern-event/2` JSON Lines, sorted by `t`; one line per project + media + id. Every observation is kept in `evidence`; when they disagree (type, or `t`/`t1` more than S s apart, or different entities) the line has `conflict: true` and `data.conflict_on`, with the most confident observation on top. Exit 1, merging nothing, if any input is malformed. Version-1 lines get P (default: aethern.json `id`, else `name` as a slug) and M (default `unknown`) |
 | `events near T FILE… [--window W] [--type X]` | `[event, …]` within ±W s of T, after the same merge |
+| `caps [list]` | text: one line per capability, `id  does` |
+| `caps find WORDS [--k N]` | `[{"id","does"}]`, best first, at most N (default 5); keyword match on id, tags and description, no AI |
+| `caps show ID…` | `[{"id","does","tags","args","out","example"?,"module","run"}]` |
+| `call ID [ARGS…]` | `{"cap","ok","exit","ms","out","err"?}`; `out` parsed when the capability says json or jsonl; exit = the capability's exit (0, 1, 2), else 1 |
+| `mcp` | MCP over stdio with three tools: `find {task,k?}`, `show {id}`, `call {id,args?}`, same answers as above |
 | `ai JOB …` | the answer on stdout, a one-line meta summary on stderr |
 | `worker TASK` | progress lines; transcript file in `worker.log_dir` |
 | `skills [--check]`, `vendor …`, `ledger …` | text, exit codes as above |
@@ -60,6 +65,7 @@ Anything not written here (Python function names, module layout) is internal and
 | `ai.log` (JSON Lines) | `{"model","secs","tokens","total","job","ok","at","cached"?}` |
 | job state (`js/state.mjs`) | `{"<parts key>": {id: {"status":"done"\|"failed","hash", …}}}`; `hash` = first 12 hex chars of sha1 of the part's inputs as JSON |
 | shared events (JSON Lines) | `aethern-event/2` (`schema/event-2.schema.json`): `{"v":2,"project","media","id","type","t","t1"?,"f"?,"source","method"?,"conf"?,"entities"?,"data"?,"evidence"?:[{"source","method"?,"conf"?,"t"?,"t1"?,"type"?,"entities"?,"data"?,"file"?}],"conflict"?}`; no other top-level fields; unique by project + media + id. Media ids: `film:<name>` (engine, Sonic), VYRN's `v<hash>`/`t<hash>`. Written by Sonic (in Paper Cinema) and VYRN. Version 1 (`schema/event-1.schema.json`, no project/media/evidence/conflict) is still read |
+| capability manifest | `aethern-caps/1` (`schema/caps-1.schema.json`): `{"format","module","about"?,"run":[argv],"cwd"?,"caps":[{"id","does","tags"?,"args"?,"out"?,"example"?,"prefix"?}]}`. One per module (`packages/aethern/`, `vyrn/`, `packages/sonic/capabilities.json`); listed in aethern.json `capabilities` as a path or `{"file","args"}` |
 | vendor manifest | `{"tools":[{"id","url","commit","licence","size","what","why_here","skill","needs_gpu"?,"needs_gui"?}],"rejected":[{"name","why"}]}` |
 | promise ledger | `{"promises":[{"id","promise","why","status":"kept"\|"OPEN","check"}]}` |
 

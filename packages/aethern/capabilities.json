@@ -1,0 +1,16 @@
+{
+ "format": "aethern-caps/1",
+ "module": "aethern",
+ "about": "Aethern: project knowledge and memory (system map, change impact, shared events, notes)",
+ "run": ["python3", "{dir}/bin/aethern"],
+ "cwd": "root",
+ "caps": [
+  {"id": "aethern.map.find", "does": "which systems of the project match some words", "tags": ["project", "code", "systems", "find", "orient"], "args": "map find WORDS --json", "out": "json", "prefix": ["map", "find"]},
+  {"id": "aethern.map.show", "does": "one system: what it does, its files, guide, command and links", "tags": ["project", "code", "systems", "explain"], "args": "ID [ID..] --json", "out": "json", "prefix": ["map", "show"]},
+  {"id": "aethern.impact", "does": "changed files -> systems -> what those systems feed (what to re-run or re-test)", "tags": ["project", "change", "dependencies", "regenerate", "impact"], "args": "[--save] --json", "out": "json", "prefix": ["impact"]},
+  {"id": "aethern.events.check", "does": "validate shared event files (aethern-event/2 or /1); exit 1 naming each bad line", "tags": ["events", "validate", "check", "format"], "args": "FILE…", "out": "text", "prefix": ["events", "check"]},
+  {"id": "aethern.events.merge", "does": "merge event files from several tools into one stream; disagreements kept with their evidence", "tags": ["events", "merge", "conflict", "evidence", "timeline"], "args": "FILE… [--out F] [--tol S]", "out": "jsonl", "prefix": ["events", "merge"]},
+  {"id": "aethern.events.near", "does": "events from any tool within a window around a time", "tags": ["events", "time", "find", "inspect"], "args": "T FILE… [--window W] [--type X]", "out": "json", "prefix": ["events", "near"]},
+  {"id": "aethern.mem.get", "does": "project notes on a topic, newest first", "tags": ["memory", "notes", "decisions", "knowledge"], "args": "[TOPIC] [--grep W] --json", "out": "json", "prefix": ["mem", "get"]}
+ ]
+}

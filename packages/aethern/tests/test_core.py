@@ -12,7 +12,7 @@ import unittest
 from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from aethern import catalog, config, events, index, memory, router, skillmap, worker  # noqa: E402
+from aethern import caps, catalog, config, events, index, mcp, memory, router, skillmap, worker  # noqa: E402
 
 SYSTEMS_MD = """# Systems
 ## The catalogue
@@ -200,6 +200,48 @@ class EventsTest(Base):
     def test_project_id(self):
         self.assertEqual(events.project_id({'name': 'Paper Cinema'}), 'paper-cinema')
         self.assertEqual(events.project_id({'name': 'X', 'id': 'cinevora'}), 'cinevora')
+
+
+class CapsTest(Base):
+    def setUp(self):
+        super().setUp()
+        m = {'format': 'aethern-caps/1', 'module': 'echo', 'about': 'test', 'run': [sys.executable, '{dir}/echo.py'], 'cwd': 'root',
+             'caps': [{'id': 'echo.json', 'does': 'say the arguments back as json', 'tags': ['repeat', 'json'], 'args': 'WORDS', 'out': 'json'},
+                      {'id': 'echo.fail', 'does': 'exit with code one', 'tags': ['error'], 'args': '', 'out': 'text'},
+                      {'id': 'echo.sound', 'does': 'pretend to check sound sync', 'tags': ['audio', 'sync'], 'args': '', 'out': 'text'}]}
+        os.makedirs(os.path.join(self.d, 'mod'))
+        json.dump(m, open(os.path.join(self.d, 'mod', 'capabilities.json'), 'w'))
+        open(os.path.join(self.d, 'mod', 'echo.py'), 'w').write(
+            'import json, sys\nif sys.argv[1] == "fail": sys.exit(1)\nprint(json.dumps(sys.argv[1:]))\n')
+        self.cfg['capabilities'] = [{'file': 'mod/capabilities.json', 'args': ['--host']}]
+        self.caps = caps.load(self.cfg)
+
+    def test_find_returns_only_what_fits(self):
+        self.assertEqual([c['id'] for c in caps.find(self.caps, 'is the audio in sync?')], ['echo.sound'])
+        self.assertEqual(caps.find(self.caps, 'nothing matches here'), [])
+        self.assertEqual(set(caps.brief(caps.find(self.caps, 'json')[0])), {'id', 'does'})
+
+    def test_call_runs_the_module_with_host_args(self):
+        r = caps.call(self.cfg, self.caps, 'echo.json', ['a', 'b'])
+        self.assertEqual((r['ok'], r['out']), (True, ['json', 'a', 'b', '--host']))
+        self.assertEqual(caps.call(self.cfg, self.caps, 'echo.fail', [])['exit'], 1)
+        self.assertEqual(caps.call(self.cfg, self.caps, 'echo.nope', [])['exit'], 2)
+
+    def test_mcp_three_tools(self):
+        inp = io.StringIO('\n'.join(json.dumps(m) for m in [
+            {'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {'protocolVersion': '2025-06-18'}},
+            {'jsonrpc': '2.0', 'method': 'notifications/initialized'},
+            {'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list'},
+            {'jsonrpc': '2.0', 'id': 3, 'method': 'tools/call', 'params': {'name': 'find', 'arguments': {'task': 'audio sync'}}},
+            {'jsonrpc': '2.0', 'id': 4, 'method': 'tools/call', 'params': {'name': 'call', 'arguments': {'id': 'echo.json', 'args': ['x']}}},
+        ]) + '\n')
+        out = io.StringIO()
+        mcp.main(self.cfg, inp, out)
+        rs = [json.loads(l) for l in out.getvalue().splitlines()]
+        self.assertEqual([r['id'] for r in rs], [1, 2, 3, 4])               # no answer to the notification
+        self.assertEqual([t['name'] for t in rs[1]['result']['tools']], ['find', 'show', 'call'])
+        self.assertEqual(json.loads(rs[2]['result']['content'][0]['text'])[0]['id'], 'echo.sound')
+        self.assertEqual(json.loads(rs[3]['result']['content'][0]['text'])['out'], ['json', 'x', '--host'])
 
 
 class MemoryTest(Base):

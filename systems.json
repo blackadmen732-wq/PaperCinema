@@ -540,7 +540,7 @@
   {
    "id": "AETHERN",
    "name": "Aethern shared core",
-   "does": "The project-independent agent toolkit Paper Cinema now runs on: project map queries (`map show/find/deps/owner`), change detection since an agent's last look (`changed`, `impact`), shared notes (`mem`), the free model router with a result cache and the free worker, the skills map, pinned outside tools, the promise ledger and hash-keyed job state. Paper Cinema's own settings are in `aethern.json`; the old `tools/` commands are thin wrappers",
+   "does": "The project-independent agent toolkit Paper Cinema now runs on: project map queries (`map show/find/deps/owner`), one backend interface over Aethern, VYRN and Sonic with selective discovery (`caps find/show`, `call`, `mcp` with three tools), change detection since an agent's last look (`changed`, `impact`), shared notes (`mem`), the free model router with a result cache and the free worker, the skills map, pinned outside tools, the promise ledger and hash-keyed job state. Paper Cinema's own settings are in `aethern.json`; the old `tools/` commands are thin wrappers",
    "files": [
     "packages/aethern/",
     "aethern.json"
