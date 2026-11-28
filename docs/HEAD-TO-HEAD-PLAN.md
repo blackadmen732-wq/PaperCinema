@@ -1,6 +1,6 @@
 # Head-to-head: does an AI-native environment beat a plain one?
 
-Status: **planned, not run.** It spends your Claude usage, so it waits for your yes.
+Status: **pilot done** (`docs/HEAD-TO-HEAD-PILOT.md`, $8.20 measured). Full runs wait for your yes.
 
 ## The question
 
@@ -11,7 +11,7 @@ better film for fewer resources than plain Claude Code? Only measured results go
 
 | | what the agent gets | commit |
 |---|---|---|
-| A. Plain Claude Code | an empty repo with the same assets, three.js, ffmpeg and Blender; no Paper Cinema code, docs or skills | new repo |
+| A. Plain Claude Code | an empty repo with the same assets, three.js and ffmpeg (Blender too where it is installed; cloud sessions have none); no Paper Cinema code, docs or skills | new repo |
 | B. Paper Cinema as it was | this repo before the core | `4a8c4cb` |
 | C. Paper Cinema on the core | this repo with `packages/aethern/` | `claude/shared-core` |
 
