@@ -47,7 +47,25 @@ python3 blender/sets/kit.py            # list every kit piece and its parameters
 | `bamboo-forest` | Morning mist, backlit canopy, shafts | forest floor, earth path, bamboo grove (520 culms, keeps the path clear), mossy toro, rocks, mist, motes | Duel line on Y (along the path) |
 | `ganryujima-beach` | Dawn over the strait | the `ganryujima` piece (port of `blender/world/build_world.py`) | Same marks and anchors as the v1 world; realistic sand, rocks, bark |
 | `edo-village` | Moonlit night street (the look board's night duel): blue sky, the moon over the plaza, warm lanterns, lit shoji | gravel road on earth, 6 machiya + 3 minka (thatch), well under a pine, 2 stalls, bamboo fences, 6 nobori, 5 toro, 3 cherry trees, 2 treelines, petals, ground fog, 15 Poly Haven prop groups (barrels, buckets, baskets, crates, bench, stools, pots, stump + axe, broom, mossy rocks, grass, ferns) | Duel line on X along the road; CAM_medium looks +Y at the minka and the moon. Nothing south of the road between x -3..4 (the medium shot's cone). `library/sets/village-pieces.json` = every village piece in a row, daylight |
+| `palace-island` (dev, `library/sets/dev/palace-island.json`) | Dawn over the sea: a sea castle | the `ganryujima` piece with its own island off (sea, mountains, clouds, paper sun) + an `ishigaki_base` citadel 44 x 36 m rising 9 m out of the water, a 5-storey `tenshu`, 2 corner turrets, `yaguramon` sea gate, `plaster_wall`s, pines, 2 `toro`, a pine islet (`rocks`) with a red `bridge` to a stone landing | Mark, 28 Nov. Built in 7 min, no new code. With the kit's procedural stone/plaster it reads as a realistic castle; `blender/sets/palace/paperize_set.py --craft` makes it a paper model (below). Moves to `library/sets/` after the Episode 1 render (the render stamp covers `library/sets/*.json`) |
 | `castle-skyline-2d5` | Dusk, paper-cut layers in haze | small 3D foreground (gravel, path, 2 toro, rocks, pine) + `layers` (trees, castle skyline with lit windows, trees, hills, mountains, clouds) | The 2.5D method of the reference videos: cards at real depths, so camera moves get parallax |
+
+### Paper-craft sets (`blender/sets/palace/paperize_set.py`)
+The kit's materials are procedural stone, plaster, tile and wood: a set reads as a realistic 3D place, which is right
+for some films and wrong for a paper world. The paperize pass runs on a BUILT set (.blend) and renders its anchors:
+```bash
+nice -n 15 $B -b -t 2 -P blender/sets/palace/paperize_set.py -- --blend output/sets/dev/palace-island-paper.blend \
+    --out output/sets/dev/palace-island-craft --cams CAM_sea,CAM_front,CAM_aerial,CAM_texture --craft --width 0.03 --angle 35
+```
+- every building mesh gets fold lines (`add_fold_lines`, folds sharper than `--angle`) and the characters' paper
+  surface (ink in the valleys, a light edge on the ridges, a mottle), with the ink line `--width` metres wide: 3-6 cm at
+  architecture distance (a character's 3.5 mm line is sub-pixel on a keep 50 m away)
+- `--craft`: every `SET_*` material becomes a paper SHEET of its colour (washi plaster, dark card roofs, kraft stones,
+  near-black backfill between them, brown card wood, red card lacquer, green card pine), each facet its own tone
+  (`facet_rand`); glows (windows, lanterns) stay. The stone gaps must stay near-black: in tan paper too the wall
+  pattern vanished
+- the sea, sky, paper sun, mountains and clouds are untouched (their look is already paper)
+Measured on the palace: 34 meshes, ~214k folds, 18 of 19 materials, ~2 min a still at 540x960.
 
 ## 3. Write a new set (the JSON)
 
