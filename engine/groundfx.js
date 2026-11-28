@@ -55,7 +55,8 @@ export function analyseGround({ fighters, dur, filmT = (x) => x, opts = {} }) {
 export function groundCues(events, o = {}) {
   const cues = [];
   const add = (e, sfx, gainDb, len, rate = 1, lead = 0) => cues.push({ id: `auto-${e.kind}-${e.id}-${cues.length}`, sfx, t: +Math.max(0, e.t - lead).toFixed(3), len,
-    gain: dB(gainDb + (o.trim ?? 0)), rate: +rate.toFixed(3), why: `${e.id} ${e.kind} (${e.speed} m/s)` });
+    gain: dB(gainDb + (o.trim ?? 0)), rate: +rate.toFixed(3), why: `${e.id} ${e.kind} (${e.speed} m/s)`,
+    event: { kind: e.kind, who: e.id, speed: e.speed, height: e.height, peakAt: +e.t.toFixed(3) } });   // what SONIC picks by
   for (const e of events) {
     if (e.kind === 'dash') add(e, 'dash-burst', -7, 0.7, 1, 0.03);
     else if (e.kind === 'skid') add(e, 'skid-dust', -11, 0.8, 0.9 + Math.min(0.3, (e.peak ?? 8) / 60));

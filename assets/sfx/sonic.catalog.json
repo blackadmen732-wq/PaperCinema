@@ -1,0 +1,1749 @@
+{
+ "schema": "sonic-catalog/1",
+ "analyzer": "sonic-analyzer/1",
+ "vocab": "library/sonic-vocab.json",
+ "roots": [
+  "assets/sfx"
+ ],
+ "count": 38,
+ "sounds": [
+  {
+   "id": "blade-clash",
+   "file": "assets/sfx/blade-clash.mp3",
+   "hash": "71b3e0dd9cad345a",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 0.42,
+    "peakDb": -4.5,
+    "rmsDb": -16.1,
+    "bodyDb": -14,
+    "crest": 11.6,
+    "peakT": 0.12,
+    "attack": 0.11,
+    "decay": 0.14,
+    "centroid": 4369,
+    "low": 0.005,
+    "high": 0.573,
+    "zcr": 0.328,
+    "flatness": 0,
+    "brightness": 0.966,
+    "weight": 0.025,
+    "intensity": 0.549,
+    "sharpness": 0.083,
+    "tonal": 0.996
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "clap",
+   "file": "assets/sfx/clap.mp3",
+   "hash": "63151fc355658222",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 0.284,
+    "peakDb": 0.2,
+    "rmsDb": -12.3,
+    "bodyDb": -7.8,
+    "crest": 12.5,
+    "peakT": 0,
+    "attack": 0,
+    "decay": 0.09,
+    "centroid": 597,
+    "low": 0.005,
+    "high": 0,
+    "zcr": 0.06,
+    "flatness": 0.001,
+    "brightness": 0.457,
+    "weight": 0.278,
+    "intensity": 1,
+    "sharpness": 1,
+    "tonal": 0.991
+   },
+   "tags": {
+    "material": [
+     "wood"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [
+     "accent",
+     "punctuation"
+    ],
+    "texture": [
+     "transient",
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "clash-light",
+   "file": "assets/sfx/clash-light.mp3",
+   "hash": "0b33a3130856762c",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.6,
+    "peakDb": -7.8,
+    "rmsDb": -34.5,
+    "bodyDb": -28.3,
+    "crest": 26.6,
+    "peakT": 0,
+    "attack": 0,
+    "decay": 0.13,
+    "centroid": 3381,
+    "low": 0,
+    "high": 0.162,
+    "zcr": 0.257,
+    "flatness": 0.003,
+    "brightness": 0.9,
+    "weight": 0.05,
+    "intensity": 0.408,
+    "sharpness": 1,
+    "tonal": 0.967
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "clash-steel",
+   "file": "assets/sfx/clash-steel.mp3",
+   "hash": "2f317137c976ed76",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 1.446,
+    "peakDb": -1.8,
+    "rmsDb": -24.7,
+    "bodyDb": -16.2,
+    "crest": 22.9,
+    "peakT": 0.01,
+    "attack": 0.01,
+    "decay": 0.18,
+    "centroid": 316,
+    "low": 0.91,
+    "high": 0.015,
+    "zcr": 0.206,
+    "flatness": 0.002,
+    "brightness": 0.294,
+    "weight": 0.853,
+    "intensity": 0.736,
+    "sharpness": 0.917,
+    "tonal": 0.985
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "dash-burst",
+   "file": "assets/sfx/dash-burst.mp3",
+   "hash": "615b7f2dfcd2fdcd",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.6,
+    "peakDb": -0.3,
+    "rmsDb": -17.3,
+    "bodyDb": -14,
+    "crest": 16.9,
+    "peakT": 0.03,
+    "attack": 0.03,
+    "decay": 0.24,
+    "centroid": 300,
+    "low": 0.79,
+    "high": 0.003,
+    "zcr": 0.036,
+    "flatness": 0.005,
+    "brightness": 0.281,
+    "weight": 0.86,
+    "intensity": 0.75,
+    "sharpness": 0.75,
+    "tonal": 0.95
+   },
+   "tags": {
+    "material": [],
+    "action": [
+     "movement"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "draw-shing",
+   "file": "assets/sfx/draw-shing.mp3",
+   "hash": "4c7f47d6a79e56fe",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 1.821,
+    "peakDb": -10.6,
+    "rmsDb": -23.1,
+    "bodyDb": -17.7,
+    "crest": 12.6,
+    "peakT": 0,
+    "attack": 0,
+    "decay": 0.51,
+    "centroid": 2737,
+    "low": 0,
+    "high": 0.025,
+    "zcr": 0.242,
+    "flatness": 0,
+    "brightness": 0.846,
+    "weight": 0.077,
+    "intensity": 0.716,
+    "sharpness": 1,
+    "tonal": 0.998
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "draw"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "earshot/swish_blade-0.6-0.2",
+   "file": "assets/sfx/earshot/swish_blade-0.6-0.2.wav",
+   "hash": "ff63fa7b0070e62b",
+   "analyzer": "sonic-analyzer/1",
+   "source": "earshot",
+   "license": "MIT",
+   "m": {
+    "dur": 0.6,
+    "peakDb": 1.5,
+    "rmsDb": -17.7,
+    "bodyDb": -13.4,
+    "crest": 19.2,
+    "peakT": 0.2,
+    "attack": 0.12,
+    "decay": 0.09,
+    "centroid": 955,
+    "low": 0.008,
+    "high": 0.01,
+    "zcr": 0.151,
+    "flatness": 0.025,
+    "brightness": 0.577,
+    "weight": 0.224,
+    "intensity": 0.541,
+    "sharpness": 0,
+    "tonal": 0.754
+   },
+   "tags": {
+    "material": [
+     "steel",
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "earshot/swish_zing-0.6-0.2",
+   "file": "assets/sfx/earshot/swish_zing-0.6-0.2.wav",
+   "hash": "5d1579c7b249c280",
+   "analyzer": "sonic-analyzer/1",
+   "source": "earshot",
+   "license": "MIT",
+   "m": {
+    "dur": 0.6,
+    "peakDb": 1.9,
+    "rmsDb": -17.2,
+    "bodyDb": -11.5,
+    "crest": 19.1,
+    "peakT": 0.2,
+    "attack": 0.12,
+    "decay": 0.03,
+    "centroid": 730,
+    "low": 0.019,
+    "high": 0.001,
+    "zcr": 0.065,
+    "flatness": 0.003,
+    "brightness": 0.508,
+    "weight": 0.273,
+    "intensity": 0.598,
+    "sharpness": 0,
+    "tonal": 0.971
+   },
+   "tags": {
+    "material": [
+     "steel",
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "earshot/whoosh_fast_crisp-0.6-0.2",
+   "file": "assets/sfx/earshot/whoosh_fast_crisp-0.6-0.2.wav",
+   "hash": "7ded9fa11b3bc20d",
+   "analyzer": "sonic-analyzer/1",
+   "source": "earshot",
+   "license": "MIT",
+   "m": {
+    "dur": 0.6,
+    "peakDb": 1.7,
+    "rmsDb": -16.3,
+    "bodyDb": -12,
+    "crest": 18.1,
+    "peakT": 0.19,
+    "attack": 0.14,
+    "decay": 0.07,
+    "centroid": 469,
+    "low": 0.238,
+    "high": 0.004,
+    "zcr": 0.052,
+    "flatness": 0.009,
+    "brightness": 0.395,
+    "weight": 0.643,
+    "intensity": 0.582,
+    "sharpness": 0,
+    "tonal": 0.913
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "earshot/whoosh_fast_whip-0.6-0.2",
+   "file": "assets/sfx/earshot/whoosh_fast_whip-0.6-0.2.wav",
+   "hash": "e59085c234e1c171",
+   "analyzer": "sonic-analyzer/1",
+   "source": "earshot",
+   "license": "MIT",
+   "m": {
+    "dur": 0.6,
+    "peakDb": -0.3,
+    "rmsDb": -22.4,
+    "bodyDb": -18.3,
+    "crest": 22.1,
+    "peakT": 0.19,
+    "attack": 0.11,
+    "decay": 0.11,
+    "centroid": 2476,
+    "low": 0,
+    "high": 0.091,
+    "zcr": 0.242,
+    "flatness": 0.068,
+    "brightness": 0.82,
+    "weight": 0.09,
+    "intensity": 0.423,
+    "sharpness": 0.083,
+    "tonal": 0.32
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "fall",
+   "file": "assets/sfx/fall.mp3",
+   "hash": "8d48a1a1f606dd4d",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 0.88,
+    "peakDb": -7.2,
+    "rmsDb": -32.9,
+    "bodyDb": -22,
+    "crest": 25.7,
+    "peakT": 0.16,
+    "attack": 0,
+    "decay": 0.05,
+    "centroid": 729,
+    "low": 0.493,
+    "high": 0.036,
+    "zcr": 0.161,
+    "flatness": 0.062,
+    "brightness": 0.508,
+    "weight": 0.746,
+    "intensity": 0.591,
+    "sharpness": 1,
+    "tonal": 0.378
+   },
+   "tags": {
+    "material": [
+     "earth",
+     "body"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "noisy"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "impact-drum",
+   "file": "assets/sfx/impact-drum.mp3",
+   "hash": "18d9580b2451cefc",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 6.956,
+    "peakDb": 0.9,
+    "rmsDb": -16.5,
+    "bodyDb": -10.3,
+    "crest": 17.4,
+    "peakT": 0.56,
+    "attack": 0.56,
+    "decay": 0.86,
+    "centroid": 69,
+    "low": 0.999,
+    "high": 0,
+    "zcr": 0.006,
+    "flatness": 0,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.634,
+    "sharpness": 0,
+    "tonal": 1
+   },
+   "tags": {
+    "material": [
+     "skin"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [
+     "accent"
+    ],
+    "texture": [
+     "tonal",
+     "ringing",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "impact",
+   "file": "assets/sfx/impact.mp3",
+   "hash": "3716e177213f318e",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 1.914,
+    "peakDb": -3.8,
+    "rmsDb": -20.7,
+    "bodyDb": -14.7,
+    "crest": 16.9,
+    "peakT": 0.15,
+    "attack": 0.15,
+    "decay": 0.31,
+    "centroid": 561,
+    "low": 0.774,
+    "high": 0.04,
+    "zcr": 0.088,
+    "flatness": 0.057,
+    "brightness": 0.441,
+    "weight": 0.78,
+    "intensity": 0.506,
+    "sharpness": 0,
+    "tonal": 0.434
+   },
+   "tags": {
+    "material": [
+     "wood"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [
+     "accent"
+    ],
+    "texture": [],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "jump-push",
+   "file": "assets/sfx/jump-push.mp3",
+   "hash": "fb46906cbf53a787",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.3,
+    "peakDb": -8.6,
+    "rmsDb": -27,
+    "bodyDb": -21.3,
+    "crest": 18.4,
+    "peakT": 0.02,
+    "attack": 0.02,
+    "decay": 0.05,
+    "centroid": 981,
+    "low": 0.083,
+    "high": 0.01,
+    "zcr": 0.117,
+    "flatness": 0.018,
+    "brightness": 0.584,
+    "weight": 0.327,
+    "intensity": 0.561,
+    "sharpness": 0.833,
+    "tonal": 0.822
+   },
+   "tags": {
+    "material": [],
+    "action": [
+     "movement"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "land-thud",
+   "file": "assets/sfx/land-thud.mp3",
+   "hash": "0462b88b45fc9842",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.8,
+    "peakDb": -0.3,
+    "rmsDb": -12.4,
+    "bodyDb": -9.1,
+    "crest": 12.2,
+    "peakT": 0.07,
+    "attack": 0.07,
+    "decay": 0.29,
+    "centroid": 44,
+    "low": 0.992,
+    "high": 0,
+    "zcr": 0.006,
+    "flatness": 0,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.792,
+    "sharpness": 0.417,
+    "tonal": 1
+   },
+   "tags": {
+    "material": [
+     "earth"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "petal-rustle",
+   "file": "assets/sfx/petal-rustle.mp3",
+   "hash": "31d0e98449180ca2",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 1.4,
+    "peakDb": -4.6,
+    "rmsDb": -24,
+    "bodyDb": -18.9,
+    "crest": 19.4,
+    "peakT": 0.26,
+    "attack": 0.25,
+    "decay": 0.17,
+    "centroid": 5951,
+    "low": 0,
+    "high": 0.791,
+    "zcr": 0.54,
+    "flatness": 0.238,
+    "brightness": 1,
+    "weight": 0,
+    "intensity": 0.382,
+    "sharpness": 0,
+    "tonal": 0
+   },
+   "tags": {
+    "material": [
+     "paper"
+    ],
+    "action": [
+     "movement"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "reveal-gong",
+   "file": "assets/sfx/reveal-gong.mp3",
+   "hash": "e76f394073f3acc5",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 18.113,
+    "peakDb": 1.9,
+    "rmsDb": -20.5,
+    "bodyDb": -11.4,
+    "crest": 22.4,
+    "peakT": 0.4,
+    "attack": 0.4,
+    "decay": 1.38,
+    "centroid": 341,
+    "low": 0.102,
+    "high": 0,
+    "zcr": 0.033,
+    "flatness": 0,
+    "brightness": 0.314,
+    "weight": 0.489,
+    "intensity": 0.602,
+    "sharpness": 0,
+    "tonal": 1
+   },
+   "tags": {
+    "material": [
+     "bronze"
+    ],
+    "action": [
+     "ring"
+    ],
+    "environment": [],
+    "intent": [
+     "reveal",
+     "punctuation"
+    ],
+    "texture": [
+     "tonal",
+     "ringing"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "rowing",
+   "file": "assets/sfx/rowing.mp3",
+   "hash": "be6515728a51f00f",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 45.862,
+    "peakDb": -0.8,
+    "rmsDb": -25.6,
+    "bodyDb": -20,
+    "crest": 24.7,
+    "peakT": 36.03,
+    "attack": 0.51,
+    "decay": 0.14,
+    "centroid": 359,
+    "low": 0.828,
+    "high": 0.02,
+    "zcr": 0.091,
+    "flatness": 0.02,
+    "brightness": 0.326,
+    "weight": 0.837,
+    "intensity": 0.35,
+    "sharpness": 0,
+    "tonal": 0.801
+   },
+   "tags": {
+    "material": [
+     "water"
+    ],
+    "action": [
+     "movement"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "sea-bed",
+   "file": "assets/sfx/sea-bed.mp3",
+   "hash": "7fc57175a3c486ca",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 37.517,
+    "peakDb": -0.4,
+    "rmsDb": -21.5,
+    "bodyDb": -11.1,
+    "crest": 21.1,
+    "peakT": 23,
+    "attack": 0.63,
+    "decay": 0.3,
+    "centroid": 89,
+    "low": 0.987,
+    "high": 0.006,
+    "zcr": 0.041,
+    "flatness": 0.005,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.61,
+    "sharpness": 0,
+    "tonal": 0.947
+   },
+   "tags": {
+    "material": [
+     "water"
+    ],
+    "action": [
+     "bed"
+    ],
+    "environment": [
+     "outdoor"
+    ],
+    "intent": [
+     "ambience"
+    ],
+    "texture": [
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "skid-dust",
+   "file": "assets/sfx/skid-dust.mp3",
+   "hash": "0d5d292d1ff1ba5c",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.8,
+    "peakDb": 0.1,
+    "rmsDb": -20.8,
+    "bodyDb": -14.8,
+    "crest": 20.9,
+    "peakT": 0.04,
+    "attack": 0.04,
+    "decay": 0.15,
+    "centroid": 699,
+    "low": 0.158,
+    "high": 0.016,
+    "zcr": 0.093,
+    "flatness": 0.035,
+    "brightness": 0.497,
+    "weight": 0.477,
+    "intensity": 0.702,
+    "sharpness": 0.667,
+    "tonal": 0.654
+   },
+   "tags": {
+    "material": [
+     "earth"
+    ],
+    "action": [
+     "scrape"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "splash",
+   "file": "assets/sfx/splash.mp3",
+   "hash": "97040b823a586923",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 1.3,
+    "peakDb": 2.3,
+    "rmsDb": -24,
+    "bodyDb": -14.4,
+    "crest": 26.3,
+    "peakT": 0.15,
+    "attack": 0.05,
+    "decay": 0.05,
+    "centroid": 2146,
+    "low": 0.005,
+    "high": 0.156,
+    "zcr": 0.347,
+    "flatness": 0.186,
+    "brightness": 0.784,
+    "weight": 0.116,
+    "intensity": 0.689,
+    "sharpness": 0.583,
+    "tonal": 0
+   },
+   "tags": {
+    "material": [
+     "water"
+    ],
+    "action": [
+     "splash"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "steel-scrape",
+   "file": "assets/sfx/steel-scrape.mp3",
+   "hash": "1c0d822aa51e30b0",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 1.6,
+    "peakDb": -10.6,
+    "rmsDb": -25.1,
+    "bodyDb": -24.9,
+    "crest": 14.5,
+    "peakT": 0.08,
+    "attack": 0.07,
+    "decay": 1.44,
+    "centroid": 5436,
+    "low": 0,
+    "high": 0.899,
+    "zcr": 0.491,
+    "flatness": 0.157,
+    "brightness": 1,
+    "weight": 0,
+    "intensity": 0.333,
+    "sharpness": 0.417,
+    "tonal": 0
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "scrape"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "steps-in",
+   "file": "assets/sfx/steps-in.mp3",
+   "hash": "3389bfd0ac7e9c05",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 16.724,
+    "peakDb": -5.1,
+    "rmsDb": -18,
+    "bodyDb": -11.2,
+    "crest": 12.9,
+    "peakT": 4.24,
+    "attack": 0.03,
+    "decay": 0.12,
+    "centroid": 22,
+    "low": 0.994,
+    "high": 0,
+    "zcr": 0.007,
+    "flatness": 0.001,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.83,
+    "sharpness": 0.75,
+    "tonal": 0.993
+   },
+   "tags": {
+    "material": [
+     "earth"
+    ],
+    "action": [
+     "step"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "steps-out",
+   "file": "assets/sfx/steps-out.mp3",
+   "hash": "3389bfd0ac7e9c05",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 16.724,
+    "peakDb": -5.1,
+    "rmsDb": -18,
+    "bodyDb": -11.2,
+    "crest": 12.9,
+    "peakT": 4.24,
+    "attack": 0.03,
+    "decay": 0.12,
+    "centroid": 22,
+    "low": 0.994,
+    "high": 0,
+    "zcr": 0.007,
+    "flatness": 0.001,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.83,
+    "sharpness": 0.75,
+    "tonal": 0.993
+   },
+   "tags": {
+    "material": [
+     "earth"
+    ],
+    "action": [
+     "step"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "swing-2",
+   "file": "assets/sfx/swing-2.mp3",
+   "hash": "40b33a4bf89972dd",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 0.365,
+    "peakDb": 1.8,
+    "rmsDb": -19,
+    "bodyDb": -14.6,
+    "crest": 20.8,
+    "peakT": 0.06,
+    "attack": 0.04,
+    "decay": 0.08,
+    "centroid": 495,
+    "low": 0.133,
+    "high": 0.003,
+    "zcr": 0.058,
+    "flatness": 0.007,
+    "brightness": 0.409,
+    "weight": 0.486,
+    "intensity": 0.707,
+    "sharpness": 0.667,
+    "tonal": 0.933
+   },
+   "tags": {
+    "material": [
+     "steel",
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "swing-3",
+   "file": "assets/sfx/swing-3.mp3",
+   "hash": "40b33a4bf89972dd",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 0.365,
+    "peakDb": 1.8,
+    "rmsDb": -19,
+    "bodyDb": -14.6,
+    "crest": 20.8,
+    "peakT": 0.06,
+    "attack": 0.04,
+    "decay": 0.08,
+    "centroid": 495,
+    "low": 0.133,
+    "high": 0.003,
+    "zcr": 0.058,
+    "flatness": 0.007,
+    "brightness": 0.409,
+    "weight": 0.486,
+    "intensity": 0.707,
+    "sharpness": 0.667,
+    "tonal": 0.933
+   },
+   "tags": {
+    "material": [
+     "steel",
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "swing",
+   "file": "assets/sfx/swing.mp3",
+   "hash": "40b33a4bf89972dd",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 0.365,
+    "peakDb": 1.8,
+    "rmsDb": -19,
+    "bodyDb": -14.6,
+    "crest": 20.8,
+    "peakT": 0.06,
+    "attack": 0.04,
+    "decay": 0.08,
+    "centroid": 495,
+    "low": 0.133,
+    "high": 0.003,
+    "zcr": 0.058,
+    "flatness": 0.007,
+    "brightness": 0.409,
+    "weight": 0.486,
+    "intensity": 0.707,
+    "sharpness": 0.667,
+    "tonal": 0.933
+   },
+   "tags": {
+    "material": [
+     "steel",
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "sword-draw-1",
+   "file": "assets/sfx/sword-draw-1.mp3",
+   "hash": "7e05594bc1b09124",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 2.606,
+    "peakDb": 4.8,
+    "rmsDb": -14.2,
+    "bodyDb": -7.2,
+    "crest": 19.1,
+    "peakT": 0.1,
+    "attack": 0.1,
+    "decay": 0.08,
+    "centroid": 4616,
+    "low": 0,
+    "high": 0.827,
+    "zcr": 0.293,
+    "flatness": 0.061,
+    "brightness": 0.98,
+    "weight": 0.01,
+    "intensity": 0.75,
+    "sharpness": 0.167,
+    "tonal": 0.393
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "draw"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "sword-draw-2",
+   "file": "assets/sfx/sword-draw-2.mp3",
+   "hash": "931cc9b51ba7c80d",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 1.002,
+    "peakDb": -3.6,
+    "rmsDb": -23.5,
+    "bodyDb": -18.7,
+    "crest": 19.9,
+    "peakT": 0.17,
+    "attack": 0.06,
+    "decay": 0.25,
+    "centroid": 3803,
+    "low": 0.001,
+    "high": 0.404,
+    "zcr": 0.344,
+    "flatness": 0.031,
+    "brightness": 0.93,
+    "weight": 0.036,
+    "intensity": 0.539,
+    "sharpness": 0.5,
+    "tonal": 0.694
+   },
+   "tags": {
+    "material": [
+     "steel"
+    ],
+    "action": [
+     "draw"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "temple-bell",
+   "file": "assets/sfx/temple-bell.mp3",
+   "hash": "9dbf5d1d46aea78f",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 33.868,
+    "peakDb": -4.1,
+    "rmsDb": -25.9,
+    "bodyDb": -23.3,
+    "crest": 21.8,
+    "peakT": 10.36,
+    "attack": 0.57,
+    "decay": 0.53,
+    "centroid": 1752,
+    "low": 0.231,
+    "high": 0.144,
+    "zcr": 0.167,
+    "flatness": 0.021,
+    "brightness": 0.732,
+    "weight": 0.464,
+    "intensity": 0.254,
+    "sharpness": 0,
+    "tonal": 0.793
+   },
+   "tags": {
+    "material": [
+     "bronze"
+    ],
+    "action": [
+     "ring"
+    ],
+    "environment": [
+     "interior"
+    ],
+    "intent": [
+     "punctuation"
+    ],
+    "texture": [
+     "tonal",
+     "bright"
+    ],
+    "size": [
+     "medium"
+    ]
+   }
+  },
+  {
+   "id": "throw-whoosh",
+   "file": "assets/sfx/throw-whoosh.mp3",
+   "hash": "03e47dd04ac26910",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "cc0",
+   "m": {
+    "dur": 0.522,
+    "peakDb": 1.5,
+    "rmsDb": -16.1,
+    "bodyDb": -10.3,
+    "crest": 17.6,
+    "peakT": 0.11,
+    "attack": 0.02,
+    "decay": 0.1,
+    "centroid": 114,
+    "low": 0.827,
+    "high": 0.002,
+    "zcr": 0.037,
+    "flatness": 0.002,
+    "brightness": 0.033,
+    "weight": 0.984,
+    "intensity": 0.884,
+    "sharpness": 0.833,
+    "tonal": 0.976
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "title-taiko",
+   "file": "assets/sfx/title-taiko.mp3",
+   "hash": "18d9580b2451cefc",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 6.956,
+    "peakDb": 0.9,
+    "rmsDb": -16.5,
+    "bodyDb": -10.3,
+    "crest": 17.4,
+    "peakT": 0.56,
+    "attack": 0.56,
+    "decay": 0.86,
+    "centroid": 69,
+    "low": 0.999,
+    "high": 0,
+    "zcr": 0.006,
+    "flatness": 0,
+    "brightness": 0,
+    "weight": 1,
+    "intensity": 0.634,
+    "sharpness": 0,
+    "tonal": 1
+   },
+   "tags": {
+    "material": [
+     "skin"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [
+     "reveal",
+     "accent"
+    ],
+    "texture": [
+     "tonal",
+     "ringing",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "whoosh-a",
+   "file": "assets/sfx/whoosh-a.mp3",
+   "hash": "ce0ddd7d3897e305",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.42,
+    "peakDb": -7.6,
+    "rmsDb": -27.9,
+    "bodyDb": -21.2,
+    "crest": 20.3,
+    "peakT": 0.16,
+    "attack": 0.04,
+    "decay": 0.04,
+    "centroid": 1229,
+    "low": 0.052,
+    "high": 0.029,
+    "zcr": 0.152,
+    "flatness": 0.04,
+    "brightness": 0.641,
+    "weight": 0.254,
+    "intensity": 0.514,
+    "sharpness": 0.667,
+    "tonal": 0.604
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "whoosh-b",
+   "file": "assets/sfx/whoosh-b.mp3",
+   "hash": "0b291ebf5456ce27",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.341,
+    "peakDb": -8.1,
+    "rmsDb": -28.9,
+    "bodyDb": -22.7,
+    "crest": 20.8,
+    "peakT": 0.12,
+    "attack": 0.03,
+    "decay": 0.04,
+    "centroid": 1994,
+    "low": 0.008,
+    "high": 0.102,
+    "zcr": 0.206,
+    "flatness": 0.108,
+    "brightness": 0.765,
+    "weight": 0.129,
+    "intensity": 0.498,
+    "sharpness": 0.75,
+    "tonal": 0
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "whoosh-c",
+   "file": "assets/sfx/whoosh-c.mp3",
+   "hash": "3bd70e20fb89a5fd",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.55,
+    "peakDb": -6.6,
+    "rmsDb": -28.4,
+    "bodyDb": -21.9,
+    "crest": 21.8,
+    "peakT": 0.22,
+    "attack": 0.05,
+    "decay": 0.06,
+    "centroid": 1103,
+    "low": 0.074,
+    "high": 0.011,
+    "zcr": 0.117,
+    "flatness": 0.02,
+    "brightness": 0.614,
+    "weight": 0.299,
+    "intensity": 0.47,
+    "sharpness": 0.583,
+    "tonal": 0.804
+   },
+   "tags": {
+    "material": [
+     "air"
+    ],
+    "action": [
+     "whoosh"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "tonal"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  },
+  {
+   "id": "wind-bed",
+   "file": "assets/sfx/wind-bed.mp3",
+   "hash": "b8aea669429537a7",
+   "analyzer": "sonic-analyzer/1",
+   "source": "freesound",
+   "license": "by",
+   "m": {
+    "dur": 111.582,
+    "peakDb": -9.6,
+    "rmsDb": -37.2,
+    "bodyDb": -23.3,
+    "crest": 27.6,
+    "peakT": 3.47,
+    "attack": 0.07,
+    "decay": 0.07,
+    "centroid": 242,
+    "low": 0.79,
+    "high": 0.004,
+    "zcr": 0.058,
+    "flatness": 0.005,
+    "brightness": 0.226,
+    "weight": 0.887,
+    "intensity": 0.377,
+    "sharpness": 0.417,
+    "tonal": 0.951
+   },
+   "tags": {
+    "material": [
+     "water",
+     "air"
+    ],
+    "action": [
+     "bed"
+    ],
+    "environment": [
+     "outdoor"
+    ],
+    "intent": [
+     "ambience"
+    ],
+    "texture": [
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "wood-chop",
+   "file": "assets/sfx/wood-chop.mp3",
+   "hash": "51e7eff7e9721650",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.3,
+    "peakDb": -0.3,
+    "rmsDb": -16.9,
+    "bodyDb": -13.3,
+    "crest": 16.6,
+    "peakT": 0.01,
+    "attack": 0.01,
+    "decay": 0.11,
+    "centroid": 186,
+    "low": 0.919,
+    "high": 0.002,
+    "zcr": 0.025,
+    "flatness": 0.002,
+    "brightness": 0.158,
+    "weight": 0.921,
+    "intensity": 0.819,
+    "sharpness": 0.917,
+    "tonal": 0.982
+   },
+   "tags": {
+    "material": [
+     "wood"
+    ],
+    "action": [
+     "impact"
+    ],
+    "environment": [],
+    "intent": [],
+    "texture": [
+     "transient",
+     "tonal",
+     "dark"
+    ],
+    "size": [
+     "heavy"
+    ]
+   }
+  },
+  {
+   "id": "wood-creak",
+   "file": "assets/sfx/wood-creak.mp3",
+   "hash": "b49e8a50c8f01b91",
+   "analyzer": "sonic-analyzer/1",
+   "source": "synth",
+   "license": "own",
+   "m": {
+    "dur": 0.9,
+    "peakDb": -6.2,
+    "rmsDb": -25.9,
+    "bodyDb": -20.8,
+    "crest": 19.7,
+    "peakT": 0.38,
+    "attack": 0.1,
+    "decay": 0.01,
+    "centroid": 1775,
+    "low": 0.007,
+    "high": 0.072,
+    "zcr": 0.193,
+    "flatness": 0.084,
+    "brightness": 0.735,
+    "weight": 0.143,
+    "intensity": 0.376,
+    "sharpness": 0.167,
+    "tonal": 0.164
+   },
+   "tags": {
+    "material": [
+     "wood"
+    ],
+    "action": [
+     "creak"
+    ],
+    "environment": [],
+    "intent": [
+     "tension"
+    ],
+    "texture": [
+     "noisy",
+     "bright"
+    ],
+    "size": [
+     "light"
+    ]
+   }
+  }
+ ]
+}

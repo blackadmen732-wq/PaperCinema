@@ -74,12 +74,26 @@ const evPath = opt('events', `output/${base}.events.json`);
 const evData = fs.existsSync(evPath) ? JSON.parse(fs.readFileSync(evPath, 'utf8')) : null;
 const autoCues = evData?.cues ?? [];
 if (autoCues.length) console.log(`+ ${autoCues.length} automatic cues from ${evPath}`);
+// SONIC (opt-in: film.autoSounds.sonic, or --sonic): every automatic cue picks its sound from the tagged catalog
+// (assets/sfx/sonic.catalog.json, built by `node tools/sonic.mjs scan`) by what the event IS: a clash by its
+// material and intensity, a whoosh by the blade's speed, a landing by its height. Time, gain and rate stay the
+// engine's; the new sound's measured peak is put on the event's moment and its level is matched to the sound it
+// replaces. Off (the default), nothing below changes. docs/SONIC.md.
+const SONIC = args.includes('--sonic') ? (film.autoSounds?.sonic || true) : film.autoSounds?.sonic;
+if (SONIC && autoCues.length) {
+  const { applyToCues } = await import('./sonic.mjs');
+  const so = typeof SONIC === 'object' ? SONIC : {};
+  const report = applyToCues(autoCues, { kinds: so.kinds, matchLevel: so.matchLevel, seed: so.seed ?? base, catalogPath: so.catalog });
+  fs.mkdirSync('output', { recursive: true });
+  fs.writeFileSync(`output/${base}.sonic.json`, JSON.stringify(report, null, 1));
+  console.log(`+ sonic: ${report.length} automatic cue(s) chose their sound from the catalog → output/${base}.sonic.json`);
+}
 // film.autoSounds.whoosh.earshot: [ids] → automatic whooshes come from the Earshot bank, peak aimed at the blade's
 // fastest moment (the analysis places whoosh cues 0.06 s before the speed peak; the apex puts the loudest point on it)
 const ES = film.autoSounds?.whoosh?.earshot;
 if (ES?.length) {
   let n = 0;
-  for (const c of autoCues) if (/^auto-whoosh/.test(c.id)) {
+  for (const c of autoCues) if (/^auto-whoosh/.test(c.id) && !c.sonic) {
     Object.assign(c, { earshot: ES[n++ % ES.length], t: c.t + 0.06, apex: 0.2, len: 0.6 });
     delete c.sfx; delete c.rate;
   }
@@ -137,6 +151,13 @@ for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
     const f = earshot(cue);
     if (f) placed.push({ cue: { ...cue, t: Math.max(0, cue.t - (cue.apex ?? 0)) }, f });
     continue;
+  }
+  // "sonic": "<query>" on a film cue: the best catalog match plays (e.g. "action=impact material=wood weight>0.6")
+  if (cue.sonic && typeof cue.sonic === 'string' && !cue.file) {
+    const { loadCatalog, query } = await import('./sonic.mjs');
+    const hits = query(loadCatalog(), cue.sonic, { sort: cue.sonicSort ?? 'intensity' });
+    if (hits.length) { cue.file = hits[0].file; console.log(`✓ ${cue.id.padEnd(13)} sonic "${cue.sonic}" → ${hits[0].id} (1 of ${hits.length})`); }
+    else console.log(`✗ ${cue.id}: no catalog sound matches "${cue.sonic}"`);
   }
   const lib = cue.sfx ? { min: 0.2, max: 8, len: cue.len, query: cue.query ?? cue.sfx, ...cue, id: cue.sfx } : cue;
   const f = await find(lib);

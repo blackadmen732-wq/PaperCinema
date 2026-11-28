@@ -24,7 +24,8 @@ connections = [["RESEARCH", "FILM"], ["NEWFILM", "FILM"], ["LIBRARY", "FILM"], [
                ["FILM", "BLENDERFILM"], ["MODELS", "BLENDERFILM"], ["ENGINE", "BLENDERFILM"], ["BLENDERFILM", "BLENDER"],
                ["ENGINE", "TIMELINE"], ["COMBAT", "FIGHTDIR"], ["FIGHTDIR", "TIMELINE"], ["TIMELINE", "CAMCHECK"], ["TIMELINE", "DAMAGE"],
                ["TIMELINE", "RENDERSUP"], ["TIMELINE", "BLENDERFILM"], ["KUROKO", "CAMCHECK"], ["CAMCHECK", "AUDIT"], ["DAMAGE", "KIZU"],
-               ["RENDERSUP", "RENDER"], ["RENDERSUP", "BLENDER"]]
+               ["RENDERSUP", "RENDER"], ["RENDERSUP", "BLENDER"],
+               ["COMBAT", "SONIC"], ["GROUNDFX", "SONIC"], ["SONIC", "SOUND"]]
 ids = {s['id'] for s in systems}
 bad = [c for c in connections if c[0] not in ids or c[1] not in ids]
 missing = []

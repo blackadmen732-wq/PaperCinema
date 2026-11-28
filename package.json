@@ -10,6 +10,7 @@
     "still": "node engine/render.mjs --still",
     "render": "node engine/render.mjs",
     "sound": "node engine/sound.mjs",
+    "sonic": "node tools/sonic.mjs",
     "playbook": "python3 docs/build_playbook.py",
     "film": "bash tools/film.sh",
     "preview": "node engine/serve.mjs",
