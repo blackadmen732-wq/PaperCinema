@@ -984,8 +984,9 @@
     "hero"
    ],
    "basis": "facing",
-   "az": 10,
-   "elev": -6,
+   "az0": 62,
+   "az1": 66,
+   "elev": -8,
    "aim": "chest",
    "size0": 0.5,
    "size1": 0.58,
@@ -995,7 +996,7 @@
    ],
    "fov": 32,
    "feel": "handheld",
-   "note": "S4 ANGER: low medium, he takes hasso against the glow (the close-up was blocked by his own raised hands)"
+   "note": "S4 ANGER: low medium from his left, he takes hasso against the glow, his face clear of his raised hands"
   },
   {
    "t": 32.2,

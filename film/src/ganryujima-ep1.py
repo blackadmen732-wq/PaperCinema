@@ -189,9 +189,13 @@ film['camera'] = [
     {'t': 27.95, 'cut': True, 'rig': 'compose', 'subjects': ['target'], 'basis': 'facing', 'az': -14, 'elev': 2, 'aim': 'head',
      'span': 0.55, 'size0': 0.9, 'size1': 1.1, 'screen': [0.5, 0.45], 'fov': 30, 'feel': 'locked',
      'note': 'S4 THE LINE: "Kojiro, you have already lost."'},
-    {'t': 30.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az': 10, 'elev': -6, 'aim': 'chest',
+    # (28 Nov, watched: at az 10 his raised left forearm and sleeve hid his whole face for 1.2 s of this 1.7 s shot.
+    # From his left (az 62-66, the hasso hands behind his head) the nearest forearm in front stays 0.177 frame-heights
+    # from his face (half a face + half a sleeve: 0.175); measured on the exported bones every 6th frame. World bearing
+    # about +18 deg: still on the hero side of the line)
+    {'t': 30.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 62, 'az1': 66, 'elev': -8, 'aim': 'chest',
      'size0': 0.5, 'size1': 0.58, 'screen': [0.5, 0.56], 'fov': 32, 'feel': 'handheld',
-     'note': 'S4 ANGER: low medium, he takes hasso against the glow (the close-up was blocked by his own raised hands)'},
+     'note': 'S4 ANGER: low medium from his left, he takes hasso against the glow, his face clear of his raised hands'},
     # S5 (32-42 s): one strike
     {'t': 32.2, 'cut': True, 'rig': 'compose', 'subjects': ['hero', 'target'], 'az0': 64, 'az1': 70, 'elev': -5, 'size': 0.34,
      'screen': [0.5, 0.58], 'fov': 36, 'feel': 'torpedo', 'note': 'S5 THE CHARGE: low, three-quarter from Kojiro\'s side'},
