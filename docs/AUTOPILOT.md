@@ -15,6 +15,11 @@ a full village... make it fight good, a system for groundbreaking sound and cool
 - Rules that still hold: no claim without proof in the same note; experiments stay off production characters and
   Episode 1 until they pass; Mark's images stay out of the public repo unless already there; push often (the
   container can be rebuilt; output/ is not kept).
+- **Memory: two render workers fill this machine** (28 Nov 04:10): a beach-set render worker grows to ~7 GB, two of
+  them ~14 of the 15 GB, and a third Blender job (a set build) got worker 2 killed by the kernel (out of memory) at
+  frame 1026. While a 2-worker render runs, nothing else heavy: no set builds, no extra Blender. A killed worker is
+  replaced by one more `film_modular.py --frames <first missing>-<last>` process with the same --res/--samples/--set;
+  film.sh then finds every frame on disk.
 - **A render only runs while a turn is running** (measured 28 Nov): the cloud machine is suspended about 2 minutes
   after the session goes idle, and a detached process (setsid nohup) does not keep it awake. The Episode 1 render
   died that way twice (21:04 and 00:42: the last frame 2 min after the turn ended; the wake-up found the machine
