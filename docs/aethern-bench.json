@@ -1,0 +1,130 @@
+{
+ "project": "Paper Cinema",
+ "when": "2026-11-28 05:17",
+ "note": "tokens = chars / 4 (estimate)",
+ "orient": {
+  "rows": [
+   {
+    "id": "SOUND",
+    "before_chars": 30379,
+    "grep_chars": 1974,
+    "after_chars": 473
+   },
+   {
+    "id": "COMBAT",
+    "before_chars": 30379,
+    "grep_chars": 926,
+    "after_chars": 610
+   },
+   {
+    "id": "KUROKO",
+    "before_chars": 30379,
+    "grep_chars": 851,
+    "after_chars": 332
+   },
+   {
+    "id": "AIROUTER",
+    "before_chars": 30379,
+    "grep_chars": 309,
+    "after_chars": 320
+   },
+   {
+    "id": "TIMELINE",
+    "before_chars": 30379,
+    "grep_chars": 678,
+    "after_chars": 536
+   }
+  ],
+  "before_tokens": 7595,
+  "grep_tokens_median": 213,
+  "after_tokens_median": 118
+ },
+ "deps": {
+  "rows": [
+   {
+    "id": "SOUND",
+    "before_chars": 39489,
+    "after_chars": 15
+   },
+   {
+    "id": "COMBAT",
+    "before_chars": 39489,
+    "after_chars": 79
+   },
+   {
+    "id": "KUROKO",
+    "before_chars": 39489,
+    "after_chars": 30
+   },
+   {
+    "id": "AIROUTER",
+    "before_chars": 39489,
+    "after_chars": 15
+   },
+   {
+    "id": "TIMELINE",
+    "before_chars": 39489,
+    "after_chars": 92
+   }
+  ],
+  "before_tokens": 9872,
+  "after_tokens_median": 8
+ },
+ "owner": {
+  "rows": [
+   {
+    "file": "tools/ai.py",
+    "before_chars": 39489,
+    "after_chars": 28
+   },
+   {
+    "file": "engine/kuroko.js",
+    "before_chars": 39489,
+    "after_chars": 25
+   },
+   {
+    "file": "tools/timeline.mjs",
+    "before_chars": 39489,
+    "after_chars": 29
+   },
+   {
+    "file": "docs/CAMERA.md",
+    "before_chars": 39489,
+    "after_chars": 40
+   },
+   {
+    "file": "engine/figure.js",
+    "before_chars": 39489,
+    "after_chars": 45
+   }
+  ],
+  "before_tokens": 9872,
+  "after_tokens_median": 7
+ },
+ "entry": {
+  "help_chars": 1347,
+  "cli_ms": 23.3
+ },
+ "change": {
+  "files": 856,
+  "cold_ms": 90.9,
+  "warm_ms": 6.8,
+  "warm_rehashed": 0,
+  "touch_ms": 6.5,
+  "touch_rehashed": 1,
+  "touch_reported_modified": 0,
+  "git_status_ms": 4.0
+ },
+ "build": {
+  "new_ms": 31.0,
+  "new_identical": true,
+  "old_ms": 20.5,
+  "old_identical": true
+ },
+ "cache": {
+  "first_call_requests": 1,
+  "repeat_requests": 0,
+  "first_ms_stub": 18.4,
+  "repeat_ms": 0.11
+ }
+}

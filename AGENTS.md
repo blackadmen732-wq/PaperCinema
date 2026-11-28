@@ -18,6 +18,9 @@ swords, paint instead of blood. **Everything in a film is data**; the engine ren
    `pc-measure` (read it first - every claim has a command that proves it), `pc-character`,
    `pc-animation`, `pc-effects`. They are the project's hard-won knowledge compressed: the numbers
    that define good, the traps that cost days, and the dead ends not worth re-running.
+8. **`python3 packages/aethern/bin/aethern help`** (`npm run ae -- help`): small answers instead of whole files.
+   `aethern map show SOUND` gives one system's row, files and links; `aethern changed` lists what moved since
+   your last look; `aethern mem get <topic>` gives the shared notes. Guide: `packages/aethern/README.md`.
 
 ## 2. Folder map
 | Folder | Contains |

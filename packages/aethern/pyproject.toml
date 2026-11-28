@@ -1,0 +1,16 @@
+[project]
+name = "aethern"
+version = "0.1.0"
+description = "Small answers for AI agents: project map, change detection, shared notes, free-model router and worker."
+requires-python = ">=3.9"
+dependencies = []          # standard library only; Pillow is optional (image review)
+
+[project.scripts]
+aethern = "aethern.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["aethern"]

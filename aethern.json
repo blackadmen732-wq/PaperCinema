@@ -1,0 +1,432 @@
+{
+ "_about": "Paper Cinema's description of itself for the Aethern core (packages/aethern). Every path is relative to this folder. Guide: packages/aethern/README.md.",
+ "name": "Paper Cinema",
+ "cache_dir": "output/aethern",
+ "memory_file": ".aethern/memory.jsonl",
+ "index_ignore": [
+  ".git",
+  "node_modules",
+  "output",
+  "__pycache__"
+ ],
+ "ai": {
+  "log": "output/ai-usage.jsonl",
+  "system": "Think silently. Output ONLY the deliverable, after a line containing exactly: FINAL:\nNever show your reasoning. If the answer is code, output code only.\nYou work for Paper Cinema: cinematic paper-craft samurai Shorts, vertical 9:16, folded washi characters lit from inside (amber = human, crimson = demonic), red paint instead of blood, anime timing (slow wind-up, 3-4 frame snap, settle). Be concrete and brief: numbers, frame counts, file names. No filler, no apologies, no restating the question.",
+  "omni_key_file": "~/.paper-cinema/omniroute-key",
+  "cache": true,
+  "cache_ttl_days": 7
+ },
+ "worker": {
+  "project": "You are working in the Paper Cinema repo (vertical paper-craft samurai films).",
+  "model": "nemotron",
+  "log_dir": "output/worker",
+  "protect": [
+   "AGENTS.md",
+   ".git/",
+   "gpu/.pod.json",
+   ".kaggle",
+   "skills-lock.json",
+   "aethern.json"
+  ]
+ },
+ "catalog": {
+  "source": "SYSTEMS.md",
+  "section_start": "## The catalogue",
+  "section_end": "Legend:",
+  "out": "systems.json",
+  "about": "Machine-readable catalogue of every Paper Cinema system. Generated from SYSTEMS.md by tools/build_systems.py; connections = [from, to] data flow.",
+  "start_here": [
+   "AGENTS.md",
+   "SYSTEMS.md",
+   ".claude/skills/paper-cinema-film/SKILL.md"
+  ],
+  "golden_path": [
+   "node engine/new-film.mjs <name> --jp 漢字 --en TITLE",
+   "edit film/<name>.json",
+   "node engine/validate.mjs film/<name>.json",
+   "node engine/render.mjs --film film/<name>.json --still auto",
+   "node engine/make.mjs film/<name>.json",
+   "python3 engine/thumbnail.py film/<name>.json"
+  ],
+  "connections": [
+   [
+    "RESEARCH",
+    "FILM"
+   ],
+   [
+    "NEWFILM",
+    "FILM"
+   ],
+   [
+    "LIBRARY",
+    "FILM"
+   ],
+   [
+    "MOVES",
+    "MOTION"
+   ],
+   [
+    "FILM",
+    "CHECK"
+   ],
+   [
+    "CHECK",
+    "ENGINE"
+   ],
+   [
+    "ENGINE",
+    "SKELETON"
+   ],
+   [
+    "ENGINE",
+    "MOTION"
+   ],
+   [
+    "ENGINE",
+    "REACT"
+   ],
+   [
+    "ENGINE",
+    "DRAW"
+   ],
+   [
+    "ENGINE",
+    "KUROKO"
+   ],
+   [
+    "ENGINE",
+    "KEYCAM"
+   ],
+   [
+    "ENGINE",
+    "WORLD"
+   ],
+   [
+    "ENGINE",
+    "RENDER"
+   ],
+   [
+    "RENDER",
+    "SOUND"
+   ],
+   [
+    "FILM",
+    "THUMB"
+   ],
+   [
+    "FILM",
+    "PLAYBOOK"
+   ],
+   [
+    "KUROKO",
+    "PLAYBOOK"
+   ],
+   [
+    "FILM",
+    "KIZU"
+   ],
+   [
+    "KIZU",
+    "SHIMI"
+   ],
+   [
+    "SHIMI",
+    "BLENDER"
+   ],
+   [
+    "GPU",
+    "MODELS"
+   ],
+   [
+    "MODELS",
+    "BLENDER"
+   ],
+   [
+    "MAKE",
+    "CHECK"
+   ],
+   [
+    "MAKE",
+    "RENDER"
+   ],
+   [
+    "MAKE",
+    "SOUND"
+   ],
+   [
+    "MAKE",
+    "PLAYBOOK"
+   ],
+   [
+    "ENGINE",
+    "COMBAT"
+   ],
+   [
+    "COMBAT",
+    "SOUND"
+   ],
+   [
+    "COMBAT",
+    "FX"
+   ],
+   [
+    "PAPERMAT",
+    "BWORLD"
+   ],
+   [
+    "PAPERMAT",
+    "SLASHFX"
+   ],
+   [
+    "BWORLD",
+    "BLENDER"
+   ],
+   [
+    "SLASHFX",
+    "BLENDER"
+   ],
+   [
+    "PAPERMAT",
+    "SETS"
+   ],
+   [
+    "BWORLD",
+    "SETS"
+   ],
+   [
+    "SETS",
+    "BLENDER"
+   ],
+   [
+    "MOCAP",
+    "MOVES"
+   ],
+   [
+    "MOCAP",
+    "FILM"
+   ],
+   [
+    "POLYHAVEN",
+    "PAPERMAT"
+   ],
+   [
+    "POLYHAVEN",
+    "SETS"
+   ],
+   [
+    "FILM",
+    "BLENDERFILM"
+   ],
+   [
+    "MODELS",
+    "BLENDERFILM"
+   ],
+   [
+    "ENGINE",
+    "BLENDERFILM"
+   ],
+   [
+    "BLENDERFILM",
+    "BLENDER"
+   ],
+   [
+    "ENGINE",
+    "TIMELINE"
+   ],
+   [
+    "COMBAT",
+    "FIGHTDIR"
+   ],
+   [
+    "FIGHTDIR",
+    "TIMELINE"
+   ],
+   [
+    "TIMELINE",
+    "CAMCHECK"
+   ],
+   [
+    "TIMELINE",
+    "DAMAGE"
+   ],
+   [
+    "TIMELINE",
+    "RENDERSUP"
+   ],
+   [
+    "TIMELINE",
+    "BLENDERFILM"
+   ],
+   [
+    "KUROKO",
+    "CAMCHECK"
+   ],
+   [
+    "CAMCHECK",
+    "AUDIT"
+   ],
+   [
+    "DAMAGE",
+    "KIZU"
+   ],
+   [
+    "RENDERSUP",
+    "RENDER"
+   ],
+   [
+    "RENDERSUP",
+    "BLENDER"
+   ],
+   [
+    "AETHERN",
+    "AIROUTER"
+   ],
+   [
+    "AETHERN",
+    "WORKER"
+   ],
+   [
+    "AETHERN",
+    "RENDERSUP"
+   ]
+  ]
+ },
+ "skills": {
+  "dir": ".claude/skills",
+  "out": "SKILLS.md",
+  "preamble": "tools/skills_preamble.md",
+  "marker": "<!-- generated below this line by tools/build_skills.py -->",
+  "groups": [
+   {
+    "prefix": [
+     "pc-"
+    ],
+    "title": "START HERE — the four that carry this project",
+    "note": "Everything learned on 25-26 Nov, compressed. Written for ANY agent: command-first, with the measured numbers and the dead ends, so nothing has to be re-derived. Read `pc-measure` first."
+   },
+   {
+    "names": [
+     "paper-cinema-film",
+     "qa-review",
+     "graphify",
+     "scene-direction",
+     "scene-writing",
+     "camera-cinematography",
+     "vfx-fx"
+    ],
+    "title": "The film pipeline",
+    "note": "The project itself. The rest is support."
+   },
+   {
+    "prefix": [
+     "tool-"
+    ],
+    "title": "Outside tools (vendor/)",
+    "note": "Fetched and pinned by `node tools/vendor.mjs`. Each skill says what it is for HERE and what it must not be used for."
+   },
+   {
+    "prefix": [
+     "scenario-blender-"
+    ],
+    "title": "Blender, by task",
+    "note": "The Scenario pack (MIT). Deep, task-shaped Blender procedure; `scenario-blender-expert` is the way in."
+   },
+   {
+    "names": [
+     "character-artist",
+     "creature-artist",
+     "anatomy",
+     "character-archetypes",
+     "rigging",
+     "animation",
+     "cloth-sim",
+     "hair-groom",
+     "sculpting",
+     "retopology",
+     "blender-modeler"
+    ],
+    "title": "The character",
+    "note": "Building, rigging and posing the folded paper cast."
+   },
+   {
+    "names": [
+     "lighting",
+     "rendering",
+     "lookdev",
+     "materials",
+     "texture-workflow",
+     "compositing",
+     "uv-workflow",
+     "physics-sim",
+     "scene-assembly",
+     "set-dressing"
+    ],
+    "title": "The shot",
+    "note": "Light it, shade it, render it, put it together."
+   },
+   {
+    "suffix": [
+     "-worlds"
+    ],
+    "names": [
+     "environment-artist",
+     "prop-artist",
+     "vehicle-artist",
+     "vegetation-artist",
+     "procedural-modeling",
+     "geometry-nodes",
+     "hard-surface",
+     "archviz"
+    ],
+    "title": "The world",
+    "note": "Sets, props and everything the duel stands in."
+   },
+   {
+    "suffix": [
+     "-style",
+     "-mood",
+     "-horror",
+     "-aesthetics"
+    ],
+    "names": [
+     "horror-style",
+     "indie-horror-aesthetics",
+     "visual-console-eras",
+     "neon-retrofuturism"
+    ],
+    "title": "Look and mood",
+    "note": "Art direction. Paper Cinema is `anime-style` + `stop-motion-craft-style` + `minimalist-style`; the rest are there to be borrowed from, not followed."
+   },
+   {
+    "suffix": [
+     "-export"
+    ],
+    "names": [
+     "export-pipeline",
+     "asset-optimization",
+     "collision-proxy",
+     "lod-pipeline"
+    ],
+    "title": "Getting assets out",
+    "note": "Export, optimise, ship to an engine."
+   },
+   {
+    "prefix": [
+     "genre-"
+    ],
+    "title": "Game genres (imported, unused here)",
+    "note": "From the Scenario pack. Paper Cinema makes films, not games; these stay because they are good reference for action staging and pacing."
+   }
+  ],
+  "ungrouped_note": "Add them to GROUPS in `tools/build_skills.py` when you touch them.",
+  "footer": "{n} skills. Generated by `python3 tools/build_skills.py` — do not edit below the marker.",
+  "stale": "  {out} is out of date — run: python3 tools/build_skills.py"
+ },
+ "vendor": {
+  "manifest": "vendor/MANIFEST.json",
+  "dir": "vendor"
+ },
+ "ledger": {
+  "file": "library/promises.json"
+ }
+}

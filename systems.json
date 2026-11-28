@@ -511,6 +511,22 @@
    "status_note": "✅"
   },
   {
+   "id": "AETHERN",
+   "name": "Aethern shared core",
+   "does": "The project-independent agent toolkit Paper Cinema now runs on: project map queries (`map show/find/deps/owner`), change detection since an agent's last look (`changed`, `impact`), shared notes (`mem`), the free model router with a result cache and the free worker, the skills map, pinned outside tools, the promise ledger and hash-keyed job state. Paper Cinema's own settings are in `aethern.json`; the old `tools/` commands are thin wrappers",
+   "files": [
+    "packages/aethern/",
+    "aethern.json"
+   ],
+   "guide": [
+    "packages/aethern/README.md",
+    "docs/AETHERN-AUDIT.md"
+   ],
+   "command": "python3 packages/aethern/bin/aethern help",
+   "status": "built",
+   "status_note": "✅"
+  },
+  {
    "id": "BLENDERSKILLS",
    "name": "Blender Skills pack (existing tool)",
    "does": "94 Blender skills for Claude Code (MIT, github.com/arjun988/blender-skills): camera-cinematography, animation, rigging, lighting, lookdev, materials, rendering, compositing, vfx-fx, cloth-sim, historical-worlds, qa-review…",
@@ -1235,6 +1251,18 @@
   [
    "RENDERSUP",
    "BLENDER"
+  ],
+  [
+   "AETHERN",
+   "AIROUTER"
+  ],
+  [
+   "AETHERN",
+   "WORKER"
+  ],
+  [
+   "AETHERN",
+   "RENDERSUP"
   ]
  ]
 }
