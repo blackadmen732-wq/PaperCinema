@@ -15,3 +15,6 @@ graphify-out/
 # Outside tools: fetched by `node tools/vendor.mjs` at the commits vendor/MANIFEST.json pins.
 # The manifest is the contract and IS committed; the checkouts are a cache and are not.
 vendor/*/
+
+# Sonic: renders of bank sounds (Earshot), rebuilt on demand by engine/sonic.mjs
+.cache/
