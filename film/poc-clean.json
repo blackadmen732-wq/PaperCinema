@@ -8,7 +8,7 @@
   "motion": {
     "overlap": true,
     "lockFeet": true,
-    "note": "anime layer: follow-through lag, snap easing, overshoot (docs/ANIMATION.md \u00a710)"
+    "note": "anime layer: follow-through lag, snap easing, overshoot (docs/ANIMATION.md §10)"
   },
   "cast": {
     "kojiro": {
@@ -336,7 +336,7 @@
       "name": "Aftermath: crane out to the end card",
       "mode": "dawn",
       "start": 19.6,
-      "end": 30,
+      "end": 22,
       "rig": {
         "type": "frame",
         "subjects": [
@@ -797,7 +797,7 @@
       "start": 0.8,
       "end": 5.4,
       "style": "hero",
-      "jp": "\u7d19\u306e\u5263",
+      "jp": "紙の剣",
       "en": "POC-CLEAN",
       "sub": ""
     },
@@ -805,7 +805,7 @@
       "start": 27.4,
       "end": 29.7,
       "style": "endcard",
-      "jp": "\u7d19\u306e\u5263",
+      "jp": "紙の剣",
       "en": "PAPER CINEMA",
       "sub": "Next episode soon"
     }
@@ -897,17 +897,6 @@
       "max": 40000,
       "len": 2.4,
       "gain": 0.6
-    },
-    {
-      "id": "score",
-      "query": "test score",
-      "min": 1000,
-      "max": 60000,
-      "file": "output/poc/music.wav",
-      "t": 1.45,
-      "len": 28.55,
-      "gain": 0.18,
-      "music": true
     }
   ],
   "clashes": [
@@ -932,20 +921,5 @@
       "note": "the bind: blades meet and stay crossed"
     }
   ],
-  "format": "vertical",
-  "poc": {
-    "intent": {
-      "impact_at": 17.45,
-      "music_downbeat_at": 17.45,
-      "contacts": [
-        10.792,
-        12.592
-      ],
-      "beats_per_bar": 4,
-      "bpm": 120.0,
-      "score_start": 1.45
-    },
-    "cue_drop": [],
-    "tight_shot": null
-  }
+  "format": "vertical"
 }

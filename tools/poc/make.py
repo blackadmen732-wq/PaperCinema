@@ -1,65 +1,108 @@
 #!/usr/bin/env python3
-"""Planted-defect proof of concept, step 1: the clean 30-second film and its defective copy, with the answers.
+"""Blind planted-defect benchmark, step 1 of 3: build the films and plant the defects.
 
-  python3 tools/poc/make.py            -> film/poc-clean.json, film/poc-defect.json, output/poc/truth.json,
-                                          output/poc/music.wav (CADENCE's synthetic 120 BPM piece, the test score)
-The clean film is the starter scaffold (kuroko-duel body, signature opening, end card) with the last shot held to make
-30 s, and a music bed whose downbeat lands on the final strike. The defective copy changes five things, each one
-small and each one known: they are the truth the detectors are scored against.
+The clean film IS the answer key. Only the evaluator (tools/poc/score.py) ever opens it; the detector/
+repairer (tools/poc/run.py) never does. The defect films carry only the legitimate production intent a
+real editable project has -- the shot list, the motion flags, the measured picture events (blade
+contacts, from the renderer). They do NOT carry the correct camera distance, the right foot-lock state
+or the correct cue times. Those are the answers, and live only in the clean film the evaluator holds.
+
+  python3 tools/poc/make.py
+Writes:
+  film/poc-clean.json             the correct film (ANSWER KEY; only score.py reads it)
+  output/poc-clean.events.json    its measured picture events (written by the renderer pipeline)
+  film/poc-defect.json            the same film with D1 (camera too close) and D2 (foot-lock off) planted
+  output/poc-defect.events.json   its events, with D3 (a clash cue shifted) and D4 (a clash cue dropped)
+  film/poc-control.json           a clean control -- identical to clean, expect ZERO detections
+  output/poc-control.events.json  the control's events (clean)
+  film/poc-style.json             a stylization film: one REAL defect (D2) plus one DECLARED intentional
+                                  choice (a deliberately silent contact), to check the repairer respects
+                                  intent and does not "repair" it
+  output/poc-style.events.json    the style film's events (the silent contact's cue removed on purpose)
+  output/poc/truth.json           the answer key index, for score.py only
+
+Defects, and why each is independently detectable and repairable without the clean film:
+  D1 camera-too-close  S8's rig distance is cut so the fighters overflow the frame. A geometry render
+                       (camera_check) measures the overflow; the repair widens the distance until the
+                       render passes -- computed from the framing constraint, not copied.
+  D2 foot-slide        motion.lockFeet is turned off, so planted feet skate. footslide measures the
+                       skate; the repair is the known remedy (turn foot-lock back on) and is re-measured.
+  D3 cue-misaligned    a clash cue is moved 120 ms off its contact. The contact time is a measured
+                       picture event; the repair snaps the cue to it.
+  D4 cue-missing       a clash cue is removed. A measured contact with no cue near it is the evidence;
+                       the repair synthesises a cue at the measured contact time.
 """
 import copy, json, os, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(ROOT, 'packages/sonic'))
-from cadence import synth                                     # noqa: E402
-
 os.chdir(ROOT)
 os.makedirs('output/poc', exist_ok=True)
+run = lambda *c: subprocess.run(list(c), check=True, capture_output=True, text=True)
+
+# --- the clean film (answer key) -------------------------------------------------------------------
 body = json.load(open('film/kuroko-duel.json'))
 body['duration'] = 24
-body['shots'][-1]['end'] = 24                                  # hold the aftermath: 6 s opening + 24 s body = 30 s
-json.dump(body, open('output/poc/body.json', 'w'), indent=1)
-subprocess.run(['node', 'engine/new-film.mjs', 'poc-clean', '--body', 'output/poc/body.json', '--force'], check=True, capture_output=True)
+body['shots'] = [s for s in body['shots'] if s['start'] < 24]
+body['shots'][-1]['end'] = min(body['shots'][-1]['end'], 24)
+json.dump(body, open('output/poc/body.json', 'w'))
+run('node', 'engine/new-film.mjs', 'poc-clean', '--body', 'output/poc/body.json', '--force')
+run('node', 'engine/render.mjs', '--film', 'film/poc-clean.json', '--still', '0')   # -> output/poc-clean.events.json
 clean = json.load(open('film/poc-clean.json'))
-x, truth_music = synth.piece()                                 # 120 BPM: a downbeat every 2.0 s
-synth.write_wav(x, 'output/poc/music.wav')
-O = 6.0                                                        # the opening's length: body time + O = film time
-HIT = 11.45 + O                                                # the final strike ("impact" cue, the film's beat event)
-start = round(HIT % 2.0, 3)                                    # music starts so a downbeat falls on the strike
-clean['sounds'].append({'id': 'score', 'query': 'test score', 'min': 1000, 'max': 60000, 'file': 'output/poc/music.wav', 't': start, 'len': 30 - start, 'gain': 0.18, 'music': True})
-# the director's intent, part of the film (a real editable production knows its own hit times): what the detectors check against
 ev = json.load(open('output/poc-clean.events.json'))
-contacts = [round(c['t'], 3) for c in ev.get('contacts', [])]
-clean['poc'] = {'intent': {'impact_at': HIT, 'music_downbeat_at': HIT, 'contacts': contacts, 'beats_per_bar': 4, 'bpm': truth_music['bpm'], 'score_start': start},
-                'cue_drop': [], 'tight_shot': None}
-json.dump(clean, open('film/poc-clean.json', 'w'), indent=2)
+contacts = sorted(round(c['t'], 3) for c in ev.get('contacts', []))
+CLASH = ('clash', 'contact', 'impact', 'hit')
+clash_cues = [c for c in ev.get('cues', []) if any(k in c.get('id', '') or k == c.get('sfx') for k in CLASH)] \
+             or [c for c in ev.get('cues', []) if c.get('event', {}).get('kind') in ('clash', 'contact')]
 
-d = copy.deepcopy(clean)
+# clean control: a byte-for-byte clean film under another name
+control = copy.deepcopy(clean); control['title'] = clean.get('title', 'poc') + ' (control)'
+json.dump(control, open('film/poc-control.json', 'w'), indent=2)
+json.dump(ev, open('output/poc-control.events.json', 'w'))
+
+# --- defect film: D1 (camera) + D2 (foot-lock) -----------------------------------------------------
 truth = []
-# 1 visual: the camera pushed in far too close in shot S5 (subject cropped / off screen)
-s5 = next(s for s in d['shots'] if s['id'] == 'S5')
-truth.append({'id': 'D1', 'kind': 'visual', 'what': 'camera too close in S5: subjects cropped', 't0': s5['start'], 't1': s5['end'],
-              'path': 'shots.S5.rig.dist', 'was': s5['rig'].get('dist'), 'now': 0.3})
-s5['rig']['dist'] = 0.3
-d['poc']['tight_shot'] = ['S5', s5['start'], s5['end']]
-# 2 animation (KINESIS): foot locking off, so feet slide
-truth.append({'id': 'D2', 'kind': 'animation', 'what': 'foot lock off: feet slide', 't0': O, 't1': 30, 'path': 'motion.lockFeet',
-              'was': d['motion'].get('lockFeet'), 'now': False})
+d = copy.deepcopy(clean)
+s8 = next(s for s in d['shots'] if s['id'] == 'S8')
+truth.append({'id': 'D1', 'kind': 'camera', 'shot': 'S8', 'field': 'shots.S8.rig.dist',
+              'clean': s8['rig'].get('dist'), 'planted': 0.3})
+s8['rig']['dist'] = 0.3
+truth.append({'id': 'D2', 'kind': 'footslide', 'field': 'motion.lockFeet',
+              'clean': clean['motion'].get('lockFeet', True), 'planted': False})
 d['motion']['lockFeet'] = False
-# 3 sync: the final strike's sound 120 ms late
-for c in d['sounds']:
-    if c['id'] in ('impact', 'impact-drum'):
-        truth.append({'id': 'D3', 'part': c['id'], 'kind': 'sync', 'what': f'{c["id"]} 120 ms late', 't0': c['t'], 't1': c['t'] + 0.12,
-                      'path': f'sounds.{c["id"]}.t', 'was': c['t'], 'now': round(c['t'] + 0.12, 3)})
-        c['t'] = round(c['t'] + 0.12, 3)
-# 4 missing sound: the second blade contact's clash is dropped from the mix (planted in the events file after render)
-truth.append({'id': 'D4', 'kind': 'missing-sound', 'what': 'no sound on the second blade contact', 't0': 12.59, 't1': 12.6,
-              'path': 'events.cues[auto-clash at 12.59]', 'was': 'present', 'now': 'removed'})
-d['poc'] = {**d['poc'], 'cue_drop': [12.592]}
-# 5 music: the score starts 300 ms late, so the downbeat misses the strike
-m = next(c for c in d['sounds'] if c['id'] == 'score')
-truth.append({'id': 'D5', 'kind': 'music-timing', 'what': 'score 300 ms late: downbeat misses the final strike', 't0': HIT, 't1': HIT,
-              'path': 'sounds.score.t', 'was': m['t'], 'now': round(m['t'] + 0.3, 3)})
-m['t'] = round(m['t'] + 0.3, 3)
 json.dump(d, open('film/poc-defect.json', 'w'), indent=2)
-json.dump({'film_s': clean['duration'], 'opening_s': O, 'hit_t': HIT, 'defects': truth}, open('output/poc/truth.json', 'w'), indent=1)
-print(f'clean {clean["duration"]} s, planted:', ', '.join(sorted({t["id"] for t in truth})))
+
+# --- defect events: D3 (cue shifted) + D4 (cue dropped) --------------------------------------------
+de = copy.deepcopy(ev)
+if clash_cues and len(contacts) >= 1:
+    c0 = min(de['cues'], key=lambda c: abs(c['t'] - contacts[0]))
+    truth.append({'id': 'D3', 'kind': 'sync', 'contact': contacts[0], 'cue': c0['id'],
+                  'clean_t': round(c0['t'], 3), 'planted_offset_ms': 120})
+    for c in de['cues']:
+        if c['id'] == c0['id']:
+            c['t'] = round(c['t'] + 0.12, 3)
+if len(contacts) >= 2:
+    near1 = [c for c in de['cues'] if abs(c['t'] - contacts[1]) < 0.05]
+    truth.append({'id': 'D4', 'kind': 'missing', 'contact': contacts[1],
+                  'dropped': [c['id'] for c in near1]})
+    de['cues'] = [c for c in de['cues'] if abs(c['t'] - contacts[1]) >= 0.05]
+json.dump(de, open('output/poc-defect.events.json', 'w'))
+
+# --- stylization film: one real defect (D2) + one declared intentional silent contact --------------
+st = copy.deepcopy(clean)
+st['motion']['lockFeet'] = False                                    # real defect: feet slide
+silent = contacts[0] if contacts else None
+st['poc'] = {'intentional': {'silent_contacts': ([silent] if silent is not None else [])}}
+json.dump(st, open('film/poc-style.json', 'w'), indent=2)
+ste = copy.deepcopy(ev)
+if silent is not None:                                              # the cue is absent ON PURPOSE
+    ste['cues'] = [c for c in ste['cues'] if abs(c['t'] - silent) >= 0.05]
+json.dump(ste, open('output/poc-style.events.json', 'w'))
+
+json.dump({'defect': truth, 'contacts': contacts,
+           'style': {'real_defect': 'D2', 'intentional_silent_contact': silent}},
+          open('output/poc/truth.json', 'w'), indent=1)
+
+for f in ('poc-clean', 'poc-control', 'poc-style', 'poc-defect'):
+    r = subprocess.run(['node', 'engine/validate.mjs', f'film/{f}.json'], capture_output=True, text=True)
+    print(f'{f:12} {"ok" if r.returncode == 0 else (r.stdout + r.stderr).strip().splitlines()[-1]}')
+print('planted', sorted(t['id'] for t in truth), '| contacts', contacts,
+      '| clash cues', [c['id'] for c in clash_cues])

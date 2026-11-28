@@ -256,8 +256,7 @@
           "reveal",
           "dutch",
           "lead"
-        ],
-        "dist": 0.3
+        ]
       }
     },
     {
@@ -337,7 +336,7 @@
       "name": "Aftermath: crane out to the end card",
       "mode": "dawn",
       "start": 19.6,
-      "end": 30,
+      "end": 22,
       "rig": {
         "type": "frame",
         "subjects": [
@@ -346,7 +345,7 @@
         ],
         "size": "wide",
         "elevation": 20,
-        "dist": 1.35,
+        "dist": 0.3,
         "angle": -20,
         "fov": 40,
         "feel": "crane",
@@ -862,7 +861,7 @@
     },
     {
       "id": "impact",
-      "t": 17.57,
+      "t": 17.45,
       "query": "wood impact hit",
       "min": 200,
       "max": 4000,
@@ -872,7 +871,7 @@
     },
     {
       "id": "impact-drum",
-      "t": 17.57,
+      "t": 17.45,
       "query": "big drum hit boom",
       "min": 500,
       "max": 8000,
@@ -898,17 +897,6 @@
       "max": 40000,
       "len": 2.4,
       "gain": 0.6
-    },
-    {
-      "id": "score",
-      "query": "test score",
-      "min": 1000,
-      "max": 60000,
-      "file": "output/poc/music.wav",
-      "t": 1.75,
-      "len": 28.55,
-      "gain": 0.18,
-      "music": true
     }
   ],
   "clashes": [
@@ -933,26 +921,5 @@
       "note": "the bind: blades meet and stay crossed"
     }
   ],
-  "format": "vertical",
-  "poc": {
-    "intent": {
-      "impact_at": 17.45,
-      "music_downbeat_at": 17.45,
-      "contacts": [
-        10.792,
-        12.592
-      ],
-      "beats_per_bar": 4,
-      "bpm": 120.0,
-      "score_start": 1.45
-    },
-    "cue_drop": [
-      12.592
-    ],
-    "tight_shot": [
-      "S5",
-      13.6,
-      14.9
-    ]
-  }
+  "format": "vertical"
 }

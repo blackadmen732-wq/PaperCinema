@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# The whole planted-defect proof of concept, reproducibly, CPU only, no frame render (~2 min, mostly two camera checks).
+# The blind planted-defect benchmark, reproducibly, CPU only, no full frame render.
+# make.py plants the defects and keeps the clean film as an answer key the repairer never sees.
+# run.py detects and repairs each film from measured evidence alone. score.py is the only reader of the
+# answer key and grades detection, metadata-correct, perceptually-correct, preservation, plus a clean
+# control and a stylization film. Camera repair renders shot geometry, so this takes several minutes.
 #   bash tools/poc/all.sh
 set -e; cd "$(git rev-parse --show-toplevel)"
-python3 tools/poc/make.py                                   # the clean 30 s film, the defective copy, the answers
-cp output/poc-clean.events.json output/poc-defect.events.json
-python3 tools/poc/run.py >/dev/null 2>&1 || true            # writes film/poc-fixed.json (D1 needs the camera checks below)
-for tag in defect fixed; do
-  node tools/camera_check.mjs film/poc-$tag.json --from 13.5 --to 15.0 --step 2 --json >output/poc/cc-$tag.json 2>/dev/null || true
-done
-python3 tools/poc/run.py                                    # detect, fix, verify, preserve; exit 1 if any check fails
+python3 tools/poc/make.py                    # clean film + answer key, defect film, clean control, stylization film
+python3 tools/poc/run.py poc-defect          # blind detect + repair
+python3 tools/poc/run.py poc-control         # clean control: expect no findings
+python3 tools/poc/run.py poc-style           # one real defect + one declared intentional silent beat
+python3 tools/poc/score.py                   # independent evaluator (reads the answer key); writes output/poc/score.json
