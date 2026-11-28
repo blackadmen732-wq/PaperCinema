@@ -1,0 +1,53 @@
+{
+ "name": "ichijoji-crossroads",
+ "about": "Episode 2 (film/ichijoji-ep2.json): the crossroads at Ichijo-ji outside Kyoto before dawn, 1604 (research/ichijoji.md). Two earth roads cross at the origin (the Kyoto road along X, the hill road along Y); the big leaning 'hanging pine' (sagari-matsu) on the north-east corner reaches out over the crossing; a stone marker at its foot; up the slope behind it a red torii and two stone lanterns (the Hachidai shrine: set dressing, our choice); a few thatched farmhouses and fences at the village edge, fields of dark earth, treelines on the hills, a low moon and ground mist. Made from existing kit pieces only (no new code).",
+ "seed": 23,
+ "clear": 1.6,
+ "polyhaven": true,
+ "lighting": {"preset": "night", "sun": {"elev": 20, "az": 30, "color": [0.55, 0.66, 1.0], "energy": 1.8, "angle": 1.2},
+  "sky": {"type": "night", "zenith": [0.012, 0.022, 0.06], "horizon": [0.07, 0.085, 0.16], "stars": 1.0, "strength": 3.0},
+  "exposure": 1.05, "bloom": 0.8, "vignette": 0.45,
+  "fighter": {"key": {"offset": [-1.6, 2.6, 2.6], "energy": 18, "color": [1.0, 0.72, 0.45], "size": 1.4},
+              "fill": {"offset": [2.6, 1.8, 1.3], "energy": 4, "color": [0.6, 0.7, 1.0], "size": 2.0},
+              "rim": {"offset": [0.8, -2.8, 2.8], "energy": 60, "color": [0.55, 0.68, 1.0], "size": 0.7}}},
+ "materials": {"gravel": {"color": [0.15, 0.14, 0.125], "scale": 18.0}, "earth": {"color": [0.075, 0.062, 0.048], "moss": 0.45}},
+ "pieces": [
+  {"kit": "moon", "name": "moon", "params": {"elev": 18, "az": 30, "size": 3.0, "strength": 9.0}},
+  {"kit": "fog", "name": "fog", "pos": [0, 0, 0], "params": {"size": [110, 110, 30], "density": 0.01, "height": 3.0, "noise": 0.45, "noise_scale": 0.08, "color": [0.42, 0.5, 0.75], "anisotropy": 0.5}},
+  {"kit": "ground", "name": "fields", "pos": [0, 0, 0], "params": {"width": 120, "depth": 120, "key": "earth", "bumps": 0.03, "res": 60}},
+  {"kit": "ground", "name": "road_kyoto", "pos": [0, 0, 0.01], "params": {"width": 70, "depth": 5.0, "key": "gravel", "bumps": 0.008, "res": 40}},
+  {"kit": "ground", "name": "road_hill", "pos": [0, 0, 0.012], "params": {"width": 4.2, "depth": 70, "key": "gravel", "bumps": 0.008, "res": 40}},
+  {"kit": "pine", "name": "sagari_matsu", "pos": [3.4, 3.6, 0], "params": {"height": 8.5, "spread": 6.0, "lean": 24, "lean_dir": -135, "pads": 8, "pad_size": 1.6}},
+  {"kit": "rocks", "name": "duel_marker", "pos": [2.3, 2.9, 0], "params": {"count": 1, "size": [0.35, 0.55], "key": "stone_mossy", "squash": 1.6, "sink": 0.1}},
+  {"kit": "rocks", "name": "pine_roots", "pos": [4.2, 4.4, 0], "params": {"count": 4, "radius": 1.4, "size": [0.25, 0.6], "key": "stone_mossy"}},
+  {"kit": "toro", "name": "corner_toro", "pos": [-2.9, 3.1, 0], "params": {"height": 1.8, "energy": 12.0}},
+  {"kit": "torii", "name": "hachidai_torii", "pos": [9.5, 13.0, 0], "rot": 20, "params": {"height": 4.6, "span": 3.6}},
+  {"kit": "toro", "name": "shrine_toro_l", "pos": [7.8, 11.6, 0], "params": {"height": 2.0, "energy": 10.0}},
+  {"kit": "toro", "name": "shrine_toro_r", "pos": [11.6, 12.2, 0], "params": {"height": 2.0, "energy": 10.0}},
+  {"kit": "minka", "name": "minka_nw", "pos": [-13.5, 10.5, 0], "params": {"width": 9.0, "depth": 6.5, "lit": 0.5}},
+  {"kit": "minka", "name": "minka_se", "pos": [14.5, -11.5, 0], "rot": 180, "params": {"width": 8.5, "depth": 6.5, "lit": 0.3}},
+  {"kit": "minka", "name": "minka_sw", "pos": [-16.0, -12.0, 0], "rot": 180, "params": {"width": 9.5, "depth": 7.0, "lit": 0.0}},
+  {"kit": "bamboo_fence", "name": "fence_nw", "pos": [-9.0, 4.2, 0], "params": {"length": 6.0, "height": 1.1, "style": "yotsume"}},
+  {"kit": "bamboo_fence", "name": "fence_se", "pos": [10.0, -4.2, 0], "rot": 180, "params": {"length": 6.0, "height": 1.1, "style": "yotsume"}},
+  {"kit": "pine", "name": "pine_far_e", "pos": [21.0, 6.0, 0], "params": {"height": 7.0, "spread": 4.0, "lean": 10, "lean_dir": -60}},
+  {"kit": "pine", "name": "pine_far_w", "pos": [-22.0, -6.5, 0], "params": {"height": 6.5, "spread": 4.0, "lean": 12, "lean_dir": 60}},
+  {"kit": "treeline", "name": "hills_n", "pos": [0, 30, 0], "params": {"width": 100, "depth": 10, "count": 46, "height": [8.0, 15.0]}},
+  {"kit": "treeline", "name": "hills_s", "pos": [0, -34, 0], "rot": 180, "params": {"width": 100, "depth": 8, "count": 34, "height": [6.0, 11.0]}},
+  {"kit": "ph_prop", "name": "grass_ne", "pos": [6.0, 5.5, 0], "params": {"role": "grass", "count": 8, "spread": 5.0, "faces": 800}},
+  {"kit": "ph_prop", "name": "grass_sw", "pos": [-6.0, -5.5, 0], "params": {"role": "grass", "count": 8, "spread": 5.0, "faces": 800}},
+  {"kit": "ph_prop", "name": "ferns_pine", "pos": [5.2, 2.6, 0], "params": {"role": "fern", "count": 3, "spread": 1.5, "faces": 800}}
+ ],
+ "marks": {
+  "MARK_center": {"pos": [0, 0, 0], "face": [0, 20], "role": "the crossing of the two roads; film coordinates are measured from here (film x = set x, film z = -set y)"},
+  "MARK_pine": {"pos": [3.4, 3.6, 0], "face": [-1, -1], "role": "the foot of the hanging pine"},
+  "MARK_hero": {"pos": [-1.8, 0, 0], "face": [1.8, 0], "role": "hero"},
+  "MARK_foe": {"pos": [1.8, 0, 0], "face": [-1.8, 0], "role": "foe"}
+ },
+ "cameras": {
+  "CAM_wide": {"pos": [-14.0, -3.0, 1.8], "look": [3.0, 2.5, 2.6], "lens": 24, "note": "down the Kyoto road from the west: the crossing, the pine over it, the torii above"},
+  "CAM_medium": {"pos": [0.4, -7.0, 1.4], "look_mark": "MARK_center", "look_z": 1.8, "lens": 28, "fstop": 4.0, "focus": "MARK_center", "note": "from the south: the crossing, the pine and the moon behind"},
+  "CAM_low": {"pos": [-1.0, -2.6, 0.3], "look": [3.0, 4.0, 5.0], "lens": 20, "fstop": 0, "note": "low under the pine"}
+ },
+ "preview_cams": ["CAM_wide", "CAM_medium", "CAM_low"],
+ "render": {"samples": 32, "res": "540x960", "volume_step_rate": 4.0}
+}

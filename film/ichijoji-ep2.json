@@ -1,0 +1,2156 @@
+{
+ "title": "Ichijo-ji: the boy first (Episode 2)",
+ "page": "engine/motion.html",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "format": "vertical",
+ "duration": 50.5,
+ "mode": "studio",
+ "motion": {
+  "overlap": true,
+  "lockFeet": true
+ },
+ "stage": {
+  "mark": "MARK_center",
+  "origin": true,
+  "turn": 0
+ },
+ "set": "ichijoji-crossroads",
+ "cast": {
+  "hero": {
+   "character": "musashi",
+   "face": "eyes",
+   "recipe": "musashi-ai"
+  },
+  "target": {
+   "character": "ronin",
+   "face": "eyes",
+   "recipe": "samurai-ai"
+  },
+  "retainerA": {
+   "character": "ronin",
+   "face": "eyes",
+   "recipe": "ronin-ai-kabuto"
+  },
+  "retainerC": {
+   "character": "ronin",
+   "face": "eyes",
+   "recipe": "assassin-ai"
+  }
+ },
+ "performances": {
+  "hero": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -1.108,
+     "hy": 0.1,
+     "note": "S1 hook: his eyes in the dark under the pine"
+    },
+    {
+     "t": 2.6,
+     "pose": "stand-blade-low",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -1.108,
+     "hy": 0.05
+    },
+    {
+     "t": 6.5,
+     "pose": "stand-blade-low",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -0.958,
+     "hy": -0.25,
+     "note": "he hears them on the road"
+    },
+    {
+     "t": 10.5,
+     "pose": "stand-blade-low",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -0.858,
+     "hy": -0.1,
+     "crouch": 0.06
+    },
+    {
+     "t": 12.4,
+     "pose": "chudan",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -0.858,
+     "settle": 0.6,
+     "note": "the blade comes up: he has decided"
+    },
+    {
+     "t": 13.6,
+     "pose": "chudan",
+     "x": 4.7,
+     "z": -4.5,
+     "ry": -0.785,
+     "tx": 0.08,
+     "note": "a small lean before the first step (anticipation)"
+    },
+    {
+     "t": 14.3,
+     "pose": "chudan",
+     "x": 4.452,
+     "z": -4.252,
+     "ry": -0.785
+    },
+    {
+     "t": 14.4,
+     "pose": "chudan",
+     "x": 4.343,
+     "z": -4.143,
+     "ry": -0.785
+    },
+    {
+     "t": 14.8,
+     "pose": "chudan",
+     "x": 3.868,
+     "z": -3.668,
+     "ry": -0.785
+    },
+    {
+     "t": 15.3,
+     "pose": "chudan",
+     "x": 3.273,
+     "z": -3.073,
+     "ry": -0.785
+    },
+    {
+     "t": 15.6,
+     "pose": "chudan",
+     "x": 2.916,
+     "z": -2.716,
+     "ry": -0.785
+    },
+    {
+     "t": 15.8,
+     "pose": "chudan",
+     "x": 2.712,
+     "z": -2.512,
+     "ry": -0.785
+    },
+    {
+     "t": 16.3,
+     "pose": "chudan",
+     "x": 2.5,
+     "z": -2.3,
+     "ry": -0.785
+    },
+    {
+     "t": 16.9,
+     "pose": "chudan",
+     "x": 2.5,
+     "z": -2.3,
+     "ry": -0.983,
+     "settle": 0.4
+    },
+    {
+     "t": 17.45,
+     "pose": "kesa-windup",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971,
+     "note": "S4 the step in, the blade high"
+    },
+    {
+     "t": 17.85,
+     "pose": "kesa-contact",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971,
+     "note": "the cut: the boy first (tradition)"
+    },
+    {
+     "t": 18.2,
+     "pose": "kesa-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971,
+     "settle": 0.9
+    },
+    {
+     "t": 20.2,
+     "pose": "kesa-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971
+    },
+    {
+     "t": 21.4,
+     "pose": "chudan",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.713,
+     "settle": 0.6,
+     "note": "S5 turns on the first retainer"
+    },
+    {
+     "t": 22.5,
+     "pose": "chudan",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.951,
+     "crouch": 0.08
+    },
+    {
+     "t": 22.85,
+     "pose": "dodge-lean",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.951,
+     "note": "slips the downcut"
+    },
+    {
+     "t": 23.15,
+     "pose": "yoko-contact",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.951,
+     "note": "the side cut"
+    },
+    {
+     "t": 23.45,
+     "pose": "yoko-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.951,
+     "settle": 0.8
+    },
+    {
+     "t": 25.0,
+     "pose": "yoko-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -1.951
+    },
+    {
+     "t": 26.0,
+     "pose": "chudan",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.535,
+     "settle": 0.6,
+     "note": "the last man"
+    },
+    {
+     "t": 27.0,
+     "pose": "chudan",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083,
+     "crouch": 0.1
+    },
+    {
+     "t": 27.45,
+     "pose": "low-dodge",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083,
+     "note": "under the thrust"
+    },
+    {
+     "t": 27.8,
+     "pose": "kiri-age-contact",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083,
+     "note": "the rising cut"
+    },
+    {
+     "t": 28.1,
+     "pose": "kiri-age-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083,
+     "settle": 0.9
+    },
+    {
+     "t": 30.0,
+     "pose": "kiri-age-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083
+    },
+    {
+     "t": 31.2,
+     "pose": "zanshin",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.083,
+     "settle": 0.7,
+     "note": "zanshin"
+    },
+    {
+     "t": 33.2,
+     "pose": "zanshin",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971,
+     "hy": -0.2,
+     "note": "his eyes go to the boy"
+    },
+    {
+     "t": 34.2,
+     "pose": "chiburi-raise",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971
+    },
+    {
+     "t": 34.6,
+     "pose": "chiburi-finish",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": -0.971,
+     "settle": 0.8,
+     "note": "the flick: paint off the blade"
+    },
+    {
+     "t": 35.8,
+     "pose": "stand-blade-low",
+     "x": 1.95,
+     "z": -1.95,
+     "ry": 1.41,
+     "tx": 0.08,
+     "settle": 0.5,
+     "note": "turns east to the road, a lean before the step"
+    },
+    {
+     "t": 36.8,
+     "pose": "stand-blade-low",
+     "x": 2.291,
+     "z": -1.895,
+     "ry": 1.41
+    },
+    {
+     "t": 37.0,
+     "pose": "stand-blade-low",
+     "x": 2.556,
+     "z": -1.852,
+     "ry": 1.41
+    },
+    {
+     "t": 37.4,
+     "pose": "stand-blade-low",
+     "x": 3.163,
+     "z": -1.753,
+     "ry": 1.41
+    },
+    {
+     "t": 38.0,
+     "pose": "stand-blade-low",
+     "x": 4.072,
+     "z": -1.606,
+     "ry": 1.41
+    },
+    {
+     "t": 38.6,
+     "pose": "stand-blade-low",
+     "x": 4.982,
+     "z": -1.458,
+     "ry": 1.41
+    },
+    {
+     "t": 39.2,
+     "pose": "stand-blade-low",
+     "x": 5.891,
+     "z": -1.31,
+     "ry": 1.41
+    },
+    {
+     "t": 39.8,
+     "pose": "stand-blade-low",
+     "x": 6.801,
+     "z": -1.163,
+     "ry": 1.41
+    },
+    {
+     "t": 40.4,
+     "pose": "stand-blade-low",
+     "x": 7.71,
+     "z": -1.015,
+     "ry": 1.41
+    },
+    {
+     "t": 41.0,
+     "pose": "stand-blade-low",
+     "x": 8.62,
+     "z": -0.867,
+     "ry": 1.41
+    },
+    {
+     "t": 41.6,
+     "pose": "stand-blade-low",
+     "x": 9.529,
+     "z": -0.72,
+     "ry": 1.41
+    },
+    {
+     "t": 42.2,
+     "pose": "stand-blade-low",
+     "x": 10.439,
+     "z": -0.572,
+     "ry": 1.41
+    },
+    {
+     "t": 42.4,
+     "pose": "stand-blade-low",
+     "x": 10.742,
+     "z": -0.523,
+     "ry": 1.41
+    },
+    {
+     "t": 42.8,
+     "pose": "stand-blade-low",
+     "x": 11.227,
+     "z": -0.444,
+     "ry": 1.41
+    },
+    {
+     "t": 43.4,
+     "pose": "stand-blade-low",
+     "x": 11.5,
+     "z": -0.4,
+     "ry": 1.41
+    },
+    {
+     "t": 44.2,
+     "pose": "stand-blade-low",
+     "x": 11.5,
+     "z": -0.4,
+     "ry": 1.41,
+     "settle": 0.4
+    },
+    {
+     "t": 45.6,
+     "pose": "stand-blade-low",
+     "x": 11.5,
+     "z": -0.4,
+     "ry": 1.11,
+     "hy": -0.5,
+     "note": "one look back at the pine"
+    },
+    {
+     "t": 50.5,
+     "pose": "stand-blade-low",
+     "x": 11.5,
+     "z": -0.4,
+     "ry": 1.16,
+     "hy": -0.45
+    }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ]
+   ],
+   "track": [
+    [
+     0,
+     0.0
+    ]
+   ],
+   "gait": {
+    "arms": [
+     0.2,
+     0.9
+    ],
+    "note": "walking with the drawn blade low in the right hand: the right arm barely swings"
+   }
+  },
+  "target": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": -11.0,
+     "z": 0.2,
+     "ry": 1.695
+    },
+    {
+     "t": 3.76,
+     "pose": "stand-blade-low",
+     "x": -10.686,
+     "z": 0.161,
+     "ry": 1.695
+    },
+    {
+     "t": 4.0,
+     "pose": "stand-blade-low",
+     "x": -10.36,
+     "z": 0.12,
+     "ry": 1.695
+    },
+    {
+     "t": 4.32,
+     "pose": "stand-blade-low",
+     "x": -9.848,
+     "z": 0.056,
+     "ry": 1.695
+    },
+    {
+     "t": 4.88,
+     "pose": "stand-blade-low",
+     "x": -8.952,
+     "z": -0.056,
+     "ry": 1.695
+    },
+    {
+     "t": 5.44,
+     "pose": "stand-blade-low",
+     "x": -8.056,
+     "z": -0.168,
+     "ry": 1.695
+    },
+    {
+     "t": 6.0,
+     "pose": "stand-blade-low",
+     "x": -7.16,
+     "z": -0.28,
+     "ry": 1.695
+    },
+    {
+     "t": 6.56,
+     "pose": "stand-blade-low",
+     "x": -6.264,
+     "z": -0.392,
+     "ry": 1.695
+    },
+    {
+     "t": 7.12,
+     "pose": "stand-blade-low",
+     "x": -5.368,
+     "z": -0.504,
+     "ry": 1.695
+    },
+    {
+     "t": 7.68,
+     "pose": "stand-blade-low",
+     "x": -4.472,
+     "z": -0.616,
+     "ry": 1.695
+    },
+    {
+     "t": 8.24,
+     "pose": "stand-blade-low",
+     "x": -3.576,
+     "z": -0.728,
+     "ry": 1.695
+    },
+    {
+     "t": 8.8,
+     "pose": "stand-blade-low",
+     "x": -2.68,
+     "z": -0.84,
+     "ry": 1.695
+    },
+    {
+     "t": 9.36,
+     "pose": "stand-blade-low",
+     "x": -1.784,
+     "z": -0.952,
+     "ry": 1.695
+    },
+    {
+     "t": 9.92,
+     "pose": "stand-blade-low",
+     "x": -0.888,
+     "z": -1.064,
+     "ry": 1.695
+    },
+    {
+     "t": 10.48,
+     "pose": "stand-blade-low",
+     "x": 0.008,
+     "z": -1.176,
+     "ry": 1.695
+    },
+    {
+     "t": 10.6,
+     "pose": "stand-blade-low",
+     "x": 0.2,
+     "z": -1.2,
+     "ry": 1.695
+    },
+    {
+     "t": 11.04,
+     "pose": "stand-blade-low",
+     "x": 0.749,
+     "z": -1.269,
+     "ry": 1.695
+    },
+    {
+     "t": 11.6,
+     "pose": "stand-blade-low",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": 1.695
+    },
+    {
+     "t": 12.3,
+     "pose": "stand-blade-low",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": -1.471,
+     "settle": 0.6,
+     "note": "turns to watch the road for Musashi"
+    },
+    {
+     "t": 14.6,
+     "pose": "stand-blade-low",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": -1.371,
+     "hy": 0.15
+    },
+    {
+     "t": 16.1,
+     "pose": "stand-blade-low",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": -1.671,
+     "hy": -0.6,
+     "note": "hears the step behind him: the head first"
+    },
+    {
+     "t": 16.8,
+     "pose": "chudan",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": 2.171,
+     "settle": 0.5,
+     "note": "turns, the blade up, too late"
+    },
+    {
+     "t": 17.6,
+     "pose": "chudan",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": 2.171,
+     "tx": -0.1
+    },
+    {
+     "t": 17.9,
+     "pose": "struck-reel",
+     "x": 1.0,
+     "z": -1.3,
+     "ry": 2.171,
+     "note": "struck"
+    },
+    {
+     "t": 18.9,
+     "pose": "stagger",
+     "x": 0.7,
+     "z": -1.05,
+     "ry": 2.171
+    },
+    {
+     "t": 19.8,
+     "pose": "kneel-collapse",
+     "x": 0.7,
+     "z": -1.05,
+     "ry": 2.171,
+     "settle": 0.5
+    },
+    {
+     "t": 20.8,
+     "pose": "fallen",
+     "x": 0.65,
+     "z": -1.0,
+     "ry": 2.171,
+     "settle": 0.6
+    },
+    {
+     "t": 50.5,
+     "pose": "fallen",
+     "x": 0.65,
+     "z": -1.0,
+     "ry": 2.171
+    }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ],
+    [
+     19.6,
+     1.0
+    ],
+    [
+     20.6,
+     0.0
+    ]
+   ],
+   "track": [
+    [
+     0,
+     0.0
+    ],
+    [
+     16.2,
+     0.0
+    ],
+    [
+     16.7,
+     1.0
+    ],
+    [
+     18.0,
+     0.0
+    ]
+   ],
+   "gait": {
+    "arms": [
+     0.2,
+     0.9
+    ],
+    "note": "walking with the drawn blade low in the right hand: the right arm barely swings"
+   }
+  },
+  "retainerA": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": -12.0,
+     "z": -1.0,
+     "ry": 1.683
+    },
+    {
+     "t": 3.547,
+     "pose": "stand-blade-low",
+     "x": -11.706,
+     "z": -1.033,
+     "ry": 1.683
+    },
+    {
+     "t": 3.8,
+     "pose": "stand-blade-low",
+     "x": -11.37,
+     "z": -1.071,
+     "ry": 1.683
+    },
+    {
+     "t": 4.093,
+     "pose": "stand-blade-low",
+     "x": -10.908,
+     "z": -1.123,
+     "ry": 1.683
+    },
+    {
+     "t": 4.64,
+     "pose": "stand-blade-low",
+     "x": -10.047,
+     "z": -1.221,
+     "ry": 1.683
+    },
+    {
+     "t": 5.187,
+     "pose": "stand-blade-low",
+     "x": -9.185,
+     "z": -1.318,
+     "ry": 1.683
+    },
+    {
+     "t": 5.733,
+     "pose": "stand-blade-low",
+     "x": -8.324,
+     "z": -1.416,
+     "ry": 1.683
+    },
+    {
+     "t": 6.28,
+     "pose": "stand-blade-low",
+     "x": -7.463,
+     "z": -1.513,
+     "ry": 1.683
+    },
+    {
+     "t": 6.827,
+     "pose": "stand-blade-low",
+     "x": -6.602,
+     "z": -1.61,
+     "ry": 1.683
+    },
+    {
+     "t": 7.373,
+     "pose": "stand-blade-low",
+     "x": -5.741,
+     "z": -1.708,
+     "ry": 1.683
+    },
+    {
+     "t": 7.92,
+     "pose": "stand-blade-low",
+     "x": -4.879,
+     "z": -1.805,
+     "ry": 1.683
+    },
+    {
+     "t": 8.467,
+     "pose": "stand-blade-low",
+     "x": -4.018,
+     "z": -1.902,
+     "ry": 1.683
+    },
+    {
+     "t": 9.013,
+     "pose": "stand-blade-low",
+     "x": -3.157,
+     "z": -2.0,
+     "ry": 1.683
+    },
+    {
+     "t": 9.56,
+     "pose": "stand-blade-low",
+     "x": -2.296,
+     "z": -2.097,
+     "ry": 1.683
+    },
+    {
+     "t": 10.107,
+     "pose": "stand-blade-low",
+     "x": -1.435,
+     "z": -2.194,
+     "ry": 1.683
+    },
+    {
+     "t": 10.2,
+     "pose": "stand-blade-low",
+     "x": -1.288,
+     "z": -2.211,
+     "ry": 1.683
+    },
+    {
+     "t": 10.653,
+     "pose": "stand-blade-low",
+     "x": -0.735,
+     "z": -2.273,
+     "ry": 1.683
+    },
+    {
+     "t": 11.2,
+     "pose": "stand-blade-low",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": 1.683
+    },
+    {
+     "t": 12.0,
+     "pose": "chudan",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": -1.373,
+     "settle": 0.6,
+     "note": "on guard, facing the road"
+    },
+    {
+     "t": 15.0,
+     "pose": "chudan",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": -1.523,
+     "hy": 0.2
+    },
+    {
+     "t": 18.3,
+     "pose": "chudan",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": -1.373,
+     "hy": -0.5,
+     "note": "hears the cut"
+    },
+    {
+     "t": 19.2,
+     "pose": "chudan",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": 1.429,
+     "settle": 0.5,
+     "note": "turns on Musashi"
+    },
+    {
+     "t": 21.6,
+     "pose": "furikaburi",
+     "x": -0.5,
+     "z": -2.3,
+     "ry": 1.429,
+     "settle": 0.5,
+     "note": "raises the blade"
+    },
+    {
+     "t": 22.6,
+     "pose": "furikaburi",
+     "x": 0.95,
+     "z": -2.35,
+     "ry": 1.19,
+     "note": "the charge"
+    },
+    {
+     "t": 22.9,
+     "pose": "shomen-strike",
+     "x": 0.95,
+     "z": -2.35,
+     "ry": 1.19,
+     "note": "the downcut misses"
+    },
+    {
+     "t": 23.25,
+     "pose": "struck-reel",
+     "x": 0.95,
+     "z": -2.35,
+     "ry": 1.19,
+     "note": "cut across the body"
+    },
+    {
+     "t": 24.2,
+     "pose": "stagger",
+     "x": 0.7,
+     "z": -2.55,
+     "ry": 1.19
+    },
+    {
+     "t": 25.2,
+     "pose": "kneel-collapse",
+     "x": 0.7,
+     "z": -2.55,
+     "ry": 1.19,
+     "settle": 0.5
+    },
+    {
+     "t": 26.4,
+     "pose": "fallen",
+     "x": 0.65,
+     "z": -2.6,
+     "ry": 1.19,
+     "settle": 0.6
+    },
+    {
+     "t": 50.5,
+     "pose": "fallen",
+     "x": 0.65,
+     "z": -2.6,
+     "ry": 1.19
+    }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ],
+    [
+     25.0,
+     1.0
+    ],
+    [
+     26.2,
+     0.0
+    ]
+   ],
+   "track": [
+    [
+     0,
+     0.0
+    ],
+    [
+     18.6,
+     0.0
+    ],
+    [
+     19.2,
+     1.0
+    ],
+    [
+     23.3,
+     0.0
+    ]
+   ],
+   "gait": {
+    "arms": [
+     0.2,
+     0.9
+    ],
+    "note": "walking with the drawn blade low in the right hand: the right arm barely swings"
+   }
+  },
+  "retainerC": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": -12.4,
+     "z": 1.3,
+     "ry": 1.595
+    },
+    {
+     "t": 3.96,
+     "pose": "stand-blade-low",
+     "x": -12.071,
+     "z": 1.292,
+     "ry": 1.595
+    },
+    {
+     "t": 4.2,
+     "pose": "stand-blade-low",
+     "x": -11.728,
+     "z": 1.284,
+     "ry": 1.595
+    },
+    {
+     "t": 4.52,
+     "pose": "stand-blade-low",
+     "x": -11.19,
+     "z": 1.271,
+     "ry": 1.595
+    },
+    {
+     "t": 5.08,
+     "pose": "stand-blade-low",
+     "x": -10.25,
+     "z": 1.249,
+     "ry": 1.595
+    },
+    {
+     "t": 5.64,
+     "pose": "stand-blade-low",
+     "x": -9.309,
+     "z": 1.226,
+     "ry": 1.595
+    },
+    {
+     "t": 6.2,
+     "pose": "stand-blade-low",
+     "x": -8.368,
+     "z": 1.204,
+     "ry": 1.595
+    },
+    {
+     "t": 6.76,
+     "pose": "stand-blade-low",
+     "x": -7.427,
+     "z": 1.182,
+     "ry": 1.595
+    },
+    {
+     "t": 7.32,
+     "pose": "stand-blade-low",
+     "x": -6.486,
+     "z": 1.159,
+     "ry": 1.595
+    },
+    {
+     "t": 7.88,
+     "pose": "stand-blade-low",
+     "x": -5.546,
+     "z": 1.137,
+     "ry": 1.595
+    },
+    {
+     "t": 8.44,
+     "pose": "stand-blade-low",
+     "x": -4.605,
+     "z": 1.114,
+     "ry": 1.595
+    },
+    {
+     "t": 9.0,
+     "pose": "stand-blade-low",
+     "x": -3.664,
+     "z": 1.092,
+     "ry": 1.595
+    },
+    {
+     "t": 9.56,
+     "pose": "stand-blade-low",
+     "x": -2.723,
+     "z": 1.07,
+     "ry": 1.595
+    },
+    {
+     "t": 10.12,
+     "pose": "stand-blade-low",
+     "x": -1.782,
+     "z": 1.047,
+     "ry": 1.595
+    },
+    {
+     "t": 10.68,
+     "pose": "stand-blade-low",
+     "x": -0.842,
+     "z": 1.025,
+     "ry": 1.595
+    },
+    {
+     "t": 10.8,
+     "pose": "stand-blade-low",
+     "x": -0.64,
+     "z": 1.02,
+     "ry": 1.595
+    },
+    {
+     "t": 11.24,
+     "pose": "stand-blade-low",
+     "x": -0.063,
+     "z": 1.006,
+     "ry": 1.595
+    },
+    {
+     "t": 11.8,
+     "pose": "stand-blade-low",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": 1.595
+    },
+    {
+     "t": 12.5,
+     "pose": "low-ready",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": -1.653,
+     "settle": 0.6
+    },
+    {
+     "t": 15.5,
+     "pose": "low-ready",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": -1.503,
+     "hy": -0.15
+    },
+    {
+     "t": 18.4,
+     "pose": "low-ready",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": -1.653,
+     "hy": 0.5,
+     "note": "hears the cut"
+    },
+    {
+     "t": 19.4,
+     "pose": "chudan",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": 2.606,
+     "settle": 0.5,
+     "note": "turns; holds back while A goes in"
+    },
+    {
+     "t": 23.4,
+     "pose": "chudan",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": 2.606,
+     "tx": -0.08,
+     "note": "flinches at A's fall"
+    },
+    {
+     "t": 25.9,
+     "pose": "tsuki-load",
+     "x": 0.2,
+     "z": 1.0,
+     "ry": 2.606,
+     "crouch": 0.12,
+     "settle": 0.5,
+     "note": "gathers for the thrust"
+    },
+    {
+     "t": 27.0,
+     "pose": "tsuki-load",
+     "x": 1.108,
+     "z": 0.037,
+     "ry": 2.606,
+     "crouch": 0.15
+    },
+    {
+     "t": 27.45,
+     "pose": "tsuki-thrust",
+     "x": 1.85,
+     "z": -0.75,
+     "ry": 3.058,
+     "note": "the thrust"
+    },
+    {
+     "t": 27.85,
+     "pose": "struck-reel",
+     "x": 1.85,
+     "z": -0.75,
+     "ry": 3.058,
+     "note": "cut on the rise"
+    },
+    {
+     "t": 28.8,
+     "pose": "stagger",
+     "x": 1.75,
+     "z": -0.45,
+     "ry": 3.058
+    },
+    {
+     "t": 29.9,
+     "pose": "kneel-collapse",
+     "x": 1.75,
+     "z": -0.45,
+     "ry": 3.058,
+     "settle": 0.5
+    },
+    {
+     "t": 31.0,
+     "pose": "fallen",
+     "x": 1.73,
+     "z": -0.4,
+     "ry": 3.058,
+     "settle": 0.6
+    },
+    {
+     "t": 50.5,
+     "pose": "fallen",
+     "x": 1.73,
+     "z": -0.4,
+     "ry": 3.058
+    }
+   ],
+   "life": [
+    [
+     0,
+     1.0
+    ],
+    [
+     29.8,
+     1.0
+    ],
+    [
+     30.8,
+     0.0
+    ]
+   ],
+   "track": [
+    [
+     0,
+     0.0
+    ],
+    [
+     18.7,
+     0.0
+    ],
+    [
+     19.3,
+     1.0
+    ],
+    [
+     27.9,
+     0.0
+    ]
+   ],
+   "gait": {
+    "arms": [
+     0.2,
+     0.9
+    ],
+    "note": "walking with the drawn blade low in the right hand: the right arm barely swings"
+   }
+  }
+ },
+ "fade": {
+  "in": 0,
+  "out": 0.0
+ },
+ "paperSurface": {
+  "angle": 36.0,
+  "ink": 0.85,
+  "width": 0.003,
+  "light": 0.55,
+  "mottle": 0.12,
+  "mottle_scale": 7.0,
+  "ao": 0.35
+ },
+ "wind": {
+  "to": [
+   1.0,
+   0.2
+  ],
+  "strength": 1.6,
+  "gust": 0.4,
+  "seed": 4,
+  "note": "a light night wind down the Kyoto road"
+ },
+ "cameraOpts": {
+  "solver": 2,
+  "aperture": 4.0
+ },
+ "camera": [
+  {
+   "t": 0.0,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "aim": "head",
+   "span": 0.5,
+   "az0": 18,
+   "az1": 8,
+   "elev": 2,
+   "size0": 0.9,
+   "size1": 1.2,
+   "ease": "out",
+   "screen": [
+    0.5,
+    0.42
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "note": "S1 HOOK: Musashi's eyes under the pine, waiting in the dark; a fast push"
+  },
+  {
+   "t": 1.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": -20,
+   "az1": -10,
+   "elev0": -16,
+   "elev1": -8,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.6
+   ],
+   "fov": 32,
+   "feel": "crane",
+   "note": "S1: low, his shape against the moonlit mist, the pine over him"
+  },
+  {
+   "t": 2.6,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target",
+    "retainerA",
+    "retainerC"
+   ],
+   "az0": -112,
+   "az1": -104,
+   "elev": 8,
+   "size": 0.3,
+   "screen": [
+    0.5,
+    0.62
+   ],
+   "fov": 34,
+   "feel": "dolly",
+   "note": "S2 WIDE: from ahead of them on the road, the three walk toward the crossing in the mist"
+  },
+  {
+   "t": 6.8,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az0": 28,
+   "az1": 20,
+   "elev": 2,
+   "size": 0.62,
+   "aim": "chest",
+   "screen": [
+    0.48,
+    0.58
+   ],
+   "fov": 34,
+   "feel": "dolly",
+   "note": "S2 MEDIUM: the boy walking at the head of his men"
+  },
+  {
+   "t": 10.6,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target",
+    "retainerA",
+    "retainerC"
+   ],
+   "az0": -60,
+   "az1": -66,
+   "elev": 6,
+   "size": 0.36,
+   "screen": [
+    0.5,
+    0.6
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S3: the three at the foot of the pine, watching the road"
+  },
+  {
+   "t": 13.2,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 40,
+   "az1": 30,
+   "elev": -4,
+   "size": 0.6,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 32,
+   "feel": "handheld",
+   "note": "S3: Musashi steps out from behind the trunk"
+  },
+  {
+   "t": 15.9,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "basis": "facing",
+   "az": 12,
+   "elev": 2,
+   "aim": "head",
+   "span": 0.6,
+   "size": 1.0,
+   "screen": [
+    0.5,
+    0.45
+   ],
+   "fov": 30,
+   "feel": "locked",
+   "note": "S4: the boy hears him and turns"
+  },
+  {
+   "t": 17.3,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "target"
+   ],
+   "az": 40,
+   "elev": 0,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.52
+   ],
+   "fov": 34,
+   "feel": "locked",
+   "note": "S4 THE CUT: profile, slow motion"
+  },
+  {
+   "t": 18.9,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "target"
+   ],
+   "az": 140,
+   "elev": 14,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.6
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S4: the boy falls under the pine"
+  },
+  {
+   "t": 20.9,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "retainerA",
+    "hero"
+   ],
+   "az0": 0,
+   "az1": -8,
+   "elev": 2,
+   "size": 0.42,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 34,
+   "feel": "torpedo",
+   "note": "S5: the first retainer charges"
+  },
+  {
+   "t": 22.7,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "retainerA"
+   ],
+   "az": 180,
+   "elev": 2,
+   "size": 0.55,
+   "screen": [
+    0.5,
+    0.52
+   ],
+   "fov": 34,
+   "feel": "locked",
+   "note": "S5: the slip and the side cut"
+  },
+  {
+   "t": 24.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "retainerA"
+   ],
+   "basis": "facing",
+   "az": 30,
+   "elev": -6,
+   "size": 0.55,
+   "screen": [
+    0.5,
+    0.58
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S5: he goes down"
+  },
+  {
+   "t": 25.8,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "retainerC",
+    "hero"
+   ],
+   "az0": 120,
+   "az1": 128,
+   "elev": 4,
+   "size": 0.45,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 34,
+   "feel": "dolly",
+   "note": "S5: the last man gathers and thrusts"
+  },
+  {
+   "t": 27.4,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "retainerC"
+   ],
+   "az": -70,
+   "elev": -4,
+   "size": 0.55,
+   "screen": [
+    0.5,
+    0.52
+   ],
+   "fov": 34,
+   "feel": "locked",
+   "note": "S5 the rising cut"
+  },
+  {
+   "t": 29.2,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero",
+    "target",
+    "retainerA",
+    "retainerC"
+   ],
+   "az": 200,
+   "elev0": 12,
+   "elev1": 28,
+   "size": 0.3,
+   "screen": [
+    0.5,
+    0.58
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S6 ABOVE: Musashi alone among the fallen, the crane rises"
+  },
+  {
+   "t": 33.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az": 20,
+   "elev": 0,
+   "size": 0.7,
+   "aim": "chest",
+   "screen": [
+    0.5,
+    0.54
+   ],
+   "fov": 32,
+   "feel": "locked",
+   "note": "S6: the flick of the blade"
+  },
+  {
+   "t": 36.0,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "az0": 120,
+   "az1": 110,
+   "elev": 8,
+   "size": 0.34,
+   "screen": [
+    0.5,
+    0.6
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S6 AWAY: he walks off east down the road, the pine and the fallen behind"
+  },
+  {
+   "t": 41.8,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "az0": 96,
+   "az1": 92,
+   "elev": 4,
+   "size0": 0.32,
+   "size1": 0.26,
+   "screen": [
+    0.5,
+    0.62
+   ],
+   "fov": 34,
+   "feel": "crane",
+   "note": "S7 THE LAST SHOT: into the mist; the end card"
+  }
+ ],
+ "cameraMoves": [
+  {
+   "move": "crash",
+   "zoom": 1.3,
+   "in": 0.05,
+   "hold": 0.2,
+   "out": 0.35,
+   "t": 17.85,
+   "note": "on the cut"
+  },
+  {
+   "move": "dutch",
+   "deg": 6,
+   "in": 0.08,
+   "hold": 0.4,
+   "out": 0.3,
+   "t": 17.87
+  },
+  {
+   "move": "shake",
+   "t": 23.15,
+   "amp": 0.9,
+   "dur": 0.3
+  },
+  {
+   "move": "shake",
+   "t": 27.8,
+   "amp": 0.9,
+   "dur": 0.3
+  },
+  {
+   "move": "breath",
+   "t": 29.2,
+   "until": 50.5,
+   "amp": 0.3
+  }
+ ],
+ "ramps": [
+  {
+   "t": 17.6,
+   "rate": 0.25,
+   "in": 0.05,
+   "hold": 0.6,
+   "out": 0.25
+  }
+ ],
+ "effects": {
+  "dof": 4.0,
+  "motionBlur": 0.5,
+  "vignette": 0.3,
+  "postFx": true,
+  "hitStop": {
+   "min": 3,
+   "max": 4
+  }
+ },
+ "impacts": [
+  {
+   "t": 17.85,
+   "at": "target.chest",
+   "intensity": 1.0,
+   "ink": true,
+   "shards": 14,
+   "colors": [
+    "#b8322a",
+    "#f3ead8"
+   ],
+   "note": "the boy: paper shards and red"
+  },
+  {
+   "t": 23.15,
+   "at": "retainerA.chest",
+   "intensity": 0.8,
+   "shards": 10,
+   "colors": [
+    "#b8322a",
+    "#f3ead8"
+   ]
+  },
+  {
+   "t": 27.8,
+   "at": "retainerC.chest",
+   "intensity": 0.8,
+   "shards": 10,
+   "colors": [
+    "#b8322a",
+    "#f3ead8"
+   ]
+  }
+ ],
+ "sounds": [
+  {
+   "id": "night-bed",
+   "t": 0,
+   "sfx": "amb-night-village",
+   "len": 50.5,
+   "gain": 0.35,
+   "note": "crickets and the night"
+  },
+  {
+   "id": "cut-boy",
+   "t": 17.85,
+   "body": true,
+   "sfx": "swing",
+   "len": 0.6,
+   "gain": 1.0
+  },
+  {
+   "id": "cut-boy-thud",
+   "t": 17.85,
+   "body": true,
+   "sfx": "impact-drum",
+   "len": 1.2,
+   "gain": 0.8,
+   "layer": "cut-boy"
+  },
+  {
+   "id": "fall-boy",
+   "t": 20.8,
+   "body": true,
+   "sfx": "fall",
+   "len": 1.0,
+   "gain": 0.6
+  },
+  {
+   "id": "cut-a",
+   "t": 23.15,
+   "body": true,
+   "sfx": "swing-2",
+   "len": 0.6,
+   "gain": 0.9
+  },
+  {
+   "id": "cut-a-hit",
+   "t": 23.15,
+   "body": true,
+   "sfx": "impact",
+   "len": 0.8,
+   "gain": 0.7,
+   "layer": "cut-a"
+  },
+  {
+   "id": "fall-a",
+   "t": 26.4,
+   "body": true,
+   "sfx": "fall",
+   "len": 1.0,
+   "gain": 0.6
+  },
+  {
+   "id": "cut-c",
+   "t": 27.8,
+   "body": true,
+   "sfx": "swing-3",
+   "len": 0.6,
+   "gain": 0.9
+  },
+  {
+   "id": "cut-c-hit",
+   "t": 27.8,
+   "body": true,
+   "sfx": "impact",
+   "len": 0.8,
+   "gain": 0.7,
+   "layer": "cut-c"
+  },
+  {
+   "id": "fall-c",
+   "t": 31.0,
+   "body": true,
+   "sfx": "fall",
+   "len": 1.0,
+   "gain": 0.6
+  },
+  {
+   "id": "score",
+   "t": 0,
+   "file": "output/ichijoji-ep2-score.wav",
+   "len": 50.5,
+   "gain": 0.62,
+   "music": true,
+   "note": "tools/score_synth.py from film.score (film.sh renders it before the mix)"
+  },
+  {
+   "id": "end-bell",
+   "t": 45.4,
+   "sfx": "temple-bell",
+   "len": 4.6,
+   "gain": 0.5
+  }
+ ],
+ "score": {
+  "seed": 7,
+  "key": "E",
+  "scale": "in",
+  "reverb": 0.35,
+  "rt60": 2.8,
+  "gain": 0.9,
+  "cues": [
+   {
+    "t": 0.12,
+    "kind": "odaiko",
+    "gain": 1.0
+   },
+   {
+    "t": 0.5,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "B4",
+      2.4
+     ]
+    ],
+    "gain": 0.5
+   },
+   {
+    "t": 1.4,
+    "kind": "taiko",
+    "gain": 0.6
+   },
+   {
+    "t": 2.6,
+    "until": 13.0,
+    "kind": "drone",
+    "note": "E2",
+    "gain": 0.5
+   },
+   {
+    "t": 2.6,
+    "until": 11.0,
+    "kind": "pulse",
+    "bpm0": 56,
+    "bpm1": 62,
+    "note": "E2",
+    "gain": 0.35
+   },
+   {
+    "t": 4.0,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "E4"
+     ],
+     [
+      0.8,
+      "B3"
+     ],
+     [
+      1.6,
+      "E4"
+     ],
+     [
+      2.4,
+      "F4"
+     ],
+     [
+      3.6,
+      "E4"
+     ],
+     [
+      4.4,
+      "B3"
+     ]
+    ],
+    "gain": 0.45
+   },
+   {
+    "t": 11.0,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "E5",
+      2.2
+     ],
+     [
+      2.1,
+      "F5",
+      1.4
+     ]
+    ],
+    "gain": 0.4,
+    "vib": 0.4
+   },
+   {
+    "t": 13.0,
+    "until": 17.6,
+    "kind": "pulse",
+    "bpm0": 70,
+    "bpm1": 110,
+    "note": "E2",
+    "gain": 0.55
+   },
+   {
+    "t": 13.0,
+    "until": 17.7,
+    "kind": "drone",
+    "note": "F2",
+    "gain": 0.5
+   },
+   {
+    "t": 16.4,
+    "until": 17.7,
+    "kind": "roll",
+    "gain": 0.9
+   },
+   {
+    "at": "contact",
+    "dt": -0.06,
+    "until_dt": 0.86,
+    "kind": "silence",
+    "fade": 0.03
+   },
+   {
+    "at": "contact",
+    "dt": 0.9,
+    "kind": "odaiko",
+    "gain": 1.0
+   },
+   {
+    "t": 20.8,
+    "until": 29.0,
+    "kind": "pulse",
+    "bpm0": 120,
+    "bpm1": 132,
+    "note": "E2",
+    "gain": 0.6
+   },
+   {
+    "t": 23.15,
+    "kind": "taiko",
+    "gain": 0.8
+   },
+   {
+    "t": 27.8,
+    "kind": "odaiko",
+    "gain": 0.9
+   },
+   {
+    "t": 29.2,
+    "until": 45.0,
+    "kind": "drone",
+    "note": "E2",
+    "gain": 0.5
+   },
+   {
+    "t": 30.0,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "B5",
+      3.6
+     ]
+    ],
+    "gain": 0.35,
+    "vib": 0.25
+   },
+   {
+    "t": 36.2,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "B4"
+     ],
+     [
+      1.2,
+      "A4"
+     ],
+     [
+      2.4,
+      "F4"
+     ],
+     [
+      3.6,
+      "E4"
+     ],
+     [
+      6.0,
+      "B3"
+     ],
+     [
+      7.2,
+      "E4"
+     ]
+    ],
+    "gain": 0.5
+   },
+   {
+    "t": 39.0,
+    "kind": "shaku",
+    "notes": [
+     [
+      0,
+      "E5",
+      2.6
+     ],
+     [
+      2.5,
+      "B4",
+      2.0
+     ],
+     [
+      4.3,
+      "C5",
+      1.2
+     ]
+    ],
+    "gain": 0.42
+   },
+   {
+    "t": 45.4,
+    "kind": "rin",
+    "note": "B5",
+    "gain": 0.5,
+    "len": 5.0
+   },
+   {
+    "t": 45.4,
+    "kind": "koto",
+    "notes": [
+     [
+      0,
+      "E4"
+     ],
+     [
+      0.3,
+      "B4"
+     ],
+     [
+      0.6,
+      "E5"
+     ]
+    ],
+    "gain": 0.45
+   }
+  ]
+ },
+ "titles": [
+  {
+   "start": 0.15,
+   "end": 2.5,
+   "style": "hero",
+   "jp": "一乗寺",
+   "en": "1604. One man. A whole school."
+  },
+  {
+   "start": 3.0,
+   "end": 6.4,
+   "style": "left",
+   "en": "Ichijō-ji, outside Kyoto",
+   "sub": "1604 (traditional date)"
+  },
+  {
+   "start": 6.8,
+   "end": 10.4,
+   "style": "bottom",
+   "en": "Twice the Yoshioka school\nhad lost to Musashi.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 10.8,
+   "end": 13.6,
+   "style": "bottom",
+   "en": "Their new head was a boy.\nHis men came with him.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 13.9,
+   "end": 16.2,
+   "style": "bottom",
+   "en": "This time, Musashi came early.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 33.4,
+   "end": 37.4,
+   "style": "bottom",
+   "en": "He cut down the boy first,\nthen fought his way out.",
+   "sub": "as tradition tells it"
+  },
+  {
+   "start": 38.0,
+   "end": 44.6,
+   "style": "quote",
+   "en": "Respect the Buddhas and the gods,\nwithout counting on their help.",
+   "sub": "Musashi, Dokkōdō (1645)"
+  },
+  {
+   "start": 45.4,
+   "end": 50.35,
+   "style": "endcard",
+   "jp": "紙の剣",
+   "en": "PAPER CINEMA",
+   "sub": "true duels, retold in paper"
+  }
+ ]
+}
