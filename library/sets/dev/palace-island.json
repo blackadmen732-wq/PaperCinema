@@ -1,0 +1,54 @@
+{
+  "name": "palace-island",
+  "about": "Mark, 28 Nov: 'create a big palace ... an island ... apply the texture'. A sea castle: the stone citadel rises straight out of the water and IS the island (a 44 x 36 m ishigaki block, 9 m high), a five-storey keep on its own stone base (~32 m to the ridge), two corner turrets, plaster walls and a gate tower facing the sea, pines and stone lanterns on top, a red arched bridge from a rocky islet with pines. The sea, mountains, clouds and paper sun are the Ganryujima world (its own low island switched off). All kit pieces, no new code. North (+Y) is the dawn: from the sea the castle stands dark against the glow; from the north the low sun lights the walls. Built in library/sets/dev/ (outside the render stamp) while Episode 1 renders.",
+  "seed": 28,
+  "clear": 1.6,
+  "polyhaven": true,
+  "lighting": {
+    "preset": "dawn",
+    "sun": {"elev": 7.0, "az": -7, "color": [1.0, 0.66, 0.42], "energy": 3.4, "angle": 1.2},
+    "sky": {"type": "nishita", "strength": 0.7, "dust": 3.0, "air": 1.2},
+    "exposure": -1.6,
+    "bloom": 0.4,
+    "vignette": 0.3,
+    "look": "AgX - High Contrast",
+    "fighter": {"key": {"offset": [-1.6, 2.6, 2.6], "energy": 110, "color": [1.0, 0.78, 0.6], "size": 1.6},
+                "rim": {"offset": [0.4, -2.8, 2.6], "energy": 220, "color": [1.0, 0.7, 0.45], "size": 0.8}}
+  },
+  "pieces": [
+    {"kit": "ganryujima", "name": "sea_world", "params": {"seed": 28, "island": false, "rocks": false, "pines": false, "realistic": true, "foam": 0.0}},
+
+    {"kit": "ishigaki_base", "name": "citadel", "pos": [0, 40, -1.5], "params": {"width": 44, "depth": 36, "height": 9.0, "batter": 2.6, "curve": 2.4, "stone": 0.95, "style": "nozura", "top": "earth"}},
+    {"kit": "tenshu", "name": "keep", "pos": [3, 46, 7.5], "params": {"base_w": 20, "base_d": 16, "base_h": 5.0, "storeys": 5, "storey_h": 3.8, "inset": 1.4, "lit": 0.45, "gables": [1, 2, 3], "shachi": true}},
+    {"kit": "tenshu", "name": "turret_west", "pos": [-16, 27, 7.5], "params": {"base_w": 7.5, "base_d": 7.5, "base_h": 1.5, "storeys": 2, "storey_h": 3.2, "inset": 1.0, "lit": 0.4, "gables": [1], "shachi": false}},
+    {"kit": "tenshu", "name": "turret_east", "pos": [16, 27, 7.5], "params": {"base_w": 7.5, "base_d": 7.5, "base_h": 1.5, "storeys": 2, "storey_h": 3.2, "inset": 1.0, "lit": 0.4, "gables": [1], "shachi": false}},
+    {"kit": "yaguramon", "name": "sea_gate", "pos": [0, 23.6, 7.5], "params": {"width": 9.0, "passage": 3.4, "depth": 5.5, "base_h": 3.8, "upper_h": 3.0, "open": 0.35, "lit": 0.6, "overhang": 1.1}},
+    {"kit": "plaster_wall", "name": "wall_front_w", "pos": [-8.5, 23.2, 7.5], "params": {"length": 8.0, "height": 2.4, "sama": 3}},
+    {"kit": "plaster_wall", "name": "wall_front_e", "pos": [8.5, 23.2, 7.5], "params": {"length": 8.0, "height": 2.4, "sama": 3}},
+    {"kit": "plaster_wall", "name": "wall_west", "pos": [-21.0, 44, 7.5], "rot": 90, "params": {"length": 26, "height": 2.4, "sama": 7}},
+    {"kit": "plaster_wall", "name": "wall_east", "pos": [21.0, 44, 7.5], "rot": -90, "params": {"length": 26, "height": 2.4, "sama": 7}},
+
+    {"kit": "pine", "name": "pine_court_w", "pos": [-12, 35, 7.5], "params": {"height": 7.5, "spread": 4.8, "lean": 16, "lean_dir": -120}},
+    {"kit": "pine", "name": "pine_court_e", "pos": [15, 55, 7.5], "params": {"height": 6.5, "spread": 4.2, "lean": 14, "lean_dir": -60}},
+    {"kit": "pine", "name": "pine_court_nw", "pos": [-15, 55, 7.5], "params": {"height": 6.0, "spread": 4.0, "lean": 20, "lean_dir": 150}},
+    {"kit": "toro", "name": "lantern_w", "pos": [-3.2, 26.8, 7.5], "params": {"height": 2.0}},
+    {"kit": "toro", "name": "lantern_e", "pos": [3.2, 26.8, 7.5], "params": {"height": 2.0}},
+
+    {"kit": "rocks", "name": "islet_rocks", "pos": [-27, 4, -0.9], "params": {"count": 8, "radius": 4.2, "size": [0.8, 2.4], "squash": 0.55}},
+    {"kit": "pine", "name": "islet_pine_big", "pos": [-28.5, 3.5, 0.6], "params": {"height": 6.5, "spread": 4.6, "lean": 26, "lean_dir": 120}},
+    {"kit": "pine", "name": "islet_pine_small", "pos": [-24.5, 0.5, 0.4], "params": {"height": 4.2, "spread": 3.0, "lean": 22, "lean_dir": 60}},
+    {"kit": "ishigaki_base", "name": "landing", "pos": [-14.5, 20.5, -1.5], "params": {"width": 6.0, "depth": 4.5, "height": 2.2, "batter": 1.0, "stone": 0.6, "style": "uchikomi", "top": "earth"}},
+    {"kit": "bridge", "name": "red_bridge", "pos": [-19.5, 12.5, 0.4], "rot": 58, "params": {"length": 16.0, "width": 2.4, "arch": 1.6, "posts": 9}}
+  ],
+  "marks": {
+    "MARK_center": {"pos": [0, 30, 7.5], "face": [0, 0]}
+  },
+  "cameras": {
+    "CAM_sea": {"pos": [-38, -18, 2.2], "look": [2, 42, 14], "lens": 28, "note": "low over the water from the south-west: the castle dark against the dawn, the islet and the bridge in front"},
+    "CAM_front": {"pos": [6, -6, 5], "look": [0, 30, 12], "lens": 35, "note": "the sea gate and the keep head-on"},
+    "CAM_aerial": {"pos": [-70, 0, 48], "look": [2, 42, 8], "lens": 32, "note": "the whole island from above"},
+    "CAM_texture": {"pos": [34, 82, 10], "look": [2, 44, 12], "lens": 35, "note": "from the north: the low sun on the stone, plaster and roofs (the paper textures)"}
+  },
+  "preview_cams": ["CAM_sea", "CAM_front", "CAM_aerial", "CAM_texture"],
+  "render": {"samples": 16, "res": "540x960"}
+}
