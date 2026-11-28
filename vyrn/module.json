@@ -1,0 +1,44 @@
+{
+  "module": "vyrn",
+  "version": "0.1.0",
+  "title": "VYRN perception engine",
+  "purpose": "Process media once into a persistent, queryable store of timestamped observations (entities with identity, motion, spatial relations, sound events, confidence, evidence) so agents ask narrow questions instead of re-watching video.",
+  "language": "python3",
+  "requires": {
+    "python": ["numpy"],
+    "python_optional": {"opencv-python-headless": "external video perception (Apache-2.0)"},
+    "binaries": ["ffmpeg", "ffprobe"]
+  },
+  "entry": "python3 -m vyrn",
+  "commands": {
+    "ingest": "ingest <video|timeline.json> [--force] [--render final.mp4] -> media id (cached by sha256 + processor version)",
+    "summary": "summary <media>",
+    "window": "window <media> <t0> <t1>",
+    "when": "when <media> <event-type> [--entity id]",
+    "track": "track <media> <entity> [--from t] [--to t] [--step n] [--joint name]",
+    "relation": "relation <media> <a> <b> [--from t] [--to t]",
+    "sync": "sync <media> [--expect timeline.json|sonic.json] [--visual] [--tol s]",
+    "evidence": "evidence <media> <t> [--entity id] [--width px] -> PNG path",
+    "backends": "backends",
+    "list": "list"
+  },
+  "inputs": {
+    "native": "paper-cinema-timeline/1 (docs/TIMELINE-FORMAT.md); Blender and Unreal adapters write the same shape",
+    "external": "any video file ffmpeg reads"
+  },
+  "outputs": {
+    "store": "output/vyrn/<media>.sqlite (schema in vyrn/store.py)",
+    "events": "output/vyrn/<media>.events.jsonl (shared event format, below)",
+    "evidence": "output/vyrn/<media>/ev_*.png (made on demand)"
+  },
+  "event_format": {
+    "fields": {"id": "<type>.<NN>, stable within a media", "type": "string", "t": "seconds", "t1": "seconds (intervals only)",
+               "f": "frame", "source": "engine | vyrn.native | vyrn.video | vyrn.audio | sonic", "method": "string",
+               "conf": "0..1 (1 = ground truth from the source environment)", "entities": ["ids"], "data": {}},
+    "compatible_with": "timeline events (docs/TIMELINE-FORMAT.md §10): same ids and type names; extra fields live in data"
+  },
+  "cache": {"key": "sha256 of the file bytes + processor versions (vyrn/ingest.py VERSION)", "dir": "output/vyrn/ or $VYRN_CACHE"},
+  "swappable_stages": {"cuts": "VYRN_CUTS", "camera": "VYRN_CAMERA", "onsets": "VYRN_ONSETS"},
+  "benchmark": "python3 -m vyrn.bench.synth && python3 -m vyrn.bench.run output/vyrn-bench/duel",
+  "guide": "docs/VYRN.md"
+}
