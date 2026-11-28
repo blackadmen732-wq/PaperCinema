@@ -58,15 +58,16 @@ keys = [{'t': 0.0, 'pose': POSE, 'x': A[0], 'z': A[1], 'ry': face(A, B)},
         {'t': 0.8, 'pose': POSE, 'x': A[0], 'z': A[1], 'ry': face(A, B)}]
 walk(keys, 0.8, 0.8 + math.dist(A, B) / 1.25 + 0.4, A, B, POSE, ease_in=0.7, ease_out=0.9)
 t_stop = keys[-1]['t']
-keys += [{'t': round(t_stop + 0.5, 3), 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(A, B), 'settle': 0.4},
-         {'t': 6.8, 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(B, C)}]
-walk(keys, 6.8, 6.8 + 2.2 / 0.73 + 0.3, B, C, POSE, ease_in=0.5, ease_out=0.6)
-keys.append({'t': 10.6, 'pose': POSE, 'x': round(C[0], 3), 'z': round(C[1], 3), 'ry': face(B, C), 'settle': 0.4})
+keys += [{'t': round(t_stop + 0.3, 3), 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(A, B), 'settle': 0.3},
+         {'t': round(t_stop + 1.2, 3), 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(B, C), 'note': 'turns round over 0.9 s: the feet step round with him'},
+         {'t': round(t_stop + 1.5, 3), 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(B, C)}]
+walk(keys, t_stop + 1.5, t_stop + 1.5 + 2.2 / 0.73 + 0.3, B, C, POSE, ease_in=0.5, ease_out=0.6)
+keys.append({'t': round(keys[-1]['t'] + 0.5, 3), 'pose': POSE, 'x': round(C[0], 3), 'z': round(C[1], 3), 'ry': face(B, C), 'settle': 0.4})
 
 film = {
     'title': 'Walk bench: the walking gait on the Episode 1 beach',
     'page': 'engine/motion.html', 'fps': 30, 'width': 1080, 'height': 1920, 'format': 'vertical',
-    'duration': 10.8, 'mode': 'dawn',
+    'duration': 11.6, 'mode': 'dawn',
     'motion': {'overlap': True, 'lockFeet': True},
     'stage': {'mark': 'MARK_center', 'origin': True, 'turn': 0},
     'cast': {'hero': {'character': 'musashi', 'face': 'eyes', 'weapon': 'bokken', 'recipe': 'musashi-ai',

@@ -5,7 +5,7 @@
  "width": 1080,
  "height": 1920,
  "format": "vertical",
- "duration": 10.8,
+ "duration": 11.6,
  "mode": "dawn",
  "motion": {
   "overlap": true,
@@ -140,85 +140,93 @@
      "ry": 1.5708
     },
     {
-     "t": 6.66,
+     "t": 6.46,
      "pose": "stand-blade-low",
      "x": 3.2,
      "z": 0.0,
      "ry": 1.5708,
-     "settle": 0.4
+     "settle": 0.3
     },
     {
-     "t": 6.8,
+     "t": 7.36,
+     "pose": "stand-blade-low",
+     "x": 3.2,
+     "z": 0.0,
+     "ry": -1.5708,
+     "note": "turns round over 0.9 s: the feet step round with him"
+    },
+    {
+     "t": 7.66,
      "pose": "stand-blade-low",
      "x": 3.2,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 7.273,
+     "t": 8.133,
      "pose": "stand-blade-low",
      "x": 3.022,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 7.3,
+     "t": 8.16,
      "pose": "stand-blade-low",
      "x": 3.001,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 7.747,
+     "t": 8.607,
      "pose": "stand-blade-low",
      "x": 2.645,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 8.22,
+     "t": 9.08,
      "pose": "stand-blade-low",
      "x": 2.268,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 8.694,
+     "t": 9.553,
      "pose": "stand-blade-low",
      "x": 1.892,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 9.167,
+     "t": 10.027,
      "pose": "stand-blade-low",
      "x": 1.515,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 9.514,
+     "t": 10.374,
      "pose": "stand-blade-low",
      "x": 1.239,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 9.64,
+     "t": 10.5,
      "pose": "stand-blade-low",
      "x": 1.149,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 10.114,
+     "t": 10.974,
      "pose": "stand-blade-low",
      "x": 1.0,
      "z": 0.0,
      "ry": -1.5708
     },
     {
-     "t": 10.6,
+     "t": 11.474,
      "pose": "stand-blade-low",
      "x": 1.0,
      "z": 0.0,

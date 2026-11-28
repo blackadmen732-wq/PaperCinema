@@ -266,7 +266,12 @@ class Rig:
             self.rot(s + 'thigh', -th, 0, roll)            # Euler XYZ here = figure.js's ZXY (bend, then roll)
             J[s + 'thigh'].scale = (1.0,) * 3 if d < 1e-6 else (true_d / d,) * 3
             self.rot(s + 'shin', -(sh - th), 0, 0)
-            self.rot(s + 'foot', sh + (p['rax'] if front else p['lax']) - pitch, 0, 0)
+            twist = 0.0                                    # the planted foot's own direction (figure.js: yr / yl)
+            if feet and feet.get('y' + ('r' if front else 'l')) is not None:
+                d_ = float(feet['y' + ('r' if front else 'l')]) - p['ry']
+                tw = float(feet.get('twist', 1.05) or 1.05)
+                twist = max(-tw, min(tw, math.atan2(math.sin(d_), math.cos(d_))))
+            self.rot(s + 'foot', sh + (p['rax'] if front else p['lax']) - pitch, twist, 0)
 
     def ground_feet(self, ground=0.0, rest=0.04, tol=0.004, base=0.0):
         """After pose(): an ankle under the world ground is put back ON it by re-solving that leg - the hip swing

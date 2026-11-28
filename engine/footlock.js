@@ -72,6 +72,11 @@ export const FOOTLOCK = {
   hipYaw: 0.06,      // the waist turns with the forward leg (rad either side) ...
   chestCounter: 1.7, // ... and the chest turns back by this many times that (the shoulders against the hips)
   armSwing: 0.32,    // shoulder swing (rad either side) of an arm whose performances.<id>.gait.arms amount is 1
+  // TURNING (28 Nov): a planted foot keeps its own direction on the ground and the body twists over it (up to
+  // footTwist); once the body has turned turnStep from where the foot was planted, the foot steps round to a new plant.
+  // Before, a planted foot turned with the body: a turn on the spot spun both feet 180 deg on the sand.
+  turnStep: 0.87,    // rad (50 deg)
+  footTwist: 1.05,   // rad (60 deg): the most a planted foot is turned against the body
 };
 
 // the sandal under the ankle (engine/figure.js: the zori runs from 6.5 cm behind the ankle to 18.5 cm in front of it,
@@ -80,6 +85,7 @@ const HEEL = [-0.065, -0.051], TOE = [0.185, -0.051];
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const ss = (u) => u * u * (3 - 2 * u);
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));   // an angle into (-pi, pi]
 
 /** The ankle of a foot turned `th` (+ toe up) about its heel (pv -1) or toe (pv 1), from the flat ankle `a` (world),
  *  the foot facing `ry`. */
@@ -207,10 +213,11 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     };
     /** The last sample of the longest contact from i whose nominal foot stays within `reach` of its mean (the body may
      *  pass over the plant, but never further than half a stride); i - 1 if not even one sample holds. */
-    const grow = (i, reach, cap) => {
+    const grow = (i, reach, cap, turn = O.turnStep) => {
       let sx = 0, sz = 0, n = 0, j = i - 1;
       for (let k = i; k <= Math.min(cap, N - 1); k++) {
         if (air[k] || piece[k] !== piece[i]) break;
+        if (Math.abs(wrap(P[k].ry - P[i].ry)) > turn) break;   // the body has turned too far over this foot
         const mx = (sx + nom[k][0]) / (n + 1), mz = (sz + nom[k][2]) / (n + 1);
         let bad = false;
         for (let q = i; q <= k; q++) if (Math.hypot(nom[q][0] - mx, nom[q][2] - mz) > reach) { bad = true; break; }
@@ -282,11 +289,22 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
             if (r - (q + 1) >= swingN + 1) { jt = q; swingFit = Math.min(swingAt(q), r - (q + 1) - 1); break; }
           }
         }
+        // or this foot STANDS a moment longer (up to 0.15 s, within half a reach more and a looser turn) until the other
+        // is down: in a turn on the spot the 50 deg limit ended a plant one sample before the other foot landed
+        if (jt < 0) {
+          const jMax2 = Math.min(grow(i, reach * 1.5, cap, O.turnStep * 1.4), j + Math.round(0.15 * RATE));
+          for (let q = j + 1; q <= jMax2; q++) {
+            if (oSw[q] || oSw[q + 1]) continue;          // the other foot is still in the air
+            let r = q + 1, free = true;
+            for (; r <= Math.min(N - 1, q + swingAt(q)); r++) if (oSw[r]) { free = false; break; }
+            if (free) { jt = q; break; }
+          }
+        }
         if (jt >= 0) j = jt;
       }
       for (let k = i; k <= j; k++) { sx += nom[k][0]; sz += nom[k][2]; n++; }   // the plant: the mean of the path
       const mid = (i + j) >> 1, lead = O.lead * (1 - wk[mid]);   // a walk passes over its plant: no catch step
-      out.push({ a: i, b: j, pos: [sx / n + vel[mid][0] * lead, LEG.footY, sz / n + vel[mid][1] * lead] });
+      out.push({ a: i, b: j, pos: [sx / n + vel[mid][0] * lead, LEG.footY, sz / n + vel[mid][1] * lead], ry: P[mid].ry });
       let ni = j + 1 + (swingFit > 0 ? swingFit : swingAt(j));   // the swing, unless a cut comes first: then plant at once
       for (let q = j + 1; q < Math.min(ni, N); q++) if (piece[q] !== piece[j]) { ni = q; break; }
       i = ni;
@@ -309,6 +327,7 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
   function path(cs, nom) {
     const out = nom.map((q) => [q[0], q[1], q[2], 0]);
     const pit = new Float64Array(N);
+    const yaw = P.map((p) => p.ry);                    // each foot's own direction (the body's, in the air)
     const rampN = Math.max(1, Math.round(O.ramp * RATE));
     const done = new Array(N).fill(false);
     // THE PLANTS. A walking foot ROLLS (scaled by the walking amount; a fighter's foot stays flat): it lands on its
@@ -324,7 +343,8 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
         if (i < c.a + lN) { th = O.heelStrike * wk[i] * (1 - ss((i - c.a) / lN)); pv = -1; }
         else if (hN > 0 && i > c.b - hN) { const u = (i - (c.b - hN)) / hN; th = -O.toeOff * wk[i] * u * u; pv = 1; }
         pit[i] = th;
-        const a = pivotAnkle(c.pos, P[i].ry, th, pv);
+        const a = pivotAnkle(c.pos, c.ry, th, pv);
+        yaw[i] = c.ry;
         out[i] = [a[0], a[1], a[2], 1]; done[i] = true;
       }
     }
@@ -335,7 +355,7 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
       if (piece[c.b] !== piece[nx.a]) {                 // a cut between the plants: no step across it; the foot stays
         for (let i = c.b + 1; i < nx.a; i++) {          // planted until the cut and is at its new plant after it
           if (piece[i] !== piece[c.b]) break;
-          out[i] = [out[c.b][0], out[c.b][1], out[c.b][2], 1]; pit[i] = pit[c.b]; done[i] = true;
+          out[i] = [out[c.b][0], out[c.b][1], out[c.b][2], 1]; pit[i] = pit[c.b]; yaw[i] = c.ry; done[i] = true;
         }
         continue;
       }
@@ -363,6 +383,7 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
         const u = (i - c.b) / (nx.a - c.b), s = ss(u);
         const yOld = (leap ? nom[i][1] : LEG.footY) + h * Math.sin(Math.PI * u);
         out[i] = [A[0] + (B[0] - A[0]) * s, yOld + (yWalk(u) - yOld) * w, A[2] + (B[2] - A[2]) * s, 0];
+        yaw[i] = c.ry + wrap(nx.ry - c.ry) * s;        // the swinging foot turns to its next plant's direction
         pit[i] = leap ? 0 : pit[c.b] * (1 - eo(Math.min(1, u / 0.5))) + pit[nx.a] * ss(clamp((u - 0.4) / 0.6, 0, 1));
         done[i] = true;
       }
@@ -378,7 +399,7 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
       }
       i = j + 1;
     }
-    return { out, pit };
+    return { out, pit, yaw };
   }
   const PR = path(cR, nomR), PL = path(cL, nomL), fR = PR.out, fL = PL.out;
 
@@ -487,7 +508,8 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     p.stance *= 1 - w;                                 // the walking stance, as planned
     p.weight *= 1 - w;
     p._feet = { r: lerp3(fR, i, j, u), l: lerp3(fL, i, j, u), rc: fR[u < 0.5 ? i : j][3], lc: fL[u < 0.5 ? i : j][3],
-      pr: L(PR.pit), pl: L(PL.pit), soft: 0.94 + (O.walkSoft - 0.94) * w };
+      pr: L(PR.pit), pl: L(PL.pit), soft: 0.94 + (O.walkSoft - 0.94) * w,
+      yr: PR.yaw[i] + wrap(PR.yaw[j] - PR.yaw[i]) * u, yl: PL.yaw[i] + wrap(PL.yaw[j] - PL.yaw[i]) * u, twist: O.footTwist };
     p.crouch += L(sC) - O.walkLift * w;
     p.rx += L(sRx);
     p.rz += L(sRz);

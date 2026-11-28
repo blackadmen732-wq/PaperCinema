@@ -853,5 +853,10 @@ export function solveLegs(f, p) {
     leg.thigh.scale.setScalar(stretch);
     // flat on the ground (+ ankle), minus the walking roll from engine/footlock.js (+ toe up: heel strike / toe-off)
     leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0)) - (p._feet ? ((front ? p._feet.pr : p._feet.pl) ?? 0) : 0);
+    // a planted foot keeps its own direction on the ground (engine/footlock.js `yr`/`yl`): the body twists over it, at
+    // most `twist` either way (the foot's y turn comes after the levelling x turn: about the vertical)
+    const fyaw = p._feet ? (front ? p._feet.yr : p._feet.yl) : undefined;
+    const tw = p._feet?.twist ?? 1.05;
+    leg.foot.rotation.y = fyaw === undefined ? 0 : Math.max(-tw, Math.min(tw, Math.atan2(Math.sin(fyaw - p.ry), Math.cos(fyaw - p.ry))));
   }
 }
