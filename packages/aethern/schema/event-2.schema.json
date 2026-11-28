@@ -83,7 +83,8 @@
    "items": {
     "type": "object",
     "required": [
-     "source"
+     "source",
+     "t"
     ],
     "additionalProperties": false,
     "properties": {
