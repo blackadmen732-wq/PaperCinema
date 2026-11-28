@@ -37,7 +37,10 @@ python3 -m vyrn backends                                  # every stage's defaul
 python3 -m vyrn.bench.synth && python3 -m vyrn.bench.run output/vyrn-bench/duel   # the benchmark
 ```
 `<media>` is the id `ingest` printed or the original file path. `--json` on any command gives the data.
-Needs `ffmpeg`, `numpy`, and for video `opencv-python-headless` (Apache-2.0).
+Needs `ffmpeg` and `numpy`; the picture stages (cuts, camera, subjects) also need `opencv-python-headless`
+(Apache-2.0). Without OpenCV a video is ingested for sound only, which is all `sync --expect` needs (0.6 s, 64 MB
+for the 6.5 s test clip). `--expect` takes a timeline, Sonic's `output/<film>.sonic.json` (uses `peakAt`), or any
+shared-format `.jsonl` such as `output/<film>.sonic.events.jsonl`.
 
 ## What is stored (`output/vyrn/<media>.sqlite`, schema in `vyrn/store.py`)
 

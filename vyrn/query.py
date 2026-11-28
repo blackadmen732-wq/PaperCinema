@@ -150,19 +150,31 @@ def relation(st, a, b, t0=None, t1=None):
 
 
 def _expected_from(path):
-    """expected sound times from a timeline (cue events, or the visual events they belong to) or a sonic.json"""
-    j = json.load(open(path))
+    """expected sound times from a timeline (its cue events), Sonic's report output/<film>.sonic.json (a list of
+    picks: peakAt is the moment the sound is aimed at, t is where the file starts), or any shared-format events
+    file (.jsonl, e.g. output/<film>.sonic.events.jsonl, whose t is already the aimed moment)"""
+    if path.endswith('.jsonl'):
+        exp = []
+        for line in open(path, encoding='utf-8'):
+            if line.strip():
+                e = json.loads(line)
+                d = e.get('data') or {}
+                exp.append({'id': e['id'], 't': e['t'], 'what': d.get('sound', e['type']), 'why': d.get('cue')})
+        return exp
+    j = json.load(open(path, encoding='utf-8'))
     exp = []
-    if j.get('format') == 'paper-cinema-timeline':
+    if isinstance(j, dict) and j.get('format') == 'paper-cinema-timeline':
         for e in j.get('events', []):
             if e['type'] == 'cue':
                 # the cue's own time is the intended sound time; `why` names the visual event it belongs to
                 exp.append({'id': e['id'], 't': e['t'], 'what': e.get('sfx', ''), 'why': e.get('why')})
-    else:        # Sonic: output/<film>.sonic.json, a list of picks with the cue time and the placed peak
-        for p in j.get('picks', j if isinstance(j, list) else []):
-            t = p.get('peakAt', p.get('t'))
-            if t is not None:
-                exp.append({'id': p.get('cue', p.get('id', '')), 't': t, 'what': p.get('sound', p.get('pick', ''))})
+        return exp
+    rows = j if isinstance(j, list) else j.get('picks', [])
+    for p in rows:
+        t = p.get('peakAt', p.get('t'))
+        if t is not None:
+            exp.append({'id': p.get('cue', p.get('id', '')), 't': t, 'what': p.get('sound', p.get('pick', '')),
+                        'why': p.get('cue')})
     return exp
 
 
@@ -176,7 +188,8 @@ def sync(st, expect=None, tol=0.1, visual=None):
         title = f'expected sounds from {os.path.basename(expect)}'
         if visual:
             # grade against the visual event each cue belongs to, not the cue's own (possibly wrong) time
-            vt = {e['id']: e['t'] for e in json.load(open(expect)).get('events', [])}
+            src = json.load(open(expect)) if expect.endswith('.json') else {}
+            vt = {e['id']: e['t'] for e in (src.get('events', []) if isinstance(src, dict) else [])}
             for x in targets:
                 if x.get('why') in vt:
                     x['t'] = vt[x['why']]

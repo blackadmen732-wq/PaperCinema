@@ -5,6 +5,14 @@ from vyrn.store import Store, cache_dir, sha256_file, save_index, load_index
 VERSION = {'native': 1, 'video': 1, 'audio': 1, 'fuse': 1}
 
 
+def _has_cv2():
+    try:
+        import cv2  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 def kind_of(path):
     if path.endswith('.json'):
         with open(path) as fh:
@@ -22,7 +30,8 @@ def ingest(path, force=False, render=None):
     media_id = f'{kind[0]}{sha[:11]}'
     spath = os.path.join(cache_dir(), f'{media_id}.sqlite')
     idx = load_index()
-    if not force and os.path.exists(spath) and idx.get(media_id, {}).get('version') == VERSION:
+    want = dict(VERSION, picture=kind == 'native' or _has_cv2())
+    if not force and os.path.exists(spath) and idx.get(media_id, {}).get('version') == want:
         return media_id, {'cached': True, 'store': spath}
     if os.path.exists(spath):
         for ext in ('', '-wal', '-shm'):
@@ -36,7 +45,15 @@ def ingest(path, force=False, render=None):
         res = native.ingest_timeline(path, st, media_id, sha)
     else:
         from vyrn import video, audio
-        res = video.ingest(path, st, media_id, sha, work)
+        if video.cv2 is None:
+            # no OpenCV: sound only (enough for `sync --expect`); the picture stages need opencv-python-headless
+            info = video.probe(path)
+            st.put_media(id=media_id, kind='video', source=path, sha256=sha, fps=info['fps'], duration=info['duration'],
+                         frames=int(round(info['duration'] * info['fps'])), width=info['width'], height=info['height'],
+                         processors={'video': 'none (OpenCV missing)'}, stats={'audio': info['audio']})
+            res = {'picture': 'skipped: pip install opencv-python-headless (Apache-2.0) for cuts, camera and subjects'}
+        else:
+            res = video.ingest(path, st, media_id, sha, work)
         res['audio'] = audio.ingest(path, st, sha)
         res['fused'] = fuse(st)
     if render:
@@ -46,7 +63,7 @@ def ingest(path, force=False, render=None):
     st.db.execute('UPDATE media SET stats = json_set(coalesce(stats, "{}"), "$.ingest", json(?))', (json.dumps(res),))
     st.commit()
     export_events(st, os.path.join(cache_dir(), f'{media_id}.events.jsonl'))
-    save_index(media_id, {'kind': kind, 'source': path, 'sha256': sha, 'version': VERSION, 'store': spath})
+    save_index(media_id, {'kind': kind, 'source': path, 'sha256': sha, 'version': want, 'store': spath})
     return media_id, dict(res, store=spath)
 
 
