@@ -140,7 +140,10 @@ film = {
         'target': {'character': 'musashi', 'face': 'eyes', 'weapon': 'bokken', 'recipe': 'musashi-ai', 'weaponPart': 'bokken_oar_t1'},
     },
     'performances': {
-        'hero': {'keys': hero, 'life': [[0, 1.0], [39.6, 1.0], [40.4, 0.0]], 'draw': {'grab': 23.9, 'slide': 24.45, 'clear': 24.85, 'blade': 0.91, 'sword': 'shiokaze'},
+        # track: his head follows Musashi only from the cut at 18.5 s (they face each other); before it the keys do the
+        # looking (ahead at the sea, then "he sees the boat" at 10 s). Tracking from frame 1 held his head at its
+        # 40-degree limit toward the far boat for 11 s, and in the hook close-up his side lock crossed his face.
+        'hero': {'keys': hero, 'life': [[0, 1.0], [39.6, 1.0], [40.4, 0.0]], 'track': [[0, 0.0], [17.6, 0.0], [18.4, 1.0]], 'draw': {'grab': 23.9, 'slide': 24.45, 'clear': 24.85, 'blade': 0.91, 'sword': 'shiokaze'},
                  'throwSaya': {'grab': 25.55, 'release': 26.2, 'to': [-3.6, 9.5], 'apex': 2.2}},
         'target': {'keys': target, 'life': [[0, 1.0]], 'drop': [{'part': 'musashi_head_t1', 't': 33.3, 'slot': 'band', 'becomes': 'hair', 'v': [-0.4, 2.0, 0.9], 'spin': 5.0, 'drag': 4.5, 'note': 'the headband cut (tradition): the band slot of the generated head leaves it'}]},
     },

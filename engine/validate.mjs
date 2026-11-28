@@ -308,6 +308,13 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (!film.cast?.[id]?.face && !film.page) warn(`${w}.eyes`, `the eyes only show with cast.${id}.face = "eyes"`);
   }
   if (p.blinks !== undefined && !(Array.isArray(p.blinks) && p.blinks.every(isNum))) err(`${w}.blinks`, 'must be a list of seconds');
+  // envelopes [[t, amount], ...]: life = the breathing/idle layer (0 = a dead body), track = how much the head turns
+  // to the opponent (0 = looks where the body faces, 1 = full tracking; engine/motion.js poseOf)
+  for (const f of ['life', 'track']) {
+    if (p[f] === undefined) continue;
+    if (!Array.isArray(p[f]) || !p[f].every((e) => Array.isArray(e) && e.length === 2 && e.every(isNum))) err(`${w}.${f}`, 'must be [[t, amount], …]');
+    else p[f].forEach((e, j) => { if (j > 0 && e[0] < p[f][j - 1][0]) err(`${w}.${f}[${j}]`, 'times must not go back'); if (e[1] < 0 || e[1] > 1.5) err(`${w}.${f}[${j}]`, 'amount must be 0-1.5'); });
+  }
 }
 
 (film.duels ?? []).forEach((d, i) => {

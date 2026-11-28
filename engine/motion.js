@@ -89,12 +89,14 @@ const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 // motion itself is moving (it never fights an action) and in when the body holds, and performances.<id>.life
 // [[t, amount], ...] scales it (0 = no life: a dead body does not breathe).
 const _sn = (t, f, ph) => Math.sin(2 * Math.PI * f * t + ph);
-function lifeAmount(c, tb) {
-  const L = c.perf.life;
+function envAt(L, tb) {                                // [[t, amount], ...] -> amount at tb (linear; 1 when absent)
   if (!Array.isArray(L) || !L.length) return 1;
   if (tb <= L[0][0]) return L[0][1];
   for (let i = 1; i < L.length; i++) {
-    if (tb <= L[i][0]) { const u = (tb - L[i - 1][0]) / Math.max(1e-6, L[i][0] - L[i - 1][0]); return L[i - 1][1] + (L[i][1] - L[i - 1][1]) * u; }
+    if (tb <= L[i][0]) {                               // eased (smoothstep): a head turn or a last breath starts and ends soft
+      const u = (tb - L[i - 1][0]) / Math.max(1e-6, L[i][0] - L[i - 1][0]), w = u * u * (3 - 2 * u);
+      return L[i - 1][1] + (L[i][1] - L[i - 1][1]) * w;
+    }
   }
   return L[L.length - 1][1];
 }
@@ -116,6 +118,7 @@ function stillness(c, tb) {
   const u = Math.max(0, Math.min(1, 1 - d / 0.6));
   return u * u * (3 - 2 * u);
 }
+const lifeAmount = (c, tb) => envAt(c.perf.life, tb);
 function addLife(c, p, tb) {
   const life = lifeAmount(c, tb);
   if (life <= 0) return;
@@ -139,10 +142,13 @@ function poseOf(c, tb) {
   const p = c.motion(tb);
   addLife(c, p, tb);
   combat.applyEyes(c, p, tb, FILM_TIME, { fps: FPS, voice: VOICE, contacts: CONTACTS });
-  // eyes on the opponent: neck takes 40% of the turn, head 60%
+  // eyes on the opponent: neck takes 40% of the turn, head 60%. performances.<id>.track [[t, amount]] scales it: a
+  // character can look where the body faces and turn to the opponent on a story beat (27 Nov: without it Kojiro's
+  // head sat at its 40-degree limit toward the far-off boat for the whole opening, and in the hook close-up his
+  // side lock crossed his face like a bar)
   const o = other(c.id).motion(tb);
   let yaw = Math.atan2(o.x - p.x, o.z - p.z) - p.ry - p.ty - p.cy;
-  yaw = Math.max(-0.7, Math.min(0.7, Math.atan2(Math.sin(yaw), Math.cos(yaw))));
+  yaw = Math.max(-0.7, Math.min(0.7, Math.atan2(Math.sin(yaw), Math.cos(yaw)))) * envAt(c.perf.track, tb);
   p.ny += 0.4 * yaw;
   p.hy += 0.6 * yaw;
   return p;
