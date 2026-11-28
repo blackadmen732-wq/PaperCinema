@@ -66,6 +66,13 @@ checks each branch's proof and merges it into `claude/first-episode`; agents do 
 | cast (Opus) | session_013EhkTQ4XUSaqFeKdWVc6u5 | agent/cast | item 14: Ronin, Monk, Noblewoman as section characters, the line-up |
 | layered sleeves (Opus) | session_013EhkTSWks9csgshETEJ9Zd | agent/layered-sleeves | item 17: plate-chain sleeves, bench vs today's sleeve |
 | Episode 2 (Opus) | session_013EhkTTSjoDYtL4qavcGHkn | agent/episode-2 | task 5: Musashi at Ichijo-ji from data only, checks + stills |
+| character motion (Opus) | session_013EhkTQmCxssr21Go7u5ot1 | agent/character-motion | Mark 12:16: "the character doesn't move properly": a run gait (new speed band, the walk unchanged), everyday moves (step back, sidestep, seiza, sit, bow, stumble, fall and rise, suriashi), a gallery film |
+| character body (Opus) | session_013EhkTPZFM9U8Xp8JwcJoQh | agent/character-body | "fix the leg, the skeleton, the articulation": a toe joint, a turning pelvis, straighter standing legs, clean bending of the sections, arms out of the chest, Kojiro's side locks |
+| asset library (Opus) | session_013EhkTRLtzuVQgZpQE1uSpm | agent/library | Mark: "the bucket test is what I want the library for": tools/paperize_model.py (any model to paper, tested), 30+ CC0 Poly Haven assets in the Supabase library (original + paper + still + row), a builder of scenes from library ids, a village, a forest path, a riverside |
+
+The library (docs/LIBRARY.md): Supabase org "Paper Cinema" (free plan), project papercinema (ref pkqbqlhgffqatgryofxt),
+private bucket pc-library, table pc_library, edge function 'library' (the only door; the token is in the sessions' private
+messages and ~/.pc-library-token, never in the repo); `python3 tools/library.py selftest` PASS 28 Nov 12:23.
 
 The helpers' frames come back encrypted (`tools/render_farm.sh`, lossless FFV1 + AES-256; the passphrase is only in the
 sessions' private messages, never in the repo): `PCF_PASS=... tools/render_farm.sh unpack ganryujima-ep1 agent/render-h1`, then
