@@ -82,6 +82,14 @@ class Rig:
             e.parent = self.J[parent]
         e.location = T(*local_three)
         self.J[n] = e
+        # figure.js turn orders: every joint is three.js 'XYZ' (Blender 'YZX' with rot()'s axis swap), but the ROOT
+        # is 'YXZ' (facing first, then the lean: a forward lean leans forward whatever way the body faces) and the
+        # THIGHS are 'ZXY' (bend in the leg plane, then roll the plane: hip abduction). Until 28 Nov all were 'YZX':
+        # a lean on a body facing 2.3 rad came out mostly sideways; a rolled leg plane bent the wrong way.
+        if n == 'root':
+            e.rotation_mode = 'YXZ'
+        elif n.endswith('thigh'):
+            e.rotation_mode = 'XYZ'
         return e
 
     def _build_joints(self):
@@ -195,30 +203,70 @@ class Rig:
         self.rot('rT', 0, p['rfy'], 0); self.rot('lT', 0, p['lfy'], 0)
         self.rot('rH', p['rwx'], 0, p['rwz']); self.rot('lH', p['lwx'], 0, p['lwz'])
         self.rot('hakama', p['swayx'], 0, p['sway'])
-        L1, L2 = 0.46, 0.44
-        hy, hzz = hipY - 0.02, hipZ
-        for s, side in (('r', -1), ('l', 1)):
-            front = side < 0
-            fz, fy = (1 if front else -1) * p['stance'] / 2, 0.04
-            dz, dy = fz - hzz, fy - hy
-            d = math.hypot(dz, dy)
-            mx = (L1 + L2) * 0.999
-            if d > mx:
-                dz *= mx / d; dy *= mx / d; d = mx
-            phi = math.atan2(dz, -dy)
-            a = math.acos(max(-1, min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))))
-            th = phi + a
-            kz, ky = hzz + L1 * math.sin(th), hy - L1 * math.cos(th)
-            sh = math.atan2(hzz + dz - kz, -(hy + dy - ky))
-            J[s + 'thigh'].location = T(side * 0.1, hy, hzz)
-            self.rot(s + 'thigh', -th, 0, side * 0.04)
-            self.rot(s + 'shin', -(sh - th), 0, 0)
-            self.rot(s + 'foot', sh + (p['rax'] if front else p['lax']), 0, 0)
+        self._solve_legs(p, hipY - 0.02, hipZ)
         bpy.context.view_layer.update()
         self._hang_sleeves(p)
         bpy.context.view_layer.update()
         self.sync_bones()
         return p
+
+    def _solve_legs(self, p, hy, hzz):
+        """The port of engine/figure.js solveLegs, the same numbers. Without `_feet` each foot is placed from the
+        stance (and stride/phase) in the figure's own frame. With `_feet` (engine/footlock.js: the timeline carries
+        it in every pose of a film with motion.lockFeet) each foot is a WORLD point (three.js coordinates) brought
+        into the root's frame: the foot stays planted and the hips move over it. Until 28 Nov this port ignored
+        `_feet`, so every render placed the feet from the stance: in Episode 1 the 'planted' left foot glided 0.66 m
+        in 28 frames at 4 cm height while the plan held it still, and the hips sank for steps that never happened.
+        Soft IK and the stretch that pays its shortfall back, the leg plane rolled sideways to contain the hip-foot
+        line, and the foot's pitch (`_feet.pr` / `.pl`, + toe up: heel strike and toe-off) as in figure.js."""
+        J = self.J
+        L1, L2 = 0.46, 0.44
+        feet = p.get('_feet')
+        inv = None
+        if feet:
+            root = J['root']
+            if root.parent is None:                        # its world matrix is its own transform: no scene update
+                inv = root.matrix_basis.inverted()
+            else:
+                bpy.context.view_layer.update()
+                inv = root.matrix_world.inverted()
+        for s, side in (('r', -1), ('l', 1)):
+            front = side < 0
+            fx, fy, fz = side * 0.1, 0.04, (1 if front else -1) * p['stance'] / 2
+            pitch = 0.0
+            if feet:
+                w = feet['r' if front else 'l']
+                v = inv @ T(w[0], w[1], w[2])              # the root's frame, Blender axes
+                fx, fy, fz = v.x, v.z, -v.y                # ... back to figure.js axes
+                pitch = float(feet.get('p' + ('r' if front else 'l'), 0.0) or 0.0)
+            elif p.get('stride', 0) > 0:                   # walking feet of a motion capture (figure.js)
+                ph = p.get('phase', 0.0) + (0.0 if front else math.pi)
+                fz += math.sin(ph) * p['stride'] / 2
+                fy += max(0.0, math.cos(ph)) * 0.07
+            sx, sy = fx - side * 0.1, fy - hy
+            roll = math.atan2(sx, -sy) + side * 0.04
+            dz, dy = fz - hzz, -math.hypot(sx, sy)
+            d = math.hypot(dz, dy)
+            true_d = d
+            mx = (L1 + L2) * 0.999
+            ds = (L1 + L2) * 0.94                          # soft IK: the reach eases onto mx, never touching it
+            if d > ds:
+                room = mx - ds
+                soft = mx - room * math.exp(-(d - ds) / room)
+                if d > 1e-6:
+                    dz *= soft / d
+                    dy *= soft / d
+                d = soft
+            phi = math.atan2(dz, -dy)
+            a = math.acos(max(-1, min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * max(d, 1e-6)))))
+            th = phi + a
+            kz, ky = hzz + L1 * math.sin(th), hy - L1 * math.cos(th)
+            sh = math.atan2(hzz + dz - kz, -(hy + dy - ky))
+            J[s + 'thigh'].location = T(side * 0.1, hy, hzz)
+            self.rot(s + 'thigh', -th, 0, roll)            # Euler XYZ here = figure.js's ZXY (bend, then roll)
+            J[s + 'thigh'].scale = (1.0,) * 3 if d < 1e-6 else (true_d / d,) * 3
+            self.rot(s + 'shin', -(sh - th), 0, 0)
+            self.rot(s + 'foot', sh + (p['rax'] if front else p['lax']) - pitch, 0, 0)
 
     def ground_feet(self, ground=0.0, rest=0.04, tol=0.004, base=0.0):
         """After pose(): an ankle under the world ground is put back ON it by re-solving that leg - the hip swing

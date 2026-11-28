@@ -195,7 +195,14 @@ def solve(TL, actors, fps, checks=True, body_shrink=0.035):
                     last_g[a.aid] = _g
                 if _g is not None and abs(_g) > 0.003:
                     base = _g
-                    act = dict(act, pose=dict(_p, y=float(_p.get('y', 0.0)) + _g))
+                    _q = dict(_p, y=float(_p.get('y', 0.0)) + _g)
+                    if isinstance(_p.get('_feet'), dict):     # the planted feet rise with the body (ground_feet then
+                        _f = dict(_p['_feet'])                # settles each one on the ground under it)
+                        for _k in ('r', 'l'):
+                            if _f.get(_k):
+                                _f[_k] = [_f[_k][0], _f[_k][1] + _g, _f[_k][2]]
+                        _q['_feet'] = _f
+                    act = dict(act, pose=_q)
                     chk[a.aid].setdefault('terrain', []).append((f, round(_g, 3)))
                 if sea_at is not None:
                     _s = sea_at(float(_p.get('x', 0.0)), -float(_p.get('z', 0.0)))
