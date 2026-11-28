@@ -117,6 +117,31 @@ to the version before Sonic (checked by `tools/sonic_bench.mjs`, which compares 
   crinkle, crumple, fast and slow tear, flutter, slash, slide, thump, tap, shred) from three parts: crackle (random
   fibre breaks), air, and a card body. Our own, no licence needed, the same bytes on every build.
 
+## Adaptive footsteps (opt-in)
+
+Off unless a film asks: `"autoSounds": {"footsteps": {"surface": "sand"}}` (or `--footsteps` on `engine/sound.mjs`;
+`node engine/new-film.mjs NAME --foley [surface]` starts a new film with it on). Existing films do not change: their
+mix is bit-identical with the feature off.
+
+Each foot contact in `output/<film>.timeline.json` (the skeleton's feet touching the ground, from
+`tools/timeline.mjs`) becomes its own step, synthesized on the CPU in `packages/sonic/foley.mjs` (about 10 ms a step,
+no samples, no AI): a heel strike and a toe roll, the footwear (`bare`, `soft`, `sandal`, `geta`, `boot`) exciting
+the surface (`sand`, `earth`, `grass`, `wood`, `stone`, `metal`, `water`), scaled by contact force (weight from the
+cast, foot speed), faster steps closing the heel-to-toe gap, the distance from the camera lowering the level and the
+highs, the space (`open`, `room`, `hall`) adding early reflections. A seed per actor, foot and step makes every step
+different and every render the same. Steps on a landing, take-off, dash or skid cue are left to that cue; both feet
+on one frame are one step. Per character: `"cast": {"kojiro": {"weight": 80, "footwear": "geta"}}`, or
+`autoSounds.footsteps.cast`. Output: `output/<film>.footsteps.json` (each step and why) and
+`output/<film>.footsteps.events.jsonl` (`sonic.step`, aethern-event/2), which VYRN checks in the final mix:
+`python3 -m vyrn sync final.mp4 --expect output/<film>.footsteps.events.jsonl --tol 0.03`.
+Standalone: `node packages/sonic/cli.mjs footsteps STEPS.jsonl --surface wood --footwear geta`.
+
+Measured on the starter film (Nov 28): 14 contacts became 9 steps (4 were both feet on one frame, 1 came 42 ms
+after the last). Alone, VYRN hears 8 of 9. In the full mix it hears 4 of 9 within 30 ms: the others sit 3 to 15 dB
+under music and beds (three of them are 14 to 19 m from the camera). That is the mix's balance, and VYRN's report
+says which steps are masked; raise `gain` (dB) or lower the beds if they should be heard. VYRN's sound-kind guess
+calls granular sand steps "ringing"; that label is wrong for these sounds.
+
 ## Offline mixing
 
 A film cue whose file is not saved and cannot be fetched (no network, Openverse down) no longer stops the mix: the

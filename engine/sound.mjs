@@ -170,6 +170,34 @@ function earshot(cue) {
   return file;
 }
 
+// ADAPTIVE FOOTSTEPS (opt-in: film.autoSounds.footsteps, or --footsteps). Off (the default), nothing here runs and the
+// mix is what it was. On, every foot contact in the film's timeline (output/<film>.timeline.json, from
+// tools/timeline.mjs: the skeleton's feet touching the ground) becomes its own synthesized step: surface, footwear,
+// weight, speed, distance from the camera and the space shape it (packages/sonic/foley.mjs). Steps on a landing,
+// take-off, dash or skid cue are left to that cue. docs/SONIC.md.
+const FOOT = args.includes('--footsteps') ? (film.autoSounds?.footsteps || true) : film.autoSounds?.footsteps;
+if (FOOT) {
+  const fo = typeof FOOT === 'object' ? FOOT : {};
+  const tlPath = opt('timeline', fo.timeline ?? `output/${base}.timeline.json`);
+  if (!fs.existsSync(tlPath)) console.log(`! footsteps: no timeline at ${tlPath} (make it with node tools/timeline.mjs film/${base}.json): no steps added`);
+  else {
+    const { footstepCues, stepEvents } = await import('../packages/sonic/foley.mjs');
+    const tl = JSON.parse(fs.readFileSync(tlPath, 'utf8'));
+    const steps = (tl.events ?? []).filter((e) => e.type === 'footstep');
+    const fr = tl.frames ?? [], fps = tl.film?.fps ?? 24;
+    const camera = fr.length ? (t) => fr[Math.max(0, Math.min(fr.length - 1, Math.round(t * fps)))]?.camera?.pos ?? null : null;
+    const castList = Array.isArray(film.cast) ? film.cast : Object.entries(film.cast ?? {}).map(([id, c]) => ({ id, ...c }));
+    const cast = Object.fromEntries(castList.map((c) => [c.id, { weight: c.weight, footwear: c.footwear }]));
+    const { cues, skipped } = footstepCues(steps, { surface: fo.surface ?? 'sand', footwear: fo.footwear, weight: fo.weight,
+      cast: { ...cast, ...(fo.cast ?? {}) }, camera, room: fo.room ?? 'open', gain: fo.gain ?? 0, avoid: autoCues, seed: fo.seed ?? base });
+    autoCues.push(...cues);
+    console.log(`+ footsteps: ${cues.length} step(s) from ${steps.length} foot contact(s) in ${tlPath} (${skipped.length} left to another cue or merged)`);
+    fs.mkdirSync('output', { recursive: true });
+    fs.writeFileSync(`output/${base}.footsteps.json`, JSON.stringify({ cues: cues.map(({ id, t, why, event }) => ({ id, t, why, event })), skipped }, null, 1));
+    fs.writeFileSync(`output/${base}.footsteps.events.jsonl`, stepEvents(cues, 'paper-cinema', `film:${base}`).map((e) => JSON.stringify(e)).join('\n') + '\n');
+  }
+}
+
 const placed = [];
 for (const cue of [...(film.sounds ?? []), ...autoCues, ...voiceCues]) {
   // "sfx" reuses another sound by its id (one file, many cues); defaults for length checks

@@ -2,11 +2,69 @@
  "format": "aethern-caps/1",
  "module": "sonic",
  "about": "Sonic: acoustic intelligence; a measured, tagged sound catalog and an event -> sound picker",
- "run": ["node", "{dir}/cli.mjs"],
+ "run": [
+  "node",
+  "{dir}/cli.mjs"
+ ],
  "cwd": "root",
  "caps": [
-  {"id": "sonic.scan", "does": "measure and tag every sound file, write the catalog (cached: unchanged files are not decoded again)", "tags": ["sound", "audio", "catalog", "index", "library"], "args": "[--roots a,b] [--catalog F]", "out": "json"},
-  {"id": "sonic.query", "does": "find sounds by tags and measurements, e.g. material=steel action=impact dur<0.5", "tags": ["sound", "audio", "search", "find", "sfx", "library"], "args": "WORDS [--catalog F]", "out": "text", "example": "material=steel action=impact dur<0.5"},
-  {"id": "sonic.pick", "does": "choose a sound for each event of an aethern-event file and say when it starts; writes sonic.pick events", "tags": ["sound", "audio", "events", "foley", "sync", "choose"], "args": "EVENTS.jsonl [--out F] [--project P --media M] [--seed S]", "out": "jsonl"}
+  {
+   "id": "sonic.scan",
+   "does": "measure and tag every sound file, write the catalog (cached: unchanged files are not decoded again)",
+   "tags": [
+    "sound",
+    "audio",
+    "catalog",
+    "index",
+    "library"
+   ],
+   "args": "[--roots a,b] [--catalog F]",
+   "out": "json"
+  },
+  {
+   "id": "sonic.query",
+   "does": "find sounds by tags and measurements, e.g. material=steel action=impact dur<0.5",
+   "tags": [
+    "sound",
+    "audio",
+    "search",
+    "find",
+    "sfx",
+    "library"
+   ],
+   "args": "WORDS [--catalog F]",
+   "out": "text",
+   "example": "material=steel action=impact dur<0.5"
+  },
+  {
+   "id": "sonic.pick",
+   "does": "choose a sound for each event of an aethern-event file and say when it starts; writes sonic.pick events",
+   "tags": [
+    "sound",
+    "audio",
+    "events",
+    "foley",
+    "sync",
+    "choose"
+   ],
+   "args": "EVENTS.jsonl [--out F] [--project P --media M] [--seed S]",
+   "out": "jsonl"
+  },
+  {
+   "id": "sonic.footsteps",
+   "does": "one synthesized footstep per foot contact, shaped by surface, footwear, weight, speed, distance and room; writes sonic.step events",
+   "tags": [
+    "sound",
+    "foley",
+    "footstep",
+    "walk",
+    "run",
+    "synthesis",
+    "surface",
+    "material"
+   ],
+   "args": "STEPS.jsonl [--surface sand|earth|grass|wood|stone|metal|water] [--footwear bare|soft|sandal|geta|boot] [--weight KG] [--room open|room|hall] [--out F]",
+   "out": "jsonl"
+  }
  ]
 }

@@ -63,6 +63,8 @@ const film = {
   titles: [...opening.titles, ...body.titles, ...endcard.titles.map((t) => ({ ...t, start: +(E + t.start).toFixed(3), end: +(E + t.end).toFixed(3) }))],
   sounds: [...opening.sounds, ...sounds, ...endcard.sounds.map((c) => ({ ...c, t: +(E + c.t).toFixed(3) }))],
 };
+// --foley [surface]: the new film starts with adaptive footsteps on (engine/sound.mjs; off unless asked)
+if (a.includes('--foley')) { const v = opt('foley'); film.autoSounds = { ...(film.autoSounds ?? {}), footsteps: { surface: v && !v.startsWith('--') ? v : 'sand' } }; }
 const out = `film/${name}.json`;
 if (fs.existsSync(out) && !a.includes('--force')) { console.log(`${out} already exists (add --force to overwrite)`); process.exit(1); }
 fs.writeFileSync(out, JSON.stringify(film, null, 2));

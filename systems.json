@@ -473,6 +473,7 @@
    "does": "Every sound → one queryable record: measured attributes (length, peak and onset times, attack, decay, loudness, spectrum → 0..1 weight, intensity, brightness, sharpness, tonal) plus tags from words in its name and credits (material, action, environment, intent) and from the measurements (texture, size); content-hash cache; hand edits that survive every scan. 302 sounds: our files, the 12 PaperAcoustics paper sounds made in code, and the 252-sound Earshot bank. Query language and MCP server for agents; an event → sound picker (clash by material and intensity with hard material matching and explicit fallbacks, whoosh by blade speed, landing by height) with variation, level matching and peak/onset alignment, checked in the finished mix. Opt-in in a film (`autoSounds.sonic`); off is bit-identical to before. Offline-safe: a sound that cannot be fetched gets a local stand-in instead of stopping the mix. Writes shared timestamped events for VYRN",
    "files": [
     "packages/sonic/",
+    "foley.mjs",
     "engine/sonic.mjs",
     "tools/sonic.mjs",
     "tools/sonic_mcp.mjs",
