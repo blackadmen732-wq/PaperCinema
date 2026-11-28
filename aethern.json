@@ -300,6 +300,18 @@
    [
     "SONIC",
     "SOUND"
+   ],
+   [
+    "TIMELINE",
+    "VYRN"
+   ],
+   [
+    "SOUND",
+    "VYRN"
+   ],
+   [
+    "VYRN",
+    "SONIC"
    ]
   ]
  },
