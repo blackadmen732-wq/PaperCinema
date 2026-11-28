@@ -1,0 +1,36 @@
+{
+  "about": "Item 14 (the board's cast), prepared WHILE the Episode 1 render runs: the plan for cutting the three new Tripo bodies into the sections our skeleton wears, applied to library/ai-parts.json + tools/ai_part.py once the render is done (the render stamp covers ai-parts.json and assets/models/ai). Fits from tools/body_plan.py (neck / shoulder-top: Ronin 88/84%, Monk 84/82%, Noblewoman 82/80%; Kojiro's proven fit sits 4% under the shoulder top). Sheets from the concepts (output/tripo/cast/*-concept-1.image.png) against library/paper-materials. Section boxes start from Kojiro's validated kojiro_*_t1 boxes and are judged on a pose-sweep render, as his were.",
+  "characters": {
+    "ronin": {
+      "raw": "output/tripo/cast/ronin-model-1.pbr.glb",
+      "facing": "+x",
+      "fit": {"mode": "body", "shoulder_frac": 0.80, "shoulder_z": 1.4},
+      "look": "torn cream kimono and trousers (ragged hems), red obi, black hair, straw sandals with black ankle wraps",
+      "sheets": {"robe": "washi_natural", "torn": "washi_shade", "obi": "washi_crimson", "hair": "washi_sumi", "skin": "washi_natural",
+                 "straw": "washi_hat", "wrap": "card_charcoal"},
+      "sections": ["head", "torso", "sleeve_R", "sleeve_L", "hakama_top", "leg_R", "leg_L", "foot_R", "foot_L"],
+      "notes": "the ragged hem is the character: keep the torn edges in the leg sections (do not let the cut line straighten them); the board's ragged-ronin parts (hood, woven kasa, patched vest, torn skirt, rope sandals, backpack) are accessories on top once the boards arrive as files"
+    },
+    "monk": {
+      "raw": "output/tripo/cast/monk-model-1.pbr.glb",
+      "facing": "+x",
+      "fit": {"mode": "body", "shoulder_frac": 0.78, "shoulder_z": 1.4},
+      "look": "shaved head, dark brown robe, cream kesa stole across the chest, wooden prayer beads at the neck, cream trousers, white tabi and sandals",
+      "sheets": {"robe": "card_umber", "kesa": "washi_natural", "beads": "card_oxblood", "skin": "washi_natural", "trousers": "washi_natural",
+                 "tabi": "washi_bleached", "straw": "washi_hat"},
+      "sections": ["head", "torso", "sleeve_R", "sleeve_L", "robe_skirt", "leg_R", "leg_L", "foot_R", "foot_L"],
+      "notes": "the robe falls below the knee: the skirt section takes the robe from the obi line down (rigid on the hips first; paper-cloth or layered plates later, item 17); the beads ride the chest bone (part of the torso section)"
+    },
+    "noblewoman": {
+      "raw": "output/tripo/cast/noblewoman-model-1.pbr.glb",
+      "facing": "+x",
+      "fit": {"mode": "body", "shoulder_frac": 0.76, "shoulder_z": 1.4},
+      "look": "black hair with red kanzashi, cream kimono with long sleeves, red obi with long tails, red under-skirt, white tabi",
+      "sheets": {"kimono": "washi_natural", "obi": "washi_crimson", "under": "washi_crimson", "hair": "washi_sumi", "ornament": "washi_crimson",
+                 "skin": "washi_bleached", "tabi": "washi_bleached"},
+      "sections": ["head", "torso", "sleeve_R", "sleeve_L", "skirt", "foot_R", "foot_L"],
+      "notes": "no legs to cut: the kimono and the red under-skirt are ONE skirt section on the hips (body_plan found no gap between the legs); long furisode sleeves are the first layered-plate candidates (item 17); the obi tails are a free part (paper cloth)"
+    }
+  },
+  "then": ["prepare every section (tools/ai_part.py, AI_PART_DUMP=1 for the paint clusters -> palettes)", "a recipe per character (library/character-recipes/<id>-ai.json)", "the validator (engine/validate.mjs) and the 5-pose sweep render, judged like kojiro-ai2", "the line-up render: Ronin, Samurai, Noblewoman, Monk, Assassin, Warrior (the board's order)"]
+}
