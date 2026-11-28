@@ -1,0 +1,706 @@
+{
+ "title": "Moves gallery 2: everyday moves and the run",
+ "page": "engine/motion.html",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "format": "vertical",
+ "duration": 44.4,
+ "mode": "dawn",
+ "motion": {
+  "overlap": true,
+  "lockFeet": {
+   "plantHolds": true
+  }
+ },
+ "stage": {
+  "mark": "MARK_center",
+  "origin": true,
+  "turn": 0
+ },
+ "cast": {
+  "hero": {
+   "character": "musashi",
+   "face": "eyes",
+   "weapon": "bokken",
+   "recipe": "musashi-ai",
+   "weaponPart": "bokken_oar_t1"
+  },
+  "target": {
+   "character": "kojiro",
+   "face": "eyes",
+   "recipe": "kojiro-ai2",
+   "hidden": true
+  }
+ },
+ "performances": {
+  "hero": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-easy",
+     "x": -1.0,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 0.6,
+     "pose": "stand-easy"
+    },
+    {
+     "t": 0.8,
+     "move": "back-step"
+    },
+    {
+     "t": 2.4,
+     "move": "sidestep-left"
+    },
+    {
+     "t": 3.9,
+     "move": "sidestep-right"
+    },
+    {
+     "t": 5.5,
+     "move": "kneel-seiza"
+    },
+    {
+     "t": 8.3,
+     "move": "bow-seiza"
+    },
+    {
+     "t": 11.7,
+     "move": "rise-from-seiza"
+    },
+    {
+     "t": 14.2,
+     "move": "bow-standing"
+    },
+    {
+     "t": 17.4,
+     "move": "sit-down"
+    },
+    {
+     "t": 20.1,
+     "move": "stand-from-sit"
+    },
+    {
+     "t": 22.7,
+     "move": "look-around"
+    },
+    {
+     "t": 26.8,
+     "move": "suriashi"
+    },
+    {
+     "t": 29.7,
+     "move": "stumble-recover"
+    },
+    {
+     "t": 31.9,
+     "move": "fall-back"
+    },
+    {
+     "t": 33.9,
+     "move": "get-up"
+    },
+    {
+     "t": 37.05,
+     "pose": "stand-easy"
+    },
+    {
+     "t": 37.1,
+     "pose": "stand-easy",
+     "x": -6.6,
+     "z": 0.0,
+     "ry": 1.5708,
+     "cut": true
+    },
+    {
+     "t": 37.6,
+     "pose": "stand-easy"
+    },
+    {
+     "t": 37.804,
+     "pose": "stand-easy",
+     "x": -6.592,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 38.007,
+     "pose": "stand-easy",
+     "x": -6.54,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 38.211,
+     "pose": "stand-easy",
+     "x": -6.403,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 38.415,
+     "pose": "stand-easy",
+     "x": -6.153,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 38.619,
+     "pose": "stand-easy",
+     "x": -5.776,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 38.822,
+     "pose": "stand-easy",
+     "x": -5.272,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 39.026,
+     "pose": "stand-easy",
+     "x": -4.66,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 39.23,
+     "pose": "stand-easy",
+     "x": -3.969,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 39.433,
+     "pose": "stand-easy",
+     "x": -3.24,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 39.637,
+     "pose": "stand-easy",
+     "x": -2.507,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 39.841,
+     "pose": "stand-easy",
+     "x": -1.773,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 40.044,
+     "pose": "stand-easy",
+     "x": -1.04,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 40.248,
+     "pose": "stand-easy",
+     "x": -0.307,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 40.452,
+     "pose": "stand-easy",
+     "x": 0.427,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 40.656,
+     "pose": "stand-easy",
+     "x": 1.16,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 40.859,
+     "pose": "stand-easy",
+     "x": 1.893,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 41.063,
+     "pose": "stand-easy",
+     "x": 2.627,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 41.267,
+     "pose": "stand-easy",
+     "x": 3.36,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 41.47,
+     "pose": "stand-easy",
+     "x": 4.093,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 41.674,
+     "pose": "stand-easy",
+     "x": 4.826,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 41.878,
+     "pose": "stand-easy",
+     "x": 5.532,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 42.081,
+     "pose": "stand-easy",
+     "x": 6.154,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 42.285,
+     "pose": "stand-easy",
+     "x": 6.645,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 42.489,
+     "pose": "stand-easy",
+     "x": 6.983,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 42.693,
+     "pose": "stand-easy",
+     "x": 7.174,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 42.896,
+     "pose": "stand-easy",
+     "x": 7.249,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 43.1,
+     "pose": "stand-easy",
+     "x": 7.26,
+     "z": 0.0,
+     "ry": 1.5708
+    },
+    {
+     "t": 43.6,
+     "pose": "stand-easy",
+     "settle": 0.5
+    }
+   ],
+   "twoHand": [
+    [
+     26.7,
+     29.4
+    ]
+   ],
+   "gait": {
+    "arms": [
+     0.6,
+     1.0
+    ],
+    "note": "the right hand carries the oar; both arms pump in the run"
+   }
+  },
+  "target": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "neutral",
+     "x": 30.0,
+     "z": 30.0,
+     "ry": 0.0
+    }
+   ]
+  }
+ },
+ "index": [
+  {
+   "move": "back-step",
+   "t": 0.8,
+   "end": 1.8,
+   "still": 1.25,
+   "note": "weight forward first, then 0.45 m back"
+  },
+  {
+   "move": "sidestep-left",
+   "t": 2.4,
+   "end": 3.4,
+   "still": 2.85,
+   "note": "lean away, slip 0.5 m left"
+  },
+  {
+   "move": "sidestep-right",
+   "t": 3.9,
+   "end": 4.9,
+   "still": 4.35,
+   "note": "and back"
+  },
+  {
+   "move": "kneel-seiza",
+   "t": 5.5,
+   "end": 7.8,
+   "still": 6.5,
+   "note": "left foot back, left knee down, then sits on his heels"
+  },
+  {
+   "move": "bow-seiza",
+   "t": 8.3,
+   "end": 11.2,
+   "still": 9.6,
+   "note": "za-rei: the hands slide to the floor"
+  },
+  {
+   "move": "rise-from-seiza",
+   "t": 11.7,
+   "end": 13.65,
+   "still": 12.55,
+   "note": "up through a kneel"
+  },
+  {
+   "move": "bow-standing",
+   "t": 14.2,
+   "end": 16.9,
+   "still": 15.4,
+   "note": "rei, 30 degrees"
+  },
+  {
+   "move": "sit-down",
+   "t": 17.4,
+   "end": 19.4,
+   "still": 19.1,
+   "note": "seat behind the feet, knees up"
+  },
+  {
+   "move": "stand-from-sit",
+   "t": 20.1,
+   "end": 22.15,
+   "still": 21.05,
+   "note": "rock forward, squat, stand"
+  },
+  {
+   "move": "look-around",
+   "t": 22.7,
+   "end": 26.3,
+   "still": 23.5,
+   "note": "head leads, chest follows"
+  },
+  {
+   "move": "suriashi",
+   "t": 26.8,
+   "end": 29.1,
+   "still": 27.35,
+   "note": "three sliding steps, the soles skim the sand"
+  },
+  {
+   "move": "stumble-recover",
+   "t": 29.7,
+   "end": 31.35,
+   "still": 30.15,
+   "note": "the toe catches, catch steps, over-correct"
+  },
+  {
+   "move": "fall-back",
+   "t": 31.9,
+   "end": 33.25,
+   "still": 32.65,
+   "note": "slip, arms up, lands on the seat"
+  },
+  {
+   "move": "get-up",
+   "t": 33.9,
+   "end": 35.9,
+   "still": 34.9,
+   "note": "rock forward, onto a knee, push up"
+  },
+  {
+   "move": "run",
+   "t": 37.6,
+   "end": 43.1,
+   "still": 40.5,
+   "note": "walk -> run at 3.6 m/s over 13.9 m -> stop"
+  }
+ ],
+ "paperSurface": {
+  "angle": 36.0,
+  "ink": 0.85,
+  "width": 0.003,
+  "light": 0.55,
+  "mottle": 0.12,
+  "mottle_scale": 7.0,
+  "ao": 0.35
+ },
+ "wind": {
+  "to": [
+   0.15,
+   -1.0
+  ],
+  "strength": 3.2,
+  "gust": 0.6,
+  "seed": 2
+ },
+ "cameraOpts": {
+  "solver": 2,
+  "aperture": 4.0
+ },
+ "effects": {
+  "dof": 4.0,
+  "motionBlur": 0.5,
+  "vignette": 0.3,
+  "postFx": true
+ },
+ "fade": {
+  "in": 0,
+  "out": 0.0
+ },
+ "camera": [
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": false,
+   "t": 0.0,
+   "note": "opening: side"
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "back-step",
+   "t": 0.5
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 32,
+   "az1": 40,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "sidesteps",
+   "t": 2.1
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "seiza",
+   "t": 5.2
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 60,
+   "az1": 66,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "standing bow",
+   "t": 13.9
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 8,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "sit",
+   "t": 17.1
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 20,
+   "az1": 24,
+   "elev": 4,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "look around",
+   "t": 22.4
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 8,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "suriashi",
+   "t": 26.5
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "stumble",
+   "t": 29.4
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 86,
+   "az1": 94,
+   "elev": 8,
+   "size": 0.5,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "note": "fall",
+   "t": 31.6
+  },
+  {
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 88,
+   "az1": 92,
+   "elev": 4,
+   "size": 0.55,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "cut": true,
+   "t": 37.1,
+   "note": "the run, tracked from the side"
+  }
+ ],
+ "sounds": [],
+ "titles": []
+}

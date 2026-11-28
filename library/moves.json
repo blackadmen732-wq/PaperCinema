@@ -945,5 +945,515 @@
   "to": 3.5,
   "anime": 1.25,
   "note": "recorded swordplay: giving ground and recovering guard"
- }
+ },
+ "back-step": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.2,
+   "pose": "stand-easy",
+   "weight": 0.3,
+   "tx": 0.06,
+   "crouch": 0.03,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.58,
+   "pose": "stand-easy",
+   "fwd": -0.45,
+   "weight": -0.35,
+   "tx": -0.05,
+   "hx": 0.08,
+   "crouch": 0.05,
+   "stance": 0.28,
+   "ease": "out"
+  },
+  {
+   "dt": 1.0,
+   "pose": "stand-easy",
+   "fwd": -0.45,
+   "settle": 0.6
+  }
+ ],
+ "sidestep-left": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.2,
+   "pose": "stand-easy",
+   "tz": -0.06,
+   "crouch": 0.04,
+   "hy": 0.1,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.58,
+   "pose": "stand-easy",
+   "side": 0.5,
+   "tz": 0.05,
+   "crouch": 0.05,
+   "hy": 0.05,
+   "ease": "out"
+  },
+  {
+   "dt": 1.0,
+   "pose": "stand-easy",
+   "side": 0.5,
+   "settle": 0.6
+  }
+ ],
+ "sidestep-right": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.2,
+   "pose": "stand-easy",
+   "tz": 0.06,
+   "crouch": 0.04,
+   "hy": -0.1,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.58,
+   "pose": "stand-easy",
+   "side": -0.5,
+   "tz": -0.05,
+   "crouch": 0.05,
+   "hy": -0.05,
+   "ease": "out"
+  },
+  {
+   "dt": 1.0,
+   "pose": "stand-easy",
+   "side": -0.5,
+   "settle": 0.6
+  }
+ ],
+ "kneel-seiza": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.28,
+   "pose": "stand-easy",
+   "crouch": -0.01,
+   "hx": 0.16,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.85,
+   "pose": "kneel-one",
+   "fwd": -0.145
+  },
+  {
+   "dt": 1.45,
+   "pose": "seiza",
+   "fwd": -0.29,
+   "y": -0.03,
+   "ease": "out"
+  },
+  {
+   "dt": 1.85,
+   "pose": "seiza",
+   "fwd": -0.29,
+   "y": -0.03,
+   "settle": 0.5
+  },
+  {
+   "dt": 2.3,
+   "pose": "seiza",
+   "fwd": -0.29,
+   "y": -0.03
+  }
+ ],
+ "rise-from-seiza": [
+  {
+   "dt": 0,
+   "pose": "seiza",
+   "y": -0.03
+  },
+  {
+   "dt": 0.3,
+   "pose": "seiza",
+   "y": -0.03,
+   "tx": 0.14,
+   "hx": 0.02,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.85,
+   "pose": "kneel-push",
+   "fwd": 0.145
+  },
+  {
+   "dt": 1.45,
+   "pose": "stand-easy",
+   "fwd": 0.29,
+   "tx": 0.06,
+   "ease": "out"
+  },
+  {
+   "dt": 1.95,
+   "pose": "stand-easy",
+   "fwd": 0.29,
+   "settle": 0.5
+  }
+ ],
+ "sit-down": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.3,
+   "pose": "stand-easy",
+   "crouch": 0.05,
+   "tx": 0.1,
+   "hx": 0.12,
+   "ease": "antic"
+  },
+  {
+   "dt": 1.0,
+   "pose": "squat-rise",
+   "fwd": -0.05,
+   "feetz": 0.05,
+   "weight": -0.3,
+   "y": -0.04
+  },
+  {
+   "dt": 1.5,
+   "pose": "sit-ground",
+   "fwd": -0.4,
+   "y": -0.2,
+   "ease": "out"
+  },
+  {
+   "dt": 2.0,
+   "pose": "sit-ground",
+   "fwd": -0.4,
+   "y": -0.2,
+   "settle": 0.5
+  }
+ ],
+ "stand-from-sit": [
+  {
+   "dt": 0,
+   "pose": "sit-ground",
+   "y": -0.2
+  },
+  {
+   "dt": 0.35,
+   "pose": "sit-ground",
+   "y": -0.2,
+   "tx": 0.4,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.95,
+   "pose": "squat-rise",
+   "fwd": 0.35,
+   "y": -0.04
+  },
+  {
+   "dt": 1.55,
+   "pose": "stand-easy",
+   "fwd": 0.4,
+   "tx": 0.05,
+   "ease": "out"
+  },
+  {
+   "dt": 2.05,
+   "pose": "stand-easy",
+   "fwd": 0.4,
+   "settle": 0.5
+  }
+ ],
+ "bow-standing": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.25,
+   "pose": "stand-easy",
+   "tx": -0.03,
+   "hx": -0.05,
+   "crouch": -0.01,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.95,
+   "pose": "bow-standing",
+   "ease": "out"
+  },
+  {
+   "dt": 1.5,
+   "pose": "bow-standing",
+   "tx": 0.53
+  },
+  {
+   "dt": 2.35,
+   "pose": "stand-easy",
+   "ease": "in"
+  },
+  {
+   "dt": 2.7,
+   "pose": "stand-easy",
+   "settle": 0.4
+  }
+ ],
+ "bow-seiza": [
+  {
+   "dt": 0,
+   "pose": "seiza",
+   "y": -0.03
+  },
+  {
+   "dt": 0.3,
+   "pose": "seiza",
+   "y": -0.03,
+   "tx": -0.06,
+   "hx": -0.05,
+   "ease": "antic"
+  },
+  {
+   "dt": 1.05,
+   "pose": "bow-seiza",
+   "y": -0.03,
+   "ease": "out"
+  },
+  {
+   "dt": 1.7,
+   "pose": "bow-seiza",
+   "y": -0.03,
+   "tx": 0.78
+  },
+  {
+   "dt": 2.55,
+   "pose": "seiza",
+   "y": -0.03,
+   "ease": "in"
+  },
+  {
+   "dt": 2.9,
+   "pose": "seiza",
+   "y": -0.03,
+   "settle": 0.4
+  }
+ ],
+ "stumble-recover": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.18,
+   "pose": "stand-easy",
+   "fwd": 0.12,
+   "tx": 0.22,
+   "hx": -0.1,
+   "weight": 0.4,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.45,
+   "pose": "stumble-pitch",
+   "fwd": 0.6,
+   "drag": 0
+  },
+  {
+   "dt": 0.8,
+   "pose": "stumble-pitch",
+   "fwd": 0.95,
+   "tx": 0.32,
+   "crouch": 0.14,
+   "weight": 0.3
+  },
+  {
+   "dt": 1.2,
+   "pose": "stand-easy",
+   "fwd": 1.1,
+   "tx": -0.07,
+   "hx": 0.06,
+   "ease": "out"
+  },
+  {
+   "dt": 1.65,
+   "pose": "stand-easy",
+   "fwd": 1.1,
+   "settle": 0.8
+  }
+ ],
+ "fall-back": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.22,
+   "pose": "flail-back",
+   "fwd": -0.05,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.5,
+   "pose": "squat-rise",
+   "fwd": -0.22,
+   "feetz": 0.22,
+   "tx": -0.1,
+   "weight": -0.5,
+   "y": -0.06,
+   "ease": "in"
+  },
+  {
+   "dt": 0.68,
+   "pose": "fall-sit",
+   "fwd": -0.45,
+   "y": -0.22,
+   "drag": 0,
+   "ease": "in"
+  },
+  {
+   "dt": 0.85,
+   "pose": "fall-sit",
+   "fwd": -0.45,
+   "y": -0.2,
+   "tx": -0.42
+  },
+  {
+   "dt": 1.35,
+   "pose": "fall-sit",
+   "fwd": -0.45,
+   "y": -0.22,
+   "settle": 0.6
+  }
+ ],
+ "get-up": [
+  {
+   "dt": 0,
+   "pose": "fall-sit",
+   "y": -0.22
+  },
+  {
+   "dt": 0.4,
+   "pose": "sit-ground",
+   "y": -0.2,
+   "tx": 0.32,
+   "feetz": 0.45,
+   "ease": "antic"
+  },
+  {
+   "dt": 1.0,
+   "pose": "kneel-push",
+   "fwd": 0.325
+  },
+  {
+   "dt": 1.6,
+   "pose": "stand-easy",
+   "fwd": 0.47,
+   "crouch": 0.12,
+   "tx": 0.2,
+   "ease": "out"
+  },
+  {
+   "dt": 2.0,
+   "pose": "stand-easy",
+   "fwd": 0.47,
+   "settle": 0.5
+  }
+ ],
+ "look-around": [
+  {
+   "dt": 0,
+   "pose": "stand-easy"
+  },
+  {
+   "dt": 0.25,
+   "pose": "stand-easy",
+   "hy": -0.08,
+   "hx": 0.04,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.8,
+   "pose": "look-left",
+   "ease": "out"
+  },
+  {
+   "dt": 1.4,
+   "pose": "look-left",
+   "hy": 0.55
+  },
+  {
+   "dt": 2.1,
+   "pose": "look-right"
+  },
+  {
+   "dt": 2.7,
+   "pose": "look-right",
+   "hy": -0.55
+  },
+  {
+   "dt": 3.2,
+   "pose": "stand-easy",
+   "ease": "out"
+  },
+  {
+   "dt": 3.6,
+   "pose": "stand-easy",
+   "settle": 0.4
+  }
+ ],
+ "suriashi": [
+  {
+   "dt": 0,
+   "pose": "suriashi-kamae",
+   "crouch": 0.04
+  },
+  {
+   "dt": 0.3,
+   "pose": "suriashi-kamae",
+   "crouch": 0.12,
+   "ease": "antic"
+  },
+  {
+   "dt": 0.68,
+   "pose": "suriashi-kamae",
+   "fwd": 0.4
+  },
+  {
+   "dt": 0.9,
+   "pose": "suriashi-kamae",
+   "fwd": 0.4
+  },
+  {
+   "dt": 1.28,
+   "pose": "suriashi-kamae",
+   "fwd": 0.8
+  },
+  {
+   "dt": 1.5,
+   "pose": "suriashi-kamae",
+   "fwd": 0.8
+  },
+  {
+   "dt": 1.88,
+   "pose": "suriashi-kamae",
+   "fwd": 1.2,
+   "ease": "out"
+  },
+  {
+   "dt": 2.3,
+   "pose": "suriashi-kamae",
+   "fwd": 1.2,
+   "settle": 0.5
+  }
+ ]
 }

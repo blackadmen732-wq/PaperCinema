@@ -47,7 +47,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   // walking is a hop (27 Nov: Musashi hopped through both of his walks). Leaps and lunges (the root in the air or
   // faster than a foot can push) are not counted.
   if (motion.plan) {
-    const { contactsR: cR, contactsL: cL, rate, air } = motion.plan;
+    const { contactsR: cR, contactsL: cL, rate, air, run } = motion.plan;
     // steps only: a gap between two plants with no airborne sample (the planner's own air: off the ground or faster
     // than a foot can push) and not across a cut
     const cutsT = motion.cuts || [];
@@ -55,12 +55,14 @@ for (const [id, c] of Object.entries(film.cast)) {
     const swings = (cs) => cs.slice(0, -1).map((c, k) => [c.b + 1, cs[k + 1].a - 1])
       .filter(([a, b]) => b >= a && !across(a - 1, b + 1) && !air.slice(a, b + 1).some(Boolean));
     const sR = swings(cR), sL = swings(cL);
-    const hops = [];
+    const hops = [], flights = [];
+    // RUNNING (engine/footlock.js run band, plan.run > 0.5): both feet off between two steps is the flight phase, not a
+    // hop. It is counted on its own; a hop is still any double swing outside a run
     for (const [a, b] of sR) for (const [c, d] of sL) {
       const lo = Math.max(a, c), hi = Math.min(b, d);
-      if (hi >= lo) hops.push(+(lo / rate).toFixed(2));
+      if (hi >= lo) (run && run[Math.round((lo + hi) / 2)] > 0.5 ? flights : hops).push(+(lo / rate).toFixed(2));
     }
-    r.gait = { stepsR: sR.length, stepsL: sL.length, hops };
+    r.gait = { stepsR: sR.length, stepsL: sL.length, hops, flights };
   }
   for (const side of ['r', 'l']) {
     let prev = null, total = 0, peak = 0, run = 0, worstRun = 0, worstAt = 0, planted = 0;
@@ -93,6 +95,7 @@ else {
         `worst run ${f.worstRun.toFixed(2)} m at ${f.worstAt.toFixed(2)} s, planted ${f.plantedFrames} frames` +
         (f.flagged ? '  ← the audit would flag this' : ''));
     if (r.gait) console.log(`  ${r.id} gait: ${r.gait.stepsR} right + ${r.gait.stepsL} left steps, both feet off the ground ` +
-      `together while walking: ${r.gait.hops.length}${r.gait.hops.length ? ' at ' + r.gait.hops.slice(0, 12).join(', ') + ' s  ← a hop, not a walk' : ''}`);
+      `together while walking: ${r.gait.hops.length}${r.gait.hops.length ? ' at ' + r.gait.hops.slice(0, 12).join(', ') + ' s  ← a hop, not a walk' : ''}` +
+      (r.gait.flights.length ? `; running flights (both off between steps, as a run should): ${r.gait.flights.length}` : ''));
   }
 }

@@ -48,6 +48,32 @@ export const REF = {
   legStretch: [1, 1.02, 'x the leg (soft IK pays its shortfall back by stretching; more shows)'],
 };
 
+// RUNNING (engine/footlock.js run band; a stretch is a run where the planner's run amount is over 0.5), recreational
+// running at about 2.5-4.5 m/s. Sources: Novacheck TF, "The biomechanics of running", Gait & Posture 7 (1998) 77-95
+// (stance ~39 % of the stride at a run, 22-27 % at a sprint; two floats; swing knee ~90-130 deg; stance knee ~40-45 deg);
+// Heiderscheit BC et al., "Effects of step rate manipulation on joint mechanics during running", Med Sci Sports Exerc
+// 43 (2011) 296-302 (preferred cadence ~165-175 steps/min at ~2.9 m/s; centre of mass vertical excursion ~7-9 cm);
+// Weyand PG et al., "Faster top running speeds are achieved with greater ground forces not more rapid leg movements",
+// J Appl Physiol 89 (2000) 1991-1999 (ground contact ~0.2-0.3 s, swing ~0.35-0.45 s at 3-6 m/s); Teng HL & Powers CM,
+// "Sagittal plane trunk posture influences patellofemoral joint stress during running", JOSPT 44 (2014) 785-792 (trunk
+// flexion ~5-15 deg). A rigid sandal again: its strike and toe-off pitch are judged as a rigid foot's.
+export const RUN_REF = {
+  cadence: [150, 190, 'steps/min'],
+  stance: [0.28, 0.42, 'of a stride'],
+  flight: [0.1, 0.35, 'of the time (both feet off)'],
+  contactTime: [0.2, 0.32, 's'],
+  swingTime: [0.36, 0.55, 's'],
+  doubleSupport: [0, 0.02, 'of the time (a run has none)'],
+  stepLength: [0.9, 1.7, 'm'],
+  pelvisBob: [0.05, 0.1, 'm p2p'],
+  kneeSwing: [85, 130, 'deg'],
+  kneeStance: [30, 50, 'deg'],
+  pitchStrike: [-5, 20, 'deg toe up'],
+  pitchToeOff: [-55, -20, 'deg heel up'],
+  trunkLean: [3, 15, 'deg forward'],
+  legStretch: [1, 1.02, 'x the leg'],
+};
+
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d; };
 const film = JSON.parse(fs.readFileSync(args[0], 'utf8'));
@@ -93,24 +119,25 @@ const pitch = (L) => {                                  // + toe up
 };
 const low = (L) => Math.min(L.heel.y, L.toe.y);
 
-function stretches(S, cuts) {
+function stretches(S, cuts, runAt = () => 0) {
   const sp = S.map((s, i) => {
     const a = S[Math.max(0, i - 6)], b = S[Math.min(N - 1, i + 6)];
     return Math.hypot(b.root[0] - a.root[0], b.root[2] - a.root[2]) / (b.t - a.t || 1);
   });
   const ok = S.map((s, i) => sp[i] >= 0.5 && s.root[1] <= 0.03 && !cuts.some(([, b]) => Math.abs(s.t - b) < 0.35));
   const out = [];
+  const isRun = S.map((s) => runAt(s.t) > 0.5);       // a walk and a run in one stretch are measured apart
   for (let i = 0; i < N;) {
     if (!ok[i]) { i++; continue; }
-    let j = i; while (j + 1 < N && ok[j + 1]) j++;
+    let j = i; while (j + 1 < N && ok[j + 1] && isRun[j + 1] === isRun[i]) j++;
     const a = i + Math.round(0.3 * HZ), b = j - Math.round(0.3 * HZ);
-    if ((j - i) * DT >= 1.2 && b > a) out.push([a, b, mean(sp.slice(a, b + 1))]);
+    if ((j - i) * DT >= 1.2 && b > a) out.push([a, b, mean(sp.slice(a, b + 1)), isRun[i]]);
     i = j + 1;
   }
   return out;
 }
 
-function measure(S, a, b, speed) {
+function measure(S, a, b, speed, run = false) {
   // the ground: a low percentile of the feet's lowest points (the minimum is a heel pressing 5 mm in as it lands)
   const lows = S.slice(a, b + 1).flatMap((s) => [low(s.r), low(s.l)]).sort((x, y) => x - y);
   const G = lows[Math.floor(0.1 * (lows.length - 1))];
@@ -136,12 +163,14 @@ function measure(S, a, b, speed) {
     ev[side] = { st, off };
   }
   const strides = [], stance = [], swing = [], kSw = [], kLd = [], pS = [], pT = [], clr = [], bob = [], sway = [], arm = [];
+  const contact = [], kSt = [];
   for (const side of ['r', 'l']) {
     const { st, off } = ev[side];
     for (let k = 0; k + 1 < st.length; k++) {
       const s0 = st[k], s1 = st[k + 1], o = off.find((x) => x > s0 && x < s1);
       if (o == null) continue;
-      strides.push((s1 - s0) * DT); stance.push((o - s0) / (s1 - s0)); swing.push((s1 - o) * DT);
+      strides.push((s1 - s0) * DT); stance.push((o - s0) / (s1 - s0)); swing.push((s1 - o) * DT); contact.push((o - s0) * DT);
+      let ms = 0; for (let i = s0; i < o; i++) ms = Math.max(ms, knee(S[i][side])); kSt.push(ms);
       let mk = 0; for (let i = o; i < s1; i++) mk = Math.max(mk, knee(S[i][side])); kSw.push(mk);
       let ml = 0; for (let i = s0; i < s0 + Math.round(0.3 * (o - s0)); i++) ml = Math.max(ml, knee(S[i][side])); kLd.push(ml);
       pS.push(pitch(S[s0][side]));
@@ -170,8 +199,14 @@ function measure(S, a, b, speed) {
     steps.push(Math.hypot(B.x - A.x, B.z - A.z));
   }
   const cad = all.length > 1 ? 60 * (all.length - 1) / ((all[all.length - 1][0] - all[0][0]) * DT) : NaN;
-  let both = 0; for (let k = 0; k < on.r.length; k++) if (on.r[k] && on.l[k]) both++;
-  return {
+  let both = 0, none = 0; for (let k = 0; k < on.r.length; k++) { if (on.r[k] && on.l[k]) both++; if (!on.r[k] && !on.l[k]) none++; }
+  // trunk lean: the hips-to-head line against the vertical, along the travel (+ forward)
+  const fA = S[a].root, fB = S[b].root, fl = Math.hypot(fB[0] - fA[0], fB[2] - fA[2]) || 1, fwd = [(fB[0] - fA[0]) / fl, (fB[2] - fA[2]) / fl];
+  const lean = mean(S.slice(a, b + 1).map((s) => { const d = s.head.clone().sub(s.hips);
+    return Math.atan2(d.x * fwd[0] + d.z * fwd[1], d.y) * 180 / Math.PI; }));
+  const runRow = run ? { run: true, flight: r2(none / on.r.length, 2), contactTime: r2(mean(contact), 2), kneeStance: r2(mean(kSt), 0),
+    trunkLean: r2(lean, 0) } : {};
+  return { ...runRow,
     from: r2(S[a].t, 2), to: r2(S[b].t, 2), speed: r2(speed, 2), strikes: all.length,
     cadence: r2(cad, 0), stance: r2(mean(stance), 2), swingTime: r2(mean(swing), 2), doubleSupport: r2(both / on.r.length, 2),
     stepLength: r2(mean(steps), 2), pelvisBob: r2(mean(bob), 3), pelvisSway: r2(mean(sway), 3),
@@ -189,17 +224,22 @@ for (const [id, c] of Object.entries(film.cast)) {
   let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
   if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet, perf.gait);
   const S = sample(makeFigure({}), motion);
-  for (const [a, b, sp] of stretches(S, motion.cuts || [])) rows.push({ id, ...measure(S, a, b, sp) });
+  const P = motion.plan;
+  const runAt = P?.run ? (t) => P.run[Math.max(0, Math.min(P.run.length - 1, Math.round(t * P.rate)))] : () => 0;
+  for (const [a, b, sp, run] of stretches(S, motion.cuts || [], runAt)) rows.push({ id, ...measure(S, a, b, sp, run) });
 }
 
-const flag = (k, v) => (REF[k] && v != null && (v < REF[k][0] || v > REF[k][1]) ? ' ✗' : '');
-if (args.includes('--json')) console.log(JSON.stringify({ film: args[0], hz: HZ, ref: REF, rows }, null, 1));
+const flag = (k, v, R = REF) => (R[k] && v != null && (v < R[k][0] || v > R[k][1]) ? ' ✗' : '');
+if (args.includes('--json')) console.log(JSON.stringify({ film: args[0], hz: HZ, ref: REF, runRef: RUN_REF, rows }, null, 1));
 else {
   console.log(`gait · ${args[0]} · ${HZ} Hz · lockFeet ${film.motion?.lockFeet ? 'ON' : 'off'} · ✗ = outside the human range`);
   for (const r of rows) {
-    console.log(`  ${r.id} ${r.from}-${r.to} s at ${r.speed} m/s, ${r.strikes} strikes`);
-    for (const k of Object.keys(REF)) console.log(`    ${k.padEnd(14)} ${String(r[k]).padStart(7)}   human ${REF[k][0]}-${REF[k][1]} ${REF[k][2]}${flag(k, r[k])}`);
+    const R = r.run ? RUN_REF : REF;
+    console.log(`  ${r.id} ${r.from}-${r.to} s at ${r.speed} m/s, ${r.strikes} strikes${r.run ? ' · RUNNING' : ''}`);
+    for (const k of Object.keys(R)) console.log(`    ${k.padEnd(14)} ${String(r[k]).padStart(7)}   human ${R[k][0]}-${R[k][1]} ${R[k][2]}${flag(k, r[k], R)}`);
     console.log(`    ${'armSwing'.padEnd(14)} ${String(r.armSwing).padStart(7)}   (hand travel along the walk, m p2p; a hand on the hilt barely swings)`);
   }
   if (!rows.length) console.log('  no walking stretch (>= 1.2 s at >= 0.5 m/s on the ground)');
+  const bad = rows.reduce((n, r) => n + Object.keys(r.run ? RUN_REF : REF).filter((k) => flag(k, r[k], r.run ? RUN_REF : REF)).length, 0);
+  if (args.includes('--strict') && bad) { console.log(`  ${bad} value(s) outside the range`); process.exitCode = 1; }
 }
