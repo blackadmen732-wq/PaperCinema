@@ -152,7 +152,9 @@ export function footstepCues(steps, ctx = {}) {
       distance: +distance.toFixed(2), room: ctx.room ?? 'open', peakAt: +s.t.toFixed(3), source: s.id ?? null } });
   }
   cues.forEach((c, i) => {
-    const e = c.event, seed = `${ctx.seed ?? ''}:${e.who}:${e.side}:${i}`;
+    // seed by the step's own moment, not its running index: inserting an earlier step must not change the sound of a
+    // later, already-approved one. Each step's variation is fixed to who / which foot / when, so it stays stable.
+    const e = c.event, seed = `${ctx.seed ?? ''}:${e.who}:${e.side}:${e.peakAt.toFixed(3)}`;
     const params = { surface: e.surface, footwear: e.footwear, force: e.force * (e.feet === 'both' ? 1 : 1), weight: e.weight, gait: e.gait, distance: e.distance, room: e.room, seed };
     const key = crypto.createHash('sha1').update(JSON.stringify([FOLEY, params])).digest('hex').slice(0, 16);
     const file = path.join(cache, `${key}.wav`);

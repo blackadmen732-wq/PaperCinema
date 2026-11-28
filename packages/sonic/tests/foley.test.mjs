@@ -58,3 +58,12 @@ test('adaptive level: against the mix, by intensity and distance, never a flat b
   assert.equal(loudMix, 9);
   assert.deepEqual(adaptiveGains([{ ownDb: NaN, mixDb: -20 }]), [0]);
 });
+
+test('a step keeps its sound when an earlier step is inserted (seed by moment, not index)', () => {
+  const a = footstepCues([{ t: 1.0, actor: 'k', side: 'R', speed: 2 }, { t: 2.0, actor: 'k', side: 'L', speed: 2 }], { surface: 'wood', cache });
+  const b = footstepCues([{ t: 0.3, actor: 'k', side: 'L', speed: 2 }, { t: 1.0, actor: 'k', side: 'R', speed: 2 }, { t: 2.0, actor: 'k', side: 'L', speed: 2 }], { surface: 'wood', cache });
+  const at2 = (set) => set.cues.find((c) => c.event.peakAt === 2.0).file;
+  const at1 = (set) => set.cues.find((c) => c.event.peakAt === 1.0).file;
+  assert.equal(at1(a), at1(b));
+  assert.equal(at2(a), at2(b));     // the 2.0 s step is byte-identical though a step was inserted before it
+});
