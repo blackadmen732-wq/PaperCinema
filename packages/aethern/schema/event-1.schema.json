@@ -1,0 +1,22 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "aethern-event/1",
+ "title": "Shared event, version 1",
+ "description": "One JSON object per line (JSON Lines). Written by Sonic (*.sonic.events.jsonl), VYRN (vyrn/<media>.events.jsonl) and the engine's timeline events; read by any of them through `aethern events`. A superset of docs/TIMELINE-FORMAT.md §10: same ids and type names, extra fields live in data. `v` is optional; a line without it is version 1.",
+ "type": "object",
+ "required": ["id", "type", "t", "source"],
+ "properties": {
+  "v": {"const": 1},
+  "id": {"type": "string", "description": "<type>.<NN>, stable within one media/film, so the same event keeps its id across tools"},
+  "type": {"type": "string", "description": "dotted name, e.g. blade-contact, footstep, sonic.pick"},
+  "t": {"type": "number", "minimum": 0, "description": "seconds, film time"},
+  "t1": {"type": ["number", "null"], "description": "end, seconds (intervals only); t1 >= t"},
+  "f": {"type": ["integer", "null"], "description": "frame"},
+  "source": {"type": "string", "description": "engine | sonic | vyrn.native | vyrn.video | vyrn.audio | …"},
+  "method": {"type": "string"},
+  "conf": {"type": "number", "minimum": 0, "maximum": 1, "description": "1 = ground truth from the environment that made the media"},
+  "entities": {"type": "array", "items": {"type": "string"}},
+  "data": {"type": "object"}
+ },
+ "additionalProperties": false
+}

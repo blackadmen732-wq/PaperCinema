@@ -14,8 +14,8 @@
 // run. A promise marked OPEN is a debt, reported but not an error, so the list can be honest about
 // what is still owed without blocking work.
 import fs from 'node:fs';
-import { execSync } from 'node:child_process';
 import { LIMITS } from '../engine/limits.js';
+import { ledger } from '../packages/aethern/js/ledger.mjs';
 
 const args = process.argv.slice(2);
 const ROOT = new URL('..', import.meta.url).pathname;
@@ -89,28 +89,6 @@ if (args.includes('--check-limits')) process.exit(checkLimits() ? 0 : 1);
 if (args.includes('--check-character')) process.exit(checkCharacter() ? 0 : 1);
 
 // ---------------------------------------------------------------- the ledger
-const L = JSON.parse(fs.readFileSync(`${ROOT}library/promises.json`, 'utf8'));
-const open = L.promises.filter((p) => p.status === 'OPEN');
-
-if (args.includes('--open')) {
-  console.log(`${open.length} promise(s) still owed:\n`);
-  for (const p of open) console.log(`  ${p.id}\n    ${p.promise}\n    why: ${p.why}\n`);
-  process.exit(0);
-}
-
-console.log(`PROMISES · ${L.promises.length} stated, ${open.length} still owed\n`);
-let broken = 0;
-for (const p of L.promises) {
-  let ok = false, note = '';
-  try { execSync(p.check, { cwd: ROOT, stdio: 'pipe' }); ok = true; }
-  catch (e) { note = (e.stdout?.toString() || e.message).trim().split('\n').pop() ?? ''; }
-  if (p.status === 'kept') {
-    console.log(`  ${ok ? '✓' : '✗ REGRESSION'}  ${p.id}`);
-    if (!ok) { broken++; console.log(`      ${p.promise}\n      ${note}`); }
-  } else {
-    console.log(`  ${ok ? '✓ now true (mark it kept)' : '…  owed'}  ${p.id}`);
-    console.log(`      ${p.promise}`);
-  }
-}
-console.log(`\n${broken ? `${broken} kept promise(s) have BROKEN — that is a regression` : 'no kept promise has broken'}`);
-process.exit(broken ? 1 : 0);
+// The ledger runner is generic and lives in the shared core (packages/aethern/js/ledger.mjs);
+// the two built-in checks above are Paper Cinema's own and stay here.
+process.exit(ledger({ root: ROOT, file: 'library/promises.json', args }));

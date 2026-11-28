@@ -187,7 +187,8 @@ export function analyse({ film, fighters, pose, fps, dur, armed = null, symmetri
             if (t - lastT > 6 / fps) {
               const k = clamp((peak[key] - 9) / 21, 0, 1);
               cues.push({ id: `auto-whoosh-${who}-${n}`, sfx: sfx[n % sfx.length], t: +Math.max(0, t - 0.06).toFixed(3), len: 0.6,
-                gain: dB(Math.min(-12, -18 + 8 * k)), rate: +(0.85 + 0.5 * k).toFixed(3), why: `${who} tip ${peak[key].toFixed(1)} m/s` });
+                gain: dB(Math.min(-12, -18 + 8 * k)), rate: +(0.85 + 0.5 * k).toFixed(3), why: `${who} tip ${peak[key].toFixed(1)} m/s`,
+                event: { kind: 'whoosh', who, speed: +peak[key].toFixed(2), peakAt: +t.toFixed(3) } });   // event: what SONIC picks by (engine/sonic.mjs)
               n++; lastT = t;
             }
           }
@@ -210,12 +211,14 @@ export function analyse({ film, fighters, pose, fps, dur, armed = null, symmetri
     if (wood) {
       const W = AS.clash?.wood ?? { sfx: 'clap', rate: 0.8, light: 'clash-light' };
       cues.push({ id: `auto-clash-${i}`, sfx: W.sfx ?? 'clap', t: +c.t.toFixed(3), len: 1.0,
-        gain: dB(-6 + 6 * c.intensity), rate: +((W.rate ?? 0.8) * rate).toFixed(3), why: `blade contact (wood), intensity ${c.intensity}` });
+        gain: dB(-6 + 6 * c.intensity), rate: +((W.rate ?? 0.8) * rate).toFixed(3), why: `blade contact (wood), intensity ${c.intensity}`,
+        event: { kind: 'clash', material: 'wood', intensity: c.intensity, speed: c.vRel, peakAt: +c.t.toFixed(3) } });
       if (W.light !== false) cues.push({ id: `auto-clash-${i}-light`, sfx: W.light ?? 'clash-light', t: +c.t.toFixed(3), len: 1.0,
         gain: dB(-14 + 6 * c.intensity), rate, why: `blade contact (wood), light layer` });
     } else {
       cues.push({ id: `auto-clash-${i}`, sfx: c.intensity >= 0.4 ? (AS.clash?.sfx ?? 'clash-steel') : (AS.clash?.light ?? 'clash-light'), t: +c.t.toFixed(3), len: 1.6,
-        gain: dB(-6 + 6 * c.intensity), rate, why: `blade contact, intensity ${c.intensity}` });
+        gain: dB(-6 + 6 * c.intensity), rate, why: `blade contact, intensity ${c.intensity}`,
+        event: { kind: 'clash', material: 'steel', intensity: c.intensity, speed: c.vRel, peakAt: +c.t.toFixed(3) } });
     }
   });
   { // scrape: blades within 4 cm for more than 4 frames while the contact point slides
@@ -225,7 +228,8 @@ export function analyse({ film, fighters, pose, fps, dur, armed = null, symmetri
       if (run.length > 4 * RATE / fps && (!wood || run.some((s) => inClash(s.tb)))) {
         const t0 = filmT(run[0].tb), t1 = filmT(run[run.length - 1].tb);
         cues.push({ id: `auto-scrape-${cues.length}`, sfx: wood ? (AS.scrape?.wood ?? AS.scrape?.sfx ?? 'steel-scrape') : (AS.scrape?.sfx ?? 'steel-scrape'), query: AS.scrape?.query, t: +t0.toFixed(3),
-          len: +Math.max(0.4, t1 - t0).toFixed(3), gain: dB(wood ? -22 : -16), why: `blades sliding ${(t1 - t0).toFixed(2)} s` });
+          len: +Math.max(0.4, t1 - t0).toFixed(3), gain: dB(wood ? -22 : -16), why: `blades sliding ${(t1 - t0).toFixed(2)} s`,
+          event: { kind: 'scrape', material: wood ? 'wood' : 'steel', dur: +(t1 - t0).toFixed(3) } });
       }
       run = [];
     };

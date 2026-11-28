@@ -1,0 +1,133 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "aethern-event/2",
+ "title": "Shared event, version 2",
+ "description": "One JSON object per line (JSON Lines). Version 2 = version 1 plus project and media ids (an event is unique by project + media + id), evidence (every observation behind the event) and conflict (true when the observations disagree: the top-level fields are the most confident one, all of them stay in evidence). Readers still accept version 1 (no v, or v: 1), which has none of the four; `aethern events merge` upgrades it.",
+ "type": "object",
+ "required": [
+  "v",
+  "project",
+  "media",
+  "id",
+  "type",
+  "t",
+  "source"
+ ],
+ "properties": {
+  "v": {
+   "const": 2
+  },
+  "id": {
+   "type": "string",
+   "description": "<type>.<NN>, stable within one media/film, so the same event keeps its id across tools"
+  },
+  "type": {
+   "type": "string",
+   "description": "dotted name, e.g. blade-contact, footstep, sonic.pick"
+  },
+  "t": {
+   "type": "number",
+   "minimum": 0,
+   "description": "seconds, media time"
+  },
+  "t1": {
+   "type": [
+    "number",
+    "null"
+   ],
+   "description": "end, seconds (intervals only); t1 >= t"
+  },
+  "f": {
+   "type": [
+    "integer",
+    "null"
+   ],
+   "description": "frame"
+  },
+  "source": {
+   "type": "string",
+   "description": "engine | sonic | vyrn.native | vyrn.video | vyrn.audio | \u2026"
+  },
+  "method": {
+   "type": "string"
+  },
+  "conf": {
+   "type": "number",
+   "minimum": 0,
+   "maximum": 1,
+   "description": "1 = ground truth from the environment that made the media"
+  },
+  "entities": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "data": {
+   "type": "object"
+  },
+  "project": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+   "description": "the project, e.g. paper-cinema (aethern.json id, else its name as a slug)"
+  },
+  "media": {
+   "type": "string",
+   "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$",
+   "description": "the media inside the project: film:<name> for a film the engine made, VYRN media ids (v<hash>, t<hash>) for what VYRN ingested"
+  },
+  "evidence": {
+   "type": "array",
+   "minItems": 1,
+   "description": "every observation of this event, in the order merged",
+   "items": {
+    "type": "object",
+    "required": [
+     "source",
+     "t"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "source": {
+      "type": "string"
+     },
+     "method": {
+      "type": "string"
+     },
+     "conf": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     },
+     "t": {
+      "type": "number"
+     },
+     "t1": {
+      "type": "number"
+     },
+     "type": {
+      "type": "string"
+     },
+     "entities": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "data": {
+      "type": "object"
+     },
+     "file": {
+      "type": "string",
+      "description": "file the observation came from"
+     }
+    }
+   }
+  },
+  "conflict": {
+   "type": "boolean",
+   "description": "observations disagree (data.conflict_on names how: type, t, t1, entities)"
+  }
+ },
+ "additionalProperties": false
+}

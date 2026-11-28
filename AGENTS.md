@@ -18,6 +18,9 @@ swords, paint instead of blood. **Everything in a film is data**; the engine ren
    `pc-measure` (read it first - every claim has a command that proves it), `pc-character`,
    `pc-animation`, `pc-effects`. They are the project's hard-won knowledge compressed: the numbers
    that define good, the traps that cost days, and the dead ends not worth re-running.
+8. **`python3 packages/aethern/bin/aethern help`** (`npm run ae -- help`): small answers instead of whole files.
+   `aethern map show SOUND` gives one system's row, files and links; `aethern changed` lists what moved since
+   your last look; `aethern mem get <topic>` gives the shared notes. Guide: `packages/aethern/README.md`.
 
 ## 2. Folder map
 | Folder | Contains |
@@ -54,6 +57,7 @@ node engine/render.mjs --film film/<name>.json --vertical | --horizontal   # for
 python3 engine/thumbnail.py film/<name>.json             # 16:9 + 9:16 thumbnails
 python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut     # SHIMI stain (presets in the file)
 python3 docs/build_playbook.py film/<name>.json          # refresh the playbook page
+node tools/sonic.mjs query material=steel action=impact dur<2   # the sound catalog: ASK it, don't open sound files (docs/SONIC.md)
 node tools/audit.mjs film/<name>.json                    # studio QA: visibility, camera, pops, smear, sound… (docs/AUDIT.md)
 bash tools/film.sh film/<name>.json [--set <name>]       # ONE COMMAND → output/<name>-final.mp4 (Blender + sound,
                                                          # validate → motion → events → audit → render → mix → report)

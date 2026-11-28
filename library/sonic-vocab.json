@@ -1,0 +1,362 @@
+{
+  "_about": "SONIC vocabulary: how words in a sound's name, title and search query become semantic tags, and how an engine event (a clash, a whoosh, a landing...) becomes a request to the catalog. Nothing here is specific to Paper Cinema: another project can ship its own vocab file (tools/sonic.mjs --vocab <file>). Edit this file to teach Sonic new words; run `node tools/sonic.mjs scan` and every sound is re-tagged (the audio is not re-analysed). Guide: docs/SONIC.md.",
+  "version": 1,
+  "facets": {
+    "material": {
+      "steel": ["steel", "sword", "blade", "metal", "katana", "clash", "shing", "draw", "zing", "tink", "iron"],
+      "wood": ["wood", "wooden", "bokken", "clap", "creak", "chop", "plank", "stick", "bamboo", "tock", "domino", "knock", "cane", "mallet", "desk", "book"],
+      "paper": ["paper", "washi", "fold", "crinkle", "crumple", "origami", "tear", "rustle", "petal", "unfold", "shred", "crease"],
+      "water": ["water", "sea", "ocean", "wave", "waves", "splash", "rowing", "shore", "rain", "drip", "plop"],
+      "air": ["whoosh", "swish", "swing", "wind", "whip", "throw", "air", "breath"],
+      "earth": ["sand", "dust", "dirt", "ground", "skid", "thud", "fall", "steps", "footsteps", "gravel"],
+      "skin": ["taiko", "drum", "boom", "kick", "punch", "lip", "mouth", "finger", "fingertip"],
+      "bronze": ["bell", "gong", "temple"],
+      "body": ["body", "flesh", "punch", "grunt"],
+      "synthetic": ["glitch", "notify", "riser", "shimmer", "sting", "logo", "downlifter", "sub", "typing", "hover", "toggle", "ui", "chirp", "data", "crush", "dropout", "reverse", "swell", "zap", "laser"]
+    },
+    "action": {
+      "impact": ["impact", "hit", "clash", "thud", "clap", "chop", "fall", "boom", "punch", "tink", "drum", "tock", "thock", "knock", "kick", "mallet", "slam", "blast", "classic", "deep", "thump", "tap"],
+      "whoosh": ["whoosh", "swish", "swing", "throw", "whip", "zing", "air", "sleeve", "whistle", "stick", "cane", "flick", "suck", "slash"],
+      "scrape": ["scrape", "skid", "slide", "grind"],
+      "draw": ["draw", "shing", "unsheathe", "sheathe"],
+      "ring": ["bell", "gong", "ring", "chime"],
+      "step": ["steps", "footsteps", "step", "walk"],
+      "movement": ["dash", "jump", "push", "rowing", "burst", "rustle", "flutter", "flap"],
+      "creak": ["creak", "groan"],
+      "splash": ["splash", "drip", "plop"],
+      "bed": ["bed", "ambience", "ambient", "room", "tone"],
+      "ui": ["click", "pop", "toggle", "tap", "notify", "hover", "typing", "key", "shutter", "switch", "tick", "snap", "zip"],
+      "riser": ["riser", "swell", "shimmer"],
+      "drop": ["downlifter", "drop"],
+      "sting": ["sting", "logo"],
+      "glitch": ["glitch"],
+      "pluck": ["pluck"],
+      "fold": ["fold", "unfold", "crease", "crinkle", "crumple"],
+      "tear": ["tear", "rip", "shred"]
+    },
+    "environment": {
+      "outdoor": ["sea", "ocean", "shore", "beach", "wind", "waves", "rain", "forest"],
+      "interior": ["temple", "dojo", "room", "hall"]
+    },
+    "intent": {
+      "reveal": ["reveal", "gong", "title"],
+      "tension": ["tension", "drone", "creak", "riser", "swell", "reverse"],
+      "accent": ["taiko", "drum", "impact", "hit", "boom", "sting", "logo", "sub", "blast"],
+      "ambience": ["bed", "ambience", "wind", "sea", "ocean"],
+      "punctuation": ["bell", "gong", "clap"],
+      "transition": ["whoosh", "riser", "downlifter", "swipe", "reverse"]
+    }
+  },
+  "_fallback": "A matched facet is hard: a wood clash only plays a wood sound. When the catalog has none, the first value in this list that has sounds stands in; with none, the engine keeps its own sound.",
+  "fallback": {
+    "material": {
+      "wood": ["steel"],
+      "steel": ["bronze"],
+      "paper": ["wood", "air"],
+      "earth": ["body", "wood"],
+      "bronze": ["steel"]
+    }
+  },
+  "_events": "Each engine event kind becomes a catalog request. need: a facet value the sound must have. prefer: facet values that score a bonus. match: event fields that are facets (event.material = 'wood' asks for material=wood). targets: a measured attribute (0..1) the sound should sit close to, computed from an event field ('from') mapped from its range ('in') to the attribute's range ('out'), with a weight ('w'). minDur: shortest usable sound. align: 'peak' puts the sound's loudest 5 ms on the event's moment (a whoosh); 'onset' puts the moment it first comes within 6 dB of its loudest there (a hit, whose top a limiter flattens and whose loudest 5 ms is just one crest of a low wave). tools/sonic_verify.mjs judges a finished mix the same way. variety: how many of the latest picks of this kind are avoided. margin (default 0.15): how far below the best score a sound may be and still be chosen for variety. words (default [kind]): a sound whose name contains one of them gets a bonus. avoid: facet values a sound must NOT have (the physical events avoid synthetic and UI sounds from the Earshot bank).",
+  "events": {
+    "whoosh": {
+      "need": {
+        "action": "whoosh"
+      },
+      "prefer": {
+        "material": "air"
+      },
+      "targets": {
+        "intensity": {
+          "from": "speed",
+          "in": [
+            9,
+            30
+          ],
+          "out": [
+            0.25,
+            0.85
+          ],
+          "w": 1.0
+        },
+        "brightness": {
+          "from": "speed",
+          "in": [
+            9,
+            30
+          ],
+          "out": [
+            0.35,
+            0.8
+          ],
+          "w": 0.6
+        }
+      },
+      "maxDur": 1.2,
+      "align": "peak",
+      "variety": 3,
+      "words": [],
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "clash": {
+      "need": {
+        "action": "impact"
+      },
+      "match": ["material"],
+      "prefer": {
+        "material": "steel"
+      },
+      "targets": {
+        "intensity": {
+          "from": "intensity",
+          "in": [
+            0,
+            1
+          ],
+          "out": [
+            0.3,
+            0.95
+          ],
+          "w": 1.4
+        },
+        "weight": {
+          "from": "intensity",
+          "in": [
+            0,
+            1
+          ],
+          "out": [
+            0.3,
+            0.8
+          ],
+          "w": 0.8
+        },
+        "tonal": {
+          "from": "intensity",
+          "in": [
+            0,
+            1
+          ],
+          "out": [
+            0.2,
+            0.6
+          ],
+          "w": 0.3
+        }
+      },
+      "minDur": 0.25,
+      "maxDur": 3,
+      "align": "onset",
+      "variety": 2,
+      "words": [],
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "scrape": {
+      "need": {
+        "action": "scrape"
+      },
+      "match": ["material"],
+      "prefer": {
+        "material": "steel"
+      },
+      "targets": {
+        "intensity": {
+          "from": "dur",
+          "in": [
+            0.2,
+            1.5
+          ],
+          "out": [
+            0.4,
+            0.7
+          ],
+          "w": 0.3
+        }
+      },
+      "variety": 1,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "dash": {
+      "need": {
+        "action": "movement"
+      },
+      "prefer": {
+        "material": "earth"
+      },
+      "targets": {
+        "intensity": {
+          "from": "speed",
+          "in": [
+            3,
+            12
+          ],
+          "out": [
+            0.4,
+            0.9
+          ],
+          "w": 1
+        }
+      },
+      "maxDur": 1.5,
+      "align": "onset",
+      "variety": 2,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "skid": {
+      "need": {
+        "action": "scrape"
+      },
+      "prefer": {
+        "material": "earth"
+      },
+      "targets": {
+        "intensity": {
+          "from": "speed",
+          "in": [
+            3,
+            12
+          ],
+          "out": [
+            0.3,
+            0.8
+          ],
+          "w": 1
+        }
+      },
+      "maxDur": 2,
+      "variety": 1,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "takeoff": {
+      "need": {
+        "action": "movement"
+      },
+      "prefer": {
+        "material": "earth"
+      },
+      "targets": {
+        "weight": {
+          "from": "speed",
+          "in": [
+            2,
+            8
+          ],
+          "out": [
+            0.3,
+            0.7
+          ],
+          "w": 1
+        }
+      },
+      "maxDur": 1,
+      "align": "peak",
+      "variety": 1,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "land": {
+      "need": {
+        "action": "impact"
+      },
+      "prefer": {
+        "material": "earth"
+      },
+      "targets": {
+        "weight": {
+          "from": "height",
+          "in": [
+            0,
+            1.2
+          ],
+          "out": [
+            0.45,
+            0.95
+          ],
+          "w": 1.2
+        }
+      },
+      "maxDur": 2,
+      "align": "onset",
+      "variety": 1,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "tear": {
+      "need": {
+        "action": "tear"
+      },
+      "match": ["material"],
+      "prefer": {
+        "material": "paper"
+      },
+      "targets": {
+        "intensity": {
+          "from": "intensity",
+          "in": [
+            0,
+            1
+          ],
+          "out": [
+            0.4,
+            0.9
+          ],
+          "w": 1
+        }
+      },
+      "maxDur": 2,
+      "align": "onset",
+      "variety": 1,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    },
+    "fold": {
+      "need": {
+        "action": "fold"
+      },
+      "prefer": {
+        "material": "paper"
+      },
+      "targets": {
+        "intensity": {
+          "from": "intensity",
+          "in": [
+            0,
+            1
+          ],
+          "out": [
+            0.3,
+            0.8
+          ],
+          "w": 1
+        }
+      },
+      "maxDur": 2,
+      "variety": 2,
+      "avoid": {
+        "material": ["synthetic"],
+        "action": ["ui"]
+      }
+    }
+  }
+}

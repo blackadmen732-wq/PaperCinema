@@ -1,0 +1,87 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "aethern-caps/1",
+ "title": "Capability manifest, version 1",
+ "description": "What one module (Aethern, VYRN, Sonic, or a future Rust binary) can do, and how to run it. Listed in aethern.json \"capabilities\"; read by `aethern caps`, `aethern call` and `aethern mcp`. A capability runs as: run + prefix (default: the id after the module name, split on dots) + the caller's arguments + the host's args.",
+ "type": "object",
+ "required": [
+  "format",
+  "module",
+  "run",
+  "caps"
+ ],
+ "additionalProperties": false,
+ "properties": {
+  "format": {
+   "const": "aethern-caps/1"
+  },
+  "module": {
+   "type": "string"
+  },
+  "about": {
+   "type": "string"
+  },
+  "run": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "argv prefix; {dir} is the manifest's folder"
+  },
+  "cwd": {
+   "enum": [
+    "root",
+    "dir"
+   ],
+   "description": "run in the project root (default) or the manifest's folder"
+  },
+  "caps": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "does"
+    ],
+    "additionalProperties": false,
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(\\.[a-z0-9-]+)+$"
+     },
+     "does": {
+      "type": "string",
+      "description": "one line: what an agent gets"
+     },
+     "tags": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "words find() matches on"
+     },
+     "args": {
+      "type": "string",
+      "description": "usage"
+     },
+     "out": {
+      "enum": [
+       "json",
+       "jsonl",
+       "text"
+      ]
+     },
+     "example": {
+      "type": "string"
+     },
+     "prefix": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  }
+ }
+}

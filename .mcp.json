@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sonic": {
+      "command": "node",
+      "args": ["tools/sonic_mcp.mjs"]
+    }
+  }
+}

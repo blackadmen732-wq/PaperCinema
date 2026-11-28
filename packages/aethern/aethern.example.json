@@ -1,0 +1,15 @@
+{
+ "name": "My project",
+ "cache_dir": ".aethern/cache",
+ "memory_file": ".aethern/memory.jsonl",
+ "ai": {"cache": true, "cache_ttl_days": 7,
+        "system": "Output only the deliverable. Be concrete and brief."},
+ "worker": {"project": "You are working in the My Project repo (a web app).",
+            "protect": [".git/", "aethern.json", ".env"]},
+ "catalog": {"source": "SYSTEMS.md", "section_start": "## The catalogue", "section_end": "Legend:",
+             "out": "systems.json", "connections": [["API", "DB"]]},
+ "skills": {"dir": ".claude/skills", "out": "SKILLS.md",
+            "groups": [{"title": "Core", "note": "Start here.", "prefix": ["core-"]}]},
+ "vendor": {"manifest": "vendor/MANIFEST.json", "dir": "vendor"},
+ "ledger": {"file": "promises.json"}
+}

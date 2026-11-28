@@ -1,0 +1,17 @@
+{
+ "format": "aethern-caps/1",
+ "module": "vyrn",
+ "about": "VYRN: visual and temporal perception of a video or a Paper Cinema timeline (cuts, tracks, contacts, sound onsets, sync)",
+ "run": ["python3", "-m", "vyrn"],
+ "cwd": "root",
+ "caps": [
+  {"id": "vyrn.ingest", "does": "process a video or timeline once (cached by content hash); returns its media id", "tags": ["video", "timeline", "analyse", "perception"], "args": "<video|timeline.json> [--render final.mp4]", "out": "text", "example": "output/dash-test.mp4"},
+  {"id": "vyrn.summary", "does": "what is in a processed media, in a few lines", "tags": ["video", "overview", "describe"], "args": "<media> [--json]", "out": "json", "example": "output/dash-test.mp4 --json"},
+  {"id": "vyrn.window", "does": "every event between two times", "tags": ["video", "events", "time range", "inspect"], "args": "<media> <t0> <t1> [--json]", "out": "json"},
+  {"id": "vyrn.when", "does": "when an event type happens (footstep, cut, sound.onset, motion.freeze …)", "tags": ["video", "find", "footstep", "cut", "impact", "time"], "args": "<media> <event-type> [--entity id] [--json]", "out": "json"},
+  {"id": "vyrn.track", "does": "how one entity (or one joint) moved over time", "tags": ["video", "motion", "tracking", "position"], "args": "<media> <entity> [--from t] [--to t] [--step n] [--joint name] [--json]", "out": "json"},
+  {"id": "vyrn.sync", "does": "is the sound in sync with expected times (a timeline, Sonic's report or an events file); exit 1 if not", "tags": ["audio", "sound", "sync", "check", "verify"], "args": "<media> [--expect file] [--visual] [--tol s] [--json]", "out": "json"},
+  {"id": "vyrn.verify", "does": "independent check of a final render's sound against the film's own picture events; exit 1 on a problem", "tags": ["audio", "render", "sync", "verify", "quality"], "args": "<media> --truth timeline.json [--tol s] [--json]", "out": "json"},
+  {"id": "vyrn.evidence", "does": "one frame or crop as a PNG path, to look at only when needed", "tags": ["video", "frame", "image", "inspect"], "args": "<media> <t> [--entity id] [--width px]", "out": "text"}
+ ]
+}
