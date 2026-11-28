@@ -1,0 +1,61 @@
+{
+ "id": "monk_torso",
+ "raw": "output/tripo/cast/monk-model-1.pbr.glb",
+ "faces_raw": 367746,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 1.7948718483631443,
+  "waist_centre_model": [
+   -0.0028363868762230045,
+   0.013195143226015858
+  ],
+  "height_m": 1.7948717948717947
+ },
+ "welded_verts": 17123,
+ "open_edges_after_weld": 0,
+ "islands": {
+  "found": 7,
+  "crumb_faces_removed": 2233
+ },
+ "cut_z_model": null,
+ "faces_cut": 115724,
+ "facets_turned_to_surface": 74,
+ "faces_part": 5051,
+ "paint_samples": {
+  "ray": 16556,
+  "nearest": 3109,
+  "none": 539
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 126,
+ "despeckled_faces": 586,
+ "classes_pct": {
+  "robe": 40.6,
+  "kesa": 35.8,
+  "beads": 23.6
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.215020090341568,
+   -0.19298268854618073,
+   0.8599831461906433
+  ],
+  "max": [
+   0.2152668833732605,
+   0.15323442220687866,
+   1.5003130435943604
+  ]
+ },
+ "total_s": 5.3
+}

@@ -1,0 +1,60 @@
+{
+ "id": "noblewoman_sleeve_R",
+ "raw": "output/tripo/cast/noblewoman-model-1.pbr.glb",
+ "faces_raw": 399902,
+ "cut_inputs": [
+  "Metallic"
+ ],
+ "facing": {
+  "from": "manifest",
+  "deg": 0.0
+ },
+ "fit": {
+  "mode": "body",
+  "scale": 1.842054318281004,
+  "waist_centre_model": [
+   0.013788620708821503,
+   -0.06900017010597846
+  ],
+  "height_m": 1.8421052631578945
+ },
+ "welded_verts": 22269,
+ "open_edges_after_weld": 0,
+ "islands": {
+  "found": 2,
+  "crumb_faces_removed": 4
+ },
+ "cut_z_model": null,
+ "faces_cut": 43646,
+ "facets_turned_to_surface": 84,
+ "faces_part": 3048,
+ "paint_samples": {
+  "ray": 11324,
+  "nearest": 477,
+  "none": 391
+ },
+ "bake_missed_pct": 0.0,
+ "paint_source": "outermost surface ray samples",
+ "unpainted_facets": 93,
+ "despeckled_faces": 4,
+ "classes_pct": {
+  "kimono": 100.0,
+  "under": 0.0
+ },
+ "hair_faces_pct": 0.0,
+ "ink_pct": 0.0,
+ "glow_pct": 0.0,
+ "bbox": {
+  "min": [
+   -0.4548257887363434,
+   -0.13063891232013702,
+   0.6599735617637634
+  ],
+  "max": [
+   -0.19976523518562317,
+   0.1514343023300171,
+   1.3943852186203003
+  ]
+ },
+ "total_s": 3.6
+}
