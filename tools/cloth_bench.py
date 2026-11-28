@@ -151,6 +151,15 @@ def main():
     # the spring bone: its root in the middle of the top edge, its tip `hang` below
     spr_p, spr_v = None, np.zeros(3)
     L, K, C, MAXD = a.hang * 0.8, 55.0, 7.0, math.radians(75.0)
+    # LAYERED (Mark, 28 Nov: "multiple different sections on the sleeve... for the fluidity"): NL stiff paper plates hung
+    # like scales, plate j hinged STEP down plate j-1 (plate 0 on the arm), each on its own spring, softer down the chain
+    # (K_L), so a swing reaches the lower plates later: a ripple down the sleeve. Each plate is rigid paper.
+    NL = 4
+    PL = a.hang / (1 + (NL - 1) * 0.5)                  # plate length: each next hinge sits half way down the one above
+    STEP = 0.5 * PL
+    K_L = [55.0, 42.0, 31.0, 22.0]
+    lay = [{'p': None, 'v': np.zeros(3)} for _ in range(NL)]
+    _, T3 = PC.grid(nu, 3, (0, 0, 0), (1, 0, 0), (0, 0, -1))
 
     out = a.out or os.path.join(REPO, 'output', 'bench', 'cloth', '%s-%s-%s' % (a.film, a.actor, s))
     os.makedirs(out, exist_ok=True)
@@ -191,7 +200,8 @@ def main():
     light = np.array([-0.4, 0.3, 0.85])
     light /= np.linalg.norm(light)
     rep = {'film': a.film, 'actor': a.actor, 'side': s, 'from': a.t0, 'to': a.t1, 'frames': f1 - f0 + 1,
-           'spring': {'depth_cm': [], 'hang_deg': []}, 'paper': {'depth_cm': [], 'hang_deg': [], 'stretch_pct': []}}
+           'spring': {'depth_cm': [], 'hang_deg': []}, 'layered': {'depth_cm': [], 'hang_deg': [], 'ripple_deg': []},
+           'paper': {'depth_cm': [], 'hang_deg': [], 'stretch_pct': []}}
     prev_hem = {}
     for f in range(f0, f1 + 1):
         t = f / fps
@@ -227,6 +237,37 @@ def main():
         spr_p, spr_v = p, v
         hd = (p - root) / L
         Xs = np.array([top[i] + hd * a.hang * j / (nv - 1) for j in range(nv) for i in range(nu)])
+        # ---- LAYERED: each plate the same spring rule as above, its root on the plate above
+        plates, hinge = [], top
+        for j_, st in enumerate(lay):
+            r0 = hinge[k_elbow]
+            g0 = r0 + want * PL
+            if st['p'] is None:
+                st['p'] = g0.copy()
+            pj, vj = st['p'], st['v']
+            for _ in range(4):
+                h = (1 / fps) / 4
+                acc = (g0 - pj) * K_L[j_] - vj * C + np.array([0, 0, -G]) * 0.15 + wind
+                vj = vj + acc * h
+                pj = pj + vj * h
+                dd = pj - r0
+                pj = r0 + dd / max(np.linalg.norm(dd), 1e-9) * PL
+            dd = (pj - r0) / max(np.linalg.norm(pj - r0), 1e-9)
+            if math.acos(max(-1.0, min(1.0, float(dd @ want)))) > MAXD:
+                dd = rotate_toward(want, dd, MAXD)
+                pj = r0 + dd * PL
+            for _ in range(6):
+                q = push_out(pj, caps, 0.015)
+                if np.linalg.norm(q - pj) < 1e-5:
+                    break
+                vj = vj - (q - pj) * fps * 0.5
+                pj = r0 + (q - r0) / max(np.linalg.norm(q - r0), 1e-9) * PL
+            st['p'], st['v'] = pj, vj
+            dj = (pj - r0) / PL
+            Pj = np.array([hinge[i] + dj * PL * r_ for r_ in (0.0, 0.5, 1.0) for i in range(nu)])
+            plates.append(Pj)
+            hinge = np.array([hinge[i] + dj * STEP for i in range(nu)])
+        Xl = np.vstack(plates)
         # ---- PAPER (PBD). Wind as AIR SPEED, calibrated to the lean the film asks for: paper_cloth's air pushes a sheet
         # facing it with rho*v per m^2 (rho 0.6), its weight is density*g, so a steady breeze leans a hanging sheet by
         # atan(0.6 v / (density g)). The film's wind strength 3 (m/s^2 for the spring: ~15 deg of lean) is v = 1.1 m/s on
@@ -234,14 +275,24 @@ def main():
         cloth.step(1 / fps, pin_targets=top, capsules=caps_m, wind=tuple(wind * 0.36 * (a.density / 0.25)))
         Xp = cloth.X.copy()
         # ---- measure: depth into the body (not the arm it hangs from), how far the hem trails the arm
-        for key, X in (('spring', Xs), ('paper', Xp)):
-            dep = max([float(seg_depth(X[nu:], p_, q_, r_).max()) for p_, q_, r_ in caps] + [0.0])
+        # the ripple: how far the last plate's direction lags the first's
+        d0_ = plates[0][-nu:].mean(0) - plates[0][:nu].mean(0)
+        dN_ = plates[-1][-nu:].mean(0) - plates[-1][:nu].mean(0)
+        rep['layered']['ripple_deg'].append(round(math.degrees(math.acos(max(-1.0, min(1.0, float(d0_ @ dN_) / max(
+            np.linalg.norm(d0_) * np.linalg.norm(dN_), 1e-9))))), 1))
+        for key, X in (('spring', Xs), ('layered', np.vstack([P_[nu:] for P_ in plates])), ('paper', Xp)):
+            dep = max([float(seg_depth(X if key == 'layered' else X[nu:], p_, q_, r_).max()) for p_, q_, r_ in caps] + [0.0])
             rep[key]['depth_cm'].append(round(100 * max(0.0, dep), 2))
             # how the sleeve hangs against GRAVITY: each column's top-to-hem line against straight down made square to
             # the arm there (what a free sheet does at rest in still air: 0). A column where the arm itself points up or
             # down has no such line (the sheet hangs alongside the arm) and is skipped; "angle from vertical" read 88
             # deg for a sleeve hanging correctly from a lowered arm.
             angs = []
+            if key == 'layered':
+                X = np.vstack([top, plates[-1][-nu:]])                 # top edge and the last plate's hem
+                hem_row = 1
+            else:
+                hem_row = nv - 1
             for i in range(nu):
                 tt = top[min(nu - 1, i + 1)] - top[max(0, i - 1)]
                 tt /= max(np.linalg.norm(tt), 1e-9)
@@ -249,24 +300,32 @@ def main():
                 if np.linalg.norm(gp) < 0.3:
                     continue
                 gp /= np.linalg.norm(gp)
-                cv = X[(nv - 1) * nu + i] - X[i]
+                cv = X[hem_row * nu + i] - X[i]
                 angs.append(math.degrees(math.acos(max(-1.0, min(1.0, float(cv @ gp) / max(np.linalg.norm(cv), 1e-9))))))
             rep[key]['hang_deg'].append(round(float(np.mean(angs)), 1) if angs else None)
         rep['paper']['stretch_pct'].append(round(100 * cloth.log['stretch'][-1], 2))
         # ---- draw
-        img = Image.new('RGB', (2 * PW + 20, PH + 70), (24, 22, 20))
+        img = Image.new('RGB', (3 * PW + 40, PH + 70), (24, 22, 20))
         dr = ImageDraw.Draw(img)
-        for k, (key, X, title) in enumerate((('spring', Xs, 'TODAY: spring sleeve (rigid panel, one bone)'),
-                                             ('paper', Xp, 'PAPER CLOTH: PBD, creases, collision'))):
+        for k, (key, X, title) in enumerate((('spring', Xs, 'TODAY: one flap, one spring'),
+                                             ('layered', Xl, 'LAYERED: 4 paper plates'),
+                                             ('paper', Xp, 'PAPER CLOTH: folds, collision'))):
             ox = k * (PW + 20)
             dr.rectangle((ox, 0, ox + PW, PH), fill=(38, 35, 32))
             # body capsules, far to near
             items = []
             for n, (p_, q_, r_) in d.items():
                 items.append(((((p_ + q_) / 2) @ view), 'cap', (p_, q_, r_, n in own)))
-            tri_depth = X[T].mean(1) @ view
-            for ti, tri in enumerate(T):
-                items.append((float(tri_depth[ti]), 'tri', tri))
+            if key == 'layered':                    # each plate its own strip of triangles, its own shade
+                for j_ in range(NL):
+                    TT = T3 + j_ * 3 * nu
+                    dps = X[TT].mean(1) @ view
+                    for ti, tri in enumerate(TT):
+                        items.append((float(dps[ti]) - 0.001 * j_, 'tri', (tri, j_)))
+            else:
+                tri_depth = X[T].mean(1) @ view
+                for ti, tri in enumerate(T):
+                    items.append((float(tri_depth[ti]), 'tri', (tri, 0)))
             items.sort(key=lambda it: it[0])
             for _, kind, obj in items:
                 if kind == 'cap':
@@ -278,31 +337,43 @@ def main():
                     for c_ in (a2, b2):
                         dr.ellipse((c_[0] - w / 2, c_[1] - w / 2, c_[0] + w / 2, c_[1] + w / 2), fill=col)
                 else:
-                    P3 = X[obj]
+                    tri_, layer_ = obj
+                    P3 = X[tri_]
                     n_ = np.cross(P3[1] - P3[0], P3[2] - P3[0])
                     n_ /= max(np.linalg.norm(n_), 1e-9)
                     sh_ = 0.45 + 0.55 * abs(float(n_ @ light))
-                    col = tuple(int(c * sh_) for c in (196, 52, 44))
+                    base_ = (196, 52, 44) if layer_ % 2 == 0 else (150, 34, 30)
+                    col = tuple(int(c * sh_) for c in base_)
                     pts = [tuple(v) for v in scr(P3, ox)]
                     dr.polygon(pts, fill=col)
-            # crease lines in ink
-            for i_, j_ in creases:
-                p1, p2 = scr(X[i_], ox), scr(X[j_], ox)
-                dr.line((p1[0], p1[1], p2[0], p2[1]), fill=(40, 12, 10), width=2)
+            # crease lines in ink (paper cloth), the plates' hems (layered)
+            if key == 'layered':
+                for j_ in range(NL):
+                    hem = X[j_ * 3 * nu + 2 * nu: j_ * 3 * nu + 3 * nu]
+                    pts_ = [tuple(v_) for v_ in scr(hem, ox)]
+                    dr.line(pts_, fill=(40, 12, 10), width=2)
+            elif key == 'paper':
+                for i_, j_ in creases:
+                    p1, p2 = scr(X[i_], ox), scr(X[j_], ox)
+                    dr.line((p1[0], p1[1], p2[0], p2[1]), fill=(40, 12, 10), width=2)
             dr.text((ox + 10, PH + 6), title, font=fontb, fill=(240, 225, 190))
             dep, hang = rep[key]['depth_cm'][-1], rep[key]['hang_deg'][-1]
             txt = 'into the body %.1f cm   off its gravity line %s' % (dep, ('%.0f deg' % hang) if hang is not None else '-')
             if key == 'paper':
                 txt += '   stretch %.1f%%' % rep['paper']['stretch_pct'][-1]
+            if key == 'layered':
+                txt += '   ripple %.0f deg' % rep['layered']['ripple_deg'][-1]
             dr.text((ox + 10, PH + 36), txt, font=font, fill=(230, 90, 80) if dep > 0.5 else (200, 200, 200))
         dr.text((10, 8), '%s  %s %s arm  t %.2f s  (f%d)' % (a.film, a.actor, s, t, f + 1), font=font, fill=(200, 200, 200))
         img.save(os.path.join(out, 'f%04d.png' % (f - f0 + 1)))
-    for key in ('spring', 'paper'):
+    for key in ('spring', 'layered', 'paper'):
         dps = rep[key]['depth_cm']
         rep[key]['summary'] = {'frames_inside': sum(1 for x in dps if x > 0.5), 'deepest_cm': max(dps),
                                'hang_median_deg': float(np.median([h for h in rep[key]['hang_deg'] if h is not None])),
                                'hang_max_deg': max(h for h in rep[key]['hang_deg'] if h is not None)}
     rep['paper']['summary']['stretch_max_pct'] = max(rep['paper']['stretch_pct'])
+    rep['layered']['summary']['ripple_median_deg'] = float(np.median(rep['layered']['ripple_deg']))
+    rep['layered']['summary']['ripple_max_deg'] = max(rep['layered']['ripple_deg'])
     rep['paper']['summary']['stretch_median_pct'] = float(np.median(rep['paper']['stretch_pct']))
     json.dump(rep, open(os.path.join(out, 'report.json'), 'w'), indent=1)
     mp4 = out.rstrip('/') + '.mp4'
@@ -314,11 +385,13 @@ def main():
         print('[bench] no mp4:', e)
         mp4 = None
     print('[bench] %s %s %s arm, %.2f-%.2f s, %d frames -> %s' % (a.film, a.actor, s, a.t0, a.t1, f1 - f0 + 1, mp4 or out))
-    for key in ('spring', 'paper'):
+    for key in ('spring', 'layered', 'paper'):
         sm = rep[key]['summary']
         print('  %-6s inside the body on %d frames (deepest %.1f cm); off its gravity line %.0f deg (median), %.0f (max)%s'
               % (key, sm['frames_inside'], sm['deepest_cm'], sm['hang_median_deg'], sm['hang_max_deg'],
-                 ('; stretch median %.2f%%, max %.2f%%' % (sm['stretch_median_pct'], sm['stretch_max_pct'])) if key == 'paper' else ''))
+                 ('; stretch median %.2f%%, max %.2f%%' % (sm['stretch_median_pct'], sm['stretch_max_pct'])) if key == 'paper' else
+                 ('; ripple (last plate vs first) median %.0f deg, max %.0f' % (sm['ripple_median_deg'], sm['ripple_max_deg']))
+                 if key == 'layered' else ''))
 
 
 if __name__ == '__main__':
