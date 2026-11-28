@@ -96,56 +96,63 @@
      "note": "a small lean before the first step (anticipation)"
     },
     {
-     "t": 14.3,
+     "t": 14.2,
      "pose": "chudan",
-     "x": 4.452,
-     "z": -4.252,
+     "x": 4.525,
+     "z": -4.325,
      "ry": -0.785
     },
     {
      "t": 14.4,
      "pose": "chudan",
-     "x": 4.343,
-     "z": -4.143,
+     "x": 4.358,
+     "z": -4.158,
      "ry": -0.785
     },
     {
-     "t": 14.8,
+     "t": 14.7,
      "pose": "chudan",
-     "x": 3.868,
-     "z": -3.668,
+     "x": 4.064,
+     "z": -3.864,
      "ry": -0.785
     },
     {
-     "t": 15.3,
+     "t": 15.2,
      "pose": "chudan",
-     "x": 3.273,
-     "z": -3.073,
+     "x": 3.576,
+     "z": -3.376,
      "ry": -0.785
     },
     {
-     "t": 15.6,
+     "t": 15.7,
      "pose": "chudan",
-     "x": 2.916,
-     "z": -2.716,
+     "x": 3.087,
+     "z": -2.887,
      "ry": -0.785
     },
     {
-     "t": 15.8,
+     "t": 15.9,
      "pose": "chudan",
-     "x": 2.712,
-     "z": -2.512,
+     "x": 2.891,
+     "z": -2.691,
      "ry": -0.785
     },
     {
-     "t": 16.3,
+     "t": 16.2,
+     "pose": "chudan",
+     "x": 2.653,
+     "z": -2.453,
+     "ry": -0.785
+    },
+    {
+     "t": 16.7,
      "pose": "chudan",
      "x": 2.5,
      "z": -2.3,
      "ry": -0.785
     },
     {
-     "t": 16.9,
+     "t": 17.1,
      "pose": "chudan",
      "x": 2.5,
      "z": -2.3,
@@ -596,33 +603,33 @@
      "ry": 1.695
     },
     {
-     "t": 12.3,
+     "t": 12.8,
      "pose": "stand-blade-low",
      "x": 1.0,
      "z": -1.3,
-     "ry": -1.471,
+     "ry": 0.0,
      "settle": 0.6,
-     "note": "turns to watch the road for Musashi"
+     "note": "turns to watch the south road for Musashi"
     },
     {
      "t": 14.6,
      "pose": "stand-blade-low",
      "x": 1.0,
      "z": -1.3,
-     "ry": -1.371,
+     "ry": 0.1,
      "hy": 0.15
     },
     {
-     "t": 16.1,
+     "t": 15.9,
      "pose": "stand-blade-low",
      "x": 1.0,
      "z": -1.3,
-     "ry": -1.671,
-     "hy": -0.6,
+     "ry": 0.25,
+     "hy": 0.6,
      "note": "hears the step behind him: the head first"
     },
     {
-     "t": 16.8,
+     "t": 16.9,
      "pose": "chudan",
      "x": 1.0,
      "z": -1.3,
@@ -846,20 +853,20 @@
      "ry": 1.683
     },
     {
-     "t": 12.0,
+     "t": 12.4,
      "pose": "chudan",
      "x": -0.5,
      "z": -2.3,
-     "ry": -1.373,
+     "ry": 3.142,
      "settle": 0.6,
-     "note": "on guard, facing the road"
+     "note": "on guard, facing the hill road north"
     },
     {
      "t": 15.0,
      "pose": "chudan",
      "x": -0.5,
      "z": -2.3,
-     "ry": -1.523,
+     "ry": 2.992,
      "hy": 0.2
     },
     {
@@ -867,12 +874,12 @@
      "pose": "chudan",
      "x": -0.5,
      "z": -2.3,
-     "ry": -1.373,
-     "hy": -0.5,
+     "ry": 3.142,
+     "hy": 0.5,
      "note": "hears the cut"
     },
     {
-     "t": 19.2,
+     "t": 19.5,
      "pose": "chudan",
      "x": -0.5,
      "z": -2.3,
@@ -1113,19 +1120,20 @@
      "ry": 1.595
     },
     {
-     "t": 12.5,
+     "t": 12.9,
      "pose": "low-ready",
      "x": 0.2,
      "z": 1.0,
-     "ry": -1.653,
-     "settle": 0.6
+     "ry": 0.073,
+     "settle": 0.6,
+     "note": "watching the south road"
     },
     {
      "t": 15.5,
      "pose": "low-ready",
      "x": 0.2,
      "z": 1.0,
-     "ry": -1.503,
+     "ry": 0.223,
      "hy": -0.15
     },
     {
@@ -1133,12 +1141,12 @@
      "pose": "low-ready",
      "x": 0.2,
      "z": 1.0,
-     "ry": -1.653,
-     "hy": 0.5,
+     "ry": 0.073,
+     "hy": -0.5,
      "note": "hears the cut"
     },
     {
-     "t": 19.4,
+     "t": 19.7,
      "pose": "chudan",
      "x": 0.2,
      "z": 1.0,

@@ -57,7 +57,9 @@ def k(t, pose, p, ry, **extra):
 
 # ---- places (film coordinates; the hanging pine's trunk at set (3.4, 3.6) = film (3.4, -3.6)) ----
 PINE = (3.4, -3.6)
-WEST = (-12.0, 0.0)                # down the Kyoto road, where the Yoshioka come from and where they look
+WEST = (-12.0, 0.0)                # down the Kyoto road, where the Yoshioka come from
+SOUTH = (1.0, 12.0)                # down the hill road (the boy and C watch it)
+NORTH = (-0.5, -14.0)              # up the hill road (A watches it)
 M0 = (4.7, -4.5)                   # Musashi, waiting in the dark behind the trunk (he came early: tradition)
 M1 = (2.5, -2.3)                   # out from behind the pine, behind the boy
 M2 = (1.95, -1.95)                 # the step into the cut
@@ -78,9 +80,9 @@ mus += [
     k(12.4, 'chudan', M0, face(M0, B1), settle=0.6, note='the blade comes up: he has decided'),
     k(13.6, 'chudan', M0, face(M0, M1), tx=0.08, note='a small lean before the first step (anticipation)'),
 ]
-walk(mus, 13.8, 16.3, M0, M1, 'chudan', ease_in=0.6, ease_out=0.7)
+walk(mus, 13.7, 16.7, M0, M1, 'chudan', ease_in=0.7, ease_out=0.8)
 mus += [
-    k(16.9, 'chudan', M1, face(M1, B1), settle=0.4),
+    k(17.1, 'chudan', M1, face(M1, B1), settle=0.4),
     k(17.45, 'kesa-windup', M2, face(M2, B1), note='S4 the step in, the blade high'),
     k(17.85, 'kesa-contact', M2, face(M2, B1), note='the cut: the boy first (tradition)'),
     k(18.2, 'kesa-finish', M2, face(M2, B1), settle=0.9),
@@ -114,10 +116,10 @@ mus += [
 boy += [k(0.0, 'stand-blade-low', B0, face(B0, B1))]
 walk(boy, 3.2, 11.6, B0, B1, 'stand-blade-low', step=0.55, ease_in=0.8, ease_out=1.0)
 boy += [
-    k(12.3, 'stand-blade-low', B1, face(B1, WEST), settle=0.6, note='turns to watch the road for Musashi'),
-    k(14.6, 'stand-blade-low', B1, face(B1, WEST) + 0.1, hy=0.15),
-    k(16.1, 'stand-blade-low', B1, face(B1, WEST) - 0.2, hy=-0.6, note='hears the step behind him: the head first'),
-    k(16.8, 'chudan', B1, face(B1, M2), settle=0.5, note='turns, the blade up, too late'),
+    k(12.8, 'stand-blade-low', B1, face(B1, SOUTH), settle=0.6, note='turns to watch the south road for Musashi'),
+    k(14.6, 'stand-blade-low', B1, face(B1, SOUTH) + 0.1, hy=0.15),
+    k(15.9, 'stand-blade-low', B1, face(B1, SOUTH) + 0.25, hy=0.6, note='hears the step behind him: the head first'),
+    k(16.9, 'chudan', B1, face(B1, M2), settle=0.5, note='turns, the blade up, too late'),
     k(17.6, 'chudan', B1, face(B1, M2), tx=-0.1),
     k(17.9, 'struck-reel', B1, face(B1, M2), note='struck'),
     k(18.9, 'stagger', lerp(B1, (B1[0] - 0.3, B1[1] + 0.25), 1), face(B1, M2)),
@@ -130,10 +132,10 @@ boy += [
 ra += [k(0.0, 'stand-blade-low', A0, face(A0, A1))]
 walk(ra, 3.0, 11.2, A0, A1, 'stand-blade-low', step=0.55, ease_in=0.8, ease_out=1.0)
 ra += [
-    k(12.0, 'chudan', A1, face(A1, WEST), settle=0.6, note='on guard, facing the road'),
-    k(15.0, 'chudan', A1, face(A1, WEST) - 0.15, hy=0.2),
-    k(18.3, 'chudan', A1, face(A1, WEST), hy=-0.5, note='hears the cut'),
-    k(19.2, 'chudan', A1, face(A1, M2), settle=0.5, note='turns on Musashi'),
+    k(12.4, 'chudan', A1, face(A1, NORTH), settle=0.6, note='on guard, facing the hill road north'),
+    k(15.0, 'chudan', A1, face(A1, NORTH) - 0.15, hy=0.2),
+    k(18.3, 'chudan', A1, face(A1, NORTH), hy=0.5, note='hears the cut'),
+    k(19.5, 'chudan', A1, face(A1, M2), settle=0.5, note='turns on Musashi'),
     k(21.6, 'furikaburi', A1, face(A1, M2), settle=0.5, note='raises the blade'),
     k(22.6, 'furikaburi', A_HIT, face(A_HIT, M2), note='the charge'),
     k(22.9, 'shomen-strike', A_HIT, face(A_HIT, M2), note='the downcut misses'),
@@ -148,10 +150,10 @@ ra += [
 rc += [k(0.0, 'stand-blade-low', C0, face(C0, C1))]
 walk(rc, 3.4, 11.8, C0, C1, 'stand-blade-low', step=0.55, ease_in=0.8, ease_out=1.0)
 rc += [
-    k(12.5, 'low-ready', C1, face(C1, WEST), settle=0.6),
-    k(15.5, 'low-ready', C1, face(C1, WEST) + 0.15, hy=-0.15),
-    k(18.4, 'low-ready', C1, face(C1, WEST), hy=0.5, note='hears the cut'),
-    k(19.4, 'chudan', C1, face(C1, M2), settle=0.5, note='turns; holds back while A goes in'),
+    k(12.9, 'low-ready', C1, face(C1, SOUTH), settle=0.6, note='watching the south road'),
+    k(15.5, 'low-ready', C1, face(C1, SOUTH) + 0.15, hy=-0.15),
+    k(18.4, 'low-ready', C1, face(C1, SOUTH), hy=-0.5, note='hears the cut'),
+    k(19.7, 'chudan', C1, face(C1, M2), settle=0.5, note='turns; holds back while A goes in'),
     k(23.4, 'chudan', C1, face(C1, M2), tx=-0.08, note='flinches at A\'s fall'),
     k(25.9, 'tsuki-load', C1, face(C1, M2), crouch=0.12, settle=0.5, note='gathers for the thrust'),
     k(27.0, 'tsuki-load', lerp(C1, C_HIT, 0.55), face(C1, M2), crouch=0.15),
@@ -162,6 +164,20 @@ rc += [
     k(31.0, 'fallen', (C_HIT[0] - 0.12, C_HIT[1] + 0.35), face(C_HIT, M2), settle=0.6),
     k(DUR, 'fallen', (C_HIT[0] - 0.12, C_HIT[1] + 0.35), face(C_HIT, M2)),
 ]
+
+def unwrap(keys):
+    """ry continuous from key to key (the shorter way round): the engine interpolates ry as a number, so a turn from
+    +170 to -170 degrees would spin 340 degrees the long way."""
+    for a, b in zip(keys, keys[1:]):
+        while b['ry'] - a['ry'] > math.pi:
+            b['ry'] = round(b['ry'] - 2 * math.pi, 3)
+        while b['ry'] - a['ry'] < -math.pi:
+            b['ry'] = round(b['ry'] + 2 * math.pi, 3)
+    return keys
+
+
+for _keys in (mus, boy, ra, rc):
+    unwrap(_keys)
 
 GAIT = {'arms': [0.2, 0.9], 'note': 'walking with the drawn blade low in the right hand: the right arm barely swings'}
 film = {
