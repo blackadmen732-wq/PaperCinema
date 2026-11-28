@@ -229,7 +229,8 @@ def _expected_from(path):
             if line.strip():
                 e = json.loads(line)
                 d = e.get('data') or {}
-                exp.append({'id': e['id'], 't': e['t'], 'what': d.get('sound', e['type']), 'why': d.get('cue')})
+                exp.append({'id': e['id'], 't': e['t'], 'what': d.get('sound', e['type']), 'why': d.get('cue'),
+                            'aim': d.get('aim', 'onset')})
         return exp
     j = json.load(open(path, encoding='utf-8'))
     exp = []
@@ -244,7 +245,7 @@ def _expected_from(path):
         t = p.get('peakAt', p.get('t'))
         if t is not None:
             exp.append({'id': p.get('cue', p.get('id', '')), 't': t, 'what': p.get('sound', p.get('pick', '')),
-                        'why': p.get('cue')})
+                        'why': p.get('cue'), 'aim': p.get('aim', 'onset')})
     return exp
 
 
@@ -313,7 +314,20 @@ def sync(st, expect=None, tol=0.1, visual=None):
         targets = [{'id': e['id'], 't': e['data'].get('impact_t', e['t0']), 'what': e['type']} for e in vis]
         title = 'visual impacts vs sound onsets'
     used = set()
+    rms = st.signal('audio.rms')
     for x in targets:
+        if x.get('aim') == 'peak':
+            # Sonic aims a whoosh's LOUDEST moment at the event: compare with the loudness peak, not an onset
+            if rms is None:
+                rows.append({**x, 'onset': None, 'offset_ms': None}); continue
+            v, r = rms['values'], rms['rate']
+            i0, i1 = max(0, int((x['t'] - tol) * r)), min(len(v), int((x['t'] + tol) * r) + 1)
+            if i1 <= i0:
+                rows.append({**x, 'onset': None, 'offset_ms': None}); continue
+            k = max(range(i0, i1), key=lambda i: v[i])
+            tp = (k + 0.5) / r
+            rows.append({**x, 'onset': round(tp, 4), 'offset_ms': round((tp - x['t']) * 1000, 1), 'measured': 'peak'})
+            continue
         cands = [o for o in ons if abs(o['t0'] - x['t']) <= tol and o['id'] not in used]
         if not cands:
             rows.append({**x, 'onset': None, 'offset_ms': None})
@@ -322,7 +336,12 @@ def sync(st, expect=None, tol=0.1, visual=None):
         used.add(o['id'])
         rows.append({**x, 'onset': o['t0'], 'offset_ms': round((o['t0'] - x['t']) * 1000, 1), 'conf': o['conf']})
     matched = [r for r in rows if r['offset_ms'] is not None]
-    bad = [r for r in matched if abs(r['offset_ms']) > 1000 / (2 * st.media()['fps'])]
+    frame_ms = 1000 / st.media()['fps']
+    # a hit must land within half a frame; a loudness peak is broad, so a whole frame is allowed
+    limit = lambda r: frame_ms if r.get('measured') == 'peak' else frame_ms / 2
+    bad = [r for r in matched if abs(r['offset_ms']) > limit(r)]
+    for r in rows:
+        r['out_of_sync'] = r['offset_ms'] is None or abs(r['offset_ms']) > limit(r)
     lines.append(f'{title}: {len(matched)}/{len(rows)} matched within {tol * 1000:.0f} ms')
     if matched:
         mae = sum(abs(r['offset_ms']) for r in matched) / len(matched)

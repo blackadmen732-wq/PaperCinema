@@ -74,7 +74,7 @@ def main(argv=None):
     if c in ('sync', 'verify'):
         rows = data['rows']
         half = 1000 / (2 * st.media()['fps'])
-        if any(r['offset_ms'] is None or abs(r['offset_ms']) > half for r in rows):
+        if any(r.get('out_of_sync', r['offset_ms'] is None or abs(r['offset_ms']) > half) for r in rows):
             sys.exit(1)
 
 
