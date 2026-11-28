@@ -385,12 +385,18 @@ export function applyToCues(cues, o = {}) {
   const kinds = o.kinds ? new Set(o.kinds) : null;
   const byId = Object.fromEntries(cat.sounds.map((s) => [s.id, s]));
   const state = { recent: {} }, report = [];
+  // bank sounds play from a cached render; without the bank's tool, only the ones already rendered can play, so the
+  // rest are left out of every pick up front (otherwise a run of unplayable top picks ends with no pick at all)
+  const toolOK = { earshot: spawnSync('earshot', ['sfx', '--help'], { stdio: 'ignore' }).status === 0 };
+  const cacheDir = o.cache ?? DEFAULTS.cache;
+  const unplayable = cat.sounds.filter((s) => s.bank && !toolOK[s.bank]
+    && !fs.existsSync(path.join(cacheDir, s.bank, `${s.earshot.replace(/[^a-z0-9.-]+/gi, '_')}-${s.m.dur}.wav`))).map((s) => s.id);
   for (const c of [...cues].sort((a, b) => a.t - b.t)) {
     const ev = eventOfCue(c);
     if (!ev || (kinds && !kinds.has(ev.kind))) continue;
     // a bank sound plays from its cached render; if it cannot be rendered (tool missing), choose again without it
     let r = null, file = null;
-    state.exclude = new Set();
+    state.exclude = new Set(unplayable);
     for (let tries = 0; tries < 4; tries++) {
       r = pick(cat, vocab, { ...ev, seed: `${o.seed ?? ''}:${c.id}` }, state);
       if (!r) break;
