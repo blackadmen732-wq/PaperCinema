@@ -246,6 +246,9 @@ const dipCurve = () => {
 const DIPC = dipCurve();
 if (DIPC) console.log(`  dipping beds and whooshes ${PRE_DIP} dB before ${hitTimes.length} hit(s)`);
 const WHOOSH = /whoosh|swish|air-cut|shing/i;
+// a hit's sharpness is in its first few ms; a 10 ms fade-in softens it, so hits get a ~1 ms de-click instead (just
+// enough to kill the cut-in click), while softer-starting one-shots keep the 10 ms. Beds still fade in over 1.5 s.
+const HIT = /clash|impact|contact|hit|auto-step|thud|fall|clap|bell|drum/i;
 // PLACE + MIX
 const inputs = ['-i', video];
 const filters = [];
@@ -253,9 +256,10 @@ placed.forEach(({ cue, f }, i) => {
   if (cue.bed) inputs.push('-stream_loop', '-1');
   inputs.push('-i', f);
   const fadeOut = Math.min(0.6, cue.len / 3);
+  const fadeIn = cue.bed ? 1.5 : HIT.test(cue.id) ? 0.001 : 0.01;
   // rate: play faster/higher (>1) or slower/lower (<1), like a tape speed change
   const rate = cue.rate && cue.rate !== 1 ? `asetrate=44100*${cue.rate},aresample=44100,` : '';
-  filters.push(`[${i + 1}:a]${rate}atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${cue.bed ? 1.5 : 0.01},` +
+  filters.push(`[${i + 1}:a]${rate}atrim=0:${cue.len},asetpts=PTS-STARTPTS,afade=t=in:d=${fadeIn},` +
     `afade=t=out:st=${(cue.len - fadeOut).toFixed(2)}:d=${fadeOut.toFixed(2)},volume=${cue.gain},` +
     `adelay=${Math.round(cue.t * 1000)}|${Math.round(cue.t * 1000)}` +
     `${DIPC && (cue.bed || cue.music || WHOOSH.test(cue.id)) ? ',' + DIPC : ''}[a${i}]`);
