@@ -17,7 +17,7 @@
     "shimi": "python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut",
     "systems": "python3 tools/build_systems.py",
     "ae": "python3 packages/aethern/bin/aethern",
-    "test": "node --test tests/*.test.mjs packages/sonic/tests/sonic.test.mjs && node tools/test_new_film.mjs && cd packages/aethern && python3 -m unittest discover -s tests && node --test tests/js.test.mjs",
+    "test": "node --test tests/*.test.mjs packages/sonic/tests/sonic.test.mjs && node tools/test_new_film.mjs && python3 -m unittest discover -s vyrn/tests -t . && cd packages/aethern && python3 -m unittest discover -s tests && node --test tests/js.test.mjs",
     "new-film": "node engine/new-film.mjs",
     "vendor": "node tools/vendor.mjs",
     "promises": "node tools/promises.mjs",
