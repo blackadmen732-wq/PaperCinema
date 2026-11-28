@@ -48,8 +48,6 @@ def onsets(x, sr=SR, k=2.0, delta=0.02, min_gap=0.06):
         if flux[i] < thr[i] or flux[i] < flux[max(0, i - loc):i + loc + 1].max():
             continue
         tc = (i * HOP + N_FFT / 2) / sr
-        if out and tc - out[-1]['tc'] < min_gap:
-            continue
         # refine: the loudest point just after the flux peak, the quietest point before it (the gap after a
         # previous sound), then the first sample after that gap reaching 10 % of the rise
         a = max(0, int((tc - 0.045) * sr)); b = min(env.size, int((tc + 0.06) * sr))
@@ -65,6 +63,11 @@ def onsets(x, sr=SR, k=2.0, delta=0.02, min_gap=0.06):
         attack = max(0, (j90 - j) / sr)
         t = (a + j) / sr
         rise = 20 * np.log10((pk + 1e-9) / (base + 1e-9))
+        # one sound, one onset: closer than min_gap to the last onset is the same sound. Measured between the
+        # refined onset times, not the flux peaks: a bright ringing hit peaks in flux late, and measuring from its
+        # peak swallowed the landing thud 71 ms after it (dash-test 4.925 s)
+        if out and t - out[-1]['t'] < min_gap:
+            continue
         conf = float(np.clip((flux[i] - thr[i]) / (thr[i] + 1e-9), 0, 1) * 0.5 + np.clip(rise / 30, 0, 1) * 0.5)
         # a hit has a sharp attack; a whoosh or a swell rises over tens of milliseconds
         kind = 'hit' if attack <= 0.040 else 'swell'

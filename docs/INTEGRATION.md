@@ -81,3 +81,11 @@ scaffold only places one `steps-in` cue.
 - The Earshot bank is not vendored in cloud sessions; Sonic leaves its unrendered sounds out of picks.
 - Blender and MediaPipe are not installed here, so the Blender checks and pose-based measures cannot run.
 - Usage per task is still not recorded automatically (see `docs/TOKEN-INVESTIGATION.md`).
+
+## Missing footstep and impact sounds (investigated Nov 28, deterministic checks only)
+
+| Report | Cause (measured) | Status |
+|---|---|---|
+| dash-test impact at 4.92 s silent | The land-thud is in the mix and loud (+11 dB over the 300 ms before it). VYRN dropped it: onsets closer than 60 ms count as one sound, and the gap was measured from the previous ringing hit's flux peak (58 ms) instead of its onset (71 ms). | **Fixed** in `vyrn/audio.py` (gap between refined onset times). Regression test `vyrn/tests/test_audio.py` rebuilds the moment from the repo's own sounds. dash-test cues heard within 50 ms: 14/16 → 15/16; onsets with no cue 23 → 19; the benchmark is unchanged. |
+| dash-test impact at 4.30 s silent | The petal burst is 45 ms after the 4.25 s cut (which is heard). Its sound, `petals`, is authored 0.06 s later in story time, and the 0.22× speed ramp stretches that to 0.26 s of film time, so it plays at 4.56 s. | Not a bug in code: an authored offset that slow motion stretches. Fix in the film (put `petals` at 3.14) if Mark wants it on the burst. |
+| Starter film: 2–3 of 14 footsteps heard | 14 foot-downs are detected from the bones (`tools/timeline.mjs`), but nothing places a sound for an ordinary step: automatic cues exist only for dash, skid, takeoff and land (`EVENTS.ground`), and this scaffold has none; the one footstep sound is an authored bed at 9.9 s. The 4 "heard" are other sounds that happen to be near. | A missing feature, not a broken one. Adding automatic step cues would change Paper Cinema's output, so it waits for Mark's yes (opt-in, off by default). |
