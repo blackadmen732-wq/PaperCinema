@@ -77,6 +77,35 @@ export const FOOTLOCK = {
   // Before, a planted foot turned with the body: a turn on the spot spun both feet 180 deg on the sand.
   turnStep: 0.87,    // rad (50 deg)
   footTwist: 1.05,   // rad (60 deg): the most a planted foot is turned against the body
+  // RUNNING (28 Nov, a speed band above the walk). A sustained speed from runFrom (full at runFull) is a run: each foot
+  // is on the ground only for the contact time and the two contacts never overlap, so between two steps BOTH feet are
+  // off the ground (the flight phase); the strides are long, the swinging heel comes up behind, the hips sink at
+  // mid-stance and ride high in the flight, the body leans into the speed and the free arms pump with bent elbows.
+  // Below runFrom nothing here runs: the walk is the walk above, unchanged. Ranges: tools/gait_check.mjs RUN_REF.
+  runFrom: 2.0, runFull: 2.6,      // sustained ground speed (m/s): the run starts / is full
+  runCadence: [140, 9, 150, 190],  // steps per minute = a + b * speed, clamped [lo, hi]: 167 at 3 m/s, 176 at 4
+  runContact: [0.12, 0.45],        // ground contact per step (s) = a + b / speed: 0.27 s at 3 m/s, 0.23 at 4
+  runLift: [0.1, 0.07, 0.2, 0.42], // the swinging ankle's peak over the line between its plants = a + b * speed (m)
+  runBob: 0.07,      // the hips sink this much at mid-stance below their flight height (m) ...
+  runSink: 0.0,      // ... around this extra crouch (m)
+  runStrike: 0.12,   // a running foot lands nearly flat (rad toe up; a sandal runner lands on the midfoot) ...
+  runLoading: 0.04,  // ... slaps down over this long (s) ...
+  runToeOff: 0.6,    // ... and pushes off this far heel up (rad, 34 deg) ...
+  runHeelOff: 0.55,  // ... the heel rising over this share of the contact
+  runLean: [0.06, 0.035, 0.24],    // torso lean forward = a + b * speed, at most c (rad): 0.17 rad at 3 m/s
+  runArm: 0.6,       // shoulder pump (rad either side) of an arm whose gait.arms amount is 1 ...
+  runElbow: -1.45,   // ... the elbow bent to about 85 deg ...
+  runArmFwd: -0.12,  // ... the swing centred a little forward
+  runSway: 0.008,    // hips over the standing foot while running (m either side): a runner's feet land near one line
+  runYaw: 0.1,       // the waist turns with the forward leg (rad either side)
+  // PLANT ON HOLDS (opt-in, film/moves-gallery-2.json): outside a walk, a foot is planted where the pose HOLDS (the
+  // mean weighted by stillness), and once a contact holds a still pose the foot steps as soon as the pose moves it
+  // holdTol away. Off (the default), a contact is planted at the plain mean of its path: a 0.45 m step back between two
+  // holds never stepped (both holds were within `reach` of the middle) and both feet stood half way, off both poses.
+  plantHolds: false,
+  holdTol: 0.05,     // m
+  holdSpeed: 0.05,   // the nominal foot moving slower than this (m/s) is holding
+  slideLift: 0.012,  // a sliding step (pose channel `slide` 1: suriashi) lifts the foot this much (m)
 };
 
 // the sandal under the ankle (engine/figure.js: the zori runs from 6.5 cm behind the ankle to 18.5 cm in front of it,
@@ -99,7 +128,7 @@ function pivotAnkle(a, ry, th, pv) {
 /** Where solveLegs would put a foot today, in the world. side: -1 right (leads), +1 left. */
 function nominal(p, side) {
   const front = side < 0;
-  let lz = (front ? 1 : -1) * p.stance / 2, ly = LEG.footY;
+  let lz = (front ? 1 : -1) * p.stance / 2 + (p.feetz ?? 0), ly = LEG.footY;
   if (p.stride > 0) {
     const ph = p.phase + (front ? 0 : Math.PI);
     lz += Math.sin(ph) * p.stride / 2;
@@ -165,6 +194,14 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
   });
   const wk = blurIn(slow.map((v) => ss(clamp((v - O.walkFrom) / (O.walkFull - O.walkFrom), 0, 1))),
     Math.max(1, Math.round(O.walkBlend * RATE)));
+  // RUN AMOUNT (0 below runFrom, 1 from runFull), from the same sustained speed. It is exactly 0 on every walk, so
+  // nothing below changes a walk: every run term is gated on it.
+  const rn = blurIn(slow.map((v) => ss(clamp((v - O.runFrom) / (O.runFull - O.runFrom), 0, 1))),
+    Math.max(1, Math.round(O.walkBlend * RATE)));
+  const running = (k) => rn[clamp(k, 0, N - 1)] > 0.5;
+  const runV = (k) => Math.max(O.runFrom, spd[clamp(k, 0, N - 1)]);
+  const runStep = (v) => 60 / clamp(O.runCadence[0] + O.runCadence[1] * v, O.runCadence[2], O.runCadence[3]);   // s
+  const runTc = (v) => O.runContact[0] + O.runContact[1] / v;                                                    // s
   // the walking stance: the feet side by side (the alternation makes the fore-aft) and no weight on one of them
   const stanceAt = (i) => P[i].stance * (1 - wk[i]), weightAt = (i) => P[i].weight * (1 - wk[i]);
   const nomR = P.map((p, i) => nominal({ ...p, stance: stanceAt(i) }, -1));
@@ -176,6 +213,11 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     const k = clamp(j, 0, N - 1), w = wk[k];
     if (w <= 0) return swingN;
     const walk = clamp(O.swingK / Math.max(0.1, spd[k]), O.swing, O.swingMax);
+    const r = rn[k];
+    if (r > 0) {                                        // a run: the swing is the stride less the contact
+      const v = runV(k), run = 2 * runStep(v) - runTc(v), wl = O.swing + (walk - O.swing) * w;
+      return Math.max(1, Math.round((wl + (run - wl) * r) * RATE));
+    }
     return Math.max(1, Math.round((O.swing + (walk - O.swing) * w) * RATE));
   };
   /** How far the body may pass a plant started at sample i (m): half a stride, longer the faster a walk goes. */
@@ -183,9 +225,16 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     const w = wk[i];
     if (w <= 0) return O.reach;
     const [a, b, lo, hi] = O.reachWalk;
-    return O.reach + (clamp(a + b * spd[i], lo, hi) - O.reach) * w;
+    const wr = O.reach + (clamp(a + b * spd[i], lo, hi) - O.reach) * w;
+    if (rn[i] > 0) { const v = runV(i); return wr + (v * runTc(v) / 2 - wr) * rn[i]; }   // half the travel in a contact
+    return wr;
   };
 
+  /** plantHolds: how much a sample counts toward a plant, 1 / (0.02 + the nominal foot's speed in m/s): a hold ~50x. */
+  const holdW = (nom, k) => {
+    const a = nom[nb(k, -1)], b = nom[nb(k, 1)];
+    return 1 / (0.02 + Math.hypot(b[0] - a[0], b[2] - a[2]) * RATE / 2);
+  };
   /** The samples where a foot of these contacts is in a STEP (between two plants of one piece, no air between). */
   function stepping(cs) {
     const sw = new Uint8Array(N);
@@ -214,6 +263,7 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     /** The last sample of the longest contact from i whose nominal foot stays within `reach` of its mean (the body may
      *  pass over the plant, but never further than half a stride); i - 1 if not even one sample holds. */
     const grow = (i, reach, cap, turn = O.turnStep) => {
+      if (O.plantHolds && wk[i] < 0.5) return growHold(i, reach, cap, turn);
       let sx = 0, sz = 0, n = 0, j = i - 1;
       for (let k = i; k <= Math.min(cap, N - 1); k++) {
         if (air[k] || piece[k] !== piece[i]) break;
@@ -223,6 +273,25 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
         for (let q = i; q <= k; q++) if (Math.hypot(nom[q][0] - mx, nom[q][2] - mz) > reach) { bad = true; break; }
         if (bad) break;
         sx += nom[k][0]; sz += nom[k][2]; n++; j = k;
+      }
+      return j;
+    };
+    /** plantHolds: the contact grows while every sample is within reach of the STILLNESS-weighted mean; after it has
+     *  held still (0.1 s), within holdTol of that hold. */
+    const growHold = (i, reach, cap, turn) => {
+      let sx = 0, sz = 0, sw = 0, j = i - 1, still = 0, held = false;
+      for (let k = i; k <= Math.min(cap, N - 1); k++) {
+        if (air[k] || piece[k] !== piece[i]) break;
+        if (Math.abs(wrap(P[k].ry - P[i].ry)) > turn) break;
+        const w = holdW(nom, k), mx = (sx + nom[k][0] * w) / (sw + w), mz = (sz + nom[k][2] * w) / (sw + w);
+        const r = held ? O.holdTol : reach;
+        let bad = false;
+        for (let q = i; q <= k; q++) if (Math.hypot(nom[q][0] - mx, nom[q][2] - mz) > r + (held && q < k ? reach : 0)) { bad = true; break; }
+        if (!bad && held && Math.hypot(nom[k][0] - mx, nom[k][2] - mz) > O.holdTol) bad = true;
+        if (bad) break;
+        sx += nom[k][0] * w; sz += nom[k][2] * w; sw += w; j = k;
+        still = w > 1 / (0.02 + O.holdSpeed) ? still + 1 : 0;
+        if (still >= Math.round(0.1 * RATE)) held = true;
       }
       return j;
     };
@@ -248,10 +317,13 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
         }
         if (s0 >= 0 && s1 > s0 && oSw[s0] && oSw[s1]) {
           const ideal = Math.round((s0 + s1) / 2) - 1, jMax = grow(i, reach * 1.5, cap);
-          if (ideal >= i + minN - 1 && ideal <= jMax && clash(ideal) < 0) j = ideal;
+          // a RUN lifts half way between the other foot's lifts too, but the other foot IS in the air then (the flight):
+          // no clash rule, only that this contact may not outlast the other foot's swing (both feet down is a walk)
+          if (running(j)) { if (ideal >= i + Math.round(0.06 * RATE) - 1 && ideal <= jMax) j = ideal; }
+          else if (ideal >= i + minN - 1 && ideal <= jMax && clash(ideal) < 0) j = ideal;
         }
       }
-      const q0 = oSw && step ? clash(j) : -1;
+      const q0 = oSw && step && !running(j) ? clash(j) : -1;
       if (q0 >= 0) {
         // an even walk: this foot lifts HALF A STEP PERIOD before the other foot's clashing lift. The period is the
         // other foot's own (its lift to its next lift, when that is a step too), else the one its speed implies (a
@@ -302,7 +374,8 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
         }
         if (jt >= 0) j = jt;
       }
-      for (let k = i; k <= j; k++) { sx += nom[k][0]; sz += nom[k][2]; n++; }   // the plant: the mean of the path
+      if (O.plantHolds && wk[i] < 0.5) for (let k = i; k <= j; k++) { const w = holdW(nom, k); sx += nom[k][0] * w; sz += nom[k][2] * w; n += w; }
+      else for (let k = i; k <= j; k++) { sx += nom[k][0]; sz += nom[k][2]; n++; }   // the plant: the mean of the path
       const mid = (i + j) >> 1, lead = O.lead * (1 - wk[mid]);   // a walk passes over its plant: no catch step
       out.push({ a: i, b: j, pos: [sx / n + vel[mid][0] * lead, LEG.footY, sz / n + vel[mid][1] * lead], ry: P[mid].ry });
       let ni = j + 1 + (swingFit > 0 ? swingFit : swingAt(j));   // the swing, unless a cut comes first: then plant at once
@@ -336,12 +409,14 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
     // on the ground (planted) all the while; the raised heel lengthens the trailing leg, so the hips sink less.
     for (let k = 0; k < cs.length; k++) {
       const c = cs[k], len = c.b - c.a + 1;
-      const lN = stepBetween(cs[k - 1], c) ? Math.min(Math.round(O.loading * RATE), Math.floor(len * 0.4)) : 0;
-      const hN = stepBetween(c, cs[k + 1]) ? Math.max(0, Math.min(Math.round(O.heelOff * len), Math.round(0.3 * RATE), len - lN - 1)) : 0;
+      const r = rn[(c.a + c.b) >> 1], mixR = (wv, rv) => (r > 0 ? wv + (rv - wv) * r : wv);   // a run's foot roll
+      const lN = stepBetween(cs[k - 1], c) ? Math.min(Math.round(mixR(O.loading, O.runLoading) * RATE), Math.floor(len * 0.4)) : 0;
+      const hN = stepBetween(c, cs[k + 1]) ? Math.max(0, Math.min(Math.round(mixR(O.heelOff, O.runHeelOff) * len), Math.round(0.3 * RATE), len - lN - 1)) : 0;
+      const hs = mixR(O.heelStrike, O.runStrike), to = mixR(O.toeOff, O.runToeOff);
       for (let i = c.a; i <= c.b; i++) {
         let th = 0, pv = 0;
-        if (i < c.a + lN) { th = O.heelStrike * wk[i] * (1 - ss((i - c.a) / lN)); pv = -1; }
-        else if (hN > 0 && i > c.b - hN) { const u = (i - (c.b - hN)) / hN; th = -O.toeOff * wk[i] * u * u; pv = 1; }
+        if (i < c.a + lN) { th = hs * wk[i] * (1 - ss((i - c.a) / lN)); pv = -1; }
+        else if (hN > 0 && i > c.b - hN) { const u = (i - (c.b - hN)) / hN; th = -to * wk[i] * u * u; pv = 1; }
         pit[i] = th;
         const a = pivotAnkle(c.pos, c.ry, th, pv);
         yaw[i] = c.ry;
@@ -365,7 +440,9 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
       for (let i = c.b + 1; i < nx.a; i++) if (air[i]) leap = true;
       const span = Math.hypot(nx.pos[0] - c.pos[0], nx.pos[2] - c.pos[2]);
       // a step lifts with its length; a leap or a lunge lifts with its time (never a balloon)
-      const h = leap ? clamp(0.9 * (nx.a - c.b) * DT, O.flight, 0.5) : clamp(span * 0.28, 0.02, O.lift);
+      let h = leap ? clamp(0.9 * (nx.a - c.b) * DT, O.flight, 0.5) : clamp(span * 0.28, 0.02, O.lift);
+      const sl = leap ? 0 : clamp(P[(c.b + nx.a) >> 1].slide ?? 0, 0, 1);   // a sliding step skims the floor
+      if (sl > 0) h += (O.slideLift - h) * sl;
       // a WALKING swing goes from the toe-off ankle (heel up) to the heel-strike ankle (toe up), low: the line between
       // them plus a small lift early in the swing (the knee folds as the thigh comes through), the foot turning from
       // heel-up to toe-up on the way. A fighter's step (walking amount 0) is the flat arc above, as before.
@@ -379,10 +456,21 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
       const yRise = A[1] + O.swingRise, yMid = B[1] + O.swingMid;
       const yWalk = (u) => (u < 0.22 ? A[1] + (yRise - A[1]) * ss(u / 0.22)
         : u < 0.55 ? yRise + (yMid - yRise) * ss((u - 0.22) / 0.33) : yMid + (B[1] - yMid) * ss((u - 0.55) / 0.45));
+      // A RUNNING swing: the heel comes up behind (the knee folds past 90 deg) while the body runs on, then the leg
+      // sweeps through and reaches for the next plant: the foot lingers behind (a late horizontal ease) and peaks high
+      const rr = leap ? 0 : rn[(c.b + nx.a) >> 1];
+      const hR = rr > 0 ? clamp(O.runLift[0] + O.runLift[1] * runV((c.b + nx.a) >> 1), O.runLift[2], O.runLift[3]) : 0;
       for (let i = c.b + 1; i < nx.a; i++) {
-        const u = (i - c.b) / (nx.a - c.b), s = ss(u);
+        const u = (i - c.b) / (nx.a - c.b);
+        let s = ss(u);
         const yOld = (leap ? nom[i][1] : LEG.footY) + h * Math.sin(Math.PI * u);
-        out[i] = [A[0] + (B[0] - A[0]) * s, yOld + (yWalk(u) - yOld) * w, A[2] + (B[2] - A[2]) * s, 0];
+        let y = yOld + (yWalk(u) - yOld) * w;
+        if (rr > 0) {
+          const yRun = A[1] + (B[1] - A[1]) * u + hR * Math.sin(Math.PI * Math.pow(u, 0.75));
+          y += (yRun - y) * rr;
+          s += (ss(clamp((u - 0.12) / 0.88, 0, 1)) - s) * rr;
+        }
+        out[i] = [A[0] + (B[0] - A[0]) * s, y, A[2] + (B[2] - A[2]) * s, 0];
         yaw[i] = c.ry + wrap(nx.ry - c.ry) * s;        // the swinging foot turns to its next plant's direction
         pit[i] = leap ? 0 : pit[c.b] * (1 - eo(Math.min(1, u / 0.5))) + pit[nx.a] * ss(clamp((u - 0.4) / 0.6, 0, 1));
         done[i] = true;
@@ -493,6 +581,18 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
   const sEnv = blurIn(Array.from(env), Math.max(1, Math.round(0.03 * RATE)));
   const sFight = blur(dil(addC));
   const sC = sFight.map((v, i) => v + ((sEnv[i] ?? 0) - v) * wk[i]), sRx = blur(addRx), sRz = blur(addRz);
+  // RUNNING hips: a spring-mass bounce. They sink runBob at mid-stance (the stance knee flexes to ~40 deg) and ride
+  // high (the walking lift) through the flight, and never stand higher than a planted foot can reach
+  if (rn.some((v) => v > 0)) {
+    const bob = new Float64Array(N);
+    for (const cs of [cR, cL]) for (const c of cs) {
+      if (!(rn[(c.a + c.b) >> 1] > 0)) continue;
+      for (let i = c.a; i <= c.b; i++) bob[i] = Math.max(bob[i], O.runSink + O.runBob * Math.sin(Math.PI * (i - c.a + 0.5) / (c.b - c.a + 1)));
+    }
+    const req = blurIn(dil(addC), Math.max(1, Math.round(0.02 * RATE)));
+    const runC = blurIn(Array.from(bob, (b, i) => Math.max(b, req[i])), Math.max(1, Math.round(0.025 * RATE)));
+    for (let i = 0; i < N; i++) if (rn[i] > 0) sC[i] += (runC[i] - sC[i]) * rn[i];
+  }
 
   const lerp3 = (A, i, j, u) => [A[i][0] + (A[j][0] - A[i][0]) * u, A[i][1] + (A[j][1] - A[i][1]) * u,
     A[i][2] + (A[j][2] - A[i][2]) * u];
@@ -517,19 +617,32 @@ export function lockFeet(motion, dur, opts = {}, gait = null) {
       // the walk above the legs: the body rides over the standing foot, the waist turns with the forward leg and the
       // chest turns back against it (the head keeps looking ahead), the free arms swing against the legs
       const ph = L(phs), c = Math.cos(p.ry), s = Math.sin(p.ry);
-      const side = -O.hipSway * w * Math.sin(ph);       // the figure's own x: + is its left
+      const r = L(rn);
+      const mixR = (wv, rv) => (r > 0 ? wv + (rv - wv) * r : wv);
+      const side = -mixR(O.hipSway, O.runSway) * w * Math.sin(ph);       // the figure's own x: + is its left
       p.x += side * c;
       p.z -= side * s;
-      const yaw = O.hipYaw * w * Math.cos(ph);
+      const yaw = mixR(O.hipYaw, O.runYaw) * w * Math.cos(ph);
       p.ty = (p.ty ?? 0) + yaw;
       p.cy = (p.cy ?? 0) - O.chestCounter * yaw;
       p.hy = (p.hy ?? 0) + (O.chestCounter - 1) * yaw;
-      p.rsx += O.armSwing * GA[0] * w * Math.cos(ph);   // - is forward: the right arm back as the right foot lands
-      p.lsx -= O.armSwing * GA[1] * w * Math.cos(ph);
+      const arm = mixR(O.armSwing, O.runArm);
+      p.rsx += arm * GA[0] * w * Math.cos(ph);   // - is forward: the right arm back as the right foot lands
+      p.lsx -= arm * GA[1] * w * Math.cos(ph);
+      if (r > 0) {
+        // the run: the body leans into the speed (the head comes back up a little to look ahead) and a free arm pumps
+        // with a bent elbow, its swing centred a little forward
+        const v = Math.max(O.runFrom, L(spd)), lean = Math.min(O.runLean[2], O.runLean[0] + O.runLean[1] * v) * r;
+        p.tx += lean;
+        p.hx = (p.hx ?? 0) - lean * 0.5;
+        const ar = Math.min(1, GA[0]) * r, al = Math.min(1, GA[1]) * r;
+        p.rex += (O.runElbow - p.rex) * ar; p.rsx += O.runArmFwd * ar;
+        p.lex += (O.runElbow - p.lex) * al; p.lsx += O.runArmFwd * al;
+      }
     }
     return p;
   };
-  out.plan = { contactsR: cR, contactsL: cL, rate: RATE, opts: O, air, walk: wk, pitchR: PR.pit, pitchL: PL.pit, phase: phs, drop: addC, hips: sC };
+  out.plan = { contactsR: cR, contactsL: cL, rate: RATE, opts: O, air, walk: wk, pitchR: PR.pit, pitchL: PL.pit, phase: phs, drop: addC, hips: sC, run: rn };
   out.cuts = motion.cuts;
   out.side = motion.side;
   return out;

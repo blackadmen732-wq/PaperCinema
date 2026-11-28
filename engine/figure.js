@@ -357,6 +357,10 @@ export const BASE_POSE = {
   // crouch = how far the hips drop (knees bend), weight = -1 back foot … +1 front foot,
   // stride/phase = walking step size and cycle phase (set by the engine while walking)
   stance: 0.12, crouch: 0, weight: 0, stride: 0, phase: 0,
+  // everyday moves (28 Nov): feetz = both feet this far ahead of (+) or behind (-) the hips, m (seiza sits on its heels
+  // at -0.08, a sit on the ground has its feet out in front); slide = 0..1, a sliding step (suriashi) whose foot skims
+  // the floor instead of lifting (engine/footlock.js)
+  feetz: 0, slide: 0,
 };
 
 export function applyPose(f, p, prev = null, dt = 0) {
@@ -796,7 +800,7 @@ export function solveLegs(f, p) {
   if (p._feet) { f.root.updateMatrix(); _legM.copy(f.root.matrix).invert(); }   // root hangs off the scene
   for (const leg of [f.legs.r, f.legs.l]) {
     const front = leg.side < 0;                       // right foot leads
-    let fx = leg.side * 0.1, fz = (front ? 1 : -1) * p.stance / 2, fy = LEG.footY;
+    let fx = leg.side * 0.1, fz = (front ? 1 : -1) * p.stance / 2 + (p.feetz ?? 0), fy = LEG.footY;
     if (p._feet) {
       const w = front ? p._feet.r : p._feet.l;
       _legV.set(w[0], w[1], w[2]).applyMatrix4(_legM);
