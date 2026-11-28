@@ -18,3 +18,5 @@ vendor/*/
 
 # Sonic: renders of bank sounds (Earshot), rebuilt on demand by engine/sonic.mjs
 .cache/
+film/poc-fixed.json
+film/poc-work.json
