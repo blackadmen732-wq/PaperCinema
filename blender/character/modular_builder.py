@@ -244,12 +244,12 @@ class Rig:
                 fz += math.sin(ph) * p['stride'] / 2
                 fy += max(0.0, math.cos(ph)) * 0.07
             sx, sy = fx - side * 0.1, fy - hy
-            roll = math.atan2(sx, -sy) + side * 0.04
+            roll = math.atan2(sx, -sy) + (0.0 if feet else side * 0.04)   # the splay: a stance foot only
             dz, dy = fz - hzz, -math.hypot(sx, sy)
             d = math.hypot(dz, dy)
             true_d = d
             mx = (L1 + L2) * 0.999
-            ds = (L1 + L2) * 0.94                          # soft IK: the reach eases onto mx, never touching it
+            ds = (L1 + L2) * (float(feet.get('soft', 0.94) or 0.94) if feet else 0.94)   # soft IK: eases onto mx
             if d > ds:
                 room = mx - ds
                 soft = mx - room * math.exp(-(d - ds) / room)

@@ -69,7 +69,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   const perf = film.performances[id];
   let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
   // film.motion.lockFeet: plant the feet in the world and let the weight fall on them (engine/footlock.js)
-  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
+  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet, perf.gait);
   if (c.hidden) fig.root.visible = false;               // an invisible target (e.g. the tree) the hero looks at
   cast[id] = { id, fig, sword: k.sword, bladeLen: k.length, motion, perf, hidden: !!c.hidden, phase: Object.keys(cast).length * 1.7,
     demonic: !!c.demonic, glow: c.glow, makeGhost: () => makeFigure(spec) };

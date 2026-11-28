@@ -315,6 +315,14 @@ for (const [id, p] of Object.entries(film.performances ?? {})) {
     if (!Array.isArray(p[f]) || !p[f].every((e) => Array.isArray(e) && e.length === 2 && e.every(isNum))) err(`${w}.${f}`, 'must be [[t, amount], …]');
     else p[f].forEach((e, j) => { if (j > 0 && e[0] < p[f][j - 1][0]) err(`${w}.${f}[${j}]`, 'times must not go back'); if (e[1] < 0 || e[1] > 1.5) err(`${w}.${f}[${j}]`, 'amount must be 0-1.5'); });
   }
+  // gait (engine/footlock.js, with motion.lockFeet): arms = how much each arm [right, left] swings while walking, 0-1.5
+  // (0 = it holds something: a hand on the hilt never swings)
+  if (p.gait !== undefined) {
+    const a = p.gait?.arms;
+    if (typeof p.gait !== 'object' || Array.isArray(p.gait)) err(`${w}.gait`, 'must be an object, e.g. { "arms": [0.3, 1] }');
+    else if (a !== undefined && !(Array.isArray(a) && a.length === 2 && a.every((x) => isNum(x) && x >= 0 && x <= 1.5))) err(`${w}.gait.arms`, 'must be [right, left], each 0-1.5');
+    if (!film.motion?.lockFeet) warn(`${w}.gait`, 'the gait only acts with motion.lockFeet');
+  }
 }
 
 (film.duels ?? []).forEach((d, i) => {

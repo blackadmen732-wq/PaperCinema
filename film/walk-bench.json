@@ -1,0 +1,282 @@
+{
+ "title": "Walk bench: the walking gait on the Episode 1 beach",
+ "page": "engine/motion.html",
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "format": "vertical",
+ "duration": 10.0,
+ "mode": "dawn",
+ "motion": {
+  "overlap": true,
+  "lockFeet": true
+ },
+ "stage": {
+  "mark": "MARK_center",
+  "origin": true,
+  "turn": 0
+ },
+ "cast": {
+  "hero": {
+   "character": "musashi",
+   "face": "eyes",
+   "weapon": "bokken",
+   "recipe": "musashi-ai",
+   "weaponPart": "bokken_oar_t1"
+  },
+  "target": {
+   "character": "kojiro",
+   "face": "eyes",
+   "recipe": "kojiro-ai2",
+   "hidden": true
+  }
+ },
+ "performances": {
+  "hero": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "stand-blade-low",
+     "x": -6.1,
+     "z": 5.3,
+     "ry": 2.2507
+    },
+    {
+     "t": 0.8,
+     "pose": "stand-blade-low",
+     "x": -6.1,
+     "z": 5.3,
+     "ry": 2.2507
+    },
+    {
+     "t": 1.284,
+     "pose": "stand-blade-low",
+     "x": -5.63,
+     "z": 4.92,
+     "ry": 2.2507
+    },
+    {
+     "t": 1.767,
+     "pose": "stand-blade-low",
+     "x": -5.16,
+     "z": 4.54,
+     "ry": 2.2507
+    },
+    {
+     "t": 2.251,
+     "pose": "stand-blade-low",
+     "x": -4.69,
+     "z": 4.16,
+     "ry": 2.2507
+    },
+    {
+     "t": 2.734,
+     "pose": "stand-blade-low",
+     "x": -4.22,
+     "z": 3.78,
+     "ry": 2.2507
+    },
+    {
+     "t": 3.218,
+     "pose": "stand-blade-low",
+     "x": -3.75,
+     "z": 3.4,
+     "ry": 2.2507
+    },
+    {
+     "t": 3.701,
+     "pose": "stand-blade-low",
+     "x": -3.28,
+     "z": 3.02,
+     "ry": 2.2507
+    },
+    {
+     "t": 4.185,
+     "pose": "stand-blade-low",
+     "x": -2.81,
+     "z": 2.64,
+     "ry": 2.2507
+    },
+    {
+     "t": 4.668,
+     "pose": "stand-blade-low",
+     "x": -2.34,
+     "z": 2.26,
+     "ry": 2.2507
+    },
+    {
+     "t": 5.152,
+     "pose": "stand-blade-low",
+     "x": -1.87,
+     "z": 1.88,
+     "ry": 2.2507
+    },
+    {
+     "t": 5.635,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.2507
+    },
+    {
+     "t": 6.135,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": 2.2507,
+     "settle": 0.4
+    },
+    {
+     "t": 6.6,
+     "pose": "stand-blade-low",
+     "x": -1.4,
+     "z": 1.5,
+     "ry": -0.8909
+    },
+    {
+     "t": 7.102,
+     "pose": "stand-blade-low",
+     "x": -1.685,
+     "z": 1.731,
+     "ry": -0.8909
+    },
+    {
+     "t": 7.605,
+     "pose": "stand-blade-low",
+     "x": -1.97,
+     "z": 1.961,
+     "ry": -0.8909
+    },
+    {
+     "t": 8.107,
+     "pose": "stand-blade-low",
+     "x": -2.255,
+     "z": 2.192,
+     "ry": -0.8909
+    },
+    {
+     "t": 8.609,
+     "pose": "stand-blade-low",
+     "x": -2.541,
+     "z": 2.422,
+     "ry": -0.8909
+    },
+    {
+     "t": 9.111,
+     "pose": "stand-blade-low",
+     "x": -2.826,
+     "z": 2.653,
+     "ry": -0.8909
+    },
+    {
+     "t": 9.614,
+     "pose": "stand-blade-low",
+     "x": -3.111,
+     "z": 2.883,
+     "ry": -0.8909
+    },
+    {
+     "t": 10.0,
+     "pose": "stand-blade-low",
+     "x": -3.111,
+     "z": 2.883,
+     "ry": -0.8909,
+     "settle": 0.4
+    }
+   ],
+   "gait": {
+    "arms": [
+     0.25,
+     1.0
+    ],
+    "note": "the right hand carries the oar low: a small swing; the left arm is free"
+   }
+  },
+  "target": {
+   "keys": [
+    {
+     "t": 0.0,
+     "pose": "neutral",
+     "x": 30.0,
+     "z": 30.0,
+     "ry": 0.0
+    }
+   ]
+  }
+ },
+ "paperSurface": {
+  "angle": 36.0,
+  "ink": 0.85,
+  "width": 0.003,
+  "light": 0.55,
+  "mottle": 0.12,
+  "mottle_scale": 7.0,
+  "ao": 0.35
+ },
+ "wind": {
+  "to": [
+   0.15,
+   -1.0
+  ],
+  "strength": 3.2,
+  "gust": 0.6,
+  "seed": 2
+ },
+ "cameraOpts": {
+  "solver": 2,
+  "aperture": 4.0
+ },
+ "effects": {
+  "dof": 4.0,
+  "motionBlur": 0.5,
+  "vignette": 0.3,
+  "postFx": true
+ },
+ "fade": {
+  "in": 0,
+  "out": 0.0
+ },
+ "camera": [
+  {
+   "t": 0.0,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 88,
+   "az1": 92,
+   "elev": 3,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "note": "SIDE: the whole body and the ground, the legs read in profile"
+  },
+  {
+   "t": 6.3,
+   "cut": true,
+   "rig": "compose",
+   "subjects": [
+    "hero"
+   ],
+   "basis": "facing",
+   "az0": 35,
+   "az1": 45,
+   "elev": 4,
+   "size": 0.62,
+   "screen": [
+    0.5,
+    0.56
+   ],
+   "fov": 30,
+   "feel": "dolly",
+   "note": "THREE-QUARTER: the slow walk, hips and arms"
+  }
+ ],
+ "sounds": [],
+ "titles": []
+}

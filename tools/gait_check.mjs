@@ -45,6 +45,7 @@ export const REF = {
   pitchStrike: [8, 25, 'deg toe up'],
   pitchToeOff: [-45, -15, 'deg heel up'],
   clearance: [0.008, 0.05, 'm'],
+  legStretch: [1, 1.02, 'x the leg (soft IK pays its shortfall back by stretching; more shows)'],
 };
 
 const args = process.argv.slice(2);
@@ -76,7 +77,8 @@ function sample(fig, motion) {
     };
     S.push({ t, root: [p.x, p.y, p.z], hips: fig.hips.getWorldPosition(v3()), head: fig.head.getWorldPosition(v3()),
       sR: fig.rS.getWorldPosition(v3()), sL: fig.lS.getWorldPosition(v3()), hR: fig.rH.getWorldPosition(v3()),
-      hL: fig.lH.getWorldPosition(v3()), r: leg('r'), l: leg('l') });
+      hL: fig.lH.getWorldPosition(v3()), r: leg('r'), l: leg('l'),
+      stretch: Math.max(fig.legs.r.thigh.scale.x, fig.legs.l.thigh.scale.x) });
   }
   return S;
 }
@@ -109,10 +111,19 @@ function stretches(S, cuts) {
 }
 
 function measure(S, a, b, speed) {
-  const G = Math.min(...S.slice(a, b + 1).flatMap((s) => [low(s.r), low(s.l)]));
+  // the ground: a low percentile of the feet's lowest points (the minimum is a heel pressing 5 mm in as it lands)
+  const lows = S.slice(a, b + 1).flatMap((s) => [low(s.r), low(s.l)]).sort((x, y) => x - y);
+  const G = lows[Math.floor(0.1 * (lows.length - 1))];
   const on = { r: [], l: [] };
   for (const side of ['r', 'l']) {
-    for (let i = a; i <= b; i++) on[side].push(low(S[i][side]) <= G + 0.015);
+    // on the ground: the lowest point within 1.5 cm of the ground AND nearly still (< 0.5 m/s across the ground): a
+    // heel passing 1 cm over the sand at 2 m/s in the last of a swing is not a contact (a gait lab's velocity rule)
+    // (heel and toe each judged on their own: the one on the ground is the one that is low AND still)
+    for (let i = a; i <= b; i++) {
+      const L = S[i][side], M = S[Math.max(0, i - 1)][side];
+      const touch = (k) => L[k].y <= G + 0.015 && Math.hypot(L[k].x - M[k].x, L[k].z - M[k].z) / DT < 0.5;
+      on[side].push(touch('heel') || touch('toe'));
+    }
     // debounce: a run shorter than 0.06 s takes the state around it
     const o = on[side], m = Math.round(0.06 * HZ);
     for (let i = 0; i < o.length;) { let j = i; while (j + 1 < o.length && o[j + 1] === o[i]) j++;
@@ -166,6 +177,7 @@ function measure(S, a, b, speed) {
     stepLength: r2(mean(steps), 2), pelvisBob: r2(mean(bob), 3), pelvisSway: r2(mean(sway), 3),
     kneeSwing: r2(mean(kSw), 0), kneeLoad: r2(mean(kLd), 0), pitchStrike: r2(mean(pS), 0), pitchToeOff: r2(mean(pT), 0),
     clearance: r2(mean(clr), 3), armSwing: r2(mean(arm), 2),
+    legStretch: r2(Math.max(...S.slice(a, b + 1).map((s) => s.stretch)), 3),
   };
 }
 
@@ -175,7 +187,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   const perf = film.performances[id];
   if (!perf?.keys) continue;
   let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
-  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
+  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet, perf.gait);
   const S = sample(makeFigure({}), motion);
   for (const [a, b, sp] of stretches(S, motion.cuts || [])) rows.push({ id, ...measure(S, a, b, sp) });
 }

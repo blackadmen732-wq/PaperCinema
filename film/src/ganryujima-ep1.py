@@ -20,14 +20,28 @@ def lerp(a, b, u):
     return (a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u)
 
 
-def walk(keys, t0, t1, a, b, pose, step=0.5, **extra):
-    """Root keys from a to b between t0 and t1 (the feet step by themselves: motion.lockFeet)."""
+def walk(keys, t0, t1, a, b, pose, step=0.5, ease_in=0.0, ease_out=0.0, **extra):
+    """Root keys from a to b between t0 and t1 (the feet step by themselves: motion.lockFeet). ease_in / ease_out:
+    seconds over which the pace builds from a stand / dies into a stop (a walker slows into a stop: with even keys the
+    curve into the stop key SPED UP to 1.6 m/s before braking, 28 Nov, and the last step became a hop)."""
     ry = face(a, b)
-    n = max(1, int(round((t1 - t0) / step)))
-    for i in range(1, n + 1):
-        u = i / n
-        p = lerp(a, b, u)
-        keys.append(dict({'t': round(t0 + (t1 - t0) * u, 3), 'pose': pose, 'x': round(p[0], 3), 'z': round(p[1], 3),
+    T, D = t1 - t0, 1.0
+    A_, B_ = min(ease_in, T / 2), min(ease_out, T / 2)
+    V = D / (T - (A_ + B_) / 2)
+
+    def s(t):                                        # distance share covered after t seconds (trapezoid speed)
+        if t < A_:
+            return V * t * t / (2 * A_)
+        if t > T - B_:
+            return D - V * (T - t) ** 2 / (2 * B_)
+        return V * (t - A_ / 2)
+
+    n = max(1, int(round(T / step)))
+    times = sorted({round(T * i / n, 4) for i in range(1, n + 1)} | ({round(A_, 4)} if A_ else set()) |
+                   ({round(T - B_, 4)} if B_ else set()))
+    for tt in times:
+        p = lerp(a, b, s(tt))
+        keys.append(dict({'t': round(t0 + tt, 3), 'pose': pose, 'x': round(p[0], 3), 'z': round(p[1], 3),
                           'ry': ry}, **extra))
 
 
@@ -90,7 +104,7 @@ target += [
     {'t': 18.5, 'pose': 'stand-blade-low', 'x': M_SAND[0], 'z': M_SAND[1], 'ry': face(M_SAND, M_STOP), 'cut': True,
      'note': 'the cut into S4: already wading out of the shallows'},
 ]
-walk(target, 18.5, 23.4, M_SAND, M_STOP, 'stand-blade-low')
+walk(target, 18.5, 23.4, M_SAND, M_STOP, 'stand-blade-low', ease_out=0.9)
 target += [
     {'t': 24.0, 'pose': 'stand-blade-low', 'x': M_STOP[0], 'z': M_STOP[1], 'ry': M_FACE, 'settle': 0.5},
     {'t': 24.9, 'pose': 'stand-blade-low', 'x': M_STOP[0], 'z': M_STOP[1], 'ry': M_FACE, 'crouch': 0.05, 'rsx': -0.4,
@@ -121,7 +135,7 @@ target += [
 ]
 m_end = (round(m_in[0] + 0.12, 3), round(m_in[1] - 0.12, 3))
 M_BACK = (-5.2, 4.9)
-walk(target, 47.3, 55.6, m_end, M_BACK, 'stand-blade-low', step=0.6)
+walk(target, 47.3, 55.6, m_end, M_BACK, 'stand-blade-low', step=0.6, ease_in=0.7, ease_out=0.9)
 target += [
     {'t': 56.4, 'pose': 'stand-blade-low', 'x': M_BACK[0], 'z': M_BACK[1], 'ry': face(m_end, M_BACK), 'settle': 0.4},
     {'t': 57.6, 'pose': 'stand-blade-low', 'x': M_BACK[0], 'z': M_BACK[1], 'ry': face(m_end, M_BACK) + 0.35, 'hy': 0.55,

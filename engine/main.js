@@ -153,7 +153,7 @@ const MOVES = await (await fetch('/library/moves.json')).json();
 const CLIPS = await loadClips(MOVES, async (n) => (await fetch(`/library/mocap/${n}.json`)).json());
 const motionOf = (id) => {   // film.motion.overlap = anime layer, film.motion.lockFeet = planted feet + weight
   const m = makeMotion(resolveKeys(expandMoves(PERF[id].keys, MOVES, CLIPS), POSES), film.motion ?? {});
-  return film.motion?.lockFeet ? lockFeet(m, film.duration ?? 36, film.motion.lockFeet) : m;
+  return film.motion?.lockFeet ? lockFeet(m, film.duration ?? 36, film.motion.lockFeet, PERF[id].gait) : m;
 };
 const kojiroMotion = motionOf('kojiro');
 const musashiMotion = motionOf('musashi');

@@ -72,6 +72,9 @@ export function installAudit(o) {
     for (const f of fighters) {
       const vis = !f.hidden && shown(f.fig.root);
       const F = { visible: vis, root: r3(f.fig.root.position), ry: +f.fig.root.rotation.y.toFixed(4), joints: {}, screen: {} };
+      // the foot plan's own word on which foot stands (engine/footlock.js): a walking swing passes low (an ankle 6-13
+      // cm up), lower than the 12 cm the slide rule took for "planted"
+      if (f.fig.lastFeet) F.planted = { rFoot: !!f.fig.lastFeet.rc, lFoot: !!f.fig.lastFeet.lc };
       if (!vis) { out.fighters[f.id] = F; continue; }
       let x0 = 9, y0 = 9, x1 = -9, y1 = -9, on = 0, n = 0;
       for (const [name, fn] of Object.entries(JOINTS)) {

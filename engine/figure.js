@@ -365,6 +365,7 @@ export function applyPose(f, p, prev = null, dt = 0) {
   f.hips.position.set(0, LEG.hipY - p.crouch, p.weight * p.stance * 0.35);
   f.root.rotation.set(p.rx, p.ry, p.rz);
   if (f.legs) solveLegs(f, p);                 // after the root transform: world-locked feet need it
+  f.lastFeet = p._feet ?? null;                // the foot plan of this pose (rc / lc = planted): the audit reads it
   const v = (k) => p[k] ?? 0;
   f.torso.rotation.set(p.tx + p.weight * 0.05, p.ty, p.tz);
   if (f.upper) f.upper.rotation.set(v('cx'), v('cy'), v('cz'));
@@ -807,7 +808,9 @@ export function solveLegs(f, p) {
     }
     // roll the leg plane sideways so it contains the hip→foot line, then solve inside that plane
     const sx = fx - leg.side * 0.1, sy = fy - hipY;
-    const roll = Math.atan2(sx, -sy) + leg.side * 0.04;
+    // the leg plane contains the hip-foot line; the small splay (feet a little apart) is for a STANCE foot only: on a
+    // pinned foot it put every planted foot 3.3 cm off its plan (28 Nov), wherever the body turned
+    const roll = Math.atan2(sx, -sy) + (p._feet ? 0 : leg.side * 0.04);
     let dz = fz - hipZ, dy = -Math.hypot(sx, sy);
     let d = Math.hypot(dz, dy);
     // SOFT IK. The knee angle comes from acos(), whose slope runs to infinity as the leg
@@ -825,7 +828,7 @@ export function solveLegs(f, p) {
     // that back for more chatter.
     const trueD = d;                                  // where the foot was actually asked to be
     const maxD = (L1 + L2) * 0.999;
-    const SOFT = 0.94;                                // where the softening starts, as a share of reach
+    const SOFT = p._feet?.soft ?? 0.94;               // where the softening starts, as a share of reach (firmer walking)
     const ds = (L1 + L2) * SOFT;
     if (d > ds) {
       const room = maxD - ds;
@@ -848,6 +851,7 @@ export function solveLegs(f, p) {
     // whole limb; at most about 1.5% on this figure, which is invisible and keeps the foot honest.
     const stretch = trueD > 1e-6 && d > 1e-6 ? trueD / d : 1;
     leg.thigh.scale.setScalar(stretch);
-    leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0));   // flat on the ground (+ ankle)
+    // flat on the ground (+ ankle), minus the walking roll from engine/footlock.js (+ toe up: heel strike / toe-off)
+    leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0)) - (p._feet ? ((front ? p._feet.pr : p._feet.pl) ?? 0) : 0);
   }
 }

@@ -38,7 +38,7 @@ for (const [id, c] of Object.entries(film.cast)) {
   if (!perf?.keys) continue;
   const fig = makeFigure({});
   let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
-  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet);
+  if (film.motion?.lockFeet) motion = lockFeet(motion, DUR, film.motion.lockFeet, perf.gait);
   const v = new THREE.Vector3();
   const foot = (p, side) => { applyPose(fig, p); fig.root.updateMatrixWorld(true);
     return fig.legs[side].foot.getWorldPosition(v).clone(); };
@@ -66,7 +66,8 @@ for (const [id, c] of Object.entries(film.cast)) {
     let prev = null, total = 0, peak = 0, run = 0, worstRun = 0, worstAt = 0, planted = 0;
     for (let i = 0; i <= Math.round(DUR * FPS); i++) {
       const t = i * DT, p = motion(t), f = foot(p, side);
-      const on = p.y <= 0.03 && f.y <= 0.12;
+      // planted: the foot plan says so when there is one (a walking swing passes lower than 12 cm), else a low foot
+      const on = p.y <= 0.03 && (p._feet ? !!p._feet[side === 'r' ? 'rc' : 'lc'] : f.y <= 0.12);
       if (on) planted++;
       // a cut (a teleport between two key pieces, engine/figure.js) is not a slide: the feet jump with the body
       if ((motion.cuts || []).some(([, b]) => (i - 1) * DT < b - 1e-6 && t >= b - 1e-6)) { prev = on ? f : null; run = 0; continue; }

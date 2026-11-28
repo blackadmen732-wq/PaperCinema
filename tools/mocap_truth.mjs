@@ -36,7 +36,7 @@ Object.keys(film.cast).forEach((id, i) => {
   holdInHand(fig.rH, k.sword, -0.06);
   const perf = film.performances[id];
   let motion = makeMotion(resolveKeys(expandMoves(perf.keys, MOVES, CLIPS), POSES), film.motion ?? {});
-  if (film.motion?.lockFeet) motion = lockFeet(motion, film.duration, film.motion.lockFeet);   // keep in step with engine/motion.js
+  if (film.motion?.lockFeet) motion = lockFeet(motion, film.duration, film.motion.lockFeet, perf.gait);   // keep in step with engine/motion.js
   cast[id] = { id, fig, sword: k.sword, perf, phase: i * 1.7, motion };
 });
 const ids = Object.keys(cast);

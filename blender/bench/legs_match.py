@@ -16,7 +16,7 @@ import statistics
 import sys
 
 import bpy
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 for d in ('blender', 'blender/character'):
@@ -43,6 +43,7 @@ rig = MB.Rig(coll, 'LM')
 PAIRS = {'thigh.R': 'rthigh', 'shin.R': 'rshin', 'foot.R': 'rfoot', 'thigh.L': 'lthigh', 'shin.L': 'lshin',
          'foot.L': 'lfoot', 'hips': 'hips', 'root': 'root'}
 err = {k: [] for k in PAIRS}
+ang = {'foot.R': [], 'foot.L': []}             # the foot's pointing direction (the heel-toe roll), degrees
 feet_seen = 0
 for f in range(fr0, fr1 + 1):
     act = T['frames'][f]['actors'].get(WHO)
@@ -60,6 +61,12 @@ for f in range(fr0, fr1 + 1):
         want = Vector((x, -z, y))                           # three.js -> Blender
         got = rig.J[bn].matrix_world.translation
         err[jn].append((got - want).length)
+        if jn in ang:                                       # toe direction: figure.js local +z, Blender local -y
+            qx, qy, qz, qw = js[names.index(jn)][3:7]
+            e = Quaternion((qw, qx, qy, qz)) @ Vector((0.0, 0.0, 1.0))
+            e = Vector((e.x, -e.z, e.y))
+            b = (rig.J[bn].matrix_world.to_3x3() @ Vector((0.0, -1.0, 0.0))).normalized()
+            ang[jn].append(math.degrees(e.normalized().angle(b, 0.0)))
 bad = False
 print('[legs] %s %s frames %d-%d (%d with a foot plan): Blender joint vs engine joint, cm' % (FILM, WHO, fr0, fr1, feet_seen))
 for jn, e in err.items():
@@ -68,5 +75,11 @@ for jn, e in err.items():
     print('  %-8s median %6.2f  worst %6.2f' % (jn, statistics.median(e) * 100, max(e) * 100))
     if jn.startswith('foot') and max(e) > 0.01:
         bad = True
-print('[legs] %s' % ('FAIL: an ankle is more than 1 cm from the engine' if bad else 'PASS: every ankle within 1 cm'))
+for jn, e in ang.items():
+    if e:
+        print('  %-8s toe direction: median %.2f deg, worst %.2f deg' % (jn, statistics.median(e), max(e)))
+        if max(e) > 1.0:
+            bad = True
+print('[legs] %s' % ('FAIL: an ankle more than 1 cm or a foot more than 1 deg from the engine' if bad
+                     else 'PASS: every ankle within 1 cm, every foot within 1 deg'))
 sys.exit(1 if bad else 0)

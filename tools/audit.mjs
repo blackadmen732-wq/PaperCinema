@@ -215,7 +215,9 @@ for (const id of ids) {
   for (const foot of ['rFoot', 'lFoot']) {
     const sp = F.map((d, i) => {
       const f = d.fighters[id], p = F[i - 1]?.fighters[id];
-      if (!i || tele(i, id) || !f.visible || !p?.visible || f.root[1] > 0.03 || f.joints[foot][1] > 0.12) return 0;
+      if (!i || tele(i, id) || !f.visible || !p?.visible || f.root[1] > 0.03) return 0;
+      // planted: the foot plan says so when there is one (a low walking swing is no slide), else a low foot
+      if (f.planted && p.planted ? !(f.planted[foot] && p.planted[foot]) : f.joints[foot][1] > 0.12) return 0;
       const a = f.joints[foot], b = p.joints[foot];
       return Math.hypot(a[0] - b[0], a[2] - b[2]);
     });
