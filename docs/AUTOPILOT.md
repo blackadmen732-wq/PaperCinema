@@ -46,6 +46,15 @@ a full village... make it fight good, a system for groundbreaking sound and cool
 | 18 | **Mark's 4-view boards -> parts** (28 Nov: kasa, face, vest, layered sleeve; dark sleeve, bracer, claw gauntlet; horned kabuto, menpo, cuirass, sode; red obi, layered skirt, wrapped leg, sandal; armour skirt, shin guard, boot): Tripo multiview -> prepared parts, recolourable by paper sheet | each part prepared, on a recipe, validator passing; one test first to measure the multiview price | blocked: the boards came as chat pictures, need the files (upload or Supabase) |
 | 19 | **Supabase asset vault** (Mark, 28 Nov): the paid originals (399 MB) + parts catalogue table | `tools/asset_vault.py upload` done, catalogue filled | blocked on Mark: a project for PaperCinema + its storage key (secure form), or the connector in a new session |
 
+## Waiting for Mark
+- **A rented GPU for the 1080x1920 final** (a new paid service): RunPod RTX 4090, Community Cloud ~$0.34/h, billed by the
+  second (runpod.io/gpu-models/rtx-4090, 28 Nov). Here the CPU renders the 360x640 preview at ~293 frames/h; the final
+  is 9x the pixels at 2-3x the samples (~200 h on this CPU, so not possible here). ESTIMATE, not measured: ~3 s a frame
+  on the 4090 -> 1800 frames in ~1.5 h, about $1-3 with setup; a 30-frame test first would measure it. Also: the GPU
+  keeps rendering while this session sleeps.
+- **Supabase**: a PaperCinema project + its storage key (secure form), or the connector in a new session (item 19).
+- **Mark's boards as files** (item 18).
+
 ## Log
 - 27 Nov 23:10 UTC: Mark: "stop the render, fix the motion and turn on the paper upgrade". Render stopped at frame 174.
   New `tools/motion_check.py` (statues, frozen actors, one-at-a-time, hard starts/stops on the exported timeline).
