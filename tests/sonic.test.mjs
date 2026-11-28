@@ -121,13 +121,22 @@ test('final mix: with Sonic on, every isolated sound lands within 25 ms of its e
   assert.ok(r.sonic.meanMs < r.off.meanMs, 'Sonic is not closer than the engine sounds');
 });
 
-test('Sonic off: engine/sound.mjs output is bit-identical to the version before Sonic', (t) => {
+test('Sonic off: engine/sound.mjs output is the pre-Sonic mix plus only the approved hit-cue de-click', (t) => {
+  // The Sonic extraction must not change the mix. One approved change is layered on top of the pre-Sonic
+  // engine since then: the hit-cue de-click (hits fade in over ~1 ms instead of 10 ms; engine/sound.mjs
+  // HIT). So we render the pre-Sonic engine WITH that same de-click applied and require byte-identical
+  // output — isolating "did anything OTHER than the approved de-click change?". Any other drift still fails.
   const added = execFileSync('git', ['log', '--diff-filter=A', '--format=%H', '--', 'engine/sonic.mjs'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).pop();
   const base = added ? `${added}~1` : null;
   const old = base && spawnSync('git', ['show', `${base}:engine/sound.mjs`]);
   if (!old || old.status !== 0) return t.skip('the commit before Sonic is not in this clone (shallow?)');
+  const PRE = 'cue.bed ? 1.5 : 0.01';                       // the pre-Sonic fade-in; de-click replaced it
+  const DECLICK = 'cue.bed ? 1.5 : /clash|impact|contact|hit|auto-step|thud|fall|clap|bell|drum/i.test(cue.id) ? 0.001 : 0.01';
+  let src = old.stdout.toString();
+  if (!src.includes(PRE)) return t.skip('pre-Sonic fade-in shape not found; cannot isolate the de-click');
+  src = src.replace(PRE, DECLICK);                          // apply ONLY the approved de-click to the baseline
   const d = path.join(tmp, 'ident'), p = makeProbe(d), head = path.join(d, 'sound-before.mjs');
-  fs.writeFileSync(head, old.stdout);
+  fs.writeFileSync(head, src);
   const CR = 'assets/sfx/credits.json', credits = fs.readFileSync(CR);
   const md5 = (f) => crypto.createHash('md5').update(spawnSync('ffmpeg', ['-v', 'error', '-i', f, '-map', '0:a', '-f', 's16le', '-'], { maxBuffer: 1 << 28 }).stdout).digest('hex');
   try {
