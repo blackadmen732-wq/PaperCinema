@@ -145,8 +145,12 @@ class EventsTest(Base):
         b = self.write('b.jsonl', [{'id': 'blade-contact.01', 'type': 'blade-contact', 't': 1.02, 'source': 'vyrn.video', 'conf': 0.8, 'data': {}},
                                    {'id': 'sonic.pick.01', 'type': 'sonic.pick', 't': 1.0, 't1': 1.4, 'source': 'sonic', 'entities': ['x'], 'data': {}}])
         self.assertEqual(events.check([a, b]), {})
-        m = events.merge([a, b])
+        with self.assertRaises(events.Malformed):                                            # two v1 files, no media id
+            events.merge([a, b])
+        m = events.merge([a, b], media='film:duel')
         self.assertEqual([e['id'] for e in m], ['footstep.01', 'blade-contact.01', 'sonic.pick.01'])
+        self.assertEqual({e['media'] for e in m}, {'film:duel'})
+        self.assertEqual(events.merge([a])[0]['media'], 'file:a')                            # one file: named after it
         bc = m[1]
         self.assertEqual((bc['v'], bc['source'], bc['t']), (2, 'engine', 1.0))
         self.assertEqual([o['source'] for o in bc['evidence']], ['engine', 'vyrn.video'])   # both observations kept
@@ -196,6 +200,14 @@ class EventsTest(Base):
         again = events.merge([self.write('m.jsonl', m)])
         self.assertTrue(again[0]['conflict'])
         self.assertEqual(len(again[0]['evidence']), 2)
+
+    def test_evidence_needs_a_time(self):
+        p = self.write('ev.jsonl', [{'v': 2, 'project': 'p', 'media': 'm', 'id': 'x.01', 'type': 'x', 't': 1, 'source': 's',
+                                     'evidence': [{'source': 'a', 't': 1}, {'source': 'b'}]}])
+        self.assertTrue(any('evidence[1].t is required' in e for e in events.check([p])[p]))
+        with self.assertRaises(events.Malformed):
+            events.merge([p])
+        self.assertIsNone(events._disagree({'type': 'x'}, {'type': 'x', 't': 2}, 0.05))   # never a KeyError
 
     def test_project_id(self):
         self.assertEqual(events.project_id({'name': 'Paper Cinema'}), 'paper-cinema')

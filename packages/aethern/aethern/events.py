@@ -74,8 +74,10 @@ def problems(ev):
                         p.append(f'evidence[{i}]: unknown field(s) {sorted(set(o) - OBS)}')
                     if o.get('conf') is not None and (not _num(o['conf']) or not 0 <= o['conf'] <= 1):
                         p.append(f'evidence[{i}].conf must be 0..1')
-                    if 't' in o and not _num(o['t']):
-                        p.append(f'evidence[{i}].t must be a finite number')
+                    if not _num(o.get('t')):
+                        p.append(f'evidence[{i}].t is required: a finite number (when that observation saw it)')
+                    if o.get('t1') is not None and not _num(o['t1']):
+                        p.append(f'evidence[{i}].t1 must be a finite number')
                     if 'data' in o and not isinstance(o['data'], dict):
                         p.append(f'evidence[{i}].data must be an object')
     extra = set(ev) - (V2 if v == 2 else V1)
@@ -141,9 +143,9 @@ def _observation(ev, file):
 def _disagree(a, b, tol):
     if a.get('type') != b.get('type'):
         return 'type'
-    if abs(a['t'] - b['t']) > tol:
+    if _num(a.get('t')) and _num(b.get('t')) and abs(a['t'] - b['t']) > tol:
         return 't'
-    if a.get('t1') is not None and b.get('t1') is not None and abs(a['t1'] - b['t1']) > tol:
+    if _num(a.get('t1')) and _num(b.get('t1')) and abs(a['t1'] - b['t1']) > tol:
         return 't1'
     ea, eb = set(a.get('entities') or []), set(b.get('entities') or [])
     if ea and eb and not ea & eb:
@@ -151,17 +153,27 @@ def _disagree(a, b, tol):
     return None
 
 
+def _stem(p):
+    s = re.sub(r'[^A-Za-z0-9._/-]+', '-', os.path.basename(p).split('.')[0]).strip('-')
+    return s or 'unnamed'
+
+
 def merge(paths, project=None, media=None, tol=TOL):
     """one aethern-event/2 list from several files. Raises Malformed (naming the bad lines) instead of guessing.
-    Version-1 lines get project/media from the arguments, else 'unknown' (so, as in version 1, the same id in two
-    files is one event)."""
+    Version-1 lines have no media id, so they get `media` from the caller. Without one, a single file's lines get
+    file:<its name>; version-1 lines from several files are refused, because nothing says whether they are the same
+    film (the same id in two films would otherwise merge into one event)."""
     bad = check(paths)
     if bad:
         raise Malformed('; '.join(f'{os.path.basename(p)} {e}' for p, errs in bad.items() for e in errs[:5]))
+    v1 = [p for p in paths if any(ev.get('v', 1) == 1 for _, ev, _ in read(p))]
+    if v1 and not media and len(paths) > 1:
+        raise Malformed('version-1 lines (no media id) in ' + ', '.join(os.path.basename(p) for p in v1)
+                        + ': say which media they belong to with --media, or merge them one file at a time')
     groups, order = {}, []
     for p in paths:
         for _, ev, _ in read(p):
-            ev = upgrade(ev, project or 'unknown', media or 'unknown')
+            ev = upgrade(ev, project or 'unknown', media or f'file:{_stem(p)}')
             k = (ev['project'], ev['media'], ev['id'])
             obs = ev.get('evidence') or [_observation(ev, p)]
             if k not in groups:
@@ -204,7 +216,7 @@ def main(argv, cfg):
     ap.add_argument('--tol', type=float, default=TOL, help='seconds two observations may differ and still agree')
     ap.add_argument('--type')
     ap.add_argument('--project', help='project id for version-1 lines (default: aethern.json id or name)')
-    ap.add_argument('--media', help='media id for version-1 lines (default: unknown)')
+    ap.add_argument('--media', help='media id for version-1 lines (needed when version-1 lines come from more than one file)')
     a = ap.parse_args(argv)
     rel = lambda p: p if os.path.isabs(p) else cfg.path(p)
     if a.cmd == 'check':
