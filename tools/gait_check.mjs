@@ -28,7 +28,7 @@ const ctx = new Proxy({}, { get: (_, k) => (k === 'getImageData' ? (x, y, w, h) 
 globalThis.document = { createElement: () => ({ width: 1, height: 1, getContext: () => ctx, style: {} }) };
 
 const THREE = await import('three');
-const { makeFigure, applyPose, makeMotion, resolveKeys } = await import('../engine/figure.js');
+const { makeFigure, applyPose, makeMotion, resolveKeys, LEG } = await import('../engine/figure.js');
 const { lockFeet } = await import('../engine/footlock.js');
 const { expandMoves, loadClipsSync } = await import('../engine/moves.js');
 
@@ -59,7 +59,11 @@ const who = opt('who', null);
 
 // sandal points in the foot's own frame (engine/figure.js: the zori box is 0.25 long from z -0.065 to 0.185, its
 // underside 0.051 below the ankle)
-const HEEL = new THREE.Vector3(0, -0.051, -0.065), TOE = new THREE.Vector3(0, -0.051, 0.185);
+// the sandal's sole sits 0.051 m under an ankle 0.04 m up; the ankle is now LEG.footY up (engine/figure.js), the sole
+// stays where it was. The toe point rides the TOE joint when the figure has one (28 Nov), so a raised heel keeps it down.
+const SOLE = -0.051 + (0.04 - LEG.footY);
+const HEEL = new THREE.Vector3(0, SOLE, -0.065), TOE = new THREE.Vector3(0, SOLE, 0.185);
+const TOE_T = new THREE.Vector3(0, SOLE - LEG.toeY, 0.185 - LEG.toeZ);
 const v3 = () => new THREE.Vector3();
 const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : NaN);
 const r2 = (x, k = 3) => (Number.isFinite(x) ? +x.toFixed(k) : null);
@@ -73,7 +77,7 @@ function sample(fig, motion) {
     const leg = (s) => {
       const L = fig.legs[s];
       return { hip: L.thigh.getWorldPosition(v3()), knee: L.shin.getWorldPosition(v3()), ankle: L.foot.getWorldPosition(v3()),
-        heel: L.foot.localToWorld(HEEL.clone()), toe: L.foot.localToWorld(TOE.clone()) };
+        heel: L.foot.localToWorld(HEEL.clone()), toe: L.toe ? L.toe.localToWorld(TOE_T.clone()) : L.foot.localToWorld(TOE.clone()) };
     };
     S.push({ t, root: [p.x, p.y, p.z], hips: fig.hips.getWorldPosition(v3()), head: fig.head.getWorldPosition(v3()),
       sR: fig.rS.getWorldPosition(v3()), sL: fig.lS.getWorldPosition(v3()), hR: fig.rH.getWorldPosition(v3()),

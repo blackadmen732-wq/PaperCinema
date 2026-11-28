@@ -14,7 +14,8 @@ export const LIMITS = {
   cx: [-0.35, 0.5], cy: [-0.6, 0.6], cz: [-0.35, 0.35], nx: [-0.5, 0.5], ny: [-0.7, 0.7],
   hx: [-0.6, 0.6], hy: [-0.9, 0.9], hz: [-0.4, 0.4],
   rcy: [-0.35, 0.35], rcz: [-0.35, 0.35], lcy: [-0.35, 0.35], lcz: [-0.35, 0.35],
-  rax: [-0.6, 0.7], lax: [-0.6, 0.7], stance: [0, 1.3], crouch: [-0.05, 0.6], weight: [-1, 1],
+  rax: [-0.6, 0.7], lax: [-0.6, 0.7], rtx: [-0.3, 0.9], ltx: [-0.3, 0.9],
+  px: [-0.35, 0.5], py: [-0.6, 0.6], pz: [-0.3, 0.3], stance: [0, 1.3], crouch: [-0.05, 0.6], weight: [-1, 1],
 };
 
 /** Hold a channel inside its limit. Unknown channels pass through untouched. */

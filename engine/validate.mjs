@@ -20,7 +20,7 @@ const poses = JSON.parse(fs.readFileSync('library/poses.json', 'utf8'));
 const moves = JSON.parse(fs.readFileSync('library/moves.json', 'utf8'));
 const CLIPS = loadClipsSync(moves, (n) => JSON.parse(fs.readFileSync(`library/mocap/${n}.json`, 'utf8')));
 const JOINTS = ['x', 'y', 'z', 'ry', 'rx', 'rz', 'tx', 'ty', 'tz', 'hx', 'hy', 'rsx', 'rsz', 'rex', 'lsx', 'lsz', 'lex', 'rwx', 'lwx', 'sway', 'swayx', 'stance', 'crouch', 'weight',
-  'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid',
+  'cx', 'cy', 'cz', 'nx', 'ny', 'hz', 'rcy', 'rcz', 'lcy', 'lcz', 'rsy', 'lsy', 'rfy', 'lfy', 'rwz', 'lwz', 'rax', 'lax', 'lid', 'px', 'py', 'pz', 'rtx', 'ltx',
   'stride', 'phase'];   // stride/phase: walking feet; motion capture keys a left-foot-forward stance with them (docs/MOCAP.md)
 const MOTION_FIELDS = ['ease', 'drag', 'settle', 'arc', 'arcTo', 'hang', 'cut'];   // anime motion layer (docs/ANIMATION.md §10); cut: true = a new piece of continuity starts at this key (engine/figure.js makeMotion)
 const D = film.duration;

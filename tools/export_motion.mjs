@@ -55,6 +55,7 @@ const data = await page.evaluate(({ SUB }) => {
     'clavicle.L': (f) => f.lC, 'shoulder.L': (f) => f.lS, 'elbow.L': (f) => f.lE, 'twist.L': (f) => f.lT, 'hand.L': (f) => f.lH,
     'thigh.R': (f) => f.legs.r.thigh, 'shin.R': (f) => f.legs.r.shin, 'foot.R': (f) => f.legs.r.foot,
     'thigh.L': (f) => f.legs.l.thigh, 'shin.L': (f) => f.legs.l.shin, 'foot.L': (f) => f.legs.l.foot,
+    'toe.R': (f) => f.legs.r.toe, 'toe.L': (f) => f.legs.l.toe,
     hakama: (f) => f.hakama,
   };
   const names = Object.keys(JOINTS);

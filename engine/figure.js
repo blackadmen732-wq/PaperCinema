@@ -16,8 +16,16 @@ function m(geo, mat) {
   return x;
 }
 
-// Leg proportions (metres). Hip joints sit ~0.90 m high, so a standing leg is slightly bent.
-export const LEG = { thigh: 0.46, shin: 0.44, hipY: 0.92, footY: 0.04 };
+// Leg proportions (metres). The hip joints sit at hipY, the ankle at footY over the sole, so a standing leg is
+// (thigh + shin) / (hipY - hipDrop - footY) = 0.90 / 0.90 of its reach: straight but for the soft IK (knee ~9 deg).
+// Until 28 Nov the hips stood 2 cm lower (hipDrop 0.02) and the ankle 2 cm higher (footY 0.04) than the rest skeleton
+// the paper parts are built on (blender/character/part_registry.REST: ankle 0.02, sole on the ground), so every
+// standing knee bent 34 deg and every Blender sole floated 2-3 cm (measured: blender/bench/body_sweep.py).
+// TOE: the foot has a toe joint at the ball, `toeZ` ahead of the ankle and `toeY` under it (on the sole), so a heel
+// can rise while the toes stay flat (a planted back foot in a lunge, a walking toe-off).
+// soft: where the stance legs' soft IK starts, as a share of the reach (see solveLegs).
+export const LEG = { thigh: 0.46, shin: 0.44, hipY: 0.92, hipDrop: 0, footY: 0.02, soft: 0.99,
+  toeZ: 0.10, toeY: -0.02, heelMax: 0.6, kneeMax: 2.7, hipW: 0.1 };
 
 export function makeFigure(c) {
   // detail (default on; { detail: false } = the old simple body): hanging kimono sleeves, trouser pleats,
@@ -32,7 +40,8 @@ export function makeFigure(c) {
   const root = new THREE.Group();
   root.rotation.order = 'YXZ';
   const hips = new THREE.Group();
-  hips.position.y = 0.92;
+  hips.position.y = LEG.hipY;
+  hips.rotation.order = 'YXZ';                // the PELVIS: turn (py) first, then tilt (px) and side tilt (pz)
   root.add(hips);
 
   // hakama upper part: short pleated skirt over the hips (swings with sway / swayx)
@@ -66,18 +75,30 @@ export function makeFigure(c) {
     const foot = new THREE.Group();
     foot.position.y = -LEG.shin;
     shin.add(foot);
-    const sole = m(new THREE.BoxGeometry(0.085, 0.05, 0.22), P(c.foot ?? '#e8e1d2'));
-    sole.position.set(0, -0.015, 0.06);
+    // the toe joint at the ball of the foot, on the sole: the heel half rides the foot, the toe half the toe
+    const toe = new THREE.Group();
+    toe.position.set(0, LEG.toeY, LEG.toeZ);
+    foot.add(toe);
+    const fy = 0.04 - LEG.footY;                     // the foot pieces were made for an ankle 4 cm up: same sole height
+    const heelL = LEG.toeZ + 0.05, toeL = 0.17 - LEG.toeZ;
+    const sole = m(new THREE.BoxGeometry(0.085, 0.05, heelL), P(c.foot ?? '#e8e1d2'));
+    sole.position.set(0, -0.015 + fy, LEG.toeZ - heelL / 2);
     foot.add(sole);
+    const soleT = m(new THREE.BoxGeometry(0.085, 0.04, toeL), P(c.foot ?? '#e8e1d2'));
+    soleT.position.set(0, -0.02 + fy - LEG.toeY, toeL / 2);
+    toe.add(soleT);
     if (detail) {
-      // zori: a dark sole under the tabi, and a red thong strap
-      const zori = m(new THREE.BoxGeometry(0.1, 0.022, 0.25), P(c.sandal ?? '#2a2320'));
-      zori.position.set(0, -0.04, 0.06);
+      // zori: a dark sole under the tabi (split at the toe joint), and a red thong strap between the toes
+      const zori = m(new THREE.BoxGeometry(0.1, 0.022, heelL + 0.015), P(c.sandal ?? '#2a2320'));
+      zori.position.set(0, -0.04 + fy, LEG.toeZ - (heelL + 0.015) / 2);
       foot.add(zori);
+      const zoriT = m(new THREE.BoxGeometry(0.1, 0.022, toeL + 0.03), P(c.sandal ?? '#2a2320'));
+      zoriT.position.set(0, -0.04 + fy - LEG.toeY, (toeL + 0.03) / 2);
+      toe.add(zoriT);
       const strap = m(new THREE.BoxGeometry(0.09, 0.012, 0.016), P(c.strap ?? '#8e2420'));
-      strap.position.set(0, 0.012, 0.11);
+      strap.position.set(0, 0.012 + fy - LEG.toeY, 0.11 - LEG.toeZ);
       strap.rotation.x = 0.5;
-      foot.add(strap);
+      toe.add(strap);
       // three folded pleats down the front of each trouser leg
       for (const k of [-1, 0, 1]) {
         const pl = m(new THREE.BoxGeometry(0.012, LEG.shin * 0.95, 0.02), P(c.hakamaFold ?? c.hakama));
@@ -86,7 +107,7 @@ export function makeFigure(c) {
         shin.add(pl);
       }
     }
-    return { thigh, shin, foot, side: sgn };
+    return { thigh, shin, foot, toe, side: sgn };
   };
   const legs = { r: leg(-1), l: leg(1) };
 
@@ -353,6 +374,9 @@ export const BASE_POSE = {
   cx: 0, cy: 0, cz: 0, nx: 0, ny: 0, hz: 0,
   rcy: 0, rcz: 0, lcy: 0, lcz: 0, rsy: 0, lsy: 0, rfy: 0, lfy: 0, rwz: 0, lwz: 0,
   rax: 0, lax: 0, lid: 0,
+  // pelvis px (tilt forward) / py (turn) / pz (side tilt): the hips group turns the waist AND carries the hip joints
+  // (the legs are solved from where the pelvis puts them); toes rtx/ltx (+ = toes bent up) on top of the automatic toe
+  px: 0, py: 0, pz: 0, rtx: 0, ltx: 0,
   // lower body: stance = distance between feet front-to-back (right foot forward, kenjutsu style),
   // crouch = how far the hips drop (knees bend), weight = -1 back foot … +1 front foot,
   // stride/phase = walking step size and cycle phase (set by the engine while walking)
@@ -363,6 +387,7 @@ export function applyPose(f, p, prev = null, dt = 0) {
   f.root.position.set(p.x, p.y, p.z);
   // balance: hips drop with crouch and shift over the loaded foot
   f.hips.position.set(0, LEG.hipY - p.crouch, p.weight * p.stance * 0.35);
+  f.hips.rotation.set(p.px ?? 0, p.py ?? 0, p.pz ?? 0);
   f.root.rotation.set(p.rx, p.ry, p.rz);
   if (f.legs) solveLegs(f, p);                 // after the root transform: world-locked feet need it
   f.lastFeet = p._feet ?? null;                // the foot plan of this pose (rc / lc = planted): the audit reads it
@@ -506,7 +531,8 @@ function monotoneTangents(ts, vs) {
 // ---------------------------------------------------------------------------
 const FPS_LAG = 24;
 const LAG_GROUPS = [
-  [-2, ['hx', 'hy', 'hz', 'nx', 'ny', 'stance', 'crouch', 'weight', 'rax', 'lax']],
+  [-2, ['hx', 'hy', 'hz', 'nx', 'ny', 'stance', 'crouch', 'weight', 'rax', 'lax', 'rtx', 'ltx']],
+  [-1, ['px', 'py', 'pz']],
   [-1, ['x', 'z', 'ry']],
   [1, ['cx', 'cy', 'cz', 'rcy', 'rcz', 'lcy', 'lcz']],
   [1.5, ['rsx', 'rsy', 'rsz', 'lsx', 'lsy', 'lsz']],
@@ -789,14 +815,42 @@ export function solveArm(f, side, target, pole, weight = 1) {
 // thigh takes a z-roll (hip abduction, Euler order ZXY) and bends in the rolled plane.
 // Knees always bend forward.
 // ---------------------------------------------------------------------------
-const _legM = new THREE.Matrix4(), _legV = new THREE.Vector3();
+const _legM = new THREE.Matrix4(), _legV = new THREE.Vector3(), _legE = new THREE.Euler(0, 0, 0, 'YXZ');
+/** The heel-up angle (rad, about the toe joint on the ground) that brings a stance ankle within `reach` of the hip,
+ *  and that ankle. A planted foot that cannot be reached flat (the back foot of a lunge or a thrust) rises onto its
+ *  toes instead of stretching the leg (until 28 Nov it stretched up to 9%: tsuki-thrust's back leg) or dragging the
+ *  hips down. Past LEG.heelMax the foot slides in toward the body. Figure-frame metres, foot pointing +z. */
+export function heelRaise(hx, hy, hz, fx, fy, fz, reach) {
+  const at = (q) => [fy + LEG.toeY + (-LEG.toeY) * Math.cos(q) + LEG.toeZ * Math.sin(q),
+    fz + LEG.toeZ + (-LEG.toeY) * Math.sin(q) - LEG.toeZ * Math.cos(q)];
+  const dist = (q) => { const [y, z] = at(q); return Math.hypot(fx - hx, y - hy, z - hz); };
+  if (dist(0) <= reach) return { q: 0, fy, fz, fx };
+  let lo = 0, hi = LEG.heelMax;
+  if (dist(hi) >= dist(0)) {                           // a foot ahead of the hip gains nothing on its toes: slide it in
+    const h = Math.max(0, reach * reach - (fx - hx) ** 2 - (fy - hy) ** 2);
+    return { q: 0, fx, fy, fz: hz + Math.sign(fz - hz) * Math.sqrt(h) };
+  }
+  if (dist(hi) > reach) {                              // on the toes and still too far: slide the foot in along the ground
+    const [y, z] = at(hi), h = Math.max(0, reach * reach - (fx - hx) ** 2 - (y - hy) ** 2);
+    return { q: hi, fx, fy: y, fz: hz + Math.sign(z - hz) * Math.sqrt(h) };
+  }
+  for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (dist(mid) > reach) lo = mid; else hi = mid; }
+  const [y, z] = at(hi);
+  return { q: hi, fx, fy: y, fz: z };
+}
 export function solveLegs(f, p) {
   const L1 = LEG.thigh, L2 = LEG.shin;
-  const hipY = LEG.hipY - p.crouch - 0.02, hipZ = p.weight * p.stance * 0.35;
+  const hipY = LEG.hipY - p.crouch - LEG.hipDrop, hipZ = p.weight * p.stance * 0.35;
+  // the PELVIS (px tilt, py turn, pz side tilt) carries the hip joints with it: the legs are solved from where it puts them
+  const pel = (p.px ?? 0) !== 0 || (p.py ?? 0) !== 0 || (p.pz ?? 0) !== 0;
+  if (pel) _legE.set(p.px ?? 0, p.py ?? 0, p.pz ?? 0, 'YXZ');
   if (p._feet) { f.root.updateMatrix(); _legM.copy(f.root.matrix).invert(); }   // root hangs off the scene
   for (const leg of [f.legs.r, f.legs.l]) {
     const front = leg.side < 0;                       // right foot leads
+    let hx = leg.side * LEG.hipW, hy = hipY, hz = hipZ;
+    if (pel) { _legV.set(leg.side * LEG.hipW, 0, 0).applyEuler(_legE); hx = _legV.x; hy += _legV.y; hz += _legV.z; }
     let fx = leg.side * 0.1, fz = (front ? 1 : -1) * p.stance / 2, fy = LEG.footY;
+    let heel = 0;                                     // heel-up angle about the toe joint (stance feet: the reach rule)
     if (p._feet) {
       const w = front ? p._feet.r : p._feet.l;
       _legV.set(w[0], w[1], w[2]).applyMatrix4(_legM);
@@ -806,12 +860,16 @@ export function solveLegs(f, p) {
       fz += Math.sin(ph) * p.stride / 2;
       fy += Math.max(0, Math.cos(ph)) * 0.07;
     }
+    if (!p._feet && fy <= LEG.footY + 1e-6) {        // a foot on the ground: past the reach it rises onto its toes
+      const r = heelRaise(hx, hy, hz, fx, fy, fz, (L1 + L2) * 1.012);
+      heel = r.q; fx = r.fx; fy = r.fy; fz = r.fz;
+    }
     // roll the leg plane sideways so it contains the hip→foot line, then solve inside that plane
-    const sx = fx - leg.side * 0.1, sy = fy - hipY;
+    const sx = fx - hx, sy = fy - hy;
     // the leg plane contains the hip-foot line; the small splay (feet a little apart) is for a STANCE foot only: on a
     // pinned foot it put every planted foot 3.3 cm off its plan (28 Nov), wherever the body turned
     const roll = Math.atan2(sx, -sy) + (p._feet ? 0 : leg.side * 0.04);
-    let dz = fz - hipZ, dy = -Math.hypot(sx, sy);
+    let dz = fz - hz, dy = -Math.hypot(sx, sy);
     let d = Math.hypot(dz, dy);
     // SOFT IK. The knee angle comes from acos(), whose slope runs to infinity as the leg
     // straightens, so near full extension a millimetre at the foot becomes degrees at the knee and
@@ -826,9 +884,11 @@ export function solveLegs(f, p) {
     // The cost is honest and small: with a leg near full stretch the foot falls short by at most
     // (maxD - ds)/e, about 1.5 cm on this figure. Foot lock absorbs it; a straighter `SOFT` trades
     // that back for more chatter.
+    // 28 Nov: a stance leg softens from LEG.soft (0.99) of its reach, not 0.94: from 0.94 the knee could never be
+    // straighter than ~24 deg (a standing figure stood with bent knees); 0.99 leaves a standing knee near 9 deg.
     const trueD = d;                                  // where the foot was actually asked to be
     const maxD = (L1 + L2) * 0.999;
-    const SOFT = p._feet?.soft ?? 0.94;               // where the softening starts, as a share of reach (firmer walking)
+    const SOFT = p._feet?.soft ?? LEG.soft;           // where the softening starts, as a share of reach (firmer walking)
     const ds = (L1 + L2) * SOFT;
     if (d > ds) {
       const room = maxD - ds;
@@ -836,12 +896,15 @@ export function solveLegs(f, p) {
       if (d > 1e-6) { dz *= soft / d; dy *= soft / d; }
       d = soft;
     }
+    // KNEE LIMIT: a knee folds at most LEG.kneeMax (155 deg); a foot asked closer to its hip stays at that fold
+    const dMin = Math.sqrt(L1 * L1 + L2 * L2 + 2 * L1 * L2 * Math.cos(LEG.kneeMax));
+    if (d < dMin && d > 1e-6) { dz *= dMin / d; dy *= dMin / d; d = dMin; }
     const phi = Math.atan2(dz, -dy);                  // hip→foot angle from straight down (toward +z)
     const a = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + d * d - L2 * L2) / (2 * L1 * d))));
     const thighAng = phi + a;                         // knee goes forward
-    const kz = hipZ + L1 * Math.sin(thighAng), ky = hipY - L1 * Math.cos(thighAng);
-    const shinAng = Math.atan2(hipZ + dz - kz, -(hipY + dy - ky));
-    leg.thigh.position.set(leg.side * 0.1, hipY, hipZ);
+    const kz = hz + L1 * Math.sin(thighAng), ky = hy - L1 * Math.cos(thighAng);
+    const shinAng = Math.atan2(hz + dz - kz, -(hy + dy - ky));
+    leg.thigh.position.set(hx, hy, hz);
     leg.thigh.rotation.set(-thighAng, 0, roll);
     leg.shin.rotation.x = -(shinAng - thighAng);
     // Stretch the limb by exactly the shortfall the softening introduced, so the knee gets the
@@ -849,10 +912,16 @@ export function solveLegs(f, p) {
     // short by up to 1.5 cm near full stretch and starts wandering, which measured WORSE than the
     // chatter it was meant to cure. Shin is a child of thigh, so scaling the thigh scales the
     // whole limb; at most about 1.5% on this figure, which is invisible and keeps the foot honest.
-    const stretch = trueD > 1e-6 && d > 1e-6 ? trueD / d : 1;
+    const stretch = trueD > 1e-6 && d > 1e-6 ? Math.max(1, trueD / d) : 1;
     leg.thigh.scale.setScalar(stretch);
-    // flat on the ground (+ ankle), minus the walking roll from engine/footlock.js (+ toe up: heel strike / toe-off)
-    leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0)) - (p._feet ? ((front ? p._feet.pr : p._feet.pl) ?? 0) : 0);
+    // flat on the ground (+ ankle), minus the walking roll from engine/footlock.js (+ toe up: heel strike / toe-off),
+    // plus the heel the reach rule raised (the foot turns toe-down about its toe joint)
+    const pitch = p._feet ? ((front ? p._feet.pr : p._feet.pl) ?? 0) : 0;
+    leg.foot.rotation.x = shinAng + (front ? (p.rax ?? 0) : (p.lax ?? 0)) - pitch + heel;
+    // THE TOE stays flat on the ground while the heel is up: the reach rule's heel, or a foot plan that turns the heel
+    // about the ball (`_feet.ball`; a plan that pivots on the toe TIP keeps the sandal rigid, as before), + rtx / ltx
+    const ballUp = p._feet?.ball ? Math.max(0, -pitch) : 0;
+    if (leg.toe) leg.toe.rotation.x = -(heel + ballUp) - (front ? (p.rtx ?? 0) : (p.ltx ?? 0));
     // a planted foot keeps its own direction on the ground (engine/footlock.js `yr`/`yl`): the body twists over it, at
     // most `twist` either way (the foot's y turn comes after the levelling x turn: about the vertical)
     const fyaw = p._feet ? (front ? p._feet.yr : p._feet.yl) : undefined;
