@@ -59,7 +59,7 @@ def crease_lines(nu, nv, columns=(), rows=()):
 
 class PaperCloth:
     def __init__(self, X0, tris, pins=(), creases=(), stretch=1.0, bend=0.6, crease_bend=0.02, drag=1.2,
-                 thickness=0.012, density=0.25, iterations=10, substeps=6, plastic=0.0):
+                 thickness=0.012, density=0.25, iterations=10, substeps=6, plastic=0.0, tethers=True, solver='gs'):
         """density: kg per square metre of the panel (washi ~0.05, a heavy folded paper costume ~0.2-0.4: light enough
         for the wind to lift it, heavy enough not to flutter like tissue). Each point carries a third of the mass of
         every triangle it belongs to."""
@@ -102,8 +102,76 @@ class PaperCloth:
         self.B = np.array([Bi, Bj], int).T if Bi else np.zeros((0, 2), int)
         self.B_rest = np.linalg.norm(self.X[self.B[:, 1]] - self.X[self.B[:, 0]], axis=1) if len(Bi) else np.zeros(0)
         self.B_k = np.array(Bk, float)
+        # LONG-RANGE ATTACHMENTS (Kim, Chentanez & Mueller 2012): every free point is tethered to every pin by its rest
+        # distance ALONG THE SHEET (shortest path over the rest edges). However fast the pins move, no point can get
+        # further from a pin than the paper between them allows. Without them, a sleeve on Kojiro's striking arm
+        # (~10 m/s at the elbow) stretched 31%; the edge constraints alone cannot pass a jerk that fast down the sheet.
+        self.T_i = self.T_j = np.zeros(0, int)
+        self.T_L = np.zeros(0)
+        if tethers and len(self.pins):
+            import heapq
+            adj = [[] for _ in range(n)]
+            for (i, j), L in zip(E, self.E_rest):
+                adj[i].append((j, L))
+                adj[j].append((i, L))
+            Ti, Tj, TL = [], [], []
+            for pin in self.pins:
+                dist = np.full(n, np.inf)
+                dist[pin] = 0.0
+                hq = [(0.0, int(pin))]
+                while hq:
+                    d0, u = heapq.heappop(hq)
+                    if d0 > dist[u]:
+                        continue
+                    for v_, L in adj[u]:
+                        if d0 + L < dist[v_]:
+                            dist[v_] = d0 + L
+                            heapq.heappush(hq, (d0 + L, v_))
+                for q in range(n):
+                    if self.w[q] > 0 and np.isfinite(dist[q]):
+                        Ti.append(q)
+                        Tj.append(int(pin))
+                        TL.append(dist[q])
+            self.T_i, self.T_j, self.T_L = np.array(Ti, int), np.array(Tj, int), np.array(TL)
+        # GAUSS-SEIDEL BY COLOUR: constraints split into groups in which no two share a point, solved group after group
+        # with full corrections (each group vectorised). The averaged Jacobi pass converges far slower: on Kojiro's
+        # strike (the arm stopping from 4 m/s in two frames) it left the sheet stretched 25% at 10 iterations x 6
+        # sub-steps (14% at 40 iterations); paper must not stretch.
+        self.solver = solver
+        self.E_groups = self._colour(self.E)
+        self.B_groups = self._colour(self.B) if len(self.B) else []
         self.frame = 0
         self.log = {'pushed': [], 'stretch': []}
+
+    @staticmethod
+    def _colour(pairs):
+        """Greedy edge colouring: lists of constraint indices, no two in a list sharing a point."""
+        groups, used = [], []
+        for c, (i, j) in enumerate(np.asarray(pairs, int)):
+            for g, pts in zip(groups, used):
+                if i not in pts and j not in pts:
+                    g.append(c)
+                    pts.update((int(i), int(j)))
+                    break
+            else:
+                groups.append([c])
+                used.append({int(i), int(j)})
+        return [np.array(g, int) for g in groups]
+
+    def _distance_gs(self, pairs, rest, k, groups):
+        for g in groups:
+            i, j = pairs[g, 0], pairs[g, 1]
+            d = self.X[j] - self.X[i]
+            L = np.linalg.norm(d, axis=1)
+            ws = self.w[i] + self.w[j]
+            ok = (L > 1e-9) & (ws > 0)
+            if not ok.any():
+                continue
+            i, j, d, L, ws = i[ok], j[ok], d[ok], L[ok], ws[ok]
+            s = (L - rest[g][ok]) / ws * k[g][ok]
+            corr = d / L[:, None] * s[:, None]
+            self.X[i] += corr * self.w[i][:, None]
+            self.X[j] -= corr * self.w[j][:, None]
 
     # ------------------------------------------------------------------ constraints (Jacobi, averaged, vectorised)
     def _distance(self, idx, rest, k, omega=1.0):
@@ -126,6 +194,30 @@ class PaperCloth:
         np.add.at(cnt, i, good.astype(float))
         np.add.at(cnt, j, good.astype(float))
         self.X += omega * dX / np.maximum(cnt, 1.0)[:, None]
+
+    def _tether(self):
+        """Pull every point back inside each of its tethers (only the free end moves; unilateral)."""
+        if not len(self.T_i):
+            return
+        d = self.X[self.T_i] - self.X[self.T_j]
+        L = np.linalg.norm(d, axis=1)
+        over = L > self.T_L
+        if not over.any():
+            return
+        # several tethers can pull one point: apply the tightest (the largest overshoot) per point
+        k = np.where(over)[0]
+        excess = L[k] - self.T_L[k]
+        order = np.argsort(-excess)
+        seen = set()
+        for idx in k[order]:
+            q = int(self.T_i[idx])
+            if q in seen:
+                continue
+            seen.add(q)
+            dd = self.X[q] - self.X[self.T_j[idx]]
+            l = float(np.linalg.norm(dd))
+            if l > self.T_L[idx]:
+                self.X[q] = self.X[self.T_j[idx]] + dd / l * self.T_L[idx]
 
     def _collide(self, capsules):
         pushed = 0
@@ -178,9 +270,15 @@ class PaperCloth:
                 u = (s + 1) / self.substeps
                 self.X[self.pins] = pin0 + (np.asarray(pin_targets, float) - pin0) * u
             for _ in range(self.iterations):
-                self._distance(self.E, self.E_rest, self.E_k)
-                if len(self.B):
-                    self._distance(self.B, self.B_rest, self.B_k)
+                if self.solver == 'gs':
+                    self._distance_gs(self.E, self.E_rest, self.E_k, self.E_groups)
+                    if len(self.B):
+                        self._distance_gs(self.B, self.B_rest, self.B_k, self.B_groups)
+                else:
+                    self._distance(self.E, self.E_rest, self.E_k)
+                    if len(self.B):
+                        self._distance(self.B, self.B_rest, self.B_k)
+                self._tether()
                 pushed += self._collide(capsules)
             if pin_targets is not None and len(self.pins):
                 self.X[self.pins] = pin0 + (np.asarray(pin_targets, float) - pin0) * ((s + 1) / self.substeps)
