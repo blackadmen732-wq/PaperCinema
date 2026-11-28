@@ -52,6 +52,13 @@
    "check": "grep -q 'makeGroundMarks' engine/groundfx.js && grep -q 'MARKS?.update' engine/motion.js",
    "status": "kept",
    "evidence": "makeGroundMarks() listens for land and skid; dash-test makes 2 marks (1 land, 1 skid). Dashes already had a wake line."
+  },
+  {
+   "id": "scaffold-fights-connect",
+   "status": "kept",
+   "promise": "A new film from engine/new-film.mjs keeps its clash aim on its strikes (blades meet) and keeps both fighters in frame in 9:16.",
+   "why": "28 Nov head-to-head pilot: the scaffold left clashes 6 s early (0 contacts, no clash sound) and lost both fighters for 3 s in vertical.",
+   "check": "node tools/test_new_film.mjs --browser"
   }
  ]
 }
