@@ -73,10 +73,11 @@ def fuse(st, tol=0.15):
 
 def export_events(st, path):
     """the shared event format (agreed with Sonic): one JSON object per line, timeline-compatible ids"""
-    with open(path, 'w') as fh:
+    with open(path + '.tmp', 'w', encoding='utf-8') as fh:
         for e in st.events():
             fh.write(json.dumps({'id': e['id'], 'type': e['type'], 't': e['t0'],
                                  **({'t1': e['t1']} if e['t1'] != e['t0'] else {}),
                                  **({'f': e['f']} if e['f'] is not None else {}),
                                  'source': e['source'], 'method': e['method'], 'conf': e['conf'],
-                                 'entities': e['entities'], 'data': e['data']}) + '\n')
+                                 'entities': e['entities'], 'data': e['data']}, ensure_ascii=False) + '\n')
+    os.replace(path + '.tmp', path)

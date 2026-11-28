@@ -63,9 +63,25 @@ def sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+def project_root():
+    """the shared core's rule (packages/aethern/INTERFACES.md): $AETHERN_ROOT, else the nearest folder holding
+    aethern.json, else the current folder"""
+    r = os.environ.get('AETHERN_ROOT')
+    if r:
+        return r
+    d = os.getcwd()
+    while True:
+        if os.path.exists(os.path.join(d, 'aethern.json')):
+            return d
+        up = os.path.dirname(d)
+        if up == d:
+            return os.getcwd()
+        d = up
+
+
 def cache_dir():
-    """output/vyrn/ inside the repo (output/ is never committed), overridable with VYRN_CACHE."""
-    d = os.environ.get('VYRN_CACHE') or os.path.join(os.getcwd(), 'output', 'vyrn')
+    """<project root>/output/vyrn (output/ is never committed), overridable with VYRN_CACHE."""
+    d = os.environ.get('VYRN_CACHE') or os.path.join(project_root(), 'output', 'vyrn')
     os.makedirs(d, exist_ok=True)
     return d
 

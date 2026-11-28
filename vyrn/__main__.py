@@ -11,7 +11,9 @@
   list                                                             everything processed so far
   backends                                                         every stage's default and alternatives, with licences
 
-<media> is a store id (from ingest), or the original file path. Add --json for machine output.
+<media> is a store id (from ingest), or the original file path. Add --json for machine output (one JSON document on
+stdout). Exit codes follow the shared core (packages/aethern/INTERFACES.md): 0 ok, 1 a check found a problem
+(sync: a sound out of sync or missing), 2 bad usage or unknown media.
 """
 import argparse, json, sys
 from vyrn import query
@@ -40,7 +42,10 @@ def main(argv=None):
         idx = load_index()
         print(json.dumps(idx, indent=1) if a.json else '\n'.join(f"{k} {v['kind']} {v['source']}" for k, v in idx.items()))
         return
-    st = resolve(x[0])
+    try:
+        st = resolve(x[0])
+    except FileNotFoundError as e:
+        print(e, file=sys.stderr); sys.exit(2)
     if c == 'summary':
         txt, data = query.summary(st)
     elif c == 'window':
@@ -57,7 +62,12 @@ def main(argv=None):
         txt, data = query.evidence(st, float(x[1]), a.entity, width=a.width)
     else:
         ap.error(f'unknown command {c}')
-    print(json.dumps(data, default=str) if a.json else txt)
+    print(json.dumps(data, default=str, ensure_ascii=False) if a.json else txt)
+    if c == 'sync':
+        rows = data['rows']
+        half = 1000 / (2 * st.media()['fps'])
+        if any(r['offset_ms'] is None or abs(r['offset_ms']) > half for r in rows):
+            sys.exit(1)
 
 
 if __name__ == '__main__':
