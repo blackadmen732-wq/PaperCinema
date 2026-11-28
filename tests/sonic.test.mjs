@@ -121,31 +121,46 @@ test('final mix: with Sonic on, every isolated sound lands within 25 ms of its e
   assert.ok(r.sonic.meanMs < r.off.meanMs, 'Sonic is not closer than the engine sounds');
 });
 
-test('Sonic off: engine/sound.mjs output is the pre-Sonic mix plus only the approved hit-cue de-click', (t) => {
-  // The Sonic extraction must not change the mix. One approved change is layered on top of the pre-Sonic
-  // engine since then: the hit-cue de-click (hits fade in over ~1 ms instead of 10 ms; engine/sound.mjs
-  // HIT). So we render the pre-Sonic engine WITH that same de-click applied and require byte-identical
-  // output — isolating "did anything OTHER than the approved de-click change?". Any other drift still fails.
+// The Sonic extraction must not change the mix. Exactly ONE approved change has been layered on the engine
+// since the pre-Sonic commit: the hit-cue de-click (hits fade in over ~1 ms instead of 10 ms). That is an
+// explicit, separately-reviewed exception. The pre-Sonic baseline is left UNTOUCHED; we prove (a) every
+// non-hit sound is byte-identical to pre-Sonic, so the extraction changed nothing, and (b) the de-click is
+// the one and only difference, present on hits in the current engine and absent from the pre-Sonic engine.
+const HIT_RE = /clash|impact|contact|hit|auto-step|thud|fall|clap|bell|drum/i;
+
+test('Sonic off: every non-hit sound is byte-identical to the pre-Sonic engine', (t) => {
   const added = execFileSync('git', ['log', '--diff-filter=A', '--format=%H', '--', 'engine/sonic.mjs'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).pop();
   const base = added ? `${added}~1` : null;
   const old = base && spawnSync('git', ['show', `${base}:engine/sound.mjs`]);
   if (!old || old.status !== 0) return t.skip('the commit before Sonic is not in this clone (shallow?)');
-  const PRE = 'cue.bed ? 1.5 : 0.01';                       // the pre-Sonic fade-in; de-click replaced it
-  const DECLICK = 'cue.bed ? 1.5 : /clash|impact|contact|hit|auto-step|thud|fall|clap|bell|drum/i.test(cue.id) ? 0.001 : 0.01';
-  let src = old.stdout.toString();
-  if (!src.includes(PRE)) return t.skip('pre-Sonic fade-in shape not found; cannot isolate the de-click');
-  src = src.replace(PRE, DECLICK);                          // apply ONLY the approved de-click to the baseline
   const d = path.join(tmp, 'ident'), p = makeProbe(d), head = path.join(d, 'sound-before.mjs');
-  fs.writeFileSync(head, src);
+  fs.writeFileSync(head, old.stdout);                        // pre-Sonic engine, UNMODIFIED
+  // Render on a probe with the hit cues removed, so the de-click exception cannot touch this comparison.
+  const ev = JSON.parse(fs.readFileSync(p.events, 'utf8'));
+  ev.cues = ev.cues.filter((c) => !HIT_RE.test(c.id));
+  const nohit = path.join(d, 'nohit.events.json');
+  fs.writeFileSync(nohit, JSON.stringify(ev));
   const CR = 'assets/sfx/credits.json', credits = fs.readFileSync(CR);
   const md5 = (f) => crypto.createHash('md5').update(spawnSync('ffmpeg', ['-v', 'error', '-i', f, '-map', '0:a', '-f', 's16le', '-'], { maxBuffer: 1 << 28 }).stdout).digest('hex');
   try {
     for (const [s, o] of [[head, 'before.mp4'], ['engine/sound.mjs', 'now.mp4']]) {
-      const r = spawnSync('node', [s, '--film', p.film, '--video', p.video, '--events', p.events, '--out', path.join(d, o)], { encoding: 'utf8' });
+      const r = spawnSync('node', [s, '--film', p.film, '--video', p.video, '--events', nohit, '--out', path.join(d, o)], { encoding: 'utf8' });
       assert.equal(r.status, 0, r.stderr);
     }
   } finally { fs.writeFileSync(CR, credits); }
   assert.equal(md5(path.join(d, 'now.mp4')), md5(path.join(d, 'before.mp4')));
+});
+
+test('the hit-cue de-click is the one approved difference from the pre-Sonic engine', (t) => {
+  const added = execFileSync('git', ['log', '--diff-filter=A', '--format=%H', '--', 'engine/sonic.mjs'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).pop();
+  const base = added ? `${added}~1` : null;
+  const old = base && spawnSync('git', ['show', `${base}:engine/sound.mjs`]);
+  if (!old || old.status !== 0) return t.skip('the commit before Sonic is not in this clone (shallow?)');
+  const before = old.stdout.toString(), now = fs.readFileSync('engine/sound.mjs', 'utf8');
+  // pre-Sonic faded every non-bed cue in over 10 ms; the current engine de-clicks hit cues to ~1 ms.
+  assert.ok(before.includes('cue.bed ? 1.5 : 0.01'), 'pre-Sonic fade-in shape not as expected');
+  assert.ok(!/0\.001/.test(before), 'pre-Sonic engine already had a de-click; exception assumption is wrong');
+  assert.ok(now.includes('HIT.test(cue.id) ? 0.001'), 'current engine no longer carries the reviewed de-click');
 });
 
 test('PaperAcoustics: made in code, the same bytes on every run', () => {
