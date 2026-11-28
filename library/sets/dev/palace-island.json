@@ -34,7 +34,7 @@
     {"kit": "toro", "name": "lantern_w", "pos": [-3.2, 26.8, 7.5], "params": {"height": 2.0}},
     {"kit": "toro", "name": "lantern_e", "pos": [3.2, 26.8, 7.5], "params": {"height": 2.0}},
 
-    {"kit": "rocks", "name": "islet_rocks", "pos": [-27, 4, -0.9], "params": {"count": 8, "radius": 4.2, "size": [0.8, 2.4], "squash": 0.55}},
+    {"kit": "rocks", "name": "islet_rocks", "pos": [-27, 4, -0.2], "params": {"count": 11, "radius": 5.0, "size": [1.0, 2.8], "squash": 0.6}},
     {"kit": "pine", "name": "islet_pine_big", "pos": [-28.5, 3.5, 0.6], "params": {"height": 6.5, "spread": 4.6, "lean": 26, "lean_dir": 120}},
     {"kit": "pine", "name": "islet_pine_small", "pos": [-24.5, 0.5, 0.4], "params": {"height": 4.2, "spread": 3.0, "lean": 22, "lean_dir": 60}},
     {"kit": "ishigaki_base", "name": "landing", "pos": [-14.5, 20.5, -1.5], "params": {"width": 6.0, "depth": 4.5, "height": 2.2, "batter": 1.0, "stone": 0.6, "style": "uchikomi", "top": "earth"}},
