@@ -15,6 +15,13 @@ a full village... make it fight good, a system for groundbreaking sound and cool
 - Rules that still hold: no claim without proof in the same note; experiments stay off production characters and
   Episode 1 until they pass; Mark's images stay out of the public repo unless already there; push often (the
   container can be rebuilt; output/ is not kept).
+- **A render only runs while a turn is running** (measured 28 Nov): the cloud machine is suspended about 2 minutes
+  after the session goes idle, and a detached process (setsid nohup) does not keep it awake. The Episode 1 render
+  died that way twice (21:04 and 00:42: the last frame 2 min after the turn ended; the wake-up found the machine
+  rebooted). So: start the render, then STAY in the turn doing other work and checking it (a 9-minute wait is
+  fine) until it is done; `tools/film.sh` resumes from the frames on disk when restarted (same render stamp), add
+  `--skip-audit` when the audit already passed on the same inputs. Measured speed (360x640, 16 samples, 2 workers
+  x 2 threads): 280 frames an hour. A rented GPU would not have this limit (waiting for Mark's yes).
 
 ## Queue (top = next)
 | # | item | done when | status |
