@@ -181,8 +181,11 @@ film['camera'] = [
     {'t': 18.5, 'cut': True, 'rig': 'compose', 'subjects': ['target', 'hero'], 'basis': 'target', 'target': 'hero',
      'az0': 194, 'az1': 189, 'elev': 11, 'size': 0.39, 'screen': [0.37, 0.40], 'fov': 34, 'feel': 'dolly',
      'note': 'S4 WIDE: following behind Musashi as he wades up from the sea, over his shoulder Kojiro waits on the duel ground against the glow'},
-    {'t': 23.4, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 32, 'az1': 26, 'elev': 0, 'size': 1.3,
-     'aim': 'chest', 'screen': [0.5, 0.5], 'fov': 32, 'feel': 'locked', 'note': 'S4 THE DRAW: the long blade leaves the scabbard'},
+    # (28 Nov, watched: aimed at the chest at size 1.3 it showed his face while his hands and the guard stayed below the
+    # frame for the whole draw. Now the whole body, knees to above the head: the hands at the hip are in frame)
+    {'t': 23.4, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 32, 'az1': 26, 'elev': -4,
+     'size0': 0.88, 'size1': 0.98, 'screen': [0.5, 0.5], 'fov': 32, 'feel': 'locked',
+     'note': 'S4 THE DRAW: the long blade leaves the scabbard (his hands and the hilt at the hip in frame)'},
     {'t': 25.3, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'az0': -26, 'az1': -32, 'elev': 6, 'size': 0.4,
      'screen': [0.55, 0.62], 'fov': 36, 'feel': 'dolly',
      'note': 'S4 THE THROW: from the sea side, the scabbard flies up over us against the glow (black lacquer vanished against the dark south)'},
@@ -193,7 +196,10 @@ film['camera'] = [
     # From his left (az 62-66, the hasso hands behind his head) the nearest forearm in front stays 0.177 frame-heights
     # from his face (half a face + half a sleeve: 0.175); measured on the exported bones every 6th frame. World bearing
     # about +18 deg: still on the hero side of the line)
-    {'t': 30.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 62, 'az1': 66, 'elev': -8, 'aim': 'chest',
+    # (second pass, watched: at 62-66 his raised hand and its paper fingers still covered his face from 31.3 s: the
+    # bones cleared, the hand mesh did not. At 96-100 both hands pass BEHIND his head: nothing stays in front of the
+    # face closer than 0.33 frame-heights, the hand's 12 cm past its joint included)
+    {'t': 30.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 96, 'az1': 100, 'elev': -10, 'aim': 'chest',
      'size0': 0.5, 'size1': 0.58, 'screen': [0.5, 0.56], 'fov': 32, 'feel': 'handheld',
      'note': 'S4 ANGER: low medium from his left, he takes hasso against the glow, his face clear of his raised hands'},
     # S5 (32-42 s): one strike

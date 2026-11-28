@@ -2,7 +2,7 @@
 # ONE COMMAND: a finished vertical film with sound, rendered in Blender.
 #
 #   tools/film.sh film/<name>.json [--set <name>] [--gpu] [--from A] [--to B] [--frames a-b]
-#                                  [--res WxH] [--samples N] [--full] [--workers N] [--fresh] [--skip-audit]
+#                                  [--res WxH] [--samples N] [--full] [--workers N] [--fresh] [--skip-audit] [--keep-frames]
 #
 # The chain (every step fails loudly and stops):
 #   1 validate   node engine/validate.mjs            the film file itself
@@ -49,7 +49,7 @@ step() { echo; echo "=== $* ==="; }
 [ -f "$FILM" ] || die "no such film file: $FILM"
 NAME=$(basename "$FILM" .json)
 
-SET= GPU=0 FRAMES= RES= SAMPLES= AUDIT=1 FROM= TO= WORKERS= FRESH=0 FULL=0 REUSE=0
+SET= GPU=0 FRAMES= RES= SAMPLES= AUDIT=1 FROM= TO= WORKERS= FRESH=0 FULL=0 REUSE=0 KEEP=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --set) SET=${2:?--set needs a set name}; shift 2 ;;
@@ -64,6 +64,10 @@ while [ $# -gt 0 ]; do
     --reuse-motion) REUSE=1; shift ;;
     --full) FULL=1; shift ;;
     --skip-audit) AUDIT=0; shift ;;
+    # --keep-frames: keep the frames on disk although the inputs changed. For a fix that touches FEW frames (a camera
+    # beat of one shot): delete that shot's frames by hand, then this renders only what is missing. Everything else on
+    # disk is trusted to be unchanged; that is the user's call, so it is a flag and it says so in the log.
+    --keep-frames) KEEP=1; shift ;;
     *) die "unknown option: $1" ;;
   esac
 done
@@ -190,7 +194,9 @@ else
   STAMP=$( { echo "$TLHASH"; sha256sum blender/*.py blender/*/*.py library/sets/*.json library/character-recipes/*.json \
              library/paper-materials/*.json library/ai-parts.json assets/models/ai/*/* 2>/dev/null \
              | awk '{print $1}'; echo "res=$RES samples=$SAMPLES set=$SET engine=${PC_ENGINE:-}"; } | sha256sum | cut -c1-16)
-  if [ -f "$FR/.render-inputs" ] && [ "$(cat "$FR/.render-inputs")" != "$STAMP" ]; then
+  if [ -f "$FR/.render-inputs" ] && [ "$(cat "$FR/.render-inputs")" != "$STAMP" ] && [ "$KEEP" = 1 ]; then
+    echo "  the render inputs changed, but --keep-frames: keeping the $(ls "$FR"/f*.png 2>/dev/null | wc -l) frame(s) on disk (only missing ones are rendered)"
+  elif [ -f "$FR/.render-inputs" ] && [ "$(cat "$FR/.render-inputs")" != "$STAMP" ]; then
     echo "  the render inputs changed since the frames in $FR were made: dropping $(ls "$FR"/f*.png 2>/dev/null | wc -l) stale frame(s)"
     rm -f "$FR"/f*.png
   elif [ ! -f "$FR/.render-inputs" ] && ls "$FR"/f*.png >/dev/null 2>&1; then
