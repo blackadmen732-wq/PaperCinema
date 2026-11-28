@@ -536,6 +536,13 @@ def build(recipe, *, pose='standing', location=(0, 0, 0), yaw=0.0, collection=No
             ob.parent = rig.rig
         else:
             parent_rigid(ob, rig.J[bone])
+    if recipe.get('layers'):
+        # opt-in layered paper garments (blender/character/layered_garment.py, AUTOPILOT item 17): the sleeve's
+        # hanging part cut into bands on a chain of plate joints; a recipe without "layers" never gets here
+        import layered_garment as LG
+        bands, lrep = LG.add_layers(rig, built, bind, recipe['layers'])
+        built += bands
+        report += lrep
     rig.pose(pose, **(pose_overrides or {}))
     rig.J['root'].location = Vector(location) + rig.J['root'].location
     rig.J['root'].rotation_euler.rotate_axis('Z', yaw)

@@ -1,0 +1,10 @@
+{
+  "id": "kojiro-ai2-layered",
+  "name": "Sasaki Kojiro - kojiro-ai2 with layered paper sleeves (test)",
+  "extends": "kojiro-ai2.json",
+  "note": "AUTOPILOT item 17 test recipe: kojiro-ai2 exactly, plus 'layers': each generated sleeve's hanging part cut into 4 bands on a chain of plate joints (blender/character/layered_garment.py), each band on its own spring (cloth_springs.plate_springs, stiffness 55/42/31/22). Bench: blender/bench/layered_sleeve_bench.py.",
+  "layers": {
+    "sleeve_R": 4,
+    "sleeve_L": 4
+  }
+}

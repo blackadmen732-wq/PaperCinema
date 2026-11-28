@@ -30,6 +30,32 @@ SPRINGS = (
     ('hakama', 0.75, 38.0, 8.0, 22.0, ('belly', 'hips', 'thigh.R', 'thigh.L', 'shin.R', 'shin.L')),
 )
 
+# LAYERED PLATES (blender/character/layered_garment.py, AUTOPILOT item 17): every joint the builder made for a
+# layered garment carries `pc_plate` (its place in the chain) and gets its own spring, softer down the chain so a
+# swing reaches the lower plates later. Knots from the cloth bench (tools/cloth_bench.py): 55/42/31/22 for 4 plates.
+PLATE_K = (55.0, 42.0, 31.0, 22.0)
+PLATE_DAMPING, PLATE_MAX_DEG = 7.0, 75.0
+
+
+def plate_stiffness(j, n):
+    if n <= 1:
+        return PLATE_K[0]
+    x = j * (len(PLATE_K) - 1) / (n - 1)
+    i = min(int(x), len(PLATE_K) - 2)
+    return PLATE_K[i] + (PLATE_K[i + 1] - PLATE_K[i]) * (x - i)
+
+
+def plate_springs(rig):
+    """The SPRINGS entries for a rig's layered plates, parent first (plate j after plate j-1)."""
+    out = []
+    for name, e in rig.J.items():
+        if 'pc_plate' in e:
+            sd = str(e.get('pc_plate_side', 'R'))
+            out.append((int(e['pc_plate']), name, float(e['pc_plate_len']),
+                        plate_stiffness(int(e['pc_plate']), int(e['pc_plates'])), PLATE_DAMPING, PLATE_MAX_DEG,
+                        ('forearm.' + sd, 'upperarm.' + sd)))
+    return [t[1:] for t in sorted(out, key=lambda t: (t[0], t[1]))]
+
 
 class ClothSprings:
     def __init__(self, rig, caps=None, fps=30, springs=SPRINGS, gravity=9.8, margin=0.015, panels=None, body=None):
@@ -39,6 +65,12 @@ class ClothSprings:
         self.panels, self.body = panels or {}, body
         self.rig, self.caps, self.dt = rig, caps, 1.0 / fps
         self.spec = [s for s in springs if s[0] in rig.J]
+        have = {s[0] for s in self.spec}
+        for sp in plate_springs(rig):                # a layered garment's plates (none on a recipe without "layers")
+            if sp[0] not in have:
+                self.spec.append(sp)
+                if body is not None and sp[0] not in self.panels:
+                    self.panels[sp[0]] = [c for c in rig.J[sp[0]].children if c.type == 'MESH']
         self.g, self.margin = gravity, margin
         self.state = {}                              # joint -> (tip position, velocity)
         self.log = {}                                # joint -> list of (lag deg, pushed out?)
@@ -105,6 +137,11 @@ class ClothSprings:
             self.caps.update()
         for name, L, k, c, max_deg, skip in self.spec:
             e = self.rig.J[name]
+            if 'pc_rest_rot' in e:
+                # a plate's rule is its REST place on the plate above (the parent carries it): reset it first, or
+                # last frame's swing would become this frame's aim and the spring would have nothing to pull back to
+                e.rotation_euler = tuple(e['pc_rest_rot'])
+                bpy.context.view_layer.update()
             root = e.matrix_world.translation.copy()
             want = (e.matrix_world.to_quaternion() @ DOWN).normalized()   # where the rule aims it now
             goal = root + want * L
