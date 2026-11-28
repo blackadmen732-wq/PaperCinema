@@ -63,10 +63,10 @@ NORTH = (-0.5, -14.0)              # up the hill road (A watches it)
 M0 = (4.7, -4.5)                   # Musashi, waiting in the dark behind the trunk (he came early: tradition)
 M1 = (2.5, -2.3)                   # out from behind the pine, behind the boy
 M2 = (1.95, -1.95)                 # the step into the cut
-M_END = (11.5, -0.4)               # walking away east along the road, into the mist
-B0, B1 = (-11.0, 0.2), (1.0, -1.3)           # the boy: along the road to the foot of the pine
-A0, A1 = (-12.0, -1.0), (-0.5, -2.3)         # retainer A (kabuto): on the boy's right
-C0, C1 = (-12.4, 1.3), (0.2, 1.0)            # retainer C (hood): on his left
+M_END = (10.0, -0.6)               # walking away east along the road, into the mist
+B0, B1 = (-7.6, 0.2), (1.0, -1.3)           # the boy: along the road to the foot of the pine
+A0, A1 = (-8.2, -1.1), (-0.5, -2.3)         # retainer A (kabuto): on the boy's right
+C0, C1 = (-8.4, 1.2), (0.6, 0.7)            # retainer C (hood): on his left
 A_HIT = (0.95, -2.35)              # A's charge ends here
 C_HIT = (1.85, -0.75)              # C's thrust ends here
 
@@ -80,7 +80,7 @@ mus += [
     k(12.4, 'chudan', M0, face(M0, B1), settle=0.6, note='the blade comes up: he has decided'),
     k(13.6, 'chudan', M0, face(M0, M1), tx=0.08, note='a small lean before the first step (anticipation)'),
 ]
-walk(mus, 13.7, 16.7, M0, M1, 'chudan', ease_in=0.7, ease_out=0.8)
+walk(mus, 13.5, 16.7, M0, M1, 'chudan', ease_in=0.7, ease_out=0.8)
 mus += [
     k(17.1, 'chudan', M1, face(M1, B1), settle=0.4),
     k(17.45, 'kesa-windup', M2, face(M2, B1), note='S4 the step in, the blade high'),
@@ -156,7 +156,8 @@ rc += [
     k(19.7, 'chudan', C1, face(C1, M2), settle=0.5, note='turns; holds back while A goes in'),
     k(23.4, 'chudan', C1, face(C1, M2), tx=-0.08, note='flinches at A\'s fall'),
     k(25.9, 'tsuki-load', C1, face(C1, M2), crouch=0.12, settle=0.5, note='gathers for the thrust'),
-    k(27.0, 'tsuki-load', lerp(C1, C_HIT, 0.55), face(C1, M2), crouch=0.15),
+    k(26.6, 'tsuki-load', C1, face(C1, M2), crouch=0.16),
+    k(27.1, 'tsuki-load', lerp(C1, C_HIT, 0.6), face(C1, M2), crouch=0.15),
     k(27.45, 'tsuki-thrust', C_HIT, face(C_HIT, M2), note='the thrust'),
     k(27.85, 'struck-reel', C_HIT, face(C_HIT, M2), note='cut on the rise'),
     k(28.8, 'stagger', (C_HIT[0] - 0.1, C_HIT[1] + 0.3), face(C_HIT, M2)),
