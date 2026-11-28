@@ -6,8 +6,8 @@ sees it, in the Blender render, next to the numbers of tools/gait_check.mjs.
     node tools/gait_check.mjs film/walk-bench.json
     RENDER_CHUNK=25 tools/film.sh film/walk-bench.json --set ganryujima-beach --workers 2 --skip-audit --res 270x480
 
-0-0.8 s he stands; 0.8-5.6 s he walks 6 m up the beach at 1.25 m/s (Episode 1's walk from the surf), seen from the
-side; he stops and turns; 6.6-9.6 s he walks 2.2 m back at 0.73 m/s (the walk-away's pace), seen three-quarter. The
+0-0.8 s he stands; 0.8-6.2 s he walks 6.2 m along the duel ground (1.25 m/s between a 0.7 s start and a 0.9 s
+stop), seen from the side; he stops and turns; 6.8-10.1 s he walks 2.2 m back at about 0.73 m/s, seen three-quarter. The
 same pose ('stand-blade-low': the oar low in the right hand), the same beach, the same light as the episode. Kojiro is
 in the cast only because the engine wants two performers: hidden, far away.
 """
@@ -26,32 +26,47 @@ def lerp(a, b, u):
     return (a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u)
 
 
-def walk(keys, t0, t1, a, b, pose, step=0.5):
-    """Root keys from a to b between t0 and t1 (the feet step by themselves: motion.lockFeet)."""
+def walk(keys, t0, t1, a, b, pose, step=0.5, ease_in=0.0, ease_out=0.0):
+    """Root keys from a to b between t0 and t1, the pace building over ease_in and dying over ease_out seconds (as
+    film/src/ganryujima-ep1.py walk(); the feet step by themselves: motion.lockFeet)."""
     ry = face(a, b)
-    n = max(1, int(round((t1 - t0) / step)))
-    for i in range(1, n + 1):
-        u = i / n
-        p = lerp(a, b, u)
-        keys.append({'t': round(t0 + (t1 - t0) * u, 3), 'pose': pose, 'x': round(p[0], 3), 'z': round(p[1], 3), 'ry': ry})
+    T = t1 - t0
+    A_, B_ = min(ease_in, T / 2), min(ease_out, T / 2)
+    V = 1.0 / (T - (A_ + B_) / 2)
+
+    def s(t):
+        if t < A_:
+            return V * t * t / (2 * A_)
+        if t > T - B_:
+            return 1.0 - V * (T - t) ** 2 / (2 * B_)
+        return V * (t - A_ / 2)
+
+    n = max(1, int(round(T / step)))
+    times = sorted({round(T * i / n, 4) for i in range(1, n + 1)} | ({round(A_, 4)} if A_ else set()) |
+                   ({round(T - B_, 4)} if B_ else set()))
+    for tt in times:
+        p = lerp(a, b, s(tt))
+        keys.append({'t': round(t0 + tt, 3), 'pose': pose, 'x': round(p[0], 3), 'z': round(p[1], 3), 'ry': ry})
 
 
-A, B = (-6.1, 5.3), (-1.4, 1.5)                  # Episode 1: from the surf up the beach (6.04 m)
-C = lerp(B, A, 2.2 / math.dist(A, B))             # back toward the sea, 2.2 m
+# along the levelled duel ground (film z 0, the sand flat at 0.94 m from x -3 to +4; Episode 1's own path starts in
+# the surf, where the sea hid the legs for the first 3 s of the first bench render)
+A, B = (-3.0, 0.0), (3.2, 0.0)                    # 6.2 m
+C = lerp(B, A, 2.2 / math.dist(A, B))             # back, 2.2 m
 POSE = 'stand-blade-low'
 keys = [{'t': 0.0, 'pose': POSE, 'x': A[0], 'z': A[1], 'ry': face(A, B)},
         {'t': 0.8, 'pose': POSE, 'x': A[0], 'z': A[1], 'ry': face(A, B)}]
-walk(keys, 0.8, 0.8 + math.dist(A, B) / 1.25, A, B, POSE)
+walk(keys, 0.8, 0.8 + math.dist(A, B) / 1.25 + 0.4, A, B, POSE, ease_in=0.7, ease_out=0.9)
 t_stop = keys[-1]['t']
 keys += [{'t': round(t_stop + 0.5, 3), 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(A, B), 'settle': 0.4},
-         {'t': 6.6, 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(B, C)}]
-walk(keys, 6.6, 6.6 + 2.2 / 0.73, B, C, POSE)
-keys.append({'t': 10.0, 'pose': POSE, 'x': round(C[0], 3), 'z': round(C[1], 3), 'ry': face(B, C), 'settle': 0.4})
+         {'t': 6.8, 'pose': POSE, 'x': B[0], 'z': B[1], 'ry': face(B, C)}]
+walk(keys, 6.8, 6.8 + 2.2 / 0.73 + 0.3, B, C, POSE, ease_in=0.5, ease_out=0.6)
+keys.append({'t': 10.6, 'pose': POSE, 'x': round(C[0], 3), 'z': round(C[1], 3), 'ry': face(B, C), 'settle': 0.4})
 
 film = {
     'title': 'Walk bench: the walking gait on the Episode 1 beach',
     'page': 'engine/motion.html', 'fps': 30, 'width': 1080, 'height': 1920, 'format': 'vertical',
-    'duration': 10.0, 'mode': 'dawn',
+    'duration': 10.8, 'mode': 'dawn',
     'motion': {'overlap': True, 'lockFeet': True},
     'stage': {'mark': 'MARK_center', 'origin': True, 'turn': 0},
     'cast': {'hero': {'character': 'musashi', 'face': 'eyes', 'weapon': 'bokken', 'recipe': 'musashi-ai',
@@ -69,7 +84,7 @@ film = {
     'camera': [
         {'t': 0.0, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 88, 'az1': 92, 'elev': 3, 'size': 0.62,
          'screen': [0.5, 0.56], 'fov': 30, 'feel': 'dolly', 'note': 'SIDE: the whole body and the ground, the legs read in profile'},
-        {'t': 6.3, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 35, 'az1': 45, 'elev': 4,
+        {'t': 6.5, 'cut': True, 'rig': 'compose', 'subjects': ['hero'], 'basis': 'facing', 'az0': 35, 'az1': 45, 'elev': 4,
          'size': 0.62, 'screen': [0.5, 0.56], 'fov': 30, 'feel': 'dolly', 'note': 'THREE-QUARTER: the slow walk, hips and arms'},
     ],
     'sounds': [], 'titles': [],

@@ -159,7 +159,9 @@ film = {
         # 40-degree limit toward the far boat for 11 s, and in the hook close-up his side lock crossed his face.
         'hero': {'keys': hero, 'life': [[0, 1.0], [39.6, 1.0], [40.4, 0.0]], 'track': [[0, 0.0], [17.6, 0.0], [18.4, 1.0]], 'draw': {'grab': 23.9, 'slide': 24.45, 'clear': 24.85, 'blade': 0.91, 'sword': 'shiokaze'},
                  'throwSaya': {'grab': 25.55, 'release': 26.2, 'to': [-3.6, 9.5], 'apex': 2.2}},
-        'target': {'keys': target, 'life': [[0, 1.0]], 'drop': [{'part': 'musashi_head_t1', 't': 33.3, 'slot': 'band', 'becomes': 'hair', 'v': [-0.4, 2.0, 0.9], 'spin': 5.0, 'drag': 4.5, 'note': 'the headband cut (tradition): the band slot of the generated head leaves it'}]},
+        'target': {'keys': target, 'life': [[0, 1.0]],
+                   'gait': {'arms': [0.25, 1.0], 'note': 'walking: the oar low in the right hand swings a little, the free left arm swings'},
+                   'drop': [{'part': 'musashi_head_t1', 't': 33.3, 'slot': 'band', 'becomes': 'hair', 'v': [-0.4, 2.0, 0.9], 'spin': 5.0, 'drag': 4.5, 'note': 'the headband cut (tradition): the band slot of the generated head leaves it'}]},
     },
     'fade': {'in': 0, 'out': 0.0},
     'paperSurface': {'angle': 36.0, 'ink': 0.85, 'width': 0.003, 'light': 0.55, 'mottle': 0.12, 'mottle_scale': 7.0, 'ao': 0.35,

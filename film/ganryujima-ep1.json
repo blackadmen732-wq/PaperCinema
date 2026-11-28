@@ -742,6 +742,13 @@
      1.0
     ]
    ],
+   "gait": {
+    "arms": [
+     0.25,
+     1.0
+    ],
+    "note": "walking: the oar low in the right hand swings a little, the free left arm swings"
+   },
    "drop": [
     {
      "part": "musashi_head_t1",

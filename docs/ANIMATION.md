@@ -284,7 +284,62 @@ function of `t` and a still matches the video):
 
 The leg IK (`solveLegs`) takes a world foot target through `pose._feet` and solves from it: the leg plane
 now rolls sideways as well (hip abduction, thigh Euler order `ZXY`), so a foot can be planted off to the
-side, not only in front or behind.
+side, not only in front or behind. A pinned foot gets no splay (the stance-only 0.04 rad that put every
+planted foot 3.3 cm off its plan until 28 Nov).
+
+**Blender follows the same plan** (`blender/character/modular_builder.py` `Rig._solve_legs`, a line-for-line
+port with the same turn orders: root `YXZ`, thighs `ZXY`). Until 28 Nov the port ignored `_feet`, so every
+render placed the feet from the stance: the "planted" feet glided with the body while the engine's preview
+and every check showed them still. Proof it now matches, joint by joint and the foot's direction:
+
+```bash
+$B -b --python-exit-code 1 -P blender/bench/legs_match.py -- --film ganryujima-ep1 --who target --frames 0-1799
+# needs a fresh output/<film>.timeline.json AND output/<film>.motion.json (tools/timeline.mjs, tools/export_motion.mjs)
+```
+
+### Walking (gait v2, 28 Nov)
+
+While the body **walks** — a sustained travel: the slowest speed within ±0.25 s is at least 0.25 m/s, full
+at 0.6 m/s, so a 0.3 s lunge is not a walk — the planner walks like a person; the fighter's footwork (quick
+0.15 s steps, flat feet, static balance) is unchanged and the two blend by that walking amount:
+
+| | fighter | walking |
+|---|---|---|
+| swing | 0.15 s | `swingK / speed`, 0.15-0.5 s (0.44 s at 1.25 m/s) |
+| reach (half a stride) | 0.38 m | 0.18 + 0.15 × speed, 0.28-0.44 m |
+| stance | the pose's (fighting stance) | feet side by side, no weight on one foot |
+| foot | flat | heel strike 15° toe up, flat after 0.1 s; heel rises over the last 40% of the stance to 29° at toe-off (a rigid sandal pivots on its toe tip) |
+| swing path | a flat arc | the heel rises 3 cm after toe-off, the toe passes ~3 cm over the ground at mid-swing, the leg reaches and lands on the heel |
+| alternation | no lift within 0.04 s of the other foot's step | the left foot lifts half way between two lifts of the right one; a quicker swing if only that fits (no hop at a stop) |
+| balance | the falling rule (lean + drop when the centre leaves the feet) | none: a walker carries over the standing foot |
+| hips | box-smoothed drop | 3 cm taller, a capped-acceleration envelope (never higher than the legs reach), a firmer leg solve (soft IK from 0.98) |
+| above the legs | — | ±2.2 cm over the standing foot, the waist turns ±0.06 rad with the forward leg, the chest back 1.7×, the head stays ahead; each arm swings `gait.arms` × 0.32 rad |
+
+Arms are opt-in per performer, because a hand that holds something must not swing:
+
+```json
+"performances": { "target": { "keys": [...], "gait": { "arms": [0.25, 1.0] } } }   // [right, left], 0-1.5
+```
+
+Every number above is a `FOOTLOCK` option (`swingK`, `swingMax`, `reachWalk`, `heelStrike`, `loading`, `toeOff`,
+`heelOff`, `swingRise`, `swingMid`, `walkLift`, `walkSoft`, `hipAccel`, `hipSway`, `hipYaw`, `chestCounter`,
+`armSwing`) and can be overridden in `"lockFeet": { ... }`. The pose carries the plan to Blender in `_feet`:
+`r`/`l` (ankle targets), `rc`/`lc` (planted), `pr`/`pl` (foot pitch, + toe up), `soft` (the leg solve).
+
+**Measure a walk** against a human one (textbook ranges: Bipedal gait cycle; Normal Gait, University of
+Missouri PM&R; Perry & Burnfield):
+
+```bash
+node tools/gait_check.mjs film/walk-bench.json          # every walking stretch: cadence, stance %, swing time,
+                                                         # double support, step, hip bob/sway, knee, foot pitch,
+                                                         # toe clearance, leg stretch; ✗ = outside the range
+```
+
+Episode 1's beach walk (1.25 m/s), before → after: cadence 157 → 113-123 steps/min, swing 0.15 → 0.43-0.45 s,
+both feet down 60% → 15-18%, hips bob 11 → 5.5 cm, feet flat → heel strike 15° / toe-off −27°, toe clearance 3.4 cm,
+leg stretch ≤ 0.8%, foot slide 0.00 m, 0 hops. Still a little off the human range: the loading knee 27-29° (8-25:
+the rig stands with its knees bent 34°) and, at slow paces, cadence and step length (the ranges are for a normal
+pace; a 0.74 m/s walk takes 92 steps a minute). The bench: `film/src/walk-bench.py`.
 
 ### Measuring foot slide
 
@@ -296,8 +351,9 @@ node tools/footslide.mjs film/dash-test.json --json
 It also reports the **gait**: steps per foot and how many times both feet are off the ground together
 while walking (a hop; leaps, lunges and cuts are not counted). It poses the real rig in Node (leg IK
 included) and measures, with the same definition as the studio audit's rule A1 (a cut is skipped: the
-feet jump with the body): a foot is **planted** when the root is on the ground (y ≤ 0.03 m) and the foot joint is
-low (y ≤ 0.12 m); **slide** is how far a planted foot travels horizontally between two frames while
+feet jump with the body): a foot is **planted** when the root is on the ground (y ≤ 0.03 m) and the foot plan says
+so (`_feet.rc`/`lc`; without a plan: the foot joint is low, y ≤ 0.12 m — a walking swing passes lower than that, 28
+Nov); **slide** is how far a planted foot travels horizontally between two frames while
 moving faster than 1 m/s. The audit flags a run of such frames that adds up to more than 0.4 m.
 
 Measured (24 fps, worst foot per film):
