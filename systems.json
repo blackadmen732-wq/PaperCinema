@@ -468,6 +468,32 @@
    "status_note": "✅"
   },
   {
+   "id": "SONIC",
+   "name": "Sonic sound catalog (SonicGraph v1)",
+   "does": "Every sound → one queryable record: measured attributes (length, peak and onset times, attack, decay, loudness, spectrum → 0..1 weight, intensity, brightness, sharpness, tonal) plus tags from words in its name and credits (material, action, environment, intent) and from the measurements (texture, size); content-hash cache; hand edits that survive every scan. 302 sounds: our files, the 12 PaperAcoustics paper sounds made in code, and the 252-sound Earshot bank. Query language and MCP server for agents; an event → sound picker (clash by material and intensity with hard material matching and explicit fallbacks, whoosh by blade speed, landing by height) with variation, level matching and peak/onset alignment, checked in the finished mix. Opt-in in a film (`autoSounds.sonic`); off is bit-identical to before. Offline-safe: a sound that cannot be fetched gets a local stand-in instead of stopping the mix. Writes shared timestamped events for VYRN",
+   "files": [
+    "engine/sonic.mjs",
+    "tools/sonic.mjs",
+    "tools/sonic_mcp.mjs",
+    "tools/sonic_verify.mjs",
+    "tools/paper_sfx.mjs",
+    "library/sonic-vocab.json",
+    "assets/sfx/sonic.catalog.json",
+    "assets/sfx/sonic.tags.json",
+    "assets/sfx/paper/",
+    "tools/sonic_bench.mjs",
+    "tests/sonic.test.mjs",
+    ".mcp.json"
+   ],
+   "guide": [
+    "docs/SONIC.md",
+    "docs/SONIC-BENCHMARK.md"
+   ],
+   "command": "node tools/sonic.mjs query material=steel action=impact",
+   "status": "built",
+   "status_note": "✅ (catalog, query, MCP, opt-in picking, tests; not yet run on a real rendered film)"
+  },
+  {
    "id": "AIROUTER",
    "name": "Free model router",
    "does": "Sends writing, code, reasoning and image review to free models (Cerebras, NVIDIA Nemotron 550B / vision, Groq, Kimi), with fallback order and a usage log, so Claude usage goes to direction only",
@@ -1263,6 +1289,18 @@
   [
    "AETHERN",
    "RENDERSUP"
+  ],
+  [
+   "COMBAT",
+   "SONIC"
+  ],
+  [
+   "GROUNDFX",
+   "SONIC"
+  ],
+  [
+   "SONIC",
+   "SOUND"
   ]
  ]
 }

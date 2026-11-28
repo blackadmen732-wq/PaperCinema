@@ -57,6 +57,7 @@ node engine/render.mjs --film film/<name>.json --vertical | --horizontal   # for
 python3 engine/thumbnail.py film/<name>.json             # 16:9 + 9:16 thumbnails
 python3 engine/shimi.py --preset kesa-cut --out output/shimi/kesa-cut     # SHIMI stain (presets in the file)
 python3 docs/build_playbook.py film/<name>.json          # refresh the playbook page
+node tools/sonic.mjs query material=steel action=impact dur<2   # the sound catalog: ASK it, don't open sound files (docs/SONIC.md)
 node tools/audit.mjs film/<name>.json                    # studio QA: visibility, camera, pops, smear, sound… (docs/AUDIT.md)
 bash tools/film.sh film/<name>.json [--set <name>]       # ONE COMMAND → output/<name>-final.mp4 (Blender + sound,
                                                          # validate → motion → events → audit → render → mix → report)

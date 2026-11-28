@@ -288,6 +288,18 @@
    [
     "AETHERN",
     "RENDERSUP"
+   ],
+   [
+    "COMBAT",
+    "SONIC"
+   ],
+   [
+    "GROUNDFX",
+    "SONIC"
+   ],
+   [
+    "SONIC",
+    "SOUND"
    ]
   ]
  },
