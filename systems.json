@@ -1005,6 +1005,21 @@
    "command": "bash gpu/kaggle_trellis2/run.sh push",
    "status": "test",
    "status_note": "🧪 run 1: the three CUDA add-ons failed to build on the T4"
+  },
+  {
+   "id": "VYRN",
+   "name": "VYRN perception engine",
+   "does": "Processes media once into a cached, queryable SQLite store of timestamped observations: subjects with persistent ids (through cuts), motion, spatial relations, sound onsets timed to ~1 ms, picture+sound impacts with their sync offset, confidence on everything, evidence crops on demand. Native input reads the film's timeline (truth); external input reads any video on CPU (FFmpeg, OpenCV, numpy). Neural models are swappable stages, licences checked. Shares a timestamped event format with Sonic",
+   "files": [
+    "vyrn/",
+    "output/vyrn/"
+   ],
+   "guide": [
+    "docs/VYRN.md"
+   ],
+   "command": null,
+   "status": "timeline.json>` then `summary` · `window` · `when` · `sync`",
+   "status_note": "timeline.json>` then `summary` · `window` · `when` · `sync`"
   }
  ],
  "connections": [
