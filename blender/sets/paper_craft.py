@@ -20,7 +20,8 @@ import bpy
 import paper_materials as pm
 
 DEFAULTS = {'look': 'craft', 'width': 0.03, 'angle': 35.0, 'ink': 0.85, 'light': 0.45, 'mottle': 0.14,
-            'mottle_scale': 0.8, 'ao': 0.4, 'sheets': True}
+            'mottle_scale': 0.8, 'ao': 0.4, 'sheets': True, 'colors': {}}
+# "colors": {"earth": [0.2, 0.3, 0.1]} recolours a sheet for this set (checked before SHEETS, same substring rule)
 
 # objects / materials whose look is their own
 # (prefixes only: a substring test once skipped the palace's 'sea_gate' along with the sea)
@@ -68,14 +69,15 @@ def config(value):
 
 
 class _Sheets:
-    def __init__(self):
+    def __init__(self, colors=None):
         self.made = {}
+        self.table = [(k, tuple(v), 0.10, 6.0) for k, v in (colors or {}).items()] + SHEETS
 
     def __call__(self, m):
         if not m or not m.name.startswith('SET_'):
             return m
         key = m.name[4:]
-        for k, col, fv, fs in SHEETS:
+        for k, col, fv, fs in self.table:
             if k in key:
                 if col is None:
                     return m                        # a glow stays as it is
@@ -115,7 +117,7 @@ def apply(scene, cfg=None, log=print):
     c = config(cfg if cfg is not None else 'craft')
     if c is None:
         return None
-    sheet = _Sheets() if c['sheets'] else (lambda m: m)
+    sheet = _Sheets(c['colors']) if c['sheets'] else (lambda m: m)
     folds, done, mats = 0, 0, []
     for ob in _targets(scene):
         if ob.data.get('pc_folded'):              # shared mesh data (instances), or a second pass: fold it once

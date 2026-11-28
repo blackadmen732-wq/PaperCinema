@@ -14,7 +14,7 @@
     "vignette": 0.3,
     "look": "AgX - High Contrast",
     "pieces": [
-      {"kit": "fog", "name": "sea_mist", "pos": [-12, 34, -0.6], "params": {"size": [150, 130, 9], "density": 0.035, "color": [1.0, 0.88, 0.78], "anisotropy": 0.55, "height": 2.2, "noise": 0.7, "noise_scale": 0.035}},
+      {"kit": "fog", "name": "sea_mist", "pos": [0, 40, -0.6], "params": {"size": [420, 420, 9], "density": 0.026, "color": [1.0, 0.88, 0.78], "anisotropy": 0.55, "height": 2.2, "noise": 0.7, "noise_scale": 0.035}},
       {"kit": "fog", "name": "channel_mist", "pos": [-21, 13, -0.6], "params": {"size": [26, 22, 4.5], "density": 0.05, "color": [1.0, 0.9, 0.82], "anisotropy": 0.5, "height": 1.4, "noise": 0.8, "noise_scale": 0.12}}
     ],
     "fighter": {"key": {"offset": [-1.6, 2.6, 2.6], "energy": 110, "color": [1.0, 0.78, 0.6], "size": 1.6}, "rim": {"offset": [0.4, -2.8, 2.6], "energy": 220, "color": [1.0, 0.7, 0.45], "size": 0.8}}
@@ -50,7 +50,7 @@
     "CAM_sea": {"pos": [-38, -18, 2.2], "look": [2, 42, 14], "lens": 28, "note": "low over the water from the south-west: the castle dark against the dawn, the islet and the bridge in front"},
     "CAM_front": {"pos": [6, -6, 5], "look": [0, 30, 12], "lens": 35, "note": "the sea gate and the keep head-on"},
     "CAM_aerial": {"pos": [-70, 0, 48], "look": [2, 42, 8], "lens": 32, "note": "the whole island from above"},
-    "CAM_courtyard": {"pos": [-9.5, 27.5, 9.2], "look_mark": "MARK_center", "look_z": 9.0, "lens": 28, "note": "on the courtyard: the duel line across the frame, the keep behind"},
+    "CAM_courtyard": {"pos": [-8.5, 24.5, 9.4], "look_mark": "MARK_center", "look_z": 1.5, "lens": 30, "note": "on the courtyard: the duel line across the frame, the keep behind"},
     "CAM_texture": {"pos": [34, 82, 10], "look": [2, 44, 12], "lens": 35, "note": "from the north: the low sun on the stone, plaster and roofs (the paper textures)"}
   },
   "preview_cams": ["CAM_sea", "CAM_front", "CAM_aerial", "CAM_texture"],
