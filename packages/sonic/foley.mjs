@@ -136,7 +136,7 @@ export function footstepCues(steps, ctx = {}) {
     if (clash) { skipped.push({ t: s.t, who: s.who, why: `${clash.kind} cue already there` }); continue; }
     if (last[s.who] != null && s.t - last[s.who] < minGap) {
       const prev = cues.findLast((c) => c.event.who === s.who);
-      if (prev && s.t - prev.t < 0.02) { prev.event.feet = 'both'; prev.event.force = Math.min(1, prev.event.force * 1.25); }   // both feet down
+      if (prev && s.t - prev.t < 0.02) { prev.event.feet = 'both'; prev.event.force = +Math.min(1, prev.event.force * 1.25).toFixed(2); }   // both feet down
       skipped.push({ t: s.t, who: s.who, why: s.t - last[s.who] < 0.02 ? 'both feet on one frame: one step' : `under ${minGap} s after the last step` });
       continue;
     }
@@ -170,4 +170,21 @@ export function stepEvents(cues, project, media) {
     source: 'sonic', method: FOLEY, conf: 1, entities: [c.event.who],
     data: { cue: c.id, kind: 'step', aim: 'onset', sound: path.basename(c.file), side: c.event.side, surface: c.event.surface,
       footwear: c.event.footwear, force: c.event.force, distance: c.event.distance, room: c.event.room } }));
+}
+
+/**
+ * Adaptive level for each step against the rest of the mix (no flat boost). For step i: ownDb is its level as placed,
+ * mixDb the level of everything else around it, both in the step's band. A step that matters (strong contact, near the
+ * camera) is aimed a little above what surrounds it, a soft or far one is allowed to sit under it, as a mixer would:
+ * aim = mixDb + lerp(-6, +3, intensity x nearness). The change is held to -6 .. +9 dB of the physically shaped
+ * level, so a far step never jumps to the front. Returns dB changes, one per step.
+ */
+export function adaptiveGains(steps, o = {}) {
+  const lo = o.down ?? -6, hi = o.up ?? 9, near = o.near ?? 4;
+  return steps.map((s) => {
+    if (!Number.isFinite(s.ownDb) || !Number.isFinite(s.mixDb)) return 0;
+    const w = Math.max(0, Math.min(1, (s.force ?? 0.5) * Math.min(1, near / Math.max(0.5, s.distance ?? 3))));
+    const aim = s.mixDb + (-6 + 9 * w);
+    return +Math.max(lo, Math.min(hi, aim - s.ownDb)).toFixed(2);
+  });
 }

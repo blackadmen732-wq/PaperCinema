@@ -136,11 +136,16 @@ on one frame are one step. Per character: `"cast": {"kojiro": {"weight": 80, "fo
 `python3 -m vyrn sync final.mp4 --expect output/<film>.footsteps.events.jsonl --tol 0.03`.
 Standalone: `node packages/sonic/cli.mjs footsteps STEPS.jsonl --surface wood --footwear geta`.
 
-Measured on the starter film (Nov 28): 14 contacts became 9 steps (4 were both feet on one frame, 1 came 42 ms
-after the last). Alone, VYRN hears 8 of 9. In the full mix it hears 4 of 9 within 30 ms: the others sit 3 to 15 dB
-under music and beds (three of them are 14 to 19 m from the camera). That is the mix's balance, and VYRN's report
-says which steps are masked; raise `gain` (dB) or lower the beds if they should be heard. VYRN's sound-kind guess
-calls granular sand steps "ringing"; that label is wrong for these sounds.
+**Level against the mix** (on unless `"adaptive": false`): the mixer measures, in the steps' band (200 Hz to
+5 kHz), everything else around each step (after ducking under voices) and the step as placed, and sets the step's
+gain from that: a strong step near the camera is aimed a few dB above what surrounds it, a soft or far one may sit
+under it, never more than -6 to +9 dB from its physically shaped level (`packages/sonic/foley.mjs` adaptiveGains).
+Nothing is boosted across the board.
+
+Measured on the starter film (Nov 28): 14 contacts became 9 steps (4 were both feet on one frame, 1 came 42 ms after
+the last). Alone, VYRN hears 8 of 9. In the full mix, VYRN heard 4 of 9 within 30 ms at a fixed level and 5 of 9 with
+the adaptive level (4 lifted, 5 lowered). The rest sit under loud moments of the mix, and VYRN's report names them.
+VYRN's sound-kind guess calls granular sand steps "ringing"; that label is wrong for these sounds.
 
 ## Offline mixing
 

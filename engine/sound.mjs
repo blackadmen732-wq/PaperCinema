@@ -10,6 +10,7 @@
 // Credits for every sound (title, author, licence, link) go to assets/sfx/credits.json.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
 
 const args = process.argv.slice(2);
@@ -314,6 +315,37 @@ const measure = (gain) => {
   return { lufs: g(/Integrated loudness:\s+I:\s+(-?[\d.]+)/), tp: g(/True peak:\s*\n\s*Peak:\s+(-?[\d.]+)/) };
 };
 const clamp = (g) => Math.max(-24, Math.min(24, g));
+// ADAPTIVE FOOTSTEP LEVEL (only with footsteps on): measure, in the steps' band (200 Hz to 5 kHz), the mix without the
+// steps and each step as placed, then set each step's gain against what surrounds it (packages/sonic/foley.mjs
+// adaptiveGains): a strong, near step lifts a little above the mix, a soft or far one may sit under it.
+const stepIdx = placed.map(({ cue }, i) => (/^auto-step-/.test(cue.id) ? i : -1)).filter((i) => i >= 0);
+if (stepIdx.length && FOOT && (typeof FOOT !== 'object' || FOOT.adaptive !== false)) {
+  const { adaptiveGains } = await import('../packages/sonic/foley.mjs');
+  // the labels the final mix takes in (after ducking under voices), split into the steps and everything else
+  const labels = mixIn.match(/\[[^\]]+\]/g) ?? [];
+  const stepL = new Set(stepIdx.map((i) => `[a${i}]`)), rest = labels.filter((l) => !stepL.has(l));
+  const band = 'highpass=f=200,lowpass=f=5000';
+  const tmp = (n) => path.join(os.tmpdir(), `sound-${process.pid}-${n}.f32`);
+  const g = [...filters, `${rest.join('')}amix=inputs=${rest.length}:normalize=0,${band}[bed]`,
+    `${[...stepL].join('')}amix=inputs=${stepL.size}:normalize=0,${band}[stp]`];
+  ff(['-y', '-loglevel', 'error', ...inputs, '-filter_complex', g.join(';'),
+    '-map', '[bed]', '-ac', '1', '-ar', '22050', '-t', String(film.duration), '-f', 'f32le', tmp('bed'),
+    '-map', '[stp]', '-ac', '1', '-ar', '22050', '-t', String(film.duration), '-f', 'f32le', tmp('stp')]);
+  const rd = (f) => { const b = fs.readFileSync(f); fs.unlinkSync(f); return new Float32Array(b.buffer, b.byteOffset, b.length >> 2); };
+  const bed = rd(tmp('bed')), stp = rd(tmp('stp'));
+  const db = (x, t0, t1) => { const a = Math.max(0, Math.floor(t0 * 22050)), b = Math.min(x.length, Math.floor(t1 * 22050)); let e = 0; for (let k = a; k < b; k++) e += x[k] * x[k]; return b > a ? 10 * Math.log10(e / (b - a) + 1e-12) : NaN; };
+  const steps = stepIdx.map((i) => { const c = placed[i].cue; return { ownDb: db(stp, c.t, c.t + 0.08), mixDb: db(bed, c.t - 0.15, c.t + 0.15), force: c.event?.force, distance: c.event?.distance }; });
+  const d = adaptiveGains(steps);
+  stepIdx.forEach((i, k) => {
+    const c = placed[i].cue, ng = +(c.gain * 10 ** (d[k] / 20)).toFixed(3);
+    filters[i] = filters[i].replace(`volume=${c.gain},`, `volume=${ng},`);
+    Object.assign(c.event ?? {}, { mixDb: +steps[k].mixDb.toFixed(1), ownDb: +steps[k].ownDb.toFixed(1), adaptDb: d[k] });
+    c.gain = ng;
+  });
+  console.log(`  footsteps: levels set against the mix (${d.filter((x) => x > 0).length} lifted, ${d.filter((x) => x < 0).length} lowered, change ${Math.min(...d)} to ${Math.max(...d)} dB)`);
+  const fp = `output/${base}.footsteps.json`;
+  if (fs.existsSync(fp)) { const j = JSON.parse(fs.readFileSync(fp, 'utf8')); j.cues = stepIdx.map((i) => { const { id, t, why, event, gain } = placed[i].cue; return { id, t, why, gain, event }; }); fs.writeFileSync(fp, JSON.stringify(j, null, 1)); }
+}
 const m1 = measure(0);
 let gain = Number.isFinite(m1.lufs) ? clamp(TARGET - m1.lufs) : 0;
 console.log(`  level pass 1: the mix measures ${m1.lufs} LUFS, true peak ${m1.tp} dBFS` +

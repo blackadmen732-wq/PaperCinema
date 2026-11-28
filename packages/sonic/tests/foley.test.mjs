@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { renderStep, footstepCues, stepEvents } from '../foley.mjs';
+import { renderStep, footstepCues, stepEvents, adaptiveGains } from '../foley.mjs';
 
 const rms = (y) => Math.sqrt(y.reduce((a, v) => a + v * v, 0) / y.length);
 const bright = (y) => { let d = 0; for (let i = 1; i < y.length; i++) d += Math.abs(y[i] - y[i - 1]); return d / (y.reduce((a, v) => a + Math.abs(v), 0) + 1e-9); };
@@ -43,4 +43,18 @@ test('cues: one per step, none on a landing cue, both feet on one frame make one
 test('the camera distance comes from the camera position at the step', () => {
   const { cues } = footstepCues([{ t: 1, actor: 'a', side: 'R', speed: 2, point: [0, 0, 10] }], { camera: () => [0, 0, 0], cache });
   assert.equal(cues[0].event.distance, 10);
+});
+
+test('adaptive level: against the mix, by intensity and distance, never a flat boost', () => {
+  const [nearHard, farSoft, quietRoom, loudMix] = adaptiveGains([
+    { ownDb: -40, mixDb: -30, force: 1, distance: 2 },     // a strong step near the camera under a busy mix: lifted above it
+    { ownDb: -40, mixDb: -30, force: 0.2, distance: 15 },  // a soft step far away: may stay under the mix
+    { ownDb: -30, mixDb: -60, force: 0.5, distance: 3 },   // nothing around it: brought down, not left blaring
+    { ownDb: -50, mixDb: -10, force: 1, distance: 1 },     // drowned: lifted, but only as far as +9 dB
+  ]);
+  assert.equal(nearHard, 9);
+  assert.ok(farSoft < nearHard && farSoft > 0);
+  assert.equal(quietRoom, -6);
+  assert.equal(loudMix, 9);
+  assert.deepEqual(adaptiveGains([{ ownDb: NaN, mixDb: -20 }]), [0]);
 });
