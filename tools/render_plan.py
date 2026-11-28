@@ -12,6 +12,8 @@ Used by tools/film.sh step 5; standalone so the shell needs no nested heredoc.
 import os
 import sys
 
+CHUNK = max(1, int(os.environ.get('RENDER_CHUNK', '100')))     # frames per Blender process (see below)
+
 
 def main(argv):
     if len(argv) != 5:
@@ -30,7 +32,11 @@ def main(argv):
         runs, s0 = [], chunk[0]
         for x, y in zip(chunk, chunk[1:] + [None]):
             if y != x + 1:
-                runs.append('%d-%d' % (s0, x))
+                # no Blender process renders more than CHUNK frames: a worker's memory grows with every frame (28 Nov:
+                # ~7 GB after ~200 frames of the beach set), and two long-lived workers were killed for lack of memory
+                # on a 15 GB machine. Each range is one process (tools/film.sh), so short ranges free it regularly.
+                for c0 in range(s0, x + 1, CHUNK):
+                    runs.append('%d-%d' % (c0, min(x, c0 + CHUNK - 1)))
                 s0 = y
         print(' '.join(runs))
     return 0
