@@ -61,6 +61,11 @@ tests/             python3 -m unittest discover -s tests ; node --test tests/js.
 bench/bench.py     measures what it saves on a real project
 ```
 
+## Interfaces
+
+The command, JSON and file contracts any implementation (Python today, Rust later) must keep
+are in `INTERFACES.md`.
+
 ## Tests
 
 ```
