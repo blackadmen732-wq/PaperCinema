@@ -12,7 +12,7 @@ Used by tools/film.sh step 5; standalone so the shell needs no nested heredoc.
 import os
 import sys
 
-CHUNK = max(1, int(os.environ.get('RENDER_CHUNK', '100')))     # frames per Blender process (see below)
+CHUNK = max(1, int(os.environ.get('RENDER_CHUNK', '50')))     # frames per Blender process (see below; 100 still reached 6.6 GB a worker on the beach set)
 
 
 def main(argv):
