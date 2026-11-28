@@ -42,6 +42,9 @@ Anything not written here (Python function names, module layout) is internal and
 | `snapshot [--as NAME]` | text |
 | `mem get [TOPIC] [--grep W]` | `[{"id","topic","text","at","by"?,"ref"?}]`, newest first |
 | `mem add TOPIC TEXT` | text: `added <id>` or `already noted <id>` |
+| `events check FILE…` | text; exit 1 if any line is not `aethern-event/1` (`schema/event-1.schema.json`) |
+| `events merge FILE… [--out F]` | JSON Lines, sorted by `t`; one line per id (higher `conf` wins), other sources listed in `data.also_from` |
+| `events near T FILE… [--window W] [--type X]` | `[event, …]` within ±W s of T |
 | `ai JOB …` | the answer on stdout, a one-line meta summary on stderr |
 | `worker TASK` | progress lines; transcript file in `worker.log_dir` |
 | `skills [--check]`, `vendor …`, `ledger …` | text, exit codes as above |
@@ -56,6 +59,7 @@ Anything not written here (Python function names, module layout) is internal and
 | `<cache_dir>/ai/<h[:2]>/<h>.json` | `{"text", "meta"}`, where `h = sha1(json([job, model_chain, messages, max_tokens], sorted keys))`; stale after `cache_ttl_days` by file time |
 | `ai.log` (JSON Lines) | `{"model","secs","tokens","total","job","ok","at","cached"?}` |
 | job state (`js/state.mjs`) | `{"<parts key>": {id: {"status":"done"\|"failed","hash", …}}}`; `hash` = first 12 hex chars of sha1 of the part's inputs as JSON |
+| shared events (JSON Lines) | `aethern-event/1`: `{"v"?:1,"id","type","t","t1"?,"f"?,"source","method"?,"conf"?,"entities"?,"data"?}`; no other top-level fields. Written by Sonic, VYRN and the engine |
 | vendor manifest | `{"tools":[{"id","url","commit","licence","size","what","why_here","skill","needs_gpu"?,"needs_gui"?}],"rejected":[{"name","why"}]}` |
 | promise ledger | `{"promises":[{"id","promise","why","status":"kept"\|"OPEN","check"}]}` |
 

@@ -14,6 +14,7 @@ orient   map show ID [ID..]    one system: does, files (+line counts), guide, co
 change   changed [--save]      files added/modified/removed since your last snapshot
          impact [--save]       changed files -> systems -> what those systems feed
          snapshot              move the snapshot to now        (--as NAME keeps a separate one)
+events   events check|merge FILE…   events near T FILE…   shared aethern-event/1 lines (Sonic, VYRN, engine)
 notes    mem get TOPIC | --grep WORD     mem add TOPIC "fact"     mem topics     mem drop ID
 labour   ai write|code|think|quick "prompt"   ai review IMG|DIR "question"   ai list   ai budget
          worker "task" [--steps N] [--dry]   a free model with read/search/patch/run/map tools
@@ -39,6 +40,9 @@ def main(argv=None):
     if cmd in ('changed', 'impact', 'snapshot'):
         from . import index
         return index.main(rest, cfg, cmd)
+    if cmd == 'events':
+        from . import events
+        return events.main(rest, cfg)
     if cmd == 'mem':
         from . import memory
         return memory.main(rest, cfg)

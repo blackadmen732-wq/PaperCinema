@@ -12,7 +12,7 @@ import unittest
 from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from aethern import catalog, config, index, memory, router, skillmap, worker  # noqa: E402
+from aethern import catalog, config, events, index, memory, router, skillmap, worker  # noqa: E402
 
 SYSTEMS_MD = """# Systems
 ## The catalogue
@@ -131,6 +131,33 @@ class IndexTest(Base):
         os.makedirs(self.cfg.path('.aethern/cache/x'), exist_ok=True)
         open(self.cfg.path('.aethern/cache/x/y'), 'w').write('z')
         self.assertEqual(index.changed(self.cfg)['added'], [])
+
+
+class EventsTest(Base):
+    def write(self, name, rows):
+        p = os.path.join(self.d, name)
+        open(p, 'w').write(''.join(json.dumps(r) + '\n' for r in rows))
+        return p
+
+    def test_check_and_merge(self):
+        a = self.write('a.jsonl', [{'id': 'blade-contact.01', 'type': 'blade-contact', 't': 1.0, 'source': 'engine', 'conf': 1},
+                                   {'id': 'footstep.01', 'type': 'footstep', 't': 0.5, 'source': 'engine', 'conf': 1}])
+        b = self.write('b.jsonl', [{'id': 'blade-contact.01', 'type': 'blade-contact', 't': 1.02, 'source': 'vyrn.video', 'conf': 0.8, 'data': {}},
+                                   {'id': 'sonic.pick.01', 'type': 'sonic.pick', 't': 1.0, 't1': 1.4, 'source': 'sonic', 'entities': ['x'], 'data': {}}])
+        self.assertEqual(events.check([a, b]), {})
+        m = events.merge([a, b])
+        self.assertEqual([e['id'] for e in m], ['footstep.01', 'blade-contact.01', 'sonic.pick.01'])
+        bc = m[1]
+        self.assertEqual((bc['source'], bc['t'], bc['data']['also_from']), ('engine', 1.0, ['vyrn.video']))
+
+    def test_bad_lines_are_named(self):
+        p = self.write('bad.jsonl', [{'id': 'x', 'type': 'y', 't': -1, 'source': 's'}, {'id': 'x', 'type': 'y', 't': 1, 't1': 0.5, 'source': 's', 'extra': 1},
+                                     {'v': 2, 'id': 'x', 'type': 'y', 't': 1, 'source': 's'}])
+        errs = events.check([p])[p]
+        self.assertTrue(any('line 1' in e and 't must' in e for e in errs))
+        self.assertTrue(any('line 2' in e and 't1' in e for e in errs))
+        self.assertTrue(any('line 2' in e and 'unknown field' in e for e in errs))
+        self.assertTrue(any('line 3' in e and 'version' in e for e in errs))
 
 
 class MemoryTest(Base):
