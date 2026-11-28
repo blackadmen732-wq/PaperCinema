@@ -163,6 +163,8 @@ def add_layers(rig, built, bind, layers):
                     if k_ in ob:
                         band[k_] = ob[k_]
                 band['pc_band'] = j
+                if 'elbow.' + side in reg.SOCKETS:          # a band hangs from the forearm, not the shoulder
+                    band['pc_socket'] = 'elbow.' + side
                 band['pc_layered_from'] = ob.name
                 band.parent = e
                 band.matrix_parent_inverse = e.matrix_world.inverted()
