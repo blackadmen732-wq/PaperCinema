@@ -63,8 +63,10 @@ Anything not written here (Python function names, module layout) is internal and
 
 1. Build it as a command that keeps one row of the command table and the files it touches,
    byte for byte. For example `aethern-index` answering `changed` and `impact`.
-2. Prove it: the existing tests run against it (`tests/` call the commands' public behaviour), and
-   `bench/bench.py` shows the gain on a real project. No measured gain, no switch.
+2. Prove it: it passes a contract test that runs the command and compares its stdout, exit code
+   and files with the Python version's (today's tests call Python functions directly, so that
+   command-level test is the first thing to write before any swap), and `bench/bench.py` shows the
+   gain on a real project. No measured gain, no switch.
 3. Switch it on with one dispatch line in `aethern/cli.py`: when `aethern.json` names an
    implementation for that command (planned key: `"impl": {"changed": "path/to/aethern-index"}`),
    run it with the same arguments. Callers do not change, and removing the key switches back.
