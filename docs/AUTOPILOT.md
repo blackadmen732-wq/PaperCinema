@@ -56,7 +56,7 @@ a full village... make it fight good, a system for groundbreaking sound and cool
   cut. (5) the wade shot B7 had Musashi out of frame for 4.2 s of 4.9 (camera report): it framed Kojiro only -> it
   follows Musashi from behind, both in frame on every frame. Also: Blender returned 0 on a Python error, so film.sh
   would have rendered on a failed bake (--python-exit-code 1 now). Audit before the last fixes: PASS 9.6/10, 0 critical.
-- 28 Nov 00:45 UTC: Episode 1 render restarted (tools/film.sh, 360x640 preview, 2 workers, detached; ~8 h). film.sh's
+- 28 Nov 00:30 UTC: Episode 1 render restarted (tools/film.sh, 360x640 preview, 2 workers, detached; 27 s a frame per worker, ~7 h: done ~07:30 UTC). film.sh's
   own audit: `STUDIO AUDIT ganryujima-ep1: PASS · 9.8/10 · 0 critical, 0 major, 6 minor` (animation 10, composition
   10, staging 10; it was 9.3 with majors this morning). Check stills of the fixed cut and wade shot sent to Mark.
   Open on the bake's own checks (judged on the render): Musashi's left arm inside his chest by up to 11 cm during the
