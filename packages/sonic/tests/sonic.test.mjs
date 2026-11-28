@@ -47,7 +47,12 @@ test('copied out of the repo: scan, pick from aethern-event/1, output passes aet
   assert.deepEqual(out.map((e) => [e.type, e.t, e.data.kind, e.data.sound]),
     [['sonic.pick', 1.2, 'clash', 'steel-clash-hit'], ['sonic.pick', 2, 'whoosh', 'sword-whoosh']]);
   assert.deepEqual(out[0].entities, ['kuro']);
-  const ck = spawnSync('python3', [AETHERN, 'events', 'check', path.join(dir, 'out.jsonl')], { encoding: 'utf8' });
+  assert.equal(out[0].v, undefined);                                             // version 1 in, version 1 out
+  const pk2 = run('pick', 'in.jsonl', '--out', 'out2.jsonl', '--project', 'cinevora-demo', '--media', 'film:night-car');
+  assert.equal(pk2.status, 0, pk2.stderr);
+  const out2 = fs.readFileSync(path.join(dir, 'out2.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual([out2[0].v, out2[0].project, out2[0].media], [2, 'cinevora-demo', 'film:night-car']);
+  const ck = spawnSync('python3', [AETHERN, 'events', 'check', path.join(dir, 'out.jsonl'), path.join(dir, 'out2.jsonl')], { encoding: 'utf8' });
   assert.equal(ck.status, 0, ck.stdout + ck.stderr);
   fs.rmSync(dir, { recursive: true, force: true });
 });

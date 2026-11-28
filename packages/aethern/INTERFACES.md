@@ -42,9 +42,9 @@ Anything not written here (Python function names, module layout) is internal and
 | `snapshot [--as NAME]` | text |
 | `mem get [TOPIC] [--grep W]` | `[{"id","topic","text","at","by"?,"ref"?}]`, newest first |
 | `mem add TOPIC TEXT` | text: `added <id>` or `already noted <id>` |
-| `events check FILE…` | text; exit 1 if any line is not `aethern-event/1` (`schema/event-1.schema.json`) |
-| `events merge FILE… [--out F]` | JSON Lines, sorted by `t`; one line per id (higher `conf` wins), other sources listed in `data.also_from` |
-| `events near T FILE… [--window W] [--type X]` | `[event, …]` within ±W s of T |
+| `events check FILE…` | text; exit 1 if any line is not a valid `aethern-event/2` or `/1` (bad JSON, non-finite numbers, missing ids, duplicate ids and bad evidence are named by line) |
+| `events merge FILE… [--out F] [--tol S] [--project P] [--media M]` | `aethern-event/2` JSON Lines, sorted by `t`; one line per project + media + id. Every observation is kept in `evidence`; when they disagree (type, or `t`/`t1` more than S s apart, or different entities) the line has `conflict: true` and `data.conflict_on`, with the most confident observation on top. Exit 1, merging nothing, if any input is malformed. Version-1 lines get P (default: aethern.json `id`, else `name` as a slug) and M (default `unknown`) |
+| `events near T FILE… [--window W] [--type X]` | `[event, …]` within ±W s of T, after the same merge |
 | `ai JOB …` | the answer on stdout, a one-line meta summary on stderr |
 | `worker TASK` | progress lines; transcript file in `worker.log_dir` |
 | `skills [--check]`, `vendor …`, `ledger …` | text, exit codes as above |
@@ -59,7 +59,7 @@ Anything not written here (Python function names, module layout) is internal and
 | `<cache_dir>/ai/<h[:2]>/<h>.json` | `{"text", "meta"}`, where `h = sha1(json([job, model_chain, messages, max_tokens], sorted keys))`; stale after `cache_ttl_days` by file time |
 | `ai.log` (JSON Lines) | `{"model","secs","tokens","total","job","ok","at","cached"?}` |
 | job state (`js/state.mjs`) | `{"<parts key>": {id: {"status":"done"\|"failed","hash", …}}}`; `hash` = first 12 hex chars of sha1 of the part's inputs as JSON |
-| shared events (JSON Lines) | `aethern-event/1`: `{"v"?:1,"id","type","t","t1"?,"f"?,"source","method"?,"conf"?,"entities"?,"data"?}`; no other top-level fields. Written by Sonic, VYRN and the engine |
+| shared events (JSON Lines) | `aethern-event/2` (`schema/event-2.schema.json`): `{"v":2,"project","media","id","type","t","t1"?,"f"?,"source","method"?,"conf"?,"entities"?,"data"?,"evidence"?:[{"source","method"?,"conf"?,"t"?,"t1"?,"type"?,"entities"?,"data"?,"file"?}],"conflict"?}`; no other top-level fields; unique by project + media + id. Media ids: `film:<name>` (engine, Sonic), VYRN's `v<hash>`/`t<hash>`. Written by Sonic (in Paper Cinema) and VYRN. Version 1 (`schema/event-1.schema.json`, no project/media/evidence/conflict) is still read |
 | vendor manifest | `{"tools":[{"id","url","commit","licence","size","what","why_here","skill","needs_gpu"?,"needs_gui"?}],"rejected":[{"name","why"}]}` |
 | promise ledger | `{"promises":[{"id","promise","why","status":"kept"\|"OPEN","check"}]}` |
 

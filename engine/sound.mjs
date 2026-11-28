@@ -111,9 +111,9 @@ if (SONIC && autoCues.length) {
   for (const c of autoCues) if (c.sonic?.bank === 'earshot') credits[c.sfx] = { title: c.sfx.slice(8), creator: 'Earshot sound bank (Leonxlnx/earshot)', license: 'MIT', source: 'https://github.com/Leonxlnx/earshot' };
   fs.mkdirSync('output', { recursive: true });
   fs.writeFileSync(`output/${base}.sonic.json`, JSON.stringify(report, null, 1));
-  // the same picks in the shared timestamped-event format (one per line), which VYRN and other tools read
+  // the same picks in the shared timestamped-event format (aethern-event/2, one per line), which VYRN and other tools read
   const { sharedEvents } = await import('./sonic.mjs');
-  fs.writeFileSync(`output/${base}.sonic.events.jsonl`, sharedEvents(report).map((e) => JSON.stringify(e)).join('\n') + '\n');
+  fs.writeFileSync(`output/${base}.sonic.events.jsonl`, sharedEvents(report, { project: 'paper-cinema', media: `film:${base}` }).map((e) => JSON.stringify(e)).join('\n') + '\n');
   console.log(`+ sonic: ${report.length} automatic cue(s) chose their sound from the catalog → output/${base}.sonic.json`);
 }
 // film.autoSounds.whoosh.earshot: [ids] → automatic whooshes come from the Earshot bank, peak aimed at the blade's

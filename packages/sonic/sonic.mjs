@@ -7,7 +7,7 @@
 //
 // Standalone package (packages/sonic): it imports nothing from any host app. A host sets its own paths with
 // configure() (Paper Cinema does that in engine/sonic.mjs) and can pass its own eventOf() to read its cues.
-// Events in and out use the shared aethern-event/1 format, so any tool can feed it and check its picks.
+// Events in and out use the shared aethern-event format (version 2, or 1), so any tool can feed it and check its picks.
 // Generic by design: nothing here knows about swords or Paper Cinema. The words, the event kinds and how an
 // event maps to a sound all live in a vocabulary JSON (vocab.json next to this file by default). Local only:
 // ffmpeg decodes, plain JS measures, no network, no AI calls. A content-hash cache means a file whose bytes
@@ -430,9 +430,11 @@ export function applyToCues(cues, o = {}) {
  * "sonic.pick" per cue it chose a sound for, at the moment the sound is aimed at (the event's peak), so VYRN (or any
  * tool) can check the finished mix against it without knowing Sonic.
  */
-export function sharedEvents(report) {
+export function sharedEvents(report, o = {}) {
+  // with o.project and o.media the lines are aethern-event/2 (unique by project + media + id); without, version 1
+  const ids = o.project && o.media ? { v: 2, project: o.project, media: o.media } : {};
   return report.filter((r) => r.now).map((r, i) => ({
-    id: `sonic.pick.${String(i + 1).padStart(2, '0')}`, type: 'sonic.pick', t: r.peakAt ?? r.t, t1: null, source: 'sonic', method: 'catalog-pick',
+    ...ids, id: `sonic.pick.${String(i + 1).padStart(2, '0')}`, type: 'sonic.pick', t: r.peakAt ?? r.t, t1: null, source: 'sonic', method: 'catalog-pick',
     conf: +Math.max(0, Math.min(1, 0.5 + r.score / 4)).toFixed(2), entities: r.who ? [r.who] : [],
     data: { cue: r.id, kind: r.kind, aim: r.aim ?? null, sound: r.now, was: r.was, start: r.t, fallback: r.fallback ?? null },
   }));
@@ -463,10 +465,11 @@ export function localStandIn(cue, o = {}) {
 
 
 /**
- * aethern-event/1 in, aethern-event/1 out. Each input event becomes one cue (id, t, event) and goes through
+ * aethern-event in, aethern-event out. Each input event becomes one cue (id, t, event) and goes through
  * applyToCues; the kind comes from data.kind or the last part of the type ("combat.clash" -> clash), the moment to
  * hit from data.peakAt or t, the "who" from the first entity. Returns { picks, events, cues }: the pick report,
- * the "sonic.pick" events, and the cues with the chosen files.
+ * the "sonic.pick" events, and the cues with the chosen files. Version-2 input (or o.project + o.media) gives
+ * version-2 output with the same project and media.
  */
 export function pickForEvents(events, o = {}) {
   const cues = [];
@@ -477,5 +480,6 @@ export function pickForEvents(events, o = {}) {
     cues.push({ id: e.id, t: e.t, event: { ...d, kind, peakAt: d.peakAt ?? e.t, ...(e.entities?.length ? { who: e.entities[0] } : {}) } });
   }
   const picks = applyToCues(cues, o);
-  return { picks, events: sharedEvents(picks), cues };
+  const ids = o.project || o.media ? o : (events.find((e) => e.v === 2) ?? {});   // answer in the ids it was asked in
+  return { picks, events: sharedEvents(picks, { project: ids.project, media: ids.media }), cues };
 }

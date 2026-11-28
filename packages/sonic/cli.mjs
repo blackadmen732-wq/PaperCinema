@@ -8,7 +8,7 @@ import { configure, scan, loadCatalog, query, brief, pickForEvents } from './son
 
 const argv = process.argv.slice(2);
 const opt = (k) => { const i = argv.indexOf(`--${k}`); if (i < 0) return undefined; const v = argv[i + 1]; argv.splice(i, 2); return v; };
-const out = opt('out'), seed = opt('seed'), roots = opt('roots'), catalog = opt('catalog'), vocab = opt('vocab'), cache = opt('cache');
+const out = opt('out'), seed = opt('seed'), roots = opt('roots'), catalog = opt('catalog'), vocab = opt('vocab'), cache = opt('cache'), project = opt('project'), media = opt('media');
 configure({ ...(catalog ? { catalog } : {}), ...(vocab ? { vocab } : {}), ...(cache ? { cache } : {}), ...(roots ? { roots: roots.split(',') } : {}) });
 const [cmd, ...rest] = argv;
 const readEvents = (f) => fs.readFileSync(f, 'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
@@ -17,13 +17,13 @@ if (cmd === 'scan') {
   const { stats } = scan();
   console.log(JSON.stringify(stats));
 } else if (cmd === 'pick' && rest[0]) {
-  const { events, picks } = pickForEvents(readEvents(rest[0]), { seed });
+  const { events, picks } = pickForEvents(readEvents(rest[0]), { seed, project, media });
   const text = events.map((e) => JSON.stringify(e)).join('\n') + (events.length ? '\n' : '');
   if (out) fs.writeFileSync(out, text); else process.stdout.write(text);
   console.error(`sonic: ${events.length} of ${picks.length} events got a sound`);
 } else if (cmd === 'query') {
   for (const s of query(loadCatalog(), rest.join(' '))) console.log(brief(s));
 } else {
-  console.error('usage: cli.mjs scan | pick EVENTS.jsonl [--out F] | query WORDS   [--catalog F] [--roots a,b] [--vocab F] [--cache D]');
+  console.error('usage: cli.mjs scan | pick EVENTS.jsonl [--out F] [--project P --media M] | query WORDS   [--catalog F] [--roots a,b] [--vocab F] [--cache D]');
   process.exit(2);
 }

@@ -148,7 +148,10 @@ class EventsTest(Base):
         m = events.merge([a, b])
         self.assertEqual([e['id'] for e in m], ['footstep.01', 'blade-contact.01', 'sonic.pick.01'])
         bc = m[1]
-        self.assertEqual((bc['source'], bc['t'], bc['data']['also_from']), ('engine', 1.0, ['vyrn.video']))
+        self.assertEqual((bc['v'], bc['source'], bc['t']), (2, 'engine', 1.0))
+        self.assertEqual([o['source'] for o in bc['evidence']], ['engine', 'vyrn.video'])   # both observations kept
+        self.assertNotIn('conflict', bc)                                                    # 20 ms apart: they agree
+        self.assertEqual(events.check([self.write('m.jsonl', m)]), {})                      # merged output is valid v2
 
     def test_bad_lines_are_named(self):
         p = self.write('bad.jsonl', [{'id': 'x', 'type': 'y', 't': -1, 'source': 's'}, {'id': 'x', 'type': 'y', 't': 1, 't1': 0.5, 'source': 's', 'extra': 1},
@@ -157,7 +160,46 @@ class EventsTest(Base):
         self.assertTrue(any('line 1' in e and 't must' in e for e in errs))
         self.assertTrue(any('line 2' in e and 't1' in e for e in errs))
         self.assertTrue(any('line 2' in e and 'unknown field' in e for e in errs))
-        self.assertTrue(any('line 3' in e and 'version' in e for e in errs))
+        self.assertTrue(any('line 3' in e and 'project is required' in e for e in errs))
+
+    def test_malformed_lines_are_rejected_with_reasons(self):
+        p = os.path.join(self.d, 'junk.jsonl')
+        open(p, 'w').write('{"id": "a.01", "type": "a", "t": NaN, "source": "s"}\n'
+                           '{not json\n'
+                           '{"v": 3, "id": "a.02", "type": "a", "t": 1, "source": "s"}\n'
+                           '{"v": 2, "project": "p", "media": "m", "id": "a.03", "type": "a", "t": 1, "source": "s", "evidence": [{"conf": 2}]}\n'
+                           '{"id": "a.04", "type": "a", "t": 1, "source": "s", "f": true}\n'
+                           '{"id": "a.05", "type": "a", "t": 1, "source": "s"}\n'
+                           '{"id": "a.05", "type": "a", "t": 2, "source": "s"}\n')
+        errs = events.check([p])[p]
+        for n, what in [(1, 'finite'), (2, 'not JSON'), (3, 'unknown version'), (4, 'evidence[0]'), (5, 'f must'), (7, 'duplicate id')]:
+            self.assertTrue(any(e.startswith(f'line {n}:') and what in e for e in errs), (n, what, errs))
+        self.assertFalse(any(e.startswith('line 6:') for e in errs))
+        with self.assertRaises(events.Malformed):
+            events.merge([p])
+
+    def test_conflicting_observations_are_kept_with_evidence(self):
+        a = self.write('eng.jsonl', [{'id': 'impact.01', 'type': 'impact', 't': 4.30, 'source': 'engine', 'conf': 1, 'data': {'frame': 103}}])
+        b = self.write('vid.jsonl', [{'id': 'impact.01', 'type': 'impact', 't': 4.42, 'source': 'vyrn.video', 'conf': 0.7, 'data': {'freeze': True}}])
+        m = events.merge([a, b], project='paper-cinema', media='film:dash-test')
+        self.assertEqual(len(m), 1)
+        e = m[0]
+        self.assertTrue(e['conflict'])
+        self.assertEqual(e['data']['conflict_on'], ['t'])
+        self.assertEqual((e['project'], e['media'], e['t']), ('paper-cinema', 'film:dash-test', 4.30))
+        self.assertEqual([(o['source'], o['t'], o['data']) for o in e['evidence']],
+                         [('engine', 4.30, {'frame': 103}), ('vyrn.video', 4.42, {'freeze': True})])
+        # the same id in two media is two events, not a conflict
+        c = self.write('v2.jsonl', [{'v': 2, 'project': 'paper-cinema', 'media': 'film:other', 'id': 'impact.01', 'type': 'impact', 't': 9, 'source': 'engine'}])
+        self.assertEqual(len(events.merge([a, c], project='paper-cinema', media='film:dash-test')), 2)
+        # merging the merged file again keeps the evidence and the conflict
+        again = events.merge([self.write('m.jsonl', m)])
+        self.assertTrue(again[0]['conflict'])
+        self.assertEqual(len(again[0]['evidence']), 2)
+
+    def test_project_id(self):
+        self.assertEqual(events.project_id({'name': 'Paper Cinema'}), 'paper-cinema')
+        self.assertEqual(events.project_id({'name': 'X', 'id': 'cinevora'}), 'cinevora')
 
 
 class MemoryTest(Base):

@@ -12,9 +12,11 @@ Sonic ──<film>.sonic.events.jsonl──▶ VYRN sync ──<media>.events.js
 aethern map: SONIC, VYRN and AETHERN are rows in the one project map, with their connections
 ```
 
-The shared language is **`aethern-event/1`** (`packages/aethern/schema/event-1.schema.json`):
-`{id, type, t, t1?, f?, source, method?, conf?, entities?, data?}`, one per line. `v` is optional and
-defaults to 1, so the files Sonic and VYRN already write are valid without changes.
+The shared language is **`aethern-event/2`** (`packages/aethern/schema/event-2.schema.json`):
+`{v: 2, project, media, id, type, t, t1?, f?, source, method?, conf?, entities?, data?, evidence?, conflict?}`,
+one per line, unique by project + media + id. `evidence` keeps every observation behind an event and
+`conflict: true` marks ones that disagree; `aethern events merge` never drops either side. Sonic (in Paper
+Cinema) and VYRN write version 2; version-1 files (`event-1.schema.json`) are still read and upgraded on merge.
 
 ## Conflicts resolved
 

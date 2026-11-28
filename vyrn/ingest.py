@@ -1,6 +1,6 @@
 """Process media ONCE. A file whose bytes (sha256) and processor version are unchanged is never processed again."""
 import json, os, resource, time
-from vyrn.store import Store, cache_dir, sha256_file, save_index, load_index
+from vyrn.store import Store, cache_dir, sha256_file, save_index, load_index, project_id
 
 VERSION = {'native': 1, 'video': 2, 'audio': 2, 'fuse': 2}
 
@@ -102,10 +102,13 @@ def fuse(st, tol=0.15):
 
 
 def export_events(st, path):
-    """the shared event format (agreed with Sonic): one JSON object per line, timeline-compatible ids"""
+    """the shared event format (aethern-event/2, agreed with Sonic): one JSON object per line, timeline-compatible
+    ids, unique by project + media + id. media is VYRN's media id (the file name's stem); project from aethern.json"""
+    media_id = os.path.basename(path).split('.')[0]
+    project = project_id()
     with open(path + '.tmp', 'w', encoding='utf-8') as fh:
         for e in st.events():
-            fh.write(json.dumps({'id': e['id'], 'type': e['type'], 't': e['t0'],
+            fh.write(json.dumps({'v': 2, 'project': project, 'media': media_id, 'id': e['id'], 'type': e['type'], 't': e['t0'],
                                  **({'t1': e['t1']} if e['t1'] != e['t0'] else {}),
                                  **({'f': e['f']} if e['f'] is not None else {}),
                                  'source': e['source'], 'method': e['method'], 'conf': e['conf'],

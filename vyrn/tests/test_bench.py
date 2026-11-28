@@ -54,6 +54,16 @@ class BenchTest(unittest.TestCase):
             self.assertGreaterEqual(t['mean_iou'], 0.45, actor)   # measured 0.53 and 0.65
             self.assertEqual(t['distinct_ids'], 1, actor)
 
+    def test_events_files_are_aethern_event_2(self):
+        import glob
+        files = glob.glob(os.path.join(self.tmp.name, 'cache', '*.events.jsonl'))
+        self.assertEqual(len(files), 2)                           # the video and the native timeline
+        p = subprocess.run([sys.executable, os.path.join(ROOT, 'packages/aethern/bin/aethern'), 'events', 'check', *files],
+                           capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stdout)
+        first = json.loads(open(files[0]).readline())
+        self.assertEqual((first['v'], first['project']), (2, 'paper-cinema'))
+
     def test_cached_reingest_is_fast(self):
         self.assertLess(self.R['cached_reingest_s'], 2.0)
 

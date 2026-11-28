@@ -79,6 +79,20 @@ def project_root():
         d = up
 
 
+def project_id():
+    """the project's id in shared events (the shared core's rule): $VYRN_PROJECT, else aethern.json "id", else its
+    "name" as a slug (Paper Cinema -> paper-cinema), else the project folder's name"""
+    if os.environ.get('VYRN_PROJECT'):
+        return os.environ['VYRN_PROJECT']
+    root = project_root()
+    try:
+        cfg = json.load(open(os.path.join(root, 'aethern.json'), encoding='utf-8'))
+    except (OSError, ValueError):
+        cfg = {}
+    import re
+    return cfg.get('id') or re.sub(r'[^a-z0-9]+', '-', str(cfg.get('name') or os.path.basename(root)).lower()).strip('-') or 'unknown'
+
+
 def cache_dir():
     """<project root>/output/vyrn (output/ is never committed), overridable with VYRN_CACHE."""
     d = os.environ.get('VYRN_CACHE') or os.path.join(project_root(), 'output', 'vyrn')
