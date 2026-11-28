@@ -158,6 +158,9 @@ test('the hit-cue de-click is the one approved difference from the pre-Sonic eng
   if (!old || old.status !== 0) return t.skip('the commit before Sonic is not in this clone (shallow?)');
   const before = old.stdout.toString(), now = fs.readFileSync('engine/sound.mjs', 'utf8');
   // pre-Sonic faded every non-bed cue in over 10 ms; the current engine de-clicks hit cues to ~1 ms.
+  // LIMITATION (accepted): this verifies the approved impact change by source-code assertion, not by an
+  // independent waveform comparison of the de-clicked hit. Waveform verification of the impact change is
+  // deferred to the future regression suite; it is not built here.
   assert.ok(before.includes('cue.bed ? 1.5 : 0.01'), 'pre-Sonic fade-in shape not as expected');
   assert.ok(!/0\.001/.test(before), 'pre-Sonic engine already had a de-click; exception assumption is wrong');
   assert.ok(now.includes('HIT.test(cue.id) ? 0.001'), 'current engine no longer carries the reviewed de-click');
