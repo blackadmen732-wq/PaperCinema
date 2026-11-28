@@ -27,7 +27,6 @@ import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import os from 'node:os';
 const run = promisify(execFile);
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -43,7 +42,9 @@ export const QUALITY = {
   hero:    { scale: 1, fps: 24, blender: { samples: 192, res: '1080x1920', blur: true, fog: 0.012 }, note: 'one still for a thumbnail' },
 };
 
-const hashOf = (obj) => crypto.createHash('sha1').update(JSON.stringify(obj)).digest('hex').slice(0, 12);
+// Hash-keyed resume state is shared with any job made of independent parts (packages/aethern/js/state.mjs).
+import { hashOf, loadState, isFresh, stateWriter } from '../packages/aethern/js/state.mjs';
+export { loadState };
 
 /** the plan: one job per shot, with the frames it owns and the hash of those frames */
 export function planFrom(TL, { quality = 'preview', only = null } = {}) {
@@ -62,7 +63,6 @@ export function planFrom(TL, { quality = 'preview', only = null } = {}) {
     });
 }
 
-export function loadState(p) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return { shots: {} }; } }
 
 // ---------- CLI ----------
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -89,7 +89,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log(`RENDER SUPERVISOR ${NAME}: ${plan.length} shot(s), quality ${quality} (${QUALITY[quality].note}), renderer ${renderer}`);
   for (const j of plan) {
     const done = state.shots[j.shot];
-    const fresh = done && done.hash === j.hash && done.status === 'done' && done.quality === quality;
+    const fresh = isFresh(done, j.hash, { quality });
     console.log(`  ${j.shot.padEnd(5)} f${String(j.f0).padStart(4)}-${String(j.f1).padEnd(4)} ${String(j.seconds).padStart(5)} s  ${fresh ? 'done (resume: skip)' : done?.status === 'failed' ? 'failed before: retry' : 'to render'}  ${j.name}`);
   }
   // ---- what this job costs, from OUR OWN measured render times ----------------------------------
@@ -129,15 +129,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const queue = [];
   for (const j of plan) {
     const done = state.shots[j.shot];
-    if (done && done.hash === j.hash && done.status === 'done' && done.quality === quality && !flag('restart')) { skipped++; continue; }
+    if (isFresh(done, j.hash, { quality }) && !flag('restart')) { skipped++; continue; }
     queue.push(j);
   }
   if (queue.length) console.log(`rendering ${queue.length} shot(s) on ${workers} worker(s)\n`);
 
   // One writer at a time: several workers finishing together would otherwise interleave writes and
   // leave the resume file truncated, which costs a whole re-render.
-  let writing = Promise.resolve();
-  const saveState = () => { writing = writing.then(() => fs.promises.writeFile(statePath, JSON.stringify(state, null, 1))); return writing; };
+  // (stateWriter also writes to a temp file and renames, so a crash mid-write keeps the old state.)
+  const saveState = stateWriter(statePath, state);
 
   const cmdFor = (j) => {
     if (renderer === 'blender') {
@@ -197,7 +197,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   await Promise.all(Array.from({ length: workers }, async () => {
     while (next < queue.length) await renderOne(queue[next++]);
   }));
-  await writing;
+  await saveState.flush();
 
   console.log(`\n${NAME}: ${made} shot(s) rendered, ${skipped} skipped (already done), ${failed} failed → ${outDir}`);
   console.log(`state: ${statePath} (run again to resume; --restart to forget)`);

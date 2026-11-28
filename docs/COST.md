@@ -36,3 +36,12 @@ python3 tools/worker.py --dry "task"  # preview only
 
 
 **Rule**: Never spawn Opus/Fable for work a haiku worker or free model can do from a clear brief.
+
+## Read less (packages/aethern)
+
+Asking is cheaper than reading. Measured on 28 Nov (`docs/AETHERN-AUDIT.md` §Benchmarks):
+- `python3 packages/aethern/bin/aethern map show <ID>`: about 120 tokens, against about 7,600 for reading SYSTEMS.md whole.
+- `aethern map deps <ID>` / `aethern map owner <file>`: under 25 tokens, against about 9,900 for systems.json.
+- `aethern changed`: what moved since your snapshot, in about 7 ms over 850 files.
+- `aethern ai` answers a repeated identical prompt from its cache with no model call (`--fresh` to skip).
+

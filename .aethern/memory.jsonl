@@ -1,0 +1,5 @@
+{"id": "06f24b38", "topic": "cost", "text": "Free model endpoints (Cerebras, Groq, NVIDIA) answer 403 from Claude Code cloud sessions: tools/ai.py and the worker only offload work on Mark's own machine", "at": "2026-11-28", "ref": "docs/AETHERN-AUDIT.md"}
+{"id": "0f366372", "topic": "cost", "text": "The ai router caches identical prompts for 7 days (output/aethern/ai); pass --fresh for a new answer", "at": "2026-11-28", "ref": "aethern.json"}
+{"id": "94930a45", "topic": "map", "text": "systems.json connections are hand-written in aethern.json catalog.connections; 27 of 66 systems had no connection on 28 Nov", "at": "2026-11-28", "ref": "docs/AETHERN-AUDIT.md"}
+{"id": "591373e3", "topic": "core", "text": "Paper Cinema tools ai.py, worker.py, build_systems.py, build_skills.py, vendor.mjs, promises.mjs ledger and headless_dom.mjs are thin wrappers over packages/aethern; change the core there", "at": "2026-11-28", "ref": "packages/aethern/README.md"}
+{"id": "949b234f", "topic": "ownership", "text": "On 28 Nov the Sonic sound-tagging task owned engine/sound.mjs, engine/combat.js and assets/sfx", "at": "2026-11-28"}
